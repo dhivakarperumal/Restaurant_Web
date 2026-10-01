@@ -106,7 +106,7 @@ const Register = () => {
                   <Utensils size={25} className="text-gold" strokeWidth={1.5} />
               </div>
               <div className="flex flex-col">
-                  <span className="text-brand-text text-2xl font-serif tracking-[0.15em] uppercase">Foodie</span>
+                  <span className="text-brand-text text-2xl font-serif tracking-[0.15em] uppercase">Buy Foods</span>
                  <div className="flex items-center gap-3 opacity-70 mt-1">
                     <div className="h-px bg-gold w-6"></div>
                     <span className="text-gold text-[9px] tracking-[0.2em] uppercase whitespace-nowrap font-medium">Fresh food, warm welcome</span>
@@ -119,7 +119,7 @@ const Register = () => {
           {/* Center Content */}
           <div className="flex flex-col gap-2 max-w-md mt-16">
               <h2 className="text-5xl font-serif font-bold text-brand-text mb-1 tracking-tight">
-              Join Foodie
+              Join Buy Foods
             </h2>
             <h2 className="text-5xl font-serif font-bold text-gold mb-6 tracking-tight">
               Restaurant
@@ -187,7 +187,7 @@ const Register = () => {
             <div className="w-14 h-14 rounded-full bg-[#1f3b31] flex items-center justify-center mb-3 shadow-md">
               <Utensils size={25} className="text-[#d9b882]" strokeWidth={1.5} />
             </div>
-            <h2 className="text-[24px] font-serif font-bold text-[#1a3029] mb-1 tracking-tight">Create Your Foodie Account</h2>
+            <h2 className="text-[24px] font-serif font-bold text-[#1a3029] mb-1 tracking-tight">Create Your Buy Foods Account</h2>
             <p className="text-gray-500 text-[12px] mb-2">Join us for fresh food and easy ordering</p>
             
             <div className="flex items-center gap-2 opacity-30">

@@ -160,7 +160,7 @@ const Login = () => {
              <Utensils size={25} className="text-[#d9b882]" strokeWidth={1.5} />
           </div>
           <div className="flex flex-col">
-             <span className="text-[#d9b882] text-2xl font-serif tracking-[0.15em] uppercase">Foodie</span>
+             <span className="text-[#d9b882] text-2xl font-serif tracking-[0.15em] uppercase">Buy Foods</span>
              <div className="flex items-center gap-3 opacity-80 mt-1">
                 <div className="h-px bg-[#d9b882] w-8"></div>
                 <span className="text-[#d9b882] text-[10px] tracking-[0.25em] uppercase whitespace-nowrap">Fresh food, warm welcome</span>
@@ -172,7 +172,7 @@ const Login = () => {
         {/* Center Content */}
         <div className="flex flex-col gap-3 max-w-lg mt-24 flex-1">
           <h2 className="text-5xl md:text-6xl font-serif font-bold text-white mb-2 tracking-wide">
-            Welcome Back to Foodie!
+            Welcome Back to Buy Foods!
           </h2>
           <p className="text-white text-2xl md:text-3xl font-serif mb-2">
             Sign in and find your next favorite
@@ -241,7 +241,7 @@ const Login = () => {
             <div className="w-14 h-14 rounded-full bg-[#1f3b31] flex items-center justify-center mb-3 shadow-lg">
               <Utensils size={27} className="text-[#d9b882]" strokeWidth={1.6} />
             </div>
-            <h2 className="text-[26px] font-serif font-bold text-[#1a3029] mb-1 tracking-tight">Welcome to Foodie</h2>
+            <h2 className="text-[26px] font-serif font-bold text-[#1a3029] mb-1 tracking-tight">Welcome to Buy Foods</h2>
             <p className="text-gray-500 text-[13px]">Sign in to explore the menu and manage your orders</p>
           </div>
 
