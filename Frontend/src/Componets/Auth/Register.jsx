@@ -94,7 +94,7 @@ const Register = () => {
         <div 
           className="flex-1 relative p-12 flex flex-col justify-center"
           style={{
-            backgroundImage: `linear-gradient(to right, rgba(253,251,247,0.98) 0%, rgba(253,251,247,0.85) 50%, rgba(253,251,247,0.5) 100%), url('images/registre.png')`,
+            backgroundImage: `linear-gradient(to right, rgba(7,28,24,0.82) 0%, rgba(7,28,24,0.64) 58%, rgba(7,28,24,0.42) 100%), url('images/registre.png')`,
             backgroundSize: 'cover',
             backgroundPosition: 'center',
           }}
@@ -102,15 +102,15 @@ const Register = () => {
           <div className="absolute top-10 left-12">
             {/* Top Logo */}
             <div className="flex items-center gap-4">
-              <div className="w-12 h-12 border border-[#b48353] flex items-center justify-center relative flex-shrink-0">
-                  <Utensils size={25} className="text-[#b48353]" strokeWidth={1.5} />
+                <div className="w-12 h-12 border border-gold flex items-center justify-center relative flex-shrink-0">
+                  <Utensils size={25} className="text-gold" strokeWidth={1.5} />
               </div>
               <div className="flex flex-col">
-                  <span className="text-[#1a3029] text-2xl font-serif tracking-[0.15em] uppercase">Foodie</span>
+                  <span className="text-brand-text text-2xl font-serif tracking-[0.15em] uppercase">Foodie</span>
                  <div className="flex items-center gap-3 opacity-70 mt-1">
-                    <div className="h-px bg-[#1a3029] w-6"></div>
-                    <span className="text-[#1a3029] text-[9px] tracking-[0.2em] uppercase whitespace-nowrap font-medium">Fresh food, warm welcome</span>
-                    <div className="h-px bg-[#1a3029] w-6"></div>
+                    <div className="h-px bg-gold w-6"></div>
+                    <span className="text-gold text-[9px] tracking-[0.2em] uppercase whitespace-nowrap font-medium">Fresh food, warm welcome</span>
+                    <div className="h-px bg-gold w-6"></div>
                  </div>
               </div>
             </div>
@@ -118,20 +118,20 @@ const Register = () => {
 
           {/* Center Content */}
           <div className="flex flex-col gap-2 max-w-md mt-16">
-            <h2 className="text-5xl font-serif font-bold text-[#1a3029] mb-1 tracking-tight">
+              <h2 className="text-5xl font-serif font-bold text-brand-text mb-1 tracking-tight">
               Join Foodie
             </h2>
-            <h2 className="text-5xl font-serif font-bold text-[#b48353] mb-6 tracking-tight">
+            <h2 className="text-5xl font-serif font-bold text-gold mb-6 tracking-tight">
               Restaurant
             </h2>
             
             <div className="flex items-center gap-4 mb-5 opacity-40">
-               <div className="h-[1.5px] bg-[#1a3029] w-12"></div>
-               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1a3029" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>
-               <div className="h-[1.5px] bg-[#1a3029] w-12"></div>
+               <div className="h-[1.5px] bg-gold w-12"></div>
+               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FEB914" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>
+               <div className="h-[1.5px] bg-gold w-12"></div>
             </div>
 
-            <p className="text-[#2a3c36] text-[17px] font-medium leading-relaxed tracking-wide">
+            <p className="text-brand-text text-[17px] font-medium leading-relaxed tracking-wide">
               Create your account and get ready<br/>to enjoy fresh, flavorful food.
             </p>
           </div>
