@@ -1,0 +1,130 @@
+
+@import url('https://fonts.googleapis.com/css2?family=Dancing+Script:wght@500;600;700&family=Josefin+Sans:ital,wght@0,100..700;1,100..700&display=swap');
+/* @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300..700;1,300..700&display=swap'); */
+/* @import url('https://fonts.googleapis.com/css2?family=Vollkorn:ital,wght@0,400..900;1,400..900&display=swap'); */
+@import "tailwindcss";
+
+@theme {
+  /* Brand / Primary */
+  --color-primary: #B87840;
+  --color-primary-strong: #9A6030;
+  --color-primary-soft: #EDCCA3;
+
+  /* Dark Brand */
+  --color-brand-bg: #0C1E1D;
+  --color-brand-surface: #21372F;
+  --color-brand-surface-strong: #3C5648;
+
+  /* Text */
+  --color-brand-text: #F8FAF9;
+  --color-brand-muted: #A5A9A8;
+
+  /* Border */
+  --color-brand-border: rgba(184, 120, 64, 0.20);
+
+  /* Additional UI Colors */
+  --color-purple: #936EC3;
+  --color-blue: #6499E9;
+  --color-success: #3C8A68;
+  --color-warning: #EDA43B;
+  --color-danger: #C96B6B;
+
+  /* Light UI */
+  --color-background: #F9F8F6;
+  --color-card: #FEFEFE;
+  --color-border: #E1E4E2;
+}
+
+
+:root {
+  /* Brand / Primary */
+  --primary: #B87840;
+  --primary-strong: #9A6030;
+  --primary-soft: #EDCCA3;
+
+  /* Dark Brand */
+  --bg-dark: #0C1E1D;
+  --bg-surface: #21372F;
+  --bg-card-dark: #3C5648;
+
+  /* Light Background */
+  --bg: #F9F8F6;
+  --bg-card: #FEFEFE;
+
+  /* Text */
+  --text-primary: #111827;
+  --text-light: #F8FAF9;
+  --text-muted: #616C68;
+
+  /* Borders */
+  --border-soft: rgba(184, 120, 64, 0.18);
+  --border-light: #E1E4E2;
+
+  /* Status */
+  --success: #3C8A68;
+  --warning: #EDA43B;
+  --danger: #C96B6B;
+  --info: #6499E9;
+
+  /* Secondary */
+  --purple: #936EC3;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+  display: none;
+}
+
+body {
+  margin: 0;
+  font-family: "Josefin Sans", sans-serif;
+  /* font-family: "Cormorant Garamond", serif; */
+  /* font-family: "Vollkorn", serif; */
+  background: var(--bg);
+  color: var(--text-primary);
+}
+
+#root {
+  min-height: 100vh;
+  background: var(--bg);
+}
+
+.hide-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.hide-scrollbar::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+  display: none;
+}
+
+@keyframes heroBannerFade {
+  from {
+    opacity: 0.35;
+    transform: scale(1.015);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.hero-banner-transition {
+  animation: heroBannerFade 700ms ease both;
+}
+
+
+
