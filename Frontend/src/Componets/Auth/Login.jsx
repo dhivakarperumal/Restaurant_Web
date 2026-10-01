@@ -3,7 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../../PrivateRouter/AuthContext";
 import { getRoleHome } from "../../PrivateRouter/roleUtils";
 import api from "../../api";
-import { Mail, Lock, Eye, EyeOff, ShieldCheck, Award, Headset } from "lucide-react";
+import { Mail, Lock, Eye, EyeOff, ShieldCheck, Award, Headset, Utensils } from "lucide-react";
 
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || "645152369108-a91u0hks1d90u4im40mvkrdpfg53kif9.apps.googleusercontent.com";
 
@@ -149,7 +149,7 @@ const Login = () => {
       <div 
         className="hidden lg:flex flex-col justify-between w-1/2 relative z-10 bg-black text-white px-14 py-12 h-full"
         style={{
-          backgroundImage: `linear-gradient(to right, rgba(17,19,23,0.95) 0%, rgba(17,19,23,0.8) 50%, rgba(17,19,23,0.95) 100%), url('images/login.png')`,
+          backgroundImage: `linear-gradient(to right, rgba(7,28,24,0.72) 0%, rgba(7,28,24,0.42) 50%, rgba(7,28,24,0.72) 100%), url('images/login.png')`,
           backgroundSize: 'cover',
           backgroundPosition: 'center',
         }}
@@ -157,14 +157,13 @@ const Login = () => {
         {/* Top Logo */}
         <div className="flex items-center gap-4 mt-2">
           <div className="w-12 h-12 border border-[#d9b882] flex items-center justify-center relative flex-shrink-0">
-             <span className="text-[#d9b882] font-serif text-xl absolute top-1 left-2">Q</span>
-             <span className="text-[#d9b882] font-serif text-xl absolute bottom-1 right-2">F</span>
+             <Utensils size={25} className="text-[#d9b882]" strokeWidth={1.5} />
           </div>
           <div className="flex flex-col">
-             <span className="text-[#d9b882] text-2xl font-serif tracking-[0.15em] uppercase">Q Frames</span>
+             <span className="text-[#d9b882] text-2xl font-serif tracking-[0.15em] uppercase">Foodie</span>
              <div className="flex items-center gap-3 opacity-80 mt-1">
                 <div className="h-px bg-[#d9b882] w-8"></div>
-                <span className="text-[#d9b882] text-[10px] tracking-[0.25em] uppercase whitespace-nowrap">Frame your memories</span>
+                <span className="text-[#d9b882] text-[10px] tracking-[0.25em] uppercase whitespace-nowrap">Fresh food, warm welcome</span>
                 <div className="h-px bg-[#d9b882] w-8"></div>
              </div>
           </div>
@@ -173,13 +172,13 @@ const Login = () => {
         {/* Center Content */}
         <div className="flex flex-col gap-3 max-w-lg mt-24 flex-1">
           <h2 className="text-5xl md:text-6xl font-serif font-bold text-white mb-2 tracking-wide">
-            Welcome Back!
+            Welcome Back to Foodie!
           </h2>
           <p className="text-white text-2xl md:text-3xl font-serif mb-2">
-            Sign in to continue
+            Sign in and find your next favorite
           </p>
           <p className="text-[#d9b882] text-3xl mt-2 italic font-light tracking-wide" style={{ fontFamily: "'Brush Script MT', 'Dancing Script', 'Pacifico', cursive" }}>
-            Framing Moments, Creating Memories.
+            Good food. Great company. Every time.
           </p>
         </div>
 
@@ -190,8 +189,8 @@ const Login = () => {
               <ShieldCheck size={32} strokeWidth={1.5} />
             </div>
             <div>
-              <h3 className="text-[#d9b882] font-medium mb-1 text-sm">Secure Login</h3>
-              <p className="text-gray-300 text-xs px-2">Your data is safe with us</p>
+              <h3 className="text-[#d9b882] font-medium mb-1 text-sm">Secure Account</h3>
+              <p className="text-gray-300 text-xs px-2">Your account is safe with us</p>
             </div>
           </div>
           <div className="flex flex-col items-center text-center gap-3">
@@ -199,8 +198,8 @@ const Login = () => {
               <Award size={32} strokeWidth={1.5} />
             </div>
             <div>
-              <h3 className="text-[#d9b882] font-medium mb-1 text-sm">Premium Quality</h3>
-              <p className="text-gray-300 text-xs px-2">Best frames for your precious moments</p>
+              <h3 className="text-[#d9b882] font-medium mb-1 text-sm">Fresh Ingredients</h3>
+              <p className="text-gray-300 text-xs px-2">Freshly prepared favorites, made with care</p>
             </div>
           </div>
           <div className="flex flex-col items-center text-center gap-3">
@@ -208,8 +207,8 @@ const Login = () => {
               <Headset size={32} strokeWidth={1.5} />
             </div>
             <div>
-              <h3 className="text-[#d9b882] font-medium mb-1 text-sm">24/7 Support</h3>
-              <p className="text-gray-300 text-xs px-2">We're here to help you</p>
+              <h3 className="text-[#d9b882] font-medium mb-1 text-sm">Here to Help</h3>
+              <p className="text-gray-300 text-xs px-2">We're ready to make your visit special</p>
             </div>
           </div>
         </div>
@@ -240,13 +239,10 @@ const Login = () => {
 
           <div className="flex flex-col items-center mb-5 relative z-10">
             <div className="w-14 h-14 rounded-full bg-[#1f3b31] flex items-center justify-center mb-3 shadow-lg">
-               <div className="relative w-7 h-7">
-                  <span className="text-[#d9b882] font-serif text-lg absolute top-0 left-1">Q</span>
-                  <span className="text-[#d9b882] font-serif text-lg absolute bottom-0 right-1">F</span>
-               </div>
+              <Utensils size={27} className="text-[#d9b882]" strokeWidth={1.6} />
             </div>
-            <h2 className="text-[26px] font-serif font-bold text-[#1a3029] mb-1 tracking-tight">Login to Q Frames</h2>
-            <p className="text-gray-500 text-[13px]">Please enter your details to access your account</p>
+            <h2 className="text-[26px] font-serif font-bold text-[#1a3029] mb-1 tracking-tight">Welcome to Foodie</h2>
+            <p className="text-gray-500 text-[13px]">Sign in to explore the menu and manage your orders</p>
           </div>
 
           <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-4 relative z-10">
