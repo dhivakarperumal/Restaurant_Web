@@ -178,54 +178,54 @@ const Navbar = () => {
   );
 
   const desktopLinkClass = ({ isActive }) =>
-    `text-base font-semibold  transition-colors ${
-      isActive ? "text-primary" : "text-white hover:text-primary"
+    `relative py-2 text-sm font-semibold transition-colors after:absolute after:inset-x-0 after:-bottom-0.5 after:h-0.5 after:origin-left after:scale-x-0 after:bg-primary after:transition-transform ${
+      isActive ? "text-primary after:scale-x-100" : "text-[var(--text-primary)] hover:text-primary"
     }`;
 
   const mobileLinkClass = ({ isActive }) =>
     `flex items-center justify-between rounded-xl px-3 py-3 text-base font-medium transition ${
       isActive
         ? "bg-primary/10 text-primary"
-        : "text-white/80 hover:bg-white/5 hover:text-white"
+        : "text-[var(--text-primary)] hover:bg-primary/5 hover:text-primary"
     }`;
 
   return (
     <>
       <header
-        className={`fixed left-0 top-0 z-50 w-full transition-transform duration-300 ease-in-out ${
+        className={`fixed left-0 top-0 z-50 w-full bg-background transition-transform duration-300 ease-in-out ${
           isScrolled ? "md:-translate-y-[42px]" : "translate-y-0"
         }`}
       >
-        <div className="hidden bg-[#0d0d0d] text-white md:block">
+        <div className="hidden bg-background text-[var(--text-primary)] md:block">
           <PageContainer>
-            <div className="flex h-[42px] items-center justify-between gap-4 text-[11px] font-medium tracking-wide text-[#f3f3f3]">
+            <div className="flex h-[42px] items-center justify-between gap-4 text-[11px] font-medium tracking-wide text-[var(--text-primary)]">
               <div className="flex min-w-0 items-center gap-5">
                 <span className="flex items-center gap-2">
-                  <FiMapPin className="text-[#d79d4a]" />
+                  <FiMapPin className="text-orange" />
                   <span className="truncate">123, MG Road, Coimbatore, Tamil Nadu</span>
                 </span>
                 <span className="hidden items-center gap-2 sm:flex">
-                  <FiClock className="text-[#d79d4a]" />
+                  <FiClock className="text-orange" />
                   Mon - Sun: 9:00 AM - 9:00 PM
                 </span>
               </div>
 
               <div className="flex shrink-0 items-center gap-3">
                 <span className="flex items-center gap-2">
-                  <FiPhone className="text-[#d79d4a]" />
+                  <FiPhone className="text-orange" />
                   +91 98765 43210
                 </span>
                 <div className="flex items-center gap-2">
                   <button
                     type="button"
-                    className="flex h-7 w-7 items-center justify-center rounded-full bg-white/5 text-[13px] text-white transition hover:bg-white/10"
+                    className="flex h-7 w-7 items-center justify-center rounded-full bg-primary/10 text-[13px] text-primary transition hover:bg-primary/20"
                     aria-label="Facebook"
                   >
                     <FiFacebook />
                   </button>
                   <button
                     type="button"
-                    className="flex h-7 w-7 items-center justify-center rounded-full bg-white/5 text-[13px] text-white transition hover:bg-white/10"
+                    className="flex h-7 w-7 items-center justify-center rounded-full bg-primary/10 text-[13px] text-primary transition hover:bg-primary/20"
                     aria-label="Instagram"
                   >
                     <FiInstagram />
@@ -237,79 +237,73 @@ const Navbar = () => {
         </div>
 
         <div
-          className={`border-b border-[#d79d4a]/40 bg-white transition-shadow duration-300 ${
+          className={`border-b border-primary/20 bg-background transition-shadow duration-300 ${
             isScrolled
               ? "shadow-[0_8px_24px_rgba(0,0,0,0.1)]"
               : "shadow-[0_4px_18px_rgba(0,0,0,0.08)]"
           }`}
         >
           <PageContainer>
-            <div className="flex h-[72px] items-center justify-between gap-2 bg-white sm:gap-4 lg:h-[88px]">
+            <div className="flex h-[72px] items-center justify-between gap-2 bg-background sm:gap-4 lg:h-[88px]">
               <Link to="/" className="flex min-w-0 items-center gap-2.5 sm:gap-3">
                 <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-[#d79d4a]/50 bg-white shadow-inner sm:h-14 sm:w-14">
                   <img
                     src="/images/logo.png"
-                    alt="Q Frame logo"
+                    alt="Restaurant Name logo"
                     className="h-full bg-white w-full object-contain"
                   />
                 </div>
                 <div className="min-w-0 leading-none">
-                  <div className="text-[22px] font-black tracking-[-0.06em] text-[#1c1c1c] sm:text-[26px]">
-                    Frame
+                  <div className="text-[22px] font-black tracking-[-0.06em] text-primary-strong sm:text-[26px]">
+                    Buy Food
                   </div>
-                  <div className="mt-1 hidden text-[9px] font-semibold tracking-[0.28em] text-[#6a5a49] sm:block">
-                    PHOTO STUDIO &amp; FRAME SHOP
+                  <div className="mt-1 hidden text-[9px] font-semibold tracking-[0.28em] text-[var(--text-muted)] sm:block">
+                    Buy Food &amp; Snacks Online
                   </div>
                 </div>
               </Link>
 
-              <nav className="hidden items-center gap-7 xl:flex">
+              <nav className="hidden items-center gap-6 xl:flex">
                 <NavLink
                   to="/"
                   end
-                  className={({ isActive }) =>
-                    `text-sm font-semibold transition ${isActive ? "text-[#d79d4a]" : "text-[#1d1d1d] hover:text-[#d79d4a]"}`
-                  }
+                  className={desktopLinkClass}
                 >
                   Home
                 </NavLink>
-                <div className="flex items-center gap-1 text-sm font-semibold text-[#1d1d1d]">
+                <div className="flex items-center gap-1 text-sm font-semibold text-[var(--text-primary)]">
                   <NavLink
                     to="/shop"
-                    className={() => `text-sm font-semibold transition ${isShopPage ? "text-[#d79d4a]" : "text-[#1d1d1d] hover:text-[#d79d4a]"}`}
+                    className={() => desktopLinkClass({ isActive: isShopPage })}
                   >
-                    Shop
+                    Menu
                   </NavLink>
                 </div>
 
-                <div className="flex items-center gap-1 text-sm font-semibold text-[#1d1d1d]">
+                <div className="flex items-center gap-1 text-sm font-semibold text-[var(--text-primary)]">
                   <NavLink
-                    to="/frames"
-                    className={({ isActive }) => `text-sm font-semibold transition ${isActive ? "text-[#d79d4a]" : "text-[#1d1d1d] hover:text-[#d79d4a]"}`}
+                    to="/about"
+                    className={desktopLinkClass}
                   >
-                    Frames
+                    About
                   </NavLink>
                 </div>
                 
 
                 <NavLink
-                  to="/gifts"
-                  className={({ isActive }) =>
-                    `text-sm font-semibold transition ${isActive ? "text-[#d79d4a]" : "text-[#1d1d1d] hover:text-[#d79d4a]"}`
-                  }
+                  to="/gallery"
+                  className={desktopLinkClass}
                 >
-                  Gifts
+                  Gallery
                 </NavLink>
 
                 <NavLink
-                  to="/albums"
+                  to="/contact?type=reservation"
                   className={({ isActive }) =>
-                    `text-sm font-semibold transition ${
-                      isActive || isAlbumPage ? "text-[#d79d4a]" : "text-[#1d1d1d] hover:text-[#d79d4a]"
-                    }`
+                    desktopLinkClass({ isActive })
                   }
                 >
-                  Albums
+                  Reservation
                 </NavLink>
                 <div ref={dropdownRef} className="relative">
                   <button
@@ -317,9 +311,9 @@ const Navbar = () => {
                     onClick={() => toggleMenu("pages")}
                     aria-expanded={openMenu === "pages"}
                     aria-haspopup="menu"
-                    className={`flex items-center gap-1 text-sm font-semibold transition ${openMenu === "pages" || isPagesRoute ? "text-[#d79d4a]" : "text-[#1d1d1d] hover:text-[#d79d4a]"}`}
+                    className={`flex items-center gap-1 text-sm font-semibold transition ${openMenu === "pages" || isPagesRoute ? "text-primary" : "text-[var(--text-primary)] hover:text-primary"}`}
                   >
-                    Pages
+                    Offers
                     <FiChevronDown
                       className={`transition-transform ${openMenu === "pages" ? "rotate-180" : ""}`}
                     />
@@ -361,6 +355,9 @@ const Navbar = () => {
                     </div>
                   )}
                 </div>
+                <NavLink to="/contact" className={desktopLinkClass}>
+                  Contact
+                </NavLink>
               </nav>
 
               <div className="flex shrink-0 items-center gap-1.5 sm:gap-2.5 lg:gap-3">
@@ -510,7 +507,7 @@ const Navbar = () => {
         </div>
 
         {mobileMenu && (
-          <div className="border-t border-[#eee5d9] bg-[#1b1a18] shadow-[0_18px_35px_rgba(0,0,0,0.22)] xl:hidden">
+          <div className="border-t border-primary/20 bg-background shadow-lg xl:hidden">
             <PageContainer>
               <nav className="max-h-[calc(100vh-72px)] overflow-y-auto py-3 sm:max-h-[calc(100vh-130px)]" aria-label="Mobile navigation">
                 <NavLink to="/" end onClick={() => setMobileMenu(false)} className={mobileLinkClass}>
@@ -540,7 +537,7 @@ const Navbar = () => {
                 </button>
 
                 {mobileSubMenu === "pages" && (
-                  <div className="ml-3 space-y-1 border-l border-white/15 pl-3">
+                  <div className="ml-3 space-y-1 border-l border-primary/20 pl-3">
                     {[
                       ["Gallery", "/gallery"],
                       ["About Us", "/about"],
@@ -559,11 +556,11 @@ const Navbar = () => {
                   </div>
                 )}
 
-                <div className="mt-3 grid grid-cols-2 gap-2 border-t border-white/10 pt-3 sm:grid-cols-3">
-                  <button type="button" onClick={() => { setMobileMenu(false); navigate(isLoggedIn ? "/account?tab=orders" : "/login"); }} className="flex items-center justify-center gap-2 rounded-xl bg-white/8 px-3 py-3 text-xs font-semibold text-white transition hover:bg-white/15">
+                <div className="mt-3 grid grid-cols-2 gap-2 border-t border-primary/20 pt-3 sm:grid-cols-3">
+                  <button type="button" onClick={() => { setMobileMenu(false); navigate(isLoggedIn ? "/account?tab=orders" : "/login"); }} className="flex items-center justify-center gap-2 rounded-xl bg-primary/5 px-3 py-3 text-xs font-semibold text-primary-strong transition hover:bg-primary/10">
                     <FiPackage /> Orders
                   </button>
-                  <button type="button" onClick={() => { setMobileMenu(false); openFavorites ? openFavorites() : navigate("/account"); }} className="flex items-center justify-center gap-2 rounded-xl bg-white/8 px-3 py-3 text-xs font-semibold text-white transition hover:bg-white/15">
+                  <button type="button" onClick={() => { setMobileMenu(false); openFavorites ? openFavorites() : navigate("/account"); }} className="flex items-center justify-center gap-2 rounded-xl bg-primary/5 px-3 py-3 text-xs font-semibold text-primary-strong transition hover:bg-primary/10">
                     <FiHeart /> Favorites
                   </button>
                   <button type="button" onClick={() => { setMobileMenu(false); openCart ? openCart() : navigate("/cart"); }} className="col-span-2 flex items-center justify-center gap-2 rounded-xl bg-[#d79d4a] px-3 py-3 text-xs font-bold text-[#1b1a18] transition hover:bg-[#e4b568] sm:col-span-1">
@@ -573,7 +570,7 @@ const Navbar = () => {
                     <Link
                       to="/login"
                       onClick={() => setMobileMenu(false)}
-                      className="col-span-2 flex items-center justify-center gap-2 rounded-xl border border-[#d79d4a] px-3 py-3 text-xs font-bold text-[#f2d19b] transition hover:bg-white/10 sm:col-span-3"
+                      className="col-span-2 flex items-center justify-center gap-2 rounded-xl border border-primary px-3 py-3 text-xs font-bold text-primary transition hover:bg-primary/10 sm:col-span-3"
                     >
                       <FiUser /> Login
                     </Link>

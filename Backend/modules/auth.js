@@ -43,7 +43,20 @@ async function migrateUserIdentifiers() {
   let [legacyColumn] = await db.query("SHOW COLUMNS FROM users LIKE 'legacy_user_key'");
 
   if (!userIdColumn) throw new Error('The users table is missing its user_id column');
-  if (!isNumericColumn(userIdColumn) && isNumericColumn(idColumn)) return;
+  if (!isNumericColumn(userIdColumn) && isNumericColumn(idColumn)) {
+    const [columnOrder] = await db.execute(
+      `SELECT COLUMN_NAME, ORDINAL_POSITION FROM information_schema.COLUMNS
+       WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'users'
+         AND COLUMN_NAME IN ('user_id', 'id')`
+    );
+    const userIdPosition = columnOrder.find((column) => column.COLUMN_NAME === 'user_id')?.ORDINAL_POSITION;
+    const idPosition = columnOrder.find((column) => column.COLUMN_NAME === 'id')?.ORDINAL_POSITION;
+    if (userIdPosition > idPosition) {
+      await db.query('ALTER TABLE users MODIFY user_id VARCHAR(255) NOT NULL FIRST');
+      await db.query('ALTER TABLE users MODIFY id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT AFTER user_id');
+    }
+    return;
+  }
 
   if (!idColumn) {
     await db.query('ALTER TABLE users ADD COLUMN id BIGINT UNSIGNED NULL AFTER user_id');
@@ -100,8 +113,8 @@ async function migrateUserIdentifiers() {
 async function initializeAuthSchema() {
   await db.query(`
     CREATE TABLE IF NOT EXISTS users (
-      id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
       user_id VARCHAR(255) NOT NULL UNIQUE,
+      id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
       username VARCHAR(100) NOT NULL,
       email VARCHAR(255) NOT NULL UNIQUE,
       mobile_number VARCHAR(32) NULL,

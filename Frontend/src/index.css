@@ -6,23 +6,27 @@
 
 @theme {
   /* Brand / Primary */
-  --color-primary: #B87840;
-  --color-primary-strong: #9A6030;
-  --color-primary-soft: #EDCCA3;
+  --color-primary: #396F0B;
+  --color-primary-strong: #022610;
+  --color-primary-soft: #7ACB00;
 
   /* Dark Brand */
-  --color-brand-bg: #0C1E1D;
-  --color-brand-surface: #21372F;
-  --color-brand-surface-strong: #3C5648;
+  --color-brand-bg: #071C18;
+  --color-brand-surface: #213D20;
+  --color-brand-surface-strong: #396F0B;
 
   /* Text */
   --color-brand-text: #F8FAF9;
   --color-brand-muted: #A5A9A8;
 
   /* Border */
-  --color-brand-border: rgba(184, 120, 64, 0.20);
+  --color-brand-border: rgba(57, 111, 11, 0.20);
 
   /* Additional UI Colors */
+  --color-orange: #FD5E02;
+  --color-gold: #FEB914;
+  --color-red-orange: #D92E06;
+
   --color-purple: #936EC3;
   --color-blue: #6499E9;
   --color-success: #3C8A68;
@@ -38,14 +42,14 @@
 
 :root {
   /* Brand / Primary */
-  --primary: #B87840;
-  --primary-strong: #9A6030;
-  --primary-soft: #EDCCA3;
+  --primary: #396F0B;
+  --primary-strong: #022610;
+  --primary-soft: #7ACB00;
 
   /* Dark Brand */
-  --bg-dark: #0C1E1D;
-  --bg-surface: #21372F;
-  --bg-card-dark: #3C5648;
+  --bg-dark: #071C18;
+  --bg-surface: #213D20;
+  --bg-card-dark: #396F0B;
 
   /* Light Background */
   --bg: #F9F8F6;
@@ -57,7 +61,7 @@
   --text-muted: #616C68;
 
   /* Borders */
-  --border-soft: rgba(184, 120, 64, 0.18);
+  --border-soft: rgba(57, 111, 11, 0.18);
   --border-light: #E1E4E2;
 
   /* Status */
@@ -65,6 +69,12 @@
   --warning: #EDA43B;
   --danger: #C96B6B;
   --info: #6499E9;
+
+  /* Food Brand Colors */
+  --orange: #FD5E02;
+  --orange-light: #FE8303;
+  --gold: #FEB914;
+  --red-orange: #D92E06;
 
   /* Secondary */
   --purple: #936EC3;
