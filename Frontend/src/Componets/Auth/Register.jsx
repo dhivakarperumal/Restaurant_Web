@@ -3,7 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../../PrivateRouter/AuthContext";
 import { getRoleHome } from "../../PrivateRouter/roleUtils";
 import api from "../../api";
-import { Mail, Lock, Eye, EyeOff, ShieldCheck, Award, Headset, User, Phone, UserPlus } from "lucide-react";
+import { Mail, Lock, Eye, EyeOff, ShieldCheck, Award, Headset, User, Phone, UserPlus, Utensils } from "lucide-react";
 
 const Register = () => {
   const navigate = useNavigate();
@@ -103,14 +103,13 @@ const Register = () => {
             {/* Top Logo */}
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 border border-[#b48353] flex items-center justify-center relative flex-shrink-0">
-                 <span className="text-[#b48353] font-serif text-xl absolute top-1 left-2">Q</span>
-                 <span className="text-[#b48353] font-serif text-xl absolute bottom-1 right-2">F</span>
+                  <Utensils size={25} className="text-[#b48353]" strokeWidth={1.5} />
               </div>
               <div className="flex flex-col">
-                 <span className="text-[#1a3029] text-2xl font-serif tracking-[0.15em] uppercase">Q Frames</span>
+                  <span className="text-[#1a3029] text-2xl font-serif tracking-[0.15em] uppercase">Foodie</span>
                  <div className="flex items-center gap-3 opacity-70 mt-1">
                     <div className="h-px bg-[#1a3029] w-6"></div>
-                    <span className="text-[#1a3029] text-[9px] tracking-[0.2em] uppercase whitespace-nowrap font-medium">Frame your memories</span>
+                    <span className="text-[#1a3029] text-[9px] tracking-[0.2em] uppercase whitespace-nowrap font-medium">Fresh food, warm welcome</span>
                     <div className="h-px bg-[#1a3029] w-6"></div>
                  </div>
               </div>
@@ -120,10 +119,10 @@ const Register = () => {
           {/* Center Content */}
           <div className="flex flex-col gap-2 max-w-md mt-16">
             <h2 className="text-5xl font-serif font-bold text-[#1a3029] mb-1 tracking-tight">
-              Create Account
+              Join Foodie
             </h2>
             <h2 className="text-5xl font-serif font-bold text-[#b48353] mb-6 tracking-tight">
-              Q Frames
+              Restaurant
             </h2>
             
             <div className="flex items-center gap-4 mb-5 opacity-40">
@@ -133,7 +132,7 @@ const Register = () => {
             </div>
 
             <p className="text-[#2a3c36] text-[17px] font-medium leading-relaxed tracking-wide">
-              Create your account and start<br/>framing your beautiful moments.
+              Create your account and get ready<br/>to enjoy fresh, flavorful food.
             </p>
           </div>
         </div>
@@ -145,8 +144,8 @@ const Register = () => {
               <ShieldCheck size={28} strokeWidth={1.5} />
             </div>
             <div>
-              <h3 className="text-[#d9b882] font-medium mb-1 text-[13px]">Secure & Safe</h3>
-              <p className="text-[#a1b4ab] text-[11px] px-2 leading-tight">Your data is protected and secure with us.</p>
+              <h3 className="text-[#d9b882] font-medium mb-1 text-[13px]">Safe &amp; Simple</h3>
+              <p className="text-[#a1b4ab] text-[11px] px-2 leading-tight">Your account details stay protected.</p>
             </div>
           </div>
           <div className="flex flex-col items-center text-center gap-2 border-r border-[#d9b882]/20 px-1">
@@ -154,8 +153,8 @@ const Register = () => {
               <Award size={28} strokeWidth={1.5} />
             </div>
             <div>
-              <h3 className="text-[#d9b882] font-medium mb-1 text-[13px]">Premium Quality</h3>
-              <p className="text-[#a1b4ab] text-[11px] px-2 leading-tight">Best quality products for your memories.</p>
+              <h3 className="text-[#d9b882] font-medium mb-1 text-[13px]">Fresh Ingredients</h3>
+              <p className="text-[#a1b4ab] text-[11px] px-2 leading-tight">Flavorful dishes made with care.</p>
             </div>
           </div>
           <div className="flex flex-col items-center text-center gap-2 pl-2">
@@ -163,8 +162,8 @@ const Register = () => {
               <Headset size={28} strokeWidth={1.5} />
             </div>
             <div>
-              <h3 className="text-[#d9b882] font-medium mb-1 text-[13px]">24/7 Support</h3>
-              <p className="text-[#a1b4ab] text-[11px] px-2 leading-tight">We're here to help you anytime.</p>
+              <h3 className="text-[#d9b882] font-medium mb-1 text-[13px]">Here to Help</h3>
+              <p className="text-[#a1b4ab] text-[11px] px-2 leading-tight">We are here to make every visit easy.</p>
             </div>
           </div>
         </div>
@@ -186,13 +185,10 @@ const Register = () => {
 
           <div className="flex flex-col items-center mb-5 relative z-10 mt-1">
             <div className="w-14 h-14 rounded-full bg-[#1f3b31] flex items-center justify-center mb-3 shadow-md">
-               <div className="relative w-7 h-7">
-                  <span className="text-[#d9b882] font-serif text-lg absolute top-0 left-1">Q</span>
-                  <span className="text-[#d9b882] font-serif text-lg absolute bottom-0 right-1">F</span>
-               </div>
+              <Utensils size={25} className="text-[#d9b882]" strokeWidth={1.5} />
             </div>
-            <h2 className="text-[24px] font-serif font-bold text-[#1a3029] mb-1 tracking-tight">Create Your Account</h2>
-            <p className="text-gray-500 text-[12px] mb-2">Please fill in the details below to get started</p>
+            <h2 className="text-[24px] font-serif font-bold text-[#1a3029] mb-1 tracking-tight">Create Your Foodie Account</h2>
+            <p className="text-gray-500 text-[12px] mb-2">Join us for fresh food and easy ordering</p>
             
             <div className="flex items-center gap-2 opacity-30">
                <div className="h-[1px] bg-[#1a3029] w-10"></div>
