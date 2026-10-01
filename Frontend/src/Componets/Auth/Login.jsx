@@ -149,7 +149,7 @@ const Login = () => {
       <div 
         className="hidden lg:flex flex-col justify-between w-1/2 relative z-10 bg-black text-white px-14 py-12 h-full"
         style={{
-          backgroundImage: `linear-gradient(to right, rgba(17,19,23,0.95) 0%, rgba(17,19,23,0.8) 50%, rgba(17,19,23,0.95) 100%), url('https://images.unsplash.com/photo-1513519245088-0e12902e5a38?q=80&w=1200&auto=format&fit=crop')`,
+          backgroundImage: `linear-gradient(to right, rgba(17,19,23,0.95) 0%, rgba(17,19,23,0.8) 50%, rgba(17,19,23,0.95) 100%), url('images/login.png')`,
           backgroundSize: 'cover',
           backgroundPosition: 'center',
         }}

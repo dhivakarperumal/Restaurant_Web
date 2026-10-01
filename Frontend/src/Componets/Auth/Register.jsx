@@ -94,7 +94,7 @@ const Register = () => {
         <div 
           className="flex-1 relative p-12 flex flex-col justify-center"
           style={{
-            backgroundImage: `linear-gradient(to right, rgba(253,251,247,0.98) 0%, rgba(253,251,247,0.85) 50%, rgba(253,251,247,0.5) 100%), url('https://images.unsplash.com/photo-1513519245088-0e12902e5a38?q=80&w=1200&auto=format&fit=crop')`,
+            backgroundImage: `linear-gradient(to right, rgba(253,251,247,0.98) 0%, rgba(253,251,247,0.85) 50%, rgba(253,251,247,0.5) 100%), url('images/registre.png')`,
             backgroundSize: 'cover',
             backgroundPosition: 'center',
           }}

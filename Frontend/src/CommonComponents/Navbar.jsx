@@ -85,10 +85,15 @@ const Navbar = () => {
     logout();
     setShowLogoutConfirm(false);
     setProfileDropdown(false);
+    setMobileMenu(false);
     navigate("/", { replace: true });
   };
 
-  const requestLogout = () => setShowLogoutConfirm(true);
+  const requestLogout = () => {
+    setProfileDropdown(false);
+    setMobileMenu(false);
+    setShowLogoutConfirm(true);
+  };
 
   useEffect(() => {
     const fetchServices = async () => {
@@ -178,54 +183,54 @@ const Navbar = () => {
   );
 
   const desktopLinkClass = ({ isActive }) =>
-    `relative py-2 text-sm font-semibold transition-colors after:absolute after:inset-x-0 after:-bottom-0.5 after:h-0.5 after:origin-left after:scale-x-0 after:bg-primary after:transition-transform ${
-      isActive ? "text-primary after:scale-x-100" : "text-[var(--text-primary)] hover:text-primary"
+    `relative py-2 text-sm font-semibold transition-colors after:absolute after:inset-x-0 after:-bottom-0.5 after:h-0.5 after:origin-left after:scale-x-0 after:bg-gold after:transition-transform ${
+      isActive ? "text-gold after:scale-x-100" : "text-brand-text hover:text-gold"
     }`;
 
   const mobileLinkClass = ({ isActive }) =>
     `flex items-center justify-between rounded-xl px-3 py-3 text-base font-medium transition ${
       isActive
-        ? "bg-primary/10 text-primary"
-        : "text-[var(--text-primary)] hover:bg-primary/5 hover:text-primary"
+        ? "bg-primary/20 text-gold"
+        : "text-brand-text/85 hover:bg-brand-surface/70 hover:text-brand-text"
     }`;
 
   return (
     <>
       <header
-        className={`fixed left-0 top-0 z-50 w-full bg-background transition-transform duration-300 ease-in-out ${
+        className={`fixed left-0 top-0 z-50 w-full bg-brand-bg transition-transform duration-300 ease-in-out ${
           isScrolled ? "md:-translate-y-[42px]" : "translate-y-0"
         }`}
       >
-        <div className="hidden bg-background text-[var(--text-primary)] md:block">
+        <div className="hidden bg-brand-bg text-brand-text md:block">
           <PageContainer>
-            <div className="flex h-[42px] items-center justify-between gap-4 text-[11px] font-medium tracking-wide text-[var(--text-primary)]">
+            <div className="flex h-[42px] items-center justify-between gap-4 text-[11px] font-medium tracking-wide text-brand-text">
               <div className="flex min-w-0 items-center gap-5">
                 <span className="flex items-center gap-2">
-                  <FiMapPin className="text-orange" />
+                  <FiMapPin className="text-gold" />
                   <span className="truncate">123, MG Road, Coimbatore, Tamil Nadu</span>
                 </span>
                 <span className="hidden items-center gap-2 sm:flex">
-                  <FiClock className="text-orange" />
+                  <FiClock className="text-gold" />
                   Mon - Sun: 9:00 AM - 9:00 PM
                 </span>
               </div>
 
               <div className="flex shrink-0 items-center gap-3">
                 <span className="flex items-center gap-2">
-                  <FiPhone className="text-orange" />
+                  <FiPhone className="text-gold" />
                   +91 98765 43210
                 </span>
                 <div className="flex items-center gap-2">
                   <button
                     type="button"
-                    className="flex h-7 w-7 items-center justify-center rounded-full bg-primary/10 text-[13px] text-primary transition hover:bg-primary/20"
+                    className="flex h-7 w-7 items-center justify-center rounded-full bg-brand-surface text-[13px] text-brand-text transition hover:bg-brand-surface-strong"
                     aria-label="Facebook"
                   >
                     <FiFacebook />
                   </button>
                   <button
                     type="button"
-                    className="flex h-7 w-7 items-center justify-center rounded-full bg-primary/10 text-[13px] text-primary transition hover:bg-primary/20"
+                    className="flex h-7 w-7 items-center justify-center rounded-full bg-brand-surface text-[13px] text-brand-text transition hover:bg-brand-surface-strong"
                     aria-label="Instagram"
                   >
                     <FiInstagram />
@@ -237,27 +242,27 @@ const Navbar = () => {
         </div>
 
         <div
-          className={`border-b border-primary/20 bg-background transition-shadow duration-300 ${
+          className={`border-b border-brand-border bg-brand-bg transition-shadow duration-300 ${
             isScrolled
               ? "shadow-[0_8px_24px_rgba(0,0,0,0.1)]"
               : "shadow-[0_4px_18px_rgba(0,0,0,0.08)]"
           }`}
         >
           <PageContainer>
-            <div className="flex h-[72px] items-center justify-between gap-2 bg-background sm:gap-4 lg:h-[88px]">
+            <div className="flex h-[72px] items-center justify-between gap-2 bg-brand-bg sm:gap-4 lg:h-[88px]">
               <Link to="/" className="flex min-w-0 items-center gap-2.5 sm:gap-3">
-                <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-[#d79d4a]/50 bg-white shadow-inner sm:h-14 sm:w-14">
+                {/* <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-[#d79d4a]/50 bg-white shadow-inner sm:h-14 sm:w-14">
                   <img
                     src="/images/logo.png"
                     alt="Restaurant Name logo"
                     className="h-full bg-white w-full object-contain"
                   />
-                </div>
+                </div> */}
                 <div className="min-w-0 leading-none">
-                  <div className="text-[22px] font-black tracking-[-0.06em] text-primary-strong sm:text-[26px]">
+                  <div className="text-[22px] font-black tracking-[-0.06em] text-brand-text sm:text-[26px]">
                     Buy Food
                   </div>
-                  <div className="mt-1 hidden text-[9px] font-semibold tracking-[0.28em] text-[var(--text-muted)] sm:block">
+                  <div className="mt-1 hidden text-[9px] font-semibold tracking-[0.28em] text-gold sm:block">
                     Buy Food &amp; Snacks Online
                   </div>
                 </div>
@@ -271,7 +276,7 @@ const Navbar = () => {
                 >
                   Home
                 </NavLink>
-                <div className="flex items-center gap-1 text-sm font-semibold text-[var(--text-primary)]">
+                <div className="flex items-center gap-1 text-sm font-semibold text-brand-text">
                   <NavLink
                     to="/shop"
                     className={() => desktopLinkClass({ isActive: isShopPage })}
@@ -280,7 +285,7 @@ const Navbar = () => {
                   </NavLink>
                 </div>
 
-                <div className="flex items-center gap-1 text-sm font-semibold text-[var(--text-primary)]">
+                <div className="flex items-center gap-1 text-sm font-semibold text-brand-text">
                   <NavLink
                     to="/about"
                     className={desktopLinkClass}
@@ -311,7 +316,7 @@ const Navbar = () => {
                     onClick={() => toggleMenu("pages")}
                     aria-expanded={openMenu === "pages"}
                     aria-haspopup="menu"
-                    className={`flex items-center gap-1 text-sm font-semibold transition ${openMenu === "pages" || isPagesRoute ? "text-primary" : "text-[var(--text-primary)] hover:text-primary"}`}
+                    className={`flex items-center gap-1 text-sm font-semibold transition ${openMenu === "pages" || isPagesRoute ? "text-gold" : "text-brand-text hover:text-gold"}`}
                   >
                     Offers
                     <FiChevronDown
@@ -366,13 +371,13 @@ const Navbar = () => {
                   onClick={() =>
                     navigate(isLoggedIn ? "/account?tab=orders" : "/login")
                   }
-                  className="relative flex h-9 w-9 items-center justify-center rounded-full border border-[#d79d4a]/30 bg-[#f2eadb] text-[#1d1d1d] transition hover:border-[#d79d4a] hover:bg-[#f8f1e6] sm:h-11 sm:w-11"
+                  className="relative flex h-9 w-9 items-center justify-center rounded-full border border-brand-border bg-brand-surface text-brand-text transition hover:border-gold hover:bg-brand-surface-strong sm:h-11 sm:w-11"
                   aria-label="My Orders"
                   title="My Orders"
                 >
                   <FiPackage className="text-base sm:text-lg" />
                   {undeliveredOrdersCount > 0 && (
-                    <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-[#d79d4a] text-[9px] font-bold text-[#111] shadow-xs sm:h-5 sm:w-5 sm:text-[10px]">
+                    <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-orange text-[9px] font-bold text-brand-bg shadow-xs sm:h-5 sm:w-5 sm:text-[10px]">
                       {undeliveredOrdersCount}
                     </span>
                   )}
@@ -383,12 +388,12 @@ const Navbar = () => {
                   onClick={() =>
                     openFavorites ? openFavorites() : navigate("/account")
                   }
-                  className="relative hidden h-9 w-9 items-center justify-center rounded-full border border-[#d79d4a]/30 bg-[#f2eadb] text-[#1d1d1d] transition hover:border-[#d79d4a] hover:bg-[#f8f1e6] sm:flex sm:h-11 sm:w-11"
+                  className="relative hidden h-9 w-9 items-center justify-center rounded-full border border-brand-border bg-brand-surface text-brand-text transition hover:border-gold hover:bg-brand-surface-strong sm:flex sm:h-11 sm:w-11"
                   aria-label="Open favorites"
                 >
                   <FiHeart className="text-base sm:text-lg" />
                   {wishlist.length > 0 && (
-                    <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-[#d79d4a] text-[9px] font-bold text-[#111] sm:h-5 sm:w-5 sm:text-[10px]">
+                    <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-orange text-[9px] font-bold text-brand-bg sm:h-5 sm:w-5 sm:text-[10px]">
                       {wishlist.length}
                     </span>
                   )}
@@ -397,12 +402,12 @@ const Navbar = () => {
                 <button
                   type="button"
                   onClick={() => (openCart ? openCart() : navigate("/cart"))}
-                  className="relative flex h-9 w-9 items-center justify-center rounded-full border border-[#d79d4a]/30 bg-[#f2eadb] text-[#1d1d1d] transition hover:border-[#d79d4a] hover:bg-[#f8f1e6] sm:h-11 sm:w-11"
+                  className="relative flex h-9 w-9 items-center justify-center rounded-full border border-brand-border bg-brand-surface text-brand-text transition hover:border-gold hover:bg-brand-surface-strong sm:h-11 sm:w-11"
                   aria-label="Cart"
                 >
                   <FiShoppingCart className="text-base sm:text-lg" />
                   {cart.length > 0 && (
-                    <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-[#d79d4a] text-[9px] font-bold text-[#111] sm:h-5 sm:w-5 sm:text-[10px]">
+                    <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-orange text-[9px] font-bold text-brand-bg sm:h-5 sm:w-5 sm:text-[10px]">
                       {cart.length}
                     </span>
                   )}
@@ -413,7 +418,7 @@ const Navbar = () => {
                     <button
                       type="button"
                       onClick={() => setProfileDropdown((prev) => !prev)}
-                      className="flex h-9 w-9 items-center justify-center rounded-full bg-[#1b1a18] text-xs font-bold text-white shadow-[0_8px_18px_rgba(0,0,0,0.12)] transition hover:bg-[#2a2623] sm:h-11 sm:w-11 sm:text-sm"
+                      className="flex h-9 w-9 items-center justify-center rounded-full bg-primary text-xs font-bold text-brand-text shadow-md transition hover:bg-primary-soft hover:text-brand-bg sm:h-11 sm:w-11 sm:text-sm"
                       aria-label="Open profile menu"
                     >
                       {userInitial}
@@ -426,7 +431,7 @@ const Navbar = () => {
                             Profile
                           </div>
                           <div className="mt-2 flex items-center gap-3">
-                            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#1b1a18] text-sm font-bold text-white">
+                            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary text-sm font-bold text-brand-text">
                               {userInitial}
                             </div>
                             <div>
@@ -495,7 +500,7 @@ const Navbar = () => {
                 <button
                   type="button"
                   onClick={() => setMobileMenu((current) => !current)}
-                  className="flex h-9 w-9 items-center justify-center rounded-full border border-[#d79d4a]/30 bg-[#f2eadb] text-[#1d1d1d] transition hover:border-[#d79d4a] hover:bg-[#f8f1e6] xl:hidden sm:h-11 sm:w-11"
+                  className="flex h-9 w-9 items-center justify-center rounded-full border border-brand-border bg-brand-surface text-brand-text transition hover:border-gold hover:bg-brand-surface-strong xl:hidden sm:h-11 sm:w-11"
                   aria-label={mobileMenu ? "Close navigation menu" : "Open navigation menu"}
                   aria-expanded={mobileMenu}
                 >
@@ -507,7 +512,7 @@ const Navbar = () => {
         </div>
 
         {mobileMenu && (
-          <div className="border-t border-primary/20 bg-background shadow-lg xl:hidden">
+          <div className="border-t border-brand-border bg-brand-bg shadow-lg xl:hidden">
             <PageContainer>
               <nav className="max-h-[calc(100vh-72px)] overflow-y-auto py-3 sm:max-h-[calc(100vh-130px)]" aria-label="Mobile navigation">
                 <NavLink to="/" end onClick={() => setMobileMenu(false)} className={mobileLinkClass}>
@@ -557,23 +562,32 @@ const Navbar = () => {
                 )}
 
                 <div className="mt-3 grid grid-cols-2 gap-2 border-t border-primary/20 pt-3 sm:grid-cols-3">
-                  <button type="button" onClick={() => { setMobileMenu(false); navigate(isLoggedIn ? "/account?tab=orders" : "/login"); }} className="flex items-center justify-center gap-2 rounded-xl bg-primary/5 px-3 py-3 text-xs font-semibold text-primary-strong transition hover:bg-primary/10">
+                  <button type="button" onClick={() => { setMobileMenu(false); navigate(isLoggedIn ? "/account?tab=orders" : "/login"); }} className="flex items-center justify-center gap-2 rounded-xl bg-brand-surface px-3 py-3 text-xs font-semibold text-brand-text transition hover:bg-brand-surface-strong">
                     <FiPackage /> Orders
                   </button>
-                  <button type="button" onClick={() => { setMobileMenu(false); openFavorites ? openFavorites() : navigate("/account"); }} className="flex items-center justify-center gap-2 rounded-xl bg-primary/5 px-3 py-3 text-xs font-semibold text-primary-strong transition hover:bg-primary/10">
+                  <button type="button" onClick={() => { setMobileMenu(false); openFavorites ? openFavorites() : navigate("/account"); }} className="flex items-center justify-center gap-2 rounded-xl bg-brand-surface px-3 py-3 text-xs font-semibold text-brand-text transition hover:bg-brand-surface-strong">
                     <FiHeart /> Favorites
                   </button>
-                  <button type="button" onClick={() => { setMobileMenu(false); openCart ? openCart() : navigate("/cart"); }} className="col-span-2 flex items-center justify-center gap-2 rounded-xl bg-[#d79d4a] px-3 py-3 text-xs font-bold text-[#1b1a18] transition hover:bg-[#e4b568] sm:col-span-1">
+                  <button type="button" onClick={() => { setMobileMenu(false); openCart ? openCart() : navigate("/cart"); }} className="col-span-2 flex items-center justify-center gap-2 rounded-xl bg-orange px-3 py-3 text-xs font-bold text-brand-bg transition hover:bg-orange-light sm:col-span-1">
                     <FiShoppingCart /> Cart {cart.length > 0 ? `(${cart.length})` : ""}
                   </button>
                   {!isLoggedIn && (
                     <Link
                       to="/login"
                       onClick={() => setMobileMenu(false)}
-                      className="col-span-2 flex items-center justify-center gap-2 rounded-xl border border-primary px-3 py-3 text-xs font-bold text-primary transition hover:bg-primary/10 sm:col-span-3"
+                      className="col-span-2 flex items-center justify-center gap-2 rounded-xl border border-gold px-3 py-3 text-xs font-bold text-gold transition hover:bg-brand-surface sm:col-span-3"
                     >
                       <FiUser /> Login
                     </Link>
+                  )}
+                  {isLoggedIn && (
+                    <button
+                      type="button"
+                      onClick={requestLogout}
+                      className="col-span-2 flex items-center justify-center gap-2 rounded-xl border border-danger/40 px-3 py-3 text-xs font-bold text-danger transition hover:bg-danger/10 sm:col-span-3"
+                    >
+                      <FiLogOut /> Sign Out
+                    </button>
                   )}
                 </div>
               </nav>
