@@ -9,7 +9,7 @@ const albumProduct = {
   productCode: 'ALB-001',
   category: 'Albums',
   subCategory: 'Wedding Album',
-  brand: 'Q Frames',
+  brand: 'Foodie Restaurant',
   albumType: 'Photo Album',
   occasion: 'Wedding',
   theme: 'Classic',

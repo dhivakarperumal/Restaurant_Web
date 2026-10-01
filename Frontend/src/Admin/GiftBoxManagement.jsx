@@ -47,7 +47,7 @@ const blankForm = {
   category: categories[0],
   subCategory: "Premium Collection",
   description: "",
-  brand: "Q Frames Prima Shop",
+  brand: "Foodie Restaurant",
   material: "Rigid cardboard",
   size: "Medium",
   color: "Warm white",
@@ -80,7 +80,7 @@ const initialBoxes = [
     subCategory: "Premium Collection",
     description:
       "A thoughtful keepsake box for photographs and handwritten memories.",
-    brand: "Q Frames Prima Shop",
+    brand: "Foodie Restaurant",
     material: "Rigid cardboard",
     size: "Large",
     color: "Sage green",
@@ -127,7 +127,7 @@ const initialBoxes = [
     subCategory: "Celebrations",
     description:
       "Bright, playful gifting with a frame and celebration essentials.",
-    brand: "Q Frames Prima Shop",
+    brand: "Foodie Restaurant",
     material: "Kraft board",
     size: "Medium",
     color: "Sunshine yellow",
@@ -174,7 +174,7 @@ const initialBoxes = [
     subCategory: "Love & Togetherness",
     description:
       "A refined couple's gift set made for a shared favorite photograph.",
-    brand: "Q Frames Prima Shop",
+    brand: "Foodie Restaurant",
     material: "Textured board",
     size: "Medium",
     color: "Blush pink",
@@ -748,7 +748,7 @@ const GiftBoxManagement = () => {
         <header className="flex flex-col gap-4 rounded-2xl border border-[#e1e6df] bg-[#fbfcfa] px-5 py-5 shadow-sm sm:flex-row sm:items-center sm:justify-between sm:px-7">
           <div>
             <div className="mb-2 flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.18em] text-[#698279]">
-              <Gift className="h-4 w-4 text-[#c1843b]" /> Q Frames Prima Shop
+              <Gift className="h-4 w-4 text-[#c1843b]" /> Foodie Restaurant
             </div>
             <h1 className="text-2xl font-bold tracking-tight text-[#1e302b] sm:text-3xl">
               Gift Box Management

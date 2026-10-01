@@ -66,12 +66,10 @@ const navItems = [
 
   /* ---- PRODUCTS ---- */
   {
-    label: "Products",
+    label: "Foods",
     icon: Package,
     children: [
-      { path: "/admin/frames", label: "Frames", icon: Image },
-      { path: "/admin/gifts", label: "Gifts", icon: Gift },
-      { path: "/admin/albums", label: "Albums", icon: Album, },
+     
       { path: "/admin/products", label: "All Products", icon: Package },
       { path: "/admin/products/categories", label: "Category", icon: Layers },
       { path: "/admin/products/stock-details", label: "Stock Details", icon: ClipboardList },
@@ -102,7 +100,7 @@ const navItems = [
     icon: Users,
   },
 
-  { path: "/admin/getorders", label: "Get Orders", icon: List },
+ 
 
   {
     path: "/admin/billing",
@@ -185,7 +183,7 @@ const Sidebar = ({ isOpen, onClose, collapsed, onToggleCollapse }) => {
         data-sidebar="admin-sidebar"
         className={`
           fixed top-0 left-0 z-50 h-full flex flex-col
-          bg-[#162420]
+          bg-brand-bg
           border-r border-[#1f3228]
           
           transition-all duration-300
@@ -202,9 +200,9 @@ const Sidebar = ({ isOpen, onClose, collapsed, onToggleCollapse }) => {
 
           {!collapsed && (
             <div className="overflow-hidden flex-1">
-              <h1 className="text-base font-bold text-white tracking-wide font-serif">QFrames</h1>
+              <h1 className="text-base font-bold text-white tracking-wide font-serif">Foodie Restaurant</h1>
               <p className="text-[10px] text-white tracking-[0.2em] uppercase">
-                Frame Your Memories
+                Fresh Food, Warm Welcome
               </p>
             </div>
           )}

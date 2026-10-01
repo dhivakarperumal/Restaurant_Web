@@ -149,7 +149,7 @@ const Login = () => {
       <div 
         className="hidden lg:flex flex-col justify-between w-1/2 relative z-10 bg-black text-white px-14 py-12 h-full"
         style={{
-          backgroundImage: `linear-gradient(to right, rgba(7,28,24,0.72) 0%, rgba(7,28,24,0.42) 50%, rgba(7,28,24,0.72) 100%), url('images/login.png')`,
+          backgroundImage: `linear-gradient(to right, rgba(7,28,24,0.82) 0%, rgba(7,28,24,0.64) 58%, rgba(7,28,24,0.42) 100%), url('images/login.png')`,
           backgroundSize: 'cover',
           backgroundPosition: 'center',
         }}
@@ -337,7 +337,7 @@ const Login = () => {
             {/* Google Login */}
             <div
               id="google-login-button"
-              className="w-full overflow-hidden rounded-lg border border-gray-300 bg-white hover:bg-gray-50 text-gray-700 text-[14px] font-semibold py-2 transition-colors shadow-sm flex items-center justify-center"
+              className="w-full overflow-hidden rounded-lg bg-white hover:bg-gray-50 text-gray-700 text-[14px] font-semibold py-2 transition-colors  flex items-center justify-center"
             ></div>
 
             <p className="text-center text-[14px] text-gray-500">
