@@ -226,6 +226,28 @@ async function findUserByIdentifier(identifier) {
   return rows[0] || null;
 }
 
+async function listUsers() {
+  const [rows] = await db.query(
+    `SELECT id, user_id, username, email, mobile_number, role, status, created_at
+     FROM users ORDER BY created_at DESC, id DESC`
+  );
+  return rows;
+}
+
+async function updateUser(userId, { username, mobile_number, role, status }) {
+  const [result] = await db.execute(
+    'UPDATE users SET username = ?, mobile_number = ?, role = ?, status = ? WHERE id = ?',
+    [username, mobile_number || null, role, status, userId]
+  );
+  if (!result.affectedRows) return null;
+  return findUserById(userId);
+}
+
+async function deleteUser(userId) {
+  const [result] = await db.execute('DELETE FROM users WHERE id = ?', [userId]);
+  return result.affectedRows > 0;
+}
+
 async function createSession(userId, rememberMe = true) {
   const token = randomBytes(32).toString('base64url');
   const expiresAt = new Date(Date.now() + (rememberMe ? 30 : 1) * 24 * 60 * 60 * 1000);
@@ -255,8 +277,11 @@ async function findUserByToken(token) {
 module.exports = {
   createSession,
   createUser,
+  deleteUser,
   findUserByIdentifier,
   findUserByToken,
   initializeAuthSchema,
+  listUsers,
+  updateUser,
   verifyPassword,
 };
