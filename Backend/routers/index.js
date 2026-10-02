@@ -12,6 +12,7 @@ const {
   updateEmployee,
 } = require('../controllers/employeeController');
 const { findUserByToken } = require('../modules/auth');
+const serverTableRouter = require('./serverTableRouter');
 const categoriesRouter = require('./categories');
 const cuisinesRouter = require('./cuisines');
 const foodsRouter = require('./foods');
@@ -168,6 +169,9 @@ router.get('/employees/:employeeId', optionalAuth, requireEmployeeAdmin, getEmpl
 router.put('/employees/:employeeId', optionalAuth, requireEmployeeAdmin, employeeUpload.any(), updateEmployee);
 router.delete('/employees/:employeeId', optionalAuth, requireEmployeeAdmin, deleteEmployee);
 router.post('/employees', optionalAuth, requireEmployeeAdmin, employeeUpload.any(), createEmployee);
+
+router.use('/server-tables', optionalAuth, serverTableRouter);
+router.use('/tables', optionalAuth, serverTableRouter);
 
 router.post('/upload', upload.single('file'), (req, res) => {
   if (!req.file) {

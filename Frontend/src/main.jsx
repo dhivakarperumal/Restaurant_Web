@@ -36,6 +36,7 @@ import OrderDetails from './Admin/Billings/OrderDetails.jsx'
 import ChefDashboard from './Chef Restaurant/ChefDashboard.jsx'
 import ChefLayout from './Chef Restaurant/Chefpanel.jsx'
 import ServerDashboard from './Server Restaurant/ServerDashboard.jsx'
+import ServerTables from './Server Restaurant/ServerTables.jsx'
 import ServerLayout from './Server Restaurant/Serverpanel.jsx'
 import DeliveryDashboard from './Delivery Restaurant/DeliveryDashboard.jsx'
 import DeliveryLayout from './Delivery Restaurant/Deliverypanel.jsx'
@@ -96,6 +97,10 @@ const router = createHashRouter([
           {
             path: 'employees/:employeeId/edit',
             element: <AddEmployee />,
+          },
+          {
+            path: 'tables',
+            element: <ServerTables />,
           },
           {
             path: 'customers',
@@ -200,6 +205,10 @@ const router = createHashRouter([
           {
             index: true,
             element: <ServerDashboard />,
+          },
+          {
+            path: 'tables',
+            element: <ServerTables />,
           },
         ],
       },

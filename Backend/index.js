@@ -1,7 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
-const { initializeAuthSchema, initializeBannerSchema, initializeCategorySchema, initializeCouponSchema, initializeCuisineSchema, initializeFoodSchema, initializeReviewSchema, initializeVideoSchema, initializeEmployeeSchema, testConnection } = require('./modules/modules');
+const { initializeAuthSchema, initializeBannerSchema, initializeCategorySchema, initializeCouponSchema, initializeCuisineSchema, initializeFoodSchema, initializeReviewSchema, initializeVideoSchema, initializeEmployeeSchema, initializeServerTableSchema, testConnection } = require('./modules/modules');
 const apiRouter = require('./routers');
 
 require('dotenv').config({ path: path.join(__dirname, '.env') });
@@ -44,6 +44,7 @@ async function startServer() {
     console.log('MySQL connected');
     await initializeAuthSchema();
     await initializeEmployeeSchema();
+    await initializeServerTableSchema();
     console.log('Database tables ready');
     await initializeCategorySchema();
     console.log('Category tables ready');
