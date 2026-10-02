@@ -220,8 +220,11 @@ async function findUserById(userId) {
 async function findUserProfile(identifier) {
   const value = String(identifier);
   const [rows] = await db.execute(
-    `SELECT id, user_id, username, email, mobile_number, role, status, created_at
-     FROM users WHERE CAST(id AS CHAR) = ? OR user_id = ? LIMIT 1`,
+    `SELECT users.id, users.user_id, users.username, users.email, users.mobile_number, users.role, users.status, users.created_at,
+            employees.employee_id
+     FROM users
+     LEFT JOIN employees ON employees.user_id = users.user_id
+     WHERE CAST(users.id AS CHAR) = ? OR users.user_id = ? LIMIT 1`,
     [value, value]
   );
   return rows[0] || null;
@@ -240,8 +243,11 @@ async function updateUserProfile(identifier, { username, mobile_number }) {
 
 async function findUserByIdentifier(identifier) {
   const [rows] = await db.execute(
-    `SELECT id, user_id, username, email, mobile_number, password_hash, role, status
-     FROM users WHERE email = ? OR username = ? LIMIT 1`,
+    `SELECT users.id, users.user_id, users.username, users.email, users.mobile_number, users.password_hash, users.role, users.status,
+            employees.employee_id
+     FROM users
+     LEFT JOIN employees ON employees.user_id = users.user_id
+     WHERE users.email = ? OR users.username = ? LIMIT 1`,
     [identifier, identifier]
   );
   return rows[0] || null;
@@ -285,9 +291,11 @@ async function createSession(userId, rememberMe = true) {
 async function findUserByToken(token) {
   const tokenHash = createHash('sha256').update(token).digest('hex');
   const [rows] = await db.execute(
-    `SELECT users.id, users.user_id, users.username, users.email, users.mobile_number, users.role, users.status
+    `SELECT users.id, users.user_id, users.username, users.email, users.mobile_number, users.role, users.status,
+            employees.employee_id
      FROM user_sessions
      INNER JOIN users ON users.id = user_sessions.user_pk
+     LEFT JOIN employees ON employees.user_id = users.user_id
      WHERE user_sessions.token_hash = ? AND user_sessions.expires_at > NOW()
      LIMIT 1`,
     [tokenHash]

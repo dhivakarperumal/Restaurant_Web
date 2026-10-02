@@ -115,7 +115,7 @@ async function findServerTables(filters = {}) {
       st.created_at, 
       st.updated_at
     FROM server_table st
-    LEFT JOIN employees e ON st.assigned_server_id = e.employee_id
+    LEFT JOIN employees e ON (st.assigned_server_id = e.employee_id OR st.assigned_server_id = e.user_id)
   `;
   const conditions = [];
   const params = [];
@@ -126,8 +126,8 @@ async function findServerTables(filters = {}) {
   }
 
   if (filters.assigned_server_id) {
-    conditions.push('st.assigned_server_id = ?');
-    params.push(String(filters.assigned_server_id).trim());
+    conditions.push('(st.assigned_server_id = ? OR e.user_id = ? OR e.employee_id = ?)');
+    params.push(String(filters.assigned_server_id).trim(), String(filters.assigned_server_id).trim(), String(filters.assigned_server_id).trim());
   }
 
   if (filters.assignment_status === 'assigned') {

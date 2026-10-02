@@ -227,9 +227,31 @@ export default function ServerTables() {
     toast.success(`${label} copied to clipboard!`);
   };
 
+  const currentServerEmployeeId = userProfile?.employee_id || userProfile?.employeeId;
+  const currentUserId = userProfile?.user_id || userProfile?.id || userProfile?.uuid;
+  const currentUserName = userProfile?.name || userProfile?.displayName || userProfile?.full_name || userProfile?.username;
+
+  const isCurrentServerTable = (table) => {
+    if (!table.assigned_server_id) return false;
+    const assignedId = String(table.assigned_server_id).trim().toLowerCase();
+    if (currentServerEmployeeId && assignedId === String(currentServerEmployeeId).trim().toLowerCase()) return true;
+    if (currentUserId && assignedId === String(currentUserId).trim().toLowerCase()) return true;
+    if (userProfile?.id && assignedId === String(userProfile.id).trim().toLowerCase()) return true;
+    if (userProfile?.uuid && assignedId === String(userProfile.uuid).trim().toLowerCase()) return true;
+    if (currentUserName && table.assigned_server_name && String(table.assigned_server_name).trim().toLowerCase() === String(currentUserName).trim().toLowerCase()) return true;
+    if (userProfile?.email && table.assigned_server_email && String(table.assigned_server_email).trim().toLowerCase() === String(userProfile.email).trim().toLowerCase()) return true;
+    return false;
+  };
+
+  // Base tables: on /server/tables, only consider tables assigned to this server
+  const baseTables = useMemo(() => {
+    if (isAdminTablesPage) return tables;
+    return tables.filter(isCurrentServerTable);
+  }, [tables, isAdminTablesPage, userProfile]);
+
   // Filtered tables
   const filteredTables = useMemo(() => {
-    return tables.filter((table) => {
+    return baseTables.filter((table) => {
       const matchesSearch =
         !searchQuery ||
         String(table.table_number || "")
@@ -251,6 +273,7 @@ export default function ServerTables() {
 
       const userEmpId = userProfile?.employee_id || userProfile?.employeeId;
       const matchesAssignment =
+        !isAdminTablesPage ||
         assignmentFilter === "all" ||
         (assignmentFilter === "assigned" && Boolean(table.assigned_server_id)) ||
         (assignmentFilter === "unassigned" && !table.assigned_server_id) ||
@@ -258,19 +281,19 @@ export default function ServerTables() {
 
       return matchesSearch && matchesStatus && matchesAssignment;
     });
-  }, [tables, searchQuery, statusFilter, assignmentFilter, userProfile]);
+  }, [baseTables, searchQuery, statusFilter, assignmentFilter, isAdminTablesPage, userProfile]);
 
   // Statistics
   const stats = useMemo(() => {
-    const total = tables.length;
-    const available = tables.filter((t) => t.status === "Available").length;
-    const occupied = tables.filter((t) => t.status === "Occupied").length;
-    const reserved = tables.filter((t) => t.status === "Reserved").length;
-    const assigned = tables.filter((t) => Boolean(t.assigned_server_id)).length;
-    const unassigned = tables.length - assigned;
-    const totalSeats = tables.reduce((sum, t) => sum + Number(t.no_of_seats || 0), 0);
+    const total = baseTables.length;
+    const available = baseTables.filter((t) => t.status === "Available").length;
+    const occupied = baseTables.filter((t) => t.status === "Occupied").length;
+    const reserved = baseTables.filter((t) => t.status === "Reserved").length;
+    const assigned = baseTables.filter((t) => Boolean(t.assigned_server_id)).length;
+    const unassigned = baseTables.length - assigned;
+    const totalSeats = baseTables.reduce((sum, t) => sum + Number(t.no_of_seats || 0), 0);
     return { total, available, occupied, reserved, assigned, unassigned, totalSeats };
-  }, [tables]);
+  }, [baseTables]);
 
   return (
     <div className={isAdminTablesPage ? "min-h-screen bg-[#f2f3f0] p-4 md:p-6" : "space-y-6"}>
@@ -284,10 +307,14 @@ export default function ServerTables() {
             </div>}
             <div>
               <h1 className={isAdminTablesPage ? "text-[2.1rem] font-bold tracking-[-0.05em] text-[#1f1d1b]" : "text-xl sm:text-2xl font-bold text-gray-900 font-serif"}>
-                {isAdminTablesPage ? "Tables" : "Server Tables"}
+                {isAdminTablesPage ? "Tables" : "My Assigned Tables"}
               </h1>
               <p className={isAdminTablesPage ? "mt-2 text-[13px] text-[#646464]" : "text-xs sm:text-sm text-gray-500"}>
-                {isAdminTablesPage ? <>Dashboard <span className="mx-2 text-[#9a9a9a]">&gt;</span> <span className="font-medium text-[#2a2a2a]">Tables</span></> : "Manage restaurant dining tables, seating capacity, and real-time status."}
+                {isAdminTablesPage ? (
+                  <>Dashboard <span className="mx-2 text-[#9a9a9a]">&gt;</span> <span className="font-medium text-[#2a2a2a]">Tables</span></>
+                ) : (
+                  "Dining tables assigned to your station. View real-time seating and update dining status."
+                )}
               </p>
             </div>
           </div>
@@ -297,27 +324,57 @@ export default function ServerTables() {
           <button
             onClick={fetchTables}
             title="Refresh tables"
-            className={isAdminTablesPage ? "flex h-[46px] w-[46px] cursor-pointer items-center justify-center rounded-xl border border-[#dfe2e5] bg-white text-gray-600 transition hover:bg-[#faf9f8]" : "p-2.5 rounded-xl border border-gray-200 text-gray-600 hover:bg-gray-50 transition"}
+            className={isAdminTablesPage ? "flex h-[46px] w-[46px] cursor-pointer items-center justify-center rounded-xl border border-[#dfe2e5] bg-white text-gray-600 transition hover:bg-[#faf9f8]" : "p-2.5 rounded-xl border border-gray-200 text-gray-600 hover:bg-gray-50 transition cursor-pointer"}
           >
             <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
           </button>
-          <button
-            onClick={handleOpenAddModal}
-            className={isAdminTablesPage ? "inline-flex h-[46px] cursor-pointer items-center justify-center gap-2 rounded-xl bg-[#1a3c36] px-4 text-[15px] font-semibold text-white shadow-[0_6px_14px_rgba(26,60,54,0.18)] transition hover:bg-[#214a42]" : "flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-[#1f3228] hover:bg-[#162420] text-[#d4a843] font-semibold text-sm shadow-md transition hover:scale-[1.02] active:scale-[0.98]"}
-          >
-            <Plus className={`w-4 h-4 ${isAdminTablesPage ? "" : "text-[#d4a843]"}`} />
-            <span>Add Table</span>
-          </button>
+          {isAdminTablesPage && (
+            <button
+              onClick={handleOpenAddModal}
+              className="inline-flex h-[46px] cursor-pointer items-center justify-center gap-2 rounded-xl bg-[#1a3c36] px-4 text-[15px] font-semibold text-white shadow-[0_6px_14px_rgba(26,60,54,0.18)] transition hover:bg-[#214a42]"
+            >
+              <Plus className="w-4 h-4" />
+              <span>Add Table</span>
+            </button>
+          )}
         </div>
       </div>
 
       {/* Stats Cards */}
       <div className={isAdminTablesPage ? "mb-6 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4" : "grid grid-cols-2 lg:grid-cols-4 gap-4"}>
         {[
-          { title: "Total Tables", value: stats.total, icon: Layers, iconBg: "bg-[#22c55e]", waveColor: "#22c55e", description: "Dining tables" },
-          { title: "Available", value: stats.available, icon: CheckCircle2, iconBg: "bg-[#f59e0b]", waveColor: "#f59e0b", description: "Ready for guests" },
-          { title: "Occupied", value: stats.occupied, icon: Clock, iconBg: "bg-[#06b6d4]", waveColor: "#06b6d4", description: "Currently in use" },
-          { title: "Total Seats", value: stats.totalSeats, icon: Armchair, iconBg: "bg-[#a855f7]", waveColor: "#a855f7", description: "Dining capacity" },
+          {
+            title: isAdminTablesPage ? "Total Tables" : "My Assigned Tables",
+            value: stats.total,
+            icon: Layers,
+            iconBg: "bg-[#22c55e]",
+            waveColor: "#22c55e",
+            description: isAdminTablesPage ? "Dining tables" : "Assigned to your station",
+          },
+          {
+            title: "Available",
+            value: stats.available,
+            icon: CheckCircle2,
+            iconBg: "bg-[#f59e0b]",
+            waveColor: "#f59e0b",
+            description: "Ready for guests",
+          },
+          {
+            title: "Occupied",
+            value: stats.occupied,
+            icon: Clock,
+            iconBg: "bg-[#06b6d4]",
+            waveColor: "#06b6d4",
+            description: "Currently in use",
+          },
+          {
+            title: "Total Seats",
+            value: stats.totalSeats,
+            icon: Armchair,
+            iconBg: "bg-[#a855f7]",
+            waveColor: "#a855f7",
+            description: "Dining capacity",
+          },
         ].map(({ title, value, icon: Icon, iconBg, waveColor, description }) => (
           <div key={title} className={isAdminTablesPage ? "relative flex h-full min-h-[170px] flex-col overflow-hidden rounded-xl border border-gray-100 bg-white p-5 shadow-sm" : "bg-white p-4 rounded-xl border border-gray-100 shadow-sm flex items-center gap-4"}>
             {isAdminTablesPage ? (
@@ -359,7 +416,7 @@ export default function ServerTables() {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
           <input
             type="text"
-            placeholder="Search by table number, UUID, or creator..."
+            placeholder={isAdminTablesPage ? "Search by table number, UUID, or creator..." : "Search by table number..."}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className={isAdminTablesPage ? "h-[46px] w-full rounded-xl border border-[#dfe2e5] bg-[#faf9f8] pl-10 pr-3 text-[14px] text-[#2d2d2d] outline-none placeholder:text-[#8a8a8a] focus:border-[#d2bc8a]" : "w-full pl-9 pr-4 py-2 text-sm bg-gray-50 rounded-lg border border-gray-200 focus:outline-none focus:border-[#d4a843] focus:bg-white transition"}
@@ -373,26 +430,25 @@ export default function ServerTables() {
             onChange={(e) => setStatusFilter(e.target.value)}
             className={isAdminTablesPage ? "h-[46px] rounded-xl border border-[#dfe2e5] bg-[#faf9f8] px-3 text-[14px] font-medium text-[#2d2d2d] outline-none focus:border-[#d2bc8a]" : "px-3 py-2 text-xs sm:text-sm bg-gray-50 border border-gray-200 rounded-lg text-gray-700 outline-none focus:border-[#d4a843]"}
           >
-            <option value="all">All Statuses ({tables.length})</option>
+            <option value="all">All Statuses ({baseTables.length})</option>
             <option value="Available">Available ({stats.available})</option>
             <option value="Occupied">Occupied ({stats.occupied})</option>
             <option value="Reserved">Reserved ({stats.reserved})</option>
             <option value="Maintenance">Maintenance</option>
           </select>
 
-          {/* Assignment filter */}
-          <select
-            value={assignmentFilter}
-            onChange={(e) => setAssignmentFilter(e.target.value)}
-            className={isAdminTablesPage ? "h-[46px] rounded-xl border border-[#dfe2e5] bg-[#faf9f8] px-3 text-[14px] font-medium text-[#2d2d2d] outline-none focus:border-[#d2bc8a]" : "px-3 py-2 text-xs sm:text-sm bg-gray-50 border border-gray-200 rounded-lg text-gray-700 outline-none focus:border-[#d4a843]"}
-          >
-            <option value="all">All Assignments ({tables.length})</option>
-            <option value="assigned">Assigned ({stats.assigned || 0})</option>
-            <option value="unassigned">Unassigned ({stats.unassigned || 0})</option>
-            {userProfile?.role?.toLowerCase() === "server" && (
-              <option value="my-tables">My Assigned Tables</option>
-            )}
-          </select>
+          {/* Assignment filter (Admin only) */}
+          {isAdminTablesPage && (
+            <select
+              value={assignmentFilter}
+              onChange={(e) => setAssignmentFilter(e.target.value)}
+              className="h-[46px] rounded-xl border border-[#dfe2e5] bg-[#faf9f8] px-3 text-[14px] font-medium text-[#2d2d2d] outline-none focus:border-[#d2bc8a]"
+            >
+              <option value="all">All Assignments ({tables.length})</option>
+              <option value="assigned">Assigned ({stats.assigned || 0})</option>
+              <option value="unassigned">Unassigned ({stats.unassigned || 0})</option>
+            </select>
+          )}
 
           {/* View mode toggle */}
           <div className={isAdminTablesPage ? "flex h-[46px] items-center overflow-hidden rounded-xl border border-[#dfe2e5] bg-[#faf9f8]" : "flex items-center rounded-lg border border-gray-200 p-0.5 bg-gray-50"}>
@@ -436,17 +492,23 @@ export default function ServerTables() {
             <UtensilsCrossed className="w-8 h-8" />
           </div>
           <div>
-            <h3 className="text-lg font-bold text-gray-800">No tables found</h3>
+            <h3 className="text-lg font-bold text-gray-800">
+              {isAdminTablesPage ? "No tables found" : "No tables assigned to you"}
+            </h3>
             <p className="text-sm text-gray-500 max-w-sm mx-auto mt-1">
-              {searchQuery || statusFilter !== "all"
-                ? "No server tables match your filter criteria. Try clearing search."
-                : "No server tables have been added yet. Click 'Add Table' to create your first dining table."}
+              {isAdminTablesPage
+                ? (searchQuery || statusFilter !== "all"
+                    ? "No server tables match your filter criteria. Try clearing search."
+                    : "No server tables have been added yet. Click 'Add Table' to create your first dining table.")
+                : (searchQuery || statusFilter !== "all"
+                    ? "No assigned tables match your filter criteria. Try clearing search or status filter."
+                    : "You do not have any dining tables assigned to your station yet. Your restaurant administrator will assign tables to you.")}
             </p>
           </div>
-          {!searchQuery && statusFilter === "all" && (
+          {isAdminTablesPage && !searchQuery && statusFilter === "all" && (
             <button
               onClick={handleOpenAddModal}
-              className={isAdminTablesPage ? "inline-flex cursor-pointer items-center gap-2 rounded-xl bg-[#1a3c36] px-4 py-2 text-sm font-semibold text-white shadow transition hover:bg-[#214a42]" : "inline-flex items-center gap-2 px-4 py-2 bg-[#1f3228] text-[#d4a843] rounded-xl text-sm font-semibold shadow hover:bg-[#162420] transition"}
+              className="inline-flex cursor-pointer items-center gap-2 rounded-xl bg-[#1a3c36] px-4 py-2 text-sm font-semibold text-white shadow transition hover:bg-[#214a42]"
             >
               <Plus className="w-4 h-4" />
               Add First Table
@@ -474,9 +536,15 @@ export default function ServerTables() {
                         <h4 className="font-bold text-gray-900 text-base leading-tight">
                           {table.table_number}
                         </h4>
-                        <span className="text-[11px] text-gray-400 font-mono">
-                          ID: #{table.id}
-                        </span>
+                        {isAdminTablesPage ? (
+                          <span className="text-[11px] text-gray-400 font-mono">
+                            ID: #{table.id}
+                          </span>
+                        ) : (
+                          <span className="text-[11px] text-gray-400 font-medium">
+                            Assigned Table
+                          </span>
+                        )}
                       </div>
                     </div>
 
@@ -500,70 +568,86 @@ export default function ServerTables() {
                       </span>
                     </div>
 
-                    <div className="flex items-center justify-between text-xs text-gray-600">
-                      <span className="flex items-center gap-1.5 text-gray-500 font-medium">
-                        <UtensilsCrossed className="w-3.5 h-3.5 text-gray-400" />
-                        Server:
-                      </span>
-                      {table.assigned_server_id ? (
-                        <div className="flex items-center gap-1.5">
-                          <span className="font-semibold text-emerald-800 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded text-[11px]">
-                            {table.assigned_server_name || "Assigned"}
-                          </span>
-                          <button
-                            type="button"
-                            onClick={() => handleUnassignTable(table)}
-                            title="Unassign this server from table"
-                            className="text-gray-400 hover:text-red-600 p-0.5 rounded transition"
-                          >
-                            <X className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
-                      ) : (
-                        <span className="text-gray-400 italic text-[11px]">Unassigned</span>
-                      )}
-                    </div>
-
-                    <div className="flex items-center justify-between text-xs text-gray-600">
-                      <span className="flex items-center gap-1.5 text-gray-500 font-medium">
-                        <Hash className="w-3.5 h-3.5 text-gray-400" />
-                        UUID:
-                      </span>
-                      <button
-                        onClick={() => copyToClipboard(table.table_id, "UUID")}
-                        title="Click to copy full UUID"
-                        className="font-mono text-[11px] text-blue-600 hover:text-blue-800 flex items-center gap-1 hover:underline"
-                      >
-                        {String(table.table_id || "").slice(0, 8)}...
-                        <Copy className="w-3 h-3" />
-                      </button>
-                    </div>
-
-                    {table.created_by && (
-                      <div className="flex items-center justify-between text-xs text-gray-500">
-                        <span>Created by:</span>
-                        <button
-                          onClick={() => copyToClipboard(table.created_by, "Created By User ID")}
-                          title={`User ID: ${table.created_by}`}
-                          className="font-mono text-[11px] text-blue-600 hover:text-blue-800 flex items-center gap-1 hover:underline"
-                        >
-                          {String(table.created_by).slice(0, 8)}...
-                          <Copy className="w-2.5 h-2.5" />
-                        </button>
+                    {isAdminTablesPage ? (
+                      <div className="flex items-center justify-between text-xs text-gray-600">
+                        <span className="flex items-center gap-1.5 text-gray-500 font-medium">
+                          <UtensilsCrossed className="w-3.5 h-3.5 text-gray-400" />
+                          Server:
+                        </span>
+                        {table.assigned_server_id ? (
+                          <div className="flex items-center gap-1.5">
+                            <span className="font-semibold text-emerald-800 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded text-[11px]">
+                              {table.assigned_server_name || "Assigned"}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => handleUnassignTable(table)}
+                              title="Unassign this server from table"
+                              className="text-gray-400 hover:text-red-600 p-0.5 rounded transition cursor-pointer"
+                            >
+                              <X className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        ) : (
+                          <span className="text-gray-400 italic text-[11px]">Unassigned</span>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="flex items-center justify-between text-xs text-gray-600">
+                        <span className="flex items-center gap-1.5 text-gray-500 font-medium">
+                          <UtensilsCrossed className="w-3.5 h-3.5 text-[#d4a843]" />
+                          Station:
+                        </span>
+                        <span className="font-semibold text-emerald-800 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded text-[11px]">
+                          Assigned to You
+                        </span>
                       </div>
                     )}
-                    {table.updated_by && (
-                      <div className="flex items-center justify-between text-xs text-gray-500">
-                        <span>Updated by:</span>
-                        <button
-                          onClick={() => copyToClipboard(table.updated_by, "Updated By User ID")}
-                          title={`User ID: ${table.updated_by}`}
-                          className="font-mono text-[11px] text-blue-600 hover:text-blue-800 flex items-center gap-1 hover:underline"
-                        >
-                          {String(table.updated_by).slice(0, 8)}...
-                          <Copy className="w-2.5 h-2.5" />
-                        </button>
-                      </div>
+
+                    {isAdminTablesPage && (
+                      <>
+                        <div className="flex items-center justify-between text-xs text-gray-600">
+                          <span className="flex items-center gap-1.5 text-gray-500 font-medium">
+                            <Hash className="w-3.5 h-3.5 text-gray-400" />
+                            UUID:
+                          </span>
+                          <button
+                            onClick={() => copyToClipboard(table.table_id, "UUID")}
+                            title="Click to copy full UUID"
+                            className="font-mono text-[11px] text-blue-600 hover:text-blue-800 flex items-center gap-1 hover:underline"
+                          >
+                            {String(table.table_id || "").slice(0, 8)}...
+                            <Copy className="w-3 h-3" />
+                          </button>
+                        </div>
+
+                        {table.created_by && (
+                          <div className="flex items-center justify-between text-xs text-gray-500">
+                            <span>Created by:</span>
+                            <button
+                              onClick={() => copyToClipboard(table.created_by, "Created By User ID")}
+                              title={`User ID: ${table.created_by}`}
+                              className="font-mono text-[11px] text-blue-600 hover:text-blue-800 flex items-center gap-1 hover:underline"
+                            >
+                              {String(table.created_by).slice(0, 8)}...
+                              <Copy className="w-2.5 h-2.5" />
+                            </button>
+                          </div>
+                        )}
+                        {table.updated_by && (
+                          <div className="flex items-center justify-between text-xs text-gray-500">
+                            <span>Updated by:</span>
+                            <button
+                              onClick={() => copyToClipboard(table.updated_by, "Updated By User ID")}
+                              title={`User ID: ${table.updated_by}`}
+                              className="font-mono text-[11px] text-blue-600 hover:text-blue-800 flex items-center gap-1 hover:underline"
+                            >
+                              {String(table.updated_by).slice(0, 8)}...
+                              <Copy className="w-2.5 h-2.5" />
+                            </button>
+                          </div>
+                        )}
+                      </>
                     )}
                   </div>
                 </div>
@@ -577,34 +661,36 @@ export default function ServerTables() {
                         <button
                           key={st}
                           onClick={() => handleQuickStatusChange(table, st)}
-                          className={`px-2 py-0.5 rounded text-[10px] font-medium transition ${
+                          className={`px-2.5 py-1 rounded text-[11px] font-medium transition cursor-pointer ${
                             table.status === st
-                              ? "bg-[#1f3228] text-white"
+                              ? "bg-[#1f3228] text-white shadow-sm"
                               : "bg-gray-100 text-gray-600 hover:bg-gray-200"
                           }`}
                         >
-                          {st[0]}
+                          {st}
                         </button>
                       ))}
                     </div>
                   </div>
 
-                  <div className="flex items-center justify-end gap-2 pt-2 border-t border-gray-100">
-                    <button
-                      onClick={() => handleOpenEditModal(table)}
-                      className="p-1.5 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-100 hover:text-gray-900 transition"
-                      title="Edit Table"
-                    >
-                      <Edit2 className="w-3.5 h-3.5" />
-                    </button>
-                    <button
-                      onClick={() => handleDelete(table)}
-                      className="p-1.5 rounded-lg border border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700 transition"
-                      title="Delete Table"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
+                  {isAdminTablesPage && (
+                    <div className="flex items-center justify-end gap-2 pt-2 border-t border-gray-100">
+                      <button
+                        onClick={() => handleOpenEditModal(table)}
+                        className="p-1.5 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-100 hover:text-gray-900 transition cursor-pointer"
+                        title="Edit Table"
+                      >
+                        <Edit2 className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        onClick={() => handleDelete(table)}
+                        className="p-1.5 rounded-lg border border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700 transition cursor-pointer"
+                        title="Delete Table"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
             );
@@ -617,16 +703,25 @@ export default function ServerTables() {
             <table className="w-full text-left text-sm">
               <thead className={isAdminTablesPage ? "border-b border-[#e8e4df] bg-[#f0e6d2] text-left text-sm font-semibold text-[#3d3d3d]" : "bg-gray-50/75 border-b border-gray-100 text-xs text-gray-500 uppercase tracking-wider font-semibold"}>
                 <tr>
-                  <th className="py-3.5 px-4"># ID</th>
                   <th className="py-3.5 px-4">Table Number</th>
                   <th className="py-3.5 px-4">Seats</th>
                   <th className="py-3.5 px-4">Status</th>
-                  <th className="py-3.5 px-4">Assigned Server</th>
-                  <th className="py-3.5 px-4">UUID (table_id)</th>
-                  <th className="py-3.5 px-4">Created By (User ID)</th>
-                  <th className="py-3.5 px-4">Updated By (User ID)</th>
-                  <th className="py-3.5 px-4">Created At</th>
-                  <th className="py-3.5 px-4 text-right">Actions</th>
+                  {isAdminTablesPage ? (
+                    <>
+                      <th className="py-3.5 px-4"># ID</th>
+                      <th className="py-3.5 px-4">Assigned Server</th>
+                      <th className="py-3.5 px-4">UUID (table_id)</th>
+                      <th className="py-3.5 px-4">Created By</th>
+                      <th className="py-3.5 px-4">Updated By</th>
+                      <th className="py-3.5 px-4">Created At</th>
+                      <th className="py-3.5 px-4 text-right">Actions</th>
+                    </>
+                  ) : (
+                    <>
+                      <th className="py-3.5 px-4">Assignment</th>
+                      <th className="py-3.5 px-4 text-right">Quick Status Update</th>
+                    </>
+                  )}
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
@@ -637,11 +732,13 @@ export default function ServerTables() {
                       key={table.table_id || table.id}
                       className="hover:bg-gray-50/50 transition-colors"
                     >
-                      <td className="py-3 px-4 font-mono font-bold text-xs text-gray-700">
-                        #{table.id}
-                      </td>
                       <td className="py-3 px-4 font-semibold text-gray-900">
-                        {table.table_number}
+                        <div className="flex items-center gap-2">
+                          <div className="w-8 h-8 rounded-lg bg-[#1f3228] text-[#d4a843] flex items-center justify-center font-bold text-xs font-serif">
+                            {table.table_number.length <= 4 ? table.table_number : "#"}
+                          </div>
+                          <span>{table.table_number}</span>
+                        </div>
                       </td>
                       <td className="py-3 px-4">
                         <span className="inline-flex items-center gap-1 font-medium text-gray-700 bg-gray-100 px-2 py-0.5 rounded-md text-xs">
@@ -657,93 +754,126 @@ export default function ServerTables() {
                           {table.status}
                         </span>
                       </td>
-                      <td className="py-3 px-4">
-                        {table.assigned_server_id ? (
-                          <div className="flex items-center gap-1.5">
+                      {isAdminTablesPage ? (
+                        <>
+                          <td className="py-3 px-4 font-mono font-bold text-xs text-gray-700">
+                            #{table.id}
+                          </td>
+                          <td className="py-3 px-4">
+                            {table.assigned_server_id ? (
+                              <div className="flex items-center gap-1.5">
+                                <span className="inline-flex items-center gap-1 font-semibold text-emerald-800 bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 rounded-full text-xs">
+                                  <UtensilsCrossed className="w-3 h-3 text-[#d4a843]" />
+                                  {table.assigned_server_name || "Assigned"}
+                                </span>
+                                <button
+                                  type="button"
+                                  onClick={() => handleUnassignTable(table)}
+                                  title="Unassign server"
+                                  className="text-gray-400 hover:text-red-600 p-0.5 rounded transition cursor-pointer"
+                                >
+                                  <X className="w-3.5 h-3.5" />
+                                </button>
+                              </div>
+                            ) : (
+                              <span className="text-gray-400 italic text-xs">
+                                Unassigned
+                              </span>
+                            )}
+                          </td>
+                          <td className="py-3 px-4">
+                            <button
+                              onClick={() => copyToClipboard(table.table_id, "UUID")}
+                              className="font-mono text-xs text-blue-600 hover:underline flex items-center gap-1 cursor-pointer"
+                              title="Click to copy full UUID"
+                            >
+                              {String(table.table_id || "").slice(0, 12)}...
+                              <Copy className="w-3 h-3" />
+                            </button>
+                          </td>
+                          <td className="py-3 px-4 text-xs text-gray-600">
+                            {table.created_by ? (
+                              <button
+                                onClick={() => copyToClipboard(table.created_by, "Created By User ID")}
+                                className="font-mono text-xs text-blue-600 hover:underline flex items-center gap-1 cursor-pointer"
+                                title={`Full User ID: ${table.created_by}`}
+                              >
+                                {String(table.created_by).slice(0, 10)}...
+                                <Copy className="w-3 h-3" />
+                              </button>
+                            ) : (
+                              "—"
+                            )}
+                          </td>
+                          <td className="py-3 px-4 text-xs text-gray-600">
+                            {table.updated_by ? (
+                              <button
+                                onClick={() => copyToClipboard(table.updated_by, "Updated By User ID")}
+                                className="font-mono text-xs text-blue-600 hover:underline flex items-center gap-1 cursor-pointer"
+                                title={`Full User ID: ${table.updated_by}`}
+                              >
+                                {String(table.updated_by).slice(0, 10)}...
+                                <Copy className="w-3 h-3" />
+                              </button>
+                            ) : (
+                              "—"
+                            )}
+                          </td>
+                          <td className="py-3 px-4 text-xs text-gray-500">
+                            {table.created_at
+                              ? new Date(table.created_at).toLocaleDateString("en-IN", {
+                                  day: "2-digit",
+                                  month: "short",
+                                  year: "numeric",
+                                })
+                              : "—"}
+                          </td>
+                          <td className="py-3 px-4 text-right">
+                            <div className="flex items-center justify-end gap-1.5">
+                              <button
+                                onClick={() => handleOpenEditModal(table)}
+                                className="p-1.5 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-100 transition cursor-pointer"
+                                title="Edit Table"
+                              >
+                                <Edit2 className="w-3.5 h-3.5" />
+                              </button>
+                              <button
+                                onClick={() => handleDelete(table)}
+                                className="p-1.5 rounded-lg border border-red-200 text-red-600 hover:bg-red-50 transition cursor-pointer"
+                                title="Delete Table"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          </td>
+                        </>
+                      ) : (
+                        <>
+                          <td className="py-3 px-4">
                             <span className="inline-flex items-center gap-1 font-semibold text-emerald-800 bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 rounded-full text-xs">
                               <UtensilsCrossed className="w-3 h-3 text-[#d4a843]" />
-                              {table.assigned_server_name || "Assigned"}
+                              Assigned to You
                             </span>
-                            <button
-                              type="button"
-                              onClick={() => handleUnassignTable(table)}
-                              title="Unassign server"
-                              className="text-gray-400 hover:text-red-600 p-0.5 rounded transition"
-                            >
-                              <X className="w-3.5 h-3.5" />
-                            </button>
-                          </div>
-                        ) : (
-                          <span className="text-gray-400 italic text-xs">
-                            Unassigned
-                          </span>
-                        )}
-                      </td>
-                      <td className="py-3 px-4">
-                        <button
-                          onClick={() => copyToClipboard(table.table_id, "UUID")}
-                          className="font-mono text-xs text-blue-600 hover:underline flex items-center gap-1"
-                          title="Click to copy full UUID"
-                        >
-                          {String(table.table_id || "").slice(0, 12)}...
-                          <Copy className="w-3 h-3" />
-                        </button>
-                      </td>
-                      <td className="py-3 px-4 text-xs text-gray-600">
-                        {table.created_by ? (
-                          <button
-                            onClick={() => copyToClipboard(table.created_by, "Created By User ID")}
-                            className="font-mono text-xs text-blue-600 hover:underline flex items-center gap-1"
-                            title={`Full User ID: ${table.created_by}`}
-                          >
-                            {String(table.created_by).slice(0, 10)}...
-                            <Copy className="w-3 h-3" />
-                          </button>
-                        ) : (
-                          "—"
-                        )}
-                      </td>
-                      <td className="py-3 px-4 text-xs text-gray-600">
-                        {table.updated_by ? (
-                          <button
-                            onClick={() => copyToClipboard(table.updated_by, "Updated By User ID")}
-                            className="font-mono text-xs text-blue-600 hover:underline flex items-center gap-1"
-                            title={`Full User ID: ${table.updated_by}`}
-                          >
-                            {String(table.updated_by).slice(0, 10)}...
-                            <Copy className="w-3 h-3" />
-                          </button>
-                        ) : (
-                          "—"
-                        )}
-                      </td>
-                      <td className="py-3 px-4 text-xs text-gray-500">
-                        {table.created_at
-                          ? new Date(table.created_at).toLocaleDateString("en-IN", {
-                              day: "2-digit",
-                              month: "short",
-                              year: "numeric",
-                            })
-                          : "—"}
-                      </td>
-                      <td className="py-3 px-4 text-right">
-                        <div className="flex items-center justify-end gap-1.5">
-                          <button
-                            onClick={() => handleOpenEditModal(table)}
-                            className="p-1.5 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-100 transition"
-                            title="Edit Table"
-                          >
-                            <Edit2 className="w-3.5 h-3.5" />
-                          </button>
-                          <button
-                            onClick={() => handleDelete(table)}
-                            className="p-1.5 rounded-lg border border-red-200 text-red-600 hover:bg-red-50 transition"
-                            title="Delete Table"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
-                      </td>
+                          </td>
+                          <td className="py-3 px-4 text-right">
+                            <div className="flex items-center justify-end gap-1.5">
+                              {["Available", "Occupied", "Reserved"].map((st) => (
+                                <button
+                                  key={st}
+                                  onClick={() => handleQuickStatusChange(table, st)}
+                                  className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition cursor-pointer ${
+                                    table.status === st
+                                      ? "bg-[#1f3228] text-white shadow-sm"
+                                      : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                                  }`}
+                                >
+                                  {st}
+                                </button>
+                              ))}
+                            </div>
+                          </td>
+                        </>
+                      )}
                     </tr>
                   );
                 })}
@@ -753,8 +883,8 @@ export default function ServerTables() {
         </div>
       )}
 
-      {/* Add / Edit Table Modal */}
-      {isAddModalOpen && (
+      {/* Add / Edit Table Modal (Admin only) */}
+      {isAdminTablesPage && isAddModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
           <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-gray-100 relative">
             <button
