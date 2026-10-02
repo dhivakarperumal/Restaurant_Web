@@ -257,6 +257,7 @@ module.exports = {
   createUser,
   findUserByIdentifier,
   findUserByToken,
+  hashPassword,
   initializeAuthSchema,
   verifyPassword,
 };

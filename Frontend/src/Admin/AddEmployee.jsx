@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   ArrowLeft,
   Banknote,
@@ -18,31 +18,34 @@ import {
   Utensils,
 } from "lucide-react";
 import { Link, useParams } from "react-router-dom";
+import api from "../api";
 
 const employeeTypes = ["Chef", "Delivery Partner", "Server", "Cashier", "Manager", "Cleaner"];
 
 const fieldStyles =
   "h-11 w-full rounded-lg border border-[#dce3dd] bg-[#fbfcfa] px-3.5 text-sm text-[#20312a] outline-none transition placeholder:text-[#9aa59d] focus:border-[#4d765c] focus:ring-2 focus:ring-[#4d765c]/10";
 
-const Field = ({ label, required = false, type = "text", options, placeholder, wide = false }) => (
+const fieldNameFromLabel = (label) => label.toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_|_$/g, "");
+
+const Field = ({ label, required = false, type = "text", options, placeholder, wide = false, name = fieldNameFromLabel(label) }) => (
   <label className={`block min-w-0 space-y-2 ${wide ? "md:col-span-2" : ""}`}>
     <span className="block text-xs font-semibold text-[#34443b]">
       {label}{required && <span className="ml-1 text-[#c16b3a]">*</span>}
     </span>
     {options ? (
       <div className="relative">
-        <select className={`${fieldStyles} appearance-none pr-9`} defaultValue="">
+        <select name={name} required={required} className={`${fieldStyles} appearance-none pr-9`} defaultValue="">
           <option value="" disabled>Select {label.toLowerCase()}</option>
           {options.map((option) => <option key={option} value={option}>{option}</option>)}
         </select>
         <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#75847a]" />
       </div>
     ) : type === "file" ? (
-      <input type="file" className={`${fieldStyles} cursor-pointer py-2 text-xs file:mr-3 file:rounded-md file:border-0 file:bg-[#edf2ed] file:px-2.5 file:py-1 file:text-xs file:font-semibold file:text-[#355443]`} />
+      <input name={name} type="file" className={`${fieldStyles} cursor-pointer py-2 text-xs file:mr-3 file:rounded-md file:border-0 file:bg-[#edf2ed] file:px-2.5 file:py-1 file:text-xs file:font-semibold file:text-[#355443]`} />
     ) : type === "textarea" ? (
-      <textarea rows={3} placeholder={placeholder || `Enter ${label.toLowerCase()}`} className={`${fieldStyles} h-auto min-h-24 resize-y py-3`} />
+      <textarea name={name} required={required} rows={3} placeholder={placeholder || `Enter ${label.toLowerCase()}`} className={`${fieldStyles} h-auto min-h-24 resize-y py-3`} />
     ) : (
-      <input type={type} placeholder={placeholder || `Enter ${label.toLowerCase()}`} className={fieldStyles} />
+      <input name={name} type={type} required={required} placeholder={placeholder || `Enter ${label.toLowerCase()}`} className={fieldStyles} />
     )}
   </label>
 );
@@ -84,7 +87,7 @@ const LocationFields = ({ showCoordinates, delivery }) => (
   </Section>
 );
 
-const EmployeeFields = ({ employeeType }) => {
+const EmployeeFields = ({ employeeType, employeeId }) => {
   const isChef = employeeType === "Chef";
   const isDelivery = employeeType === "Delivery Partner";
   const isBasic = !isChef && !isDelivery;
@@ -93,16 +96,20 @@ const EmployeeFields = ({ employeeType }) => {
   return (
     <>
       <Section icon={UserRound} title="Personal details" description="Identity, contact and account access">
-        <Field label={isChef ? "Chef Name" : "Full Name"} required />
+        <Field label={isChef ? "Chef Name" : "Full Name"} name="full_name" required />
         <UploadField label="Profile Photo" />
         <Field label="Gender" options={["Female", "Male", "Non-binary", "Prefer not to say"]} />
         <Field label="Date of Birth" type="date" />
         <Field label="Phone Number" type="tel" required />
         {isDelivery && <Field label="WhatsApp Number" type="tel" />}
-        <Field label="Email" type="email" />
-        {!isDelivery && <Field label="Password / Create Login" type="password" />}
-        <Field label={isChef ? "Chef ID / Employee ID" : isDelivery ? "Delivery Boy ID / Employee ID" : "Employee ID"} />
+        <Field label="Email" type="email" required />
+        <label className="block min-w-0 space-y-2">
+          <span className="block text-xs font-semibold text-[#34443b]">{isChef ? "Chef ID / Employee ID" : isDelivery ? "Delivery Boy ID / Employee ID" : "Employee ID"}</span>
+          <input readOnly value={employeeId} placeholder="Generated automatically on save" className={`${fieldStyles} bg-[#f2f5f1] text-[#66746a]`} />
+        </label>
         <Field label="Status" options={["Active", "Inactive"]} />
+        <Field label="Password" type="password" name="password" required />
+        <Field label="Confirm Password" type="password" name="confirm_password" required />
       </Section>
 
       {isChef && (
@@ -137,8 +144,8 @@ const EmployeeFields = ({ employeeType }) => {
           <div className="md:col-span-2 lg:col-span-3">
             <span className="block text-xs font-semibold text-[#34443b]">Working Days</span>
             <div className="mt-3 flex flex-wrap gap-x-5 gap-y-3">
-              {["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"].map((day) => (
-                <label key={day} className="inline-flex items-center gap-2 text-xs text-[#536259]"><input type="checkbox" className="h-4 w-4 accent-[#42694f]" />{day}</label>
+                {["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"].map((day) => (
+                  <label key={day} className="inline-flex items-center gap-2 text-xs text-[#536259]"><input type="checkbox" name="working_days" value={day} className="h-4 w-4 accent-[#42694f]" />{day}</label>
               ))}
             </div>
           </div>
@@ -227,7 +234,6 @@ const EmployeeFields = ({ employeeType }) => {
           </Section>
           <Section icon={BriefcaseBusiness} title="Login / app access" description="Partner account access">
             <Field label="Username / Phone Number" />
-            <Field label="Password" type="password" />
             <Field label="App Access" options={["Enabled", "Disabled"]} />
             <Field label="Login Status" options={["Logged In", "Logged Out"]} />
           </Section>
@@ -243,9 +249,41 @@ const AddEmployee = () => {
     (type) => type.toLowerCase().replaceAll(" ", "-") === routeEmployeeType,
   );
   const [employeeType, setEmployeeType] = useState(initialEmployeeType || "Chef");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState("");
+  const [createdEmployeeId, setCreatedEmployeeId] = useState("");
+
+  useEffect(() => {
+    setEmployeeType(initialEmployeeType || "Chef");
+    setCreatedEmployeeId("");
+  }, [initialEmployeeType]);
+
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+    setSubmitError("");
+
+    const formData = new FormData(event.currentTarget);
+    formData.set("employee_type", employeeType);
+    if (formData.get("password") !== formData.get("confirm_password")) {
+      setSubmitError("Password and confirm password do not match.");
+      return;
+    }
+
+    try {
+      setIsSubmitting(true);
+      const response = await api.post("/employees", formData);
+      setCreatedEmployeeId(response.data?.employee?.employee_id || "");
+    } catch (error) {
+      setSubmitError(error.response?.data?.message || "Employee could not be created. Please try again.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   return (
+    <form onSubmit={handleSubmit}>
     <main className="mx-auto w-full max-w-6xl px-1 pb-10 pt-2 sm:px-3 sm:pt-4">
+      <input type="hidden" name="employee_type" value={employeeType} />
       <div className="mb-6 flex flex-col gap-4 border-b border-[#dfe5df] pb-5 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <Link to="/admin" className="mb-3 inline-flex items-center gap-1.5 text-xs font-semibold text-[#64736a] transition hover:text-[#355443]"><ArrowLeft className="h-3.5 w-3.5" /> Admin dashboard</Link>
@@ -256,7 +294,7 @@ const AddEmployee = () => {
         <div className="w-full sm:w-64">
           <label htmlFor="employee-type" className="mb-2 block text-xs font-semibold text-[#34443b]">Employee type <span className="text-[#c16b3a">*</span></label>
           <div className="relative">
-            <select id="employee-type" value={employeeType} onChange={(event) => setEmployeeType(event.target.value)} className={`${fieldStyles} appearance-none pr-9 font-semibold`}>
+            <select id="employee-type" value={employeeType} onChange={(event) => { setEmployeeType(event.target.value); setCreatedEmployeeId(""); }} className={`${fieldStyles} appearance-none pr-9 font-semibold`}>
               {employeeTypes.map((type) => <option key={type} value={type}>{type}</option>)}
             </select>
             <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#75847a]" />
@@ -273,15 +311,19 @@ const AddEmployee = () => {
         <span className="hidden items-center gap-1.5 rounded-full border border-[#d8e4d7] bg-white px-3 py-1.5 text-[11px] font-semibold text-[#55715a] sm:inline-flex"><Check className="h-3.5 w-3.5" /> Draft form</span>
       </div>
 
+      {submitError && <p role="alert" className="mb-4 rounded-lg border border-[#edc7c1] bg-[#fff4f1] px-4 py-3 text-sm text-[#a13e30]">{submitError}</p>}
+      {createdEmployeeId && <p role="status" className="mb-4 rounded-lg border border-[#cfe2d1] bg-[#f2f8f2] px-4 py-3 text-sm font-semibold text-[#315a3c]">Employee created successfully. Employee ID: {createdEmployeeId}</p>}
+
       <div className="space-y-4">
-        <EmployeeFields employeeType={employeeType} />
+        <EmployeeFields employeeType={employeeType} employeeId={createdEmployeeId} />
       </div>
 
       <div className="mt-6 flex flex-col-reverse gap-3 border-t border-[#dfe5df] pt-5 sm:flex-row sm:justify-end">
         <Link to="/admin" className="inline-flex h-11 items-center justify-center rounded-lg border border-[#d5ddd5] bg-white px-5 text-sm font-semibold text-[#56645a] transition hover:bg-[#f7f8f6]">Cancel</Link>
-        <button type="button" className="inline-flex h-11 items-center justify-center gap-2 rounded-lg bg-[#244b36] px-5 text-sm font-semibold text-white transition hover:bg-[#1b3d2b]"><Upload className="h-4 w-4" /> Save employee</button>
+        <button type="submit" disabled={isSubmitting} className="inline-flex h-11 items-center justify-center gap-2 rounded-lg bg-[#244b36] px-5 text-sm font-semibold text-white transition hover:bg-[#1b3d2b] disabled:cursor-wait disabled:opacity-60"><Upload className="h-4 w-4" /> {isSubmitting ? "Adding employee..." : "Save employee"}</button>
       </div>
     </main>
+    </form>
   );
 };
 
