@@ -97,19 +97,6 @@ const requireAdmin = async (req, res, next) => {
   }
 };
 
-const requireAdmin = (req, res, next) => {
-  if (!req.auth) {
-    return res.status(401).json({ success: false, message: 'Administrator login is required' });
-  }
-
-  const role = String(req.auth.role || '').trim().toLowerCase();
-  if (!['admin', 'super admin', 'superadmin'].includes(role)) {
-    return res.status(403).json({ success: false, message: 'Only an administrator can manage employees' });
-  }
-
-  return next();
-};
-
 router.get('/health', (req, res) => {
   res.json({ success: true, message: 'API is healthy' });
 });

@@ -30,6 +30,7 @@ const employeeColumns = [
 async function initializeEmployeeSchema() {
   await db.query(`
     CREATE TABLE IF NOT EXISTS employees (
+      id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT UNIQUE,
       employee_id VARCHAR(255) NOT NULL PRIMARY KEY,
       user_id VARCHAR(255) NOT NULL UNIQUE,
       employee_type VARCHAR(50) NOT NULL,
@@ -111,6 +112,13 @@ async function initializeEmployeeSchema() {
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
   `);
 
+  const [idColumns] = await db.query("SHOW COLUMNS FROM employees LIKE 'id'");
+  if (idColumns.length === 0) {
+    await db.query(
+      'ALTER TABLE employees ADD COLUMN id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT UNIQUE FIRST'
+    );
+  }
+
   const [specializationColumns] = await db.query("SHOW COLUMNS FROM employees LIKE 'specialization'");
   if (specializationColumns.length > 0) {
     await db.query('ALTER TABLE employees DROP COLUMN specialization');
@@ -167,7 +175,7 @@ async function createEmployeeWithUser({ employeeData, createdBy, password }) {
 
 async function findEmployees() {
   const [rows] = await db.execute(
-    `SELECT employee_id, employee_type, full_name, phone_number, email, status, created_at
+    `SELECT id, employee_id, employee_type, full_name, phone_number, email, status, created_at
      FROM employees ORDER BY created_at DESC`
   );
   return rows;
