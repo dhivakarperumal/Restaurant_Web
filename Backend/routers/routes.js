@@ -20,6 +20,7 @@ const bannersRouter = require('./banners');
 const couponsRouter = require('./coupons');
 const reviewsRouter = require('./reviews');
 const videosRouter = require('./videos');
+const settingsRouter = require('./settings');
 
 const router = express.Router();
 const uploadDirectory = path.join(__dirname, '..', 'upload');
@@ -31,7 +32,7 @@ const legacyEmployeeUploadDirectories = [
 
 fs.mkdirSync(uploadDirectory, { recursive: true });
 
-const uploadFolders = new Set(['categories', 'cuisines', 'foods', 'banners', 'review']);
+const uploadFolders = new Set(['categories', 'cuisines', 'foods', 'banners', 'review', 'settings']);
 fs.mkdirSync(employeeUploadDirectory, { recursive: true });
 
 const createUploadFilename = (req, file, callback) => {
@@ -143,6 +144,7 @@ router.use('/banners', bannersRouter);
 router.use('/coupons', couponsRouter);
 router.use('/reviews', reviewsRouter);
 router.use('/videos', videosRouter);
+router.use('/settings', requireAdmin, settingsRouter);
 router.get('/employees', optionalAuth, requireEmployeeAdmin, listEmployees);
 router.get('/employees/documents/:filename', optionalAuth, requireEmployeeAdmin, (req, res) => {
   const filename = req.params.filename;

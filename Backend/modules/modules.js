@@ -8,6 +8,7 @@ const { initializeCouponSchema } = require('./coupons');
 const { initializeReviewSchema } = require('./reviews');
 const { initializeVideoSchema } = require('./videos');
 const { initializeEmployeeSchema } = require('./employees');
+const { initializeSettingsSchema } = require('./settings');
 const {
   initializeServerTableSchema,
   createServerTable,
@@ -28,6 +29,7 @@ module.exports = {
   initializeCouponSchema,
   initializeReviewSchema,
   initializeVideoSchema,
+  initializeSettingsSchema,
   initializeEmployeeSchema,
   initializeServerTableSchema,
   createServerTable,
