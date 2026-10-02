@@ -7,13 +7,14 @@ const { findUserByToken } = require('../modules/auth');
 const categoriesRouter = require('./categories');
 const cuisinesRouter = require('./cuisines');
 const foodsRouter = require('./foods');
+const bannersRouter = require('./banners');
 
 const router = express.Router();
 const uploadDirectory = path.join(__dirname, '..', 'upload');
 
 fs.mkdirSync(uploadDirectory, { recursive: true });
 
-const uploadFolders = new Set(['categories', 'cuisines', 'foods']);
+const uploadFolders = new Set(['categories', 'cuisines', 'foods', 'banners']);
 
 const storage = multer.diskStorage({
   destination: (req, _file, callback) => {
@@ -79,6 +80,7 @@ router.delete('/users/:userId', requireAdmin, removeUser);
 router.use('/categories', categoriesRouter);
 router.use('/cuisines', cuisinesRouter);
 router.use('/foods', foodsRouter);
+router.use('/banners', bannersRouter);
 
 router.post('/upload', upload.single('file'), (req, res) => {
   if (!req.file) {

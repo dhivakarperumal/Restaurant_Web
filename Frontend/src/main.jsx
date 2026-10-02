@@ -13,12 +13,14 @@ import PrivateRoute from './PrivateRouter/PrivateRouter.jsx'
 
 import AdminDashboard from './Admin/AdminDashboard.jsx'
 import AdminCustomers from './Admin/AdminCustomers.jsx'
+import BannerManagement from './Admin/Marketting/BannerManagement.jsx'
 import AdminLayout from './Admin/Adminpanel.jsx'
 import AdminCategories from './Admin/AdminProducts/Categories.jsx'
 import AddCategory from './Admin/AdminProducts/AddCategory.jsx'
 import Cuisines from './Admin/AdminProducts/Cuisines.jsx'
 import AdminProducts from './Admin/AdminProducts/AdminProducts.jsx'
 import AddFood from './Admin/AdminProducts/AddFood.jsx'
+import AdminReviews from './Admin/AdminReviews/AdminReviews.jsx'
 
 
 
@@ -75,6 +77,10 @@ const router = createHashRouter([
             element: <AdminCustomers />,
           },
           {
+            path: 'banners',
+            element: <BannerManagement />,
+          },
+          {
             path: 'products',
             element: <AdminProducts />,
           },
@@ -101,6 +107,10 @@ const router = createHashRouter([
           {
             path: 'products/cuisines',
             element: <Cuisines />,
+          },
+          {
+            path: 'reviews',
+            element: <AdminReviews />,
           },
         ],
       },

@@ -45,7 +45,8 @@ const BannerManagement = () => {
         setLoading(true);
         try {
             const response = await api.get("/banners");
-            setBanners(Array.isArray(response.data) ? response.data : []);
+            const rows = response.data?.data;
+            setBanners(Array.isArray(rows) ? rows : Array.isArray(response.data) ? response.data : []);
         } catch (error) {
             console.error("Error fetching banners:", error);
             toast.error("Failed to load banners");
@@ -62,7 +63,7 @@ const BannerManagement = () => {
         if (!window.confirm("Are you sure you want to delete this banner?")) return;
         try {
             await api.delete(`/banners/${id}`);
-            setBanners(banners.filter(b => b.id !== id));
+            setBanners(banners.filter(b => String(b.id) !== String(id)));
             toast.success("Banner deleted successfully");
         } catch (error) {
             console.error("Error deleting banner:", error);

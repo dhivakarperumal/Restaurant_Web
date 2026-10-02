@@ -3,6 +3,7 @@ const { initializeAuthSchema } = require('./auth');
 const { initializeCategorySchema } = require('./categories');
 const { initializeCuisineSchema } = require('./cuisines');
 const { initializeFoodSchema } = require('./foods');
+const { initializeBannerSchema } = require('./banners');
 
 module.exports = {
   db,
@@ -10,5 +11,6 @@ module.exports = {
   initializeCategorySchema,
   initializeCuisineSchema,
   initializeFoodSchema,
+  initializeBannerSchema,
   testConnection: db.testConnection,
 };
