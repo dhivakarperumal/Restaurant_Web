@@ -405,7 +405,7 @@ const AddFood = ({ drawer = false, onClose, onSaved }) => {
         if (drawer && event.target === event.currentTarget && !saving && !uploading) closeForm();
       }}
     >
-    <form onSubmit={handleSave} className={drawer ? 'scrollbar-hide h-full w-full max-w-5xl overflow-y-auto bg-[#f4f5f2] p-4 shadow-2xl md:p-6' : 'min-h-screen bg-[#f4f5f2] p-4 md:p-6'}>
+    <form onSubmit={handleSave} className={drawer ? 'scrollbar-hide h-full w-full max-w-4xl overflow-y-auto bg-[#f4f5f2] p-4 shadow-2xl md:p-6' : 'min-h-screen bg-[#f4f5f2] p-4 md:p-6'}>
       <div className="mx-auto max-w-5xl pb-24">
         <header className="mb-5 flex flex-wrap items-end justify-between gap-4 border-b border-gray-200 pb-4">
           <div>
@@ -482,7 +482,7 @@ const AddFood = ({ drawer = false, onClose, onSaved }) => {
             </label>
           </Section>
 
-          <Section number="04" title="Availability" description="Control service channels and menu visibility.">
+          <Section number="04" title="Availability" description="Control service channels and menu visibility." columns={3}>
             <Toggle label="Available" checked={form.isAvailable} onChange={(value) => setValue('isAvailable', value)} />
             <Toggle label="Dining available" checked={form.diningAvailable} onChange={(value) => setValue('diningAvailable', value)} />
             <Toggle label="Takeaway available" checked={form.takeawayAvailable} onChange={(value) => setValue('takeawayAvailable', value)} />
@@ -529,13 +529,9 @@ const AddFood = ({ drawer = false, onClose, onSaved }) => {
             ))}
           </Section>
 
-          <Section number="07" title="Audit" description="Audit timestamps are generated automatically when saved.">
-            <label className="block text-sm font-medium text-gray-700">Created by<input readOnly value={form.createdBy || profileName || 'Admin'} className="mt-1.5 h-10 w-full rounded-md border border-gray-300 bg-gray-50 px-3 text-gray-600" /></label>
-            <label className="block text-sm font-medium text-gray-700">Updated by<input readOnly value={profileName || 'Admin'} className="mt-1.5 h-10 w-full rounded-md border border-gray-300 bg-gray-50 px-3 text-gray-600" /></label>
-          </Section>
         </div>
       </div>
-      <div className={`${drawer ? 'sticky bottom-0 -mx-4 md:-mx-6' : 'fixed inset-x-0'} z-20 border-t border-gray-200 bg-white/95 px-4 py-3 backdrop-blur sm:px-6`}>
+      <div className={`${drawer ? 'sticky bottom-[-25px] -mx-4  md:-mx-6' : 'fixed inset-x-0'} z-20 border-t border-gray-200 bg-white/95 px-4 py-3 backdrop-blur sm:px-6`}>
         <div className={`mx-auto flex flex-wrap justify-end gap-2 ${drawer ? '' : 'max-w-5xl'}`}>
           <button type="button" onClick={closeForm} className="inline-flex h-10 items-center gap-2 rounded-md border border-gray-300 px-4 text-sm font-medium text-gray-700 hover:bg-gray-50"><ArrowLeft className="h-4 w-4" /> Cancel</button>
           <button type="button" onClick={handleReset} disabled={saving || uploading} className="h-10 rounded-md border border-gray-300 px-4 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50">Reset</button>
