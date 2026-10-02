@@ -100,7 +100,6 @@ const buildEmployeeData = (body, employeeType) => ({
   email: getValue(body.email).toLowerCase(),
   status: ['Active', 'Inactive'].includes(getValue(body.status)) ? getValue(body.status) : 'Active',
   cuisine_type: nullableValue(body.cuisine_type),
-  specialization: parseStringList(body.specialization),
   experience_years: nullableNumber(body.experience_years),
   description: nullableValue(body.description || body.description_about_chef),
   special_dishes: parseStringList(body.special_dishes),

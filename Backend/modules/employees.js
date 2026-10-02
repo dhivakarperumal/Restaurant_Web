@@ -13,7 +13,7 @@ const employeeTypeConfig = new Map([
 
 const employeeColumns = [
   'employee_type', 'full_name', 'profile_photo', 'gender', 'date_of_birth', 'phone_number',
-  'whatsapp_number', 'email', 'status', 'cuisine_type', 'specialization', 'experience_years',
+  'whatsapp_number', 'email', 'status', 'cuisine_type', 'experience_years',
   'description', 'special_dishes', 'food_preference', 'address', 'area_locality', 'city',
   'district', 'state', 'pincode', 'latitude', 'longitude', 'vehicle_type', 'vehicle_number',
   'vehicle_model', 'vehicle_color', 'driving_license_number', 'driving_license_expiry_date',
@@ -42,7 +42,6 @@ async function initializeEmployeeSchema() {
       email VARCHAR(255) NOT NULL UNIQUE,
       status VARCHAR(20) NOT NULL DEFAULT 'Active',
       cuisine_type VARCHAR(100) NULL,
-      specialization TEXT NULL,
       experience_years DECIMAL(6,2) NULL,
       description TEXT NULL,
       special_dishes TEXT NULL,
@@ -113,8 +112,8 @@ async function initializeEmployeeSchema() {
   `);
 
   const [specializationColumns] = await db.query("SHOW COLUMNS FROM employees LIKE 'specialization'");
-  if (specializationColumns[0]?.Type.toLowerCase().startsWith('varchar(')) {
-    await db.query('ALTER TABLE employees MODIFY COLUMN specialization TEXT NULL');
+  if (specializationColumns.length > 0) {
+    await db.query('ALTER TABLE employees DROP COLUMN specialization');
   }
 }
 

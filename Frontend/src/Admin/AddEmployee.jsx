@@ -234,7 +234,6 @@ const EmployeeFields = ({ employeeType, employeeId, isEditing, initialData }) =>
       {isChef && (
         <Section icon={Utensils} title="Restaurant details" description="Cuisine, experience and food specialties">
           <Field label="Cuisine Type" required options={["South Indian", "North Indian", "Chinese", "Bakery", "Italian", "Continental", "Other"]} />
-          <StringListField name="specialization" label="Specialization" initialValue={initialData?.specialization} placeholder="e.g. Tandoor, pastry, or food plating" />
           <Field label="Experience (Years)" type="number" />
           <Field label="Food Preference" options={["Veg", "Non-Veg", "Both"]} />
           <StringListField name="special_dishes" label="Special Dishes" initialValue={initialData?.special_dishes} placeholder="e.g. signature biryani" />
@@ -426,7 +425,7 @@ const AddEmployee = () => {
 
     Array.from(formRef.current.elements).forEach((field) => {
       if (!field.name || field.type === "file" || field.type === "password") return;
-      if (["special_dishes", "specialization"].includes(field.name)) return;
+      if (field.name === "special_dishes") return;
       if (field.type === "checkbox") {
         field.checked = days.includes(field.value);
         return;
