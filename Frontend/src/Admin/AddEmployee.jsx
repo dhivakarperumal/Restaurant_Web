@@ -10,6 +10,7 @@ import {
   CreditCard,
   FileCheck2,
   LocateFixed,
+  LoaderCircle,
   MapPin,
   ShieldCheck,
   Upload,
@@ -341,8 +342,8 @@ const AddEmployee = () => {
         await api.put(`/employees/${encodeURIComponent(routeEmployeeId)}`, formData);
         navigate("/admin/employees");
       } else {
-        const response = await api.post("/employees", formData);
-        setCreatedEmployeeId(response.data?.employee?.employee_id || "");
+        await api.post("/employees", formData);
+        navigate("/admin/employees");
       }
     } catch (requestError) {
       setSubmitError(requestError.response?.data?.message || `Employee could not be ${isEditing ? "updated" : "created"}. Please try again.`);
@@ -395,7 +396,7 @@ const AddEmployee = () => {
 
       <div className="mt-6 flex flex-col-reverse gap-3 border-t border-[#dfe5df] pt-5 sm:flex-row sm:justify-end">
         <Link to="/admin/employees" className="inline-flex h-11 items-center justify-center rounded-lg border border-[#d5ddd5] bg-white px-5 text-sm font-semibold text-[#56645a] transition hover:bg-[#f7f8f6]">Cancel</Link>
-        <button type="submit" disabled={isSubmitting || isLoadingEmployee || Boolean(loadError)} className="inline-flex h-11 items-center justify-center gap-2 rounded-lg bg-[#244b36] px-5 text-sm font-semibold text-white transition hover:bg-[#1b3d2b] disabled:cursor-wait disabled:opacity-60"><Upload className="h-4 w-4" /> {isSubmitting ? (isEditing ? "Saving changes..." : "Adding employee...") : (isEditing ? "Save changes" : "Save employee")}</button>
+        <button type="submit" disabled={isSubmitting || isLoadingEmployee || Boolean(loadError)} aria-busy={isSubmitting} className="inline-flex h-11 items-center justify-center gap-2 rounded-lg bg-[#244b36] px-5 text-sm font-semibold text-white transition hover:bg-[#1b3d2b] disabled:cursor-wait disabled:opacity-60">{isSubmitting ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />} {isSubmitting ? (isEditing ? "Saving changes..." : "Adding employee...") : (isEditing ? "Save changes" : "Save employee")}</button>
       </div>
     </main>
     </form>
