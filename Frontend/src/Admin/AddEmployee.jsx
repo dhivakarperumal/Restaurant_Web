@@ -174,11 +174,9 @@ const EmployeeFields = ({ employeeType }) => {
 
       <Section icon={Banknote} title="Salary details" description="Compensation and payroll information">
         <Field label="Basic Salary" type="number" placeholder="Enter basic salary" required />
-        <Field label="Salary Frequency" options={["Monthly", "Weekly", "Daily"]} />
         <Field label="Allowances" type="number" placeholder="Enter allowances" />
         <Field label="Deductions" type="number" placeholder="Enter deductions" />
         <Field label="Net Salary" type="number" placeholder="Enter net salary" />
-        <Field label="Effective From" type="date" />
         <Field label="Payroll Notes" type="textarea" wide />
       </Section>
 
