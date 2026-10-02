@@ -23,6 +23,10 @@ import Cuisines from './Admin/AdminProducts/Cuisines.jsx'
 import AdminProducts from './Admin/AdminProducts/AdminProducts.jsx'
 import AddFood from './Admin/AdminProducts/AddFood.jsx'
 import AdminReviews from './Admin/AdminReviews/AdminReviews.jsx'
+import PointOfSale from './Admin/Billings/PointOfSale.jsx'
+import Billing from './Admin/Billings/Billing.jsx'
+import NewBilling from './Admin/Billings/NewBilling.jsx'
+import OrderDetails from './Admin/Billings/OrderDetails.jsx'
 
 
 
@@ -121,6 +125,22 @@ const router = createHashRouter([
           {
             path: 'reviews',
             element: <AdminReviews />,
+          },
+          {
+            path: 'billing',
+            element: <PointOfSale />,
+          },
+          {
+            path: 'billing/new',
+            element: <NewBilling />,
+          },
+          {
+            path: 'billing/history',
+            element: <Billing />,
+          },
+          {
+            path: 'billing/:orderId',
+            element: <OrderDetails />,
           },
         ],
       },
