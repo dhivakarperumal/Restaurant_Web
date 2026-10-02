@@ -3,8 +3,10 @@ const {
   createUser,
   deleteUser: deleteUserRecord,
   findUserByIdentifier,
+  findUserProfile: findUserProfileRecord,
   listUsers: listUsersRecord,
   updateUser: updateUserRecord,
+  updateUserProfile: updateUserProfileRecord,
   verifyPassword,
 } = require('../modules/auth');
 
@@ -121,6 +123,38 @@ async function updateUser(req, res) {
   }
 }
 
+const isOwnProfile = (req) => [req.auth?.id, req.auth?.user_id]
+  .some((identifier) => identifier !== undefined && String(identifier) === String(req.params.profileId));
+
+async function getProfile(req, res) {
+  if (!isOwnProfile(req)) return res.status(403).json({ success: false, message: 'You can only view your own profile.' });
+  try {
+    const profile = await findUserProfileRecord(req.params.profileId);
+    if (!profile) return res.status(404).json({ success: false, message: 'Profile not found.' });
+    return res.json({ success: true, data: profile });
+  } catch (error) {
+    console.error('Failed to load profile:', error.message);
+    return res.status(500).json({ success: false, message: 'Unable to load profile.' });
+  }
+}
+
+async function updateProfile(req, res) {
+  if (!isOwnProfile(req)) return res.status(403).json({ success: false, message: 'You can only update your own profile.' });
+  const username = String(req.body.username || '').trim();
+  const mobileNumber = String(req.body.mobile_number || '').trim();
+  if (!username || username.length > 100 || mobileNumber.length > 32) {
+    return res.status(400).json({ success: false, message: 'Enter a name and a phone number of at most 32 characters.' });
+  }
+  try {
+    const profile = await updateUserProfileRecord(req.params.profileId, { username, mobile_number: mobileNumber });
+    if (!profile) return res.status(404).json({ success: false, message: 'Profile not found.' });
+    return res.json({ success: true, data: profile });
+  } catch (error) {
+    console.error('Failed to update profile:', error.message);
+    return res.status(500).json({ success: false, message: 'Unable to update profile.' });
+  }
+}
+
 async function removeUser(req, res) {
   if (!/^\d+$/.test(req.params.userId)) {
     return res.status(400).json({ success: false, message: 'A valid user ID is required.' });
@@ -183,4 +217,4 @@ async function googleLogin(req, res) {
   }
 }
 
-module.exports = { googleLogin, listUsers, login, register, removeUser, updateUser };
+module.exports = { getProfile, googleLogin, listUsers, login, register, removeUser, updateProfile, updateUser };

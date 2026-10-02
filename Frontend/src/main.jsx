@@ -12,6 +12,7 @@ import PrivateRoute from './PrivateRouter/PrivateRouter.jsx'
 
 
 import AdminDashboard from './Admin/AdminDashboard.jsx'
+import AdminProfile from './Admin/AdminProfile.jsx'
 import AddEmployee from './Admin/AddEmployee.jsx'
 import AllEmployees from './Admin/AllEmployees.jsx'
 import AdminCustomers from './Admin/AdminCustomers.jsx'
@@ -99,6 +100,14 @@ const router = createHashRouter([
           {
             path: 'customers',
             element: <AdminCustomers />,
+          },
+          {
+            path: 'settings',
+            element: <AdminProfile />,
+          },
+          {
+            path: 'settings/profile',
+            element: <AdminProfile />,
           },
           {
             path: 'banners',

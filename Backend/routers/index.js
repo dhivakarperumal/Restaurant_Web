@@ -3,7 +3,7 @@ const { randomUUID } = require('crypto');
 const fs = require('fs');
 const multer = require('multer');
 const path = require('path');
-const { googleLogin, listUsers, login, register, removeUser, updateUser } = require('../controllers/authController');
+const { getProfile, googleLogin, listUsers, login, register, removeUser, updateProfile, updateUser } = require('../controllers/authController');
 const {
   createEmployee,
   deleteEmployee,
@@ -96,7 +96,21 @@ const requireAdmin = async (req, res, next) => {
   }
 };
 
-const requireAdmin = (req, res, next) => {
+const requireAuthenticatedUser = async (req, res, next) => {
+  const token = req.get('authorization')?.replace(/^Bearer\s+/i, '');
+  if (!token) return res.status(401).json({ success: false, message: 'Login is required.' });
+  try {
+    const user = await findUserByToken(token);
+    if (!user) return res.status(401).json({ success: false, message: 'Your session is invalid or expired.' });
+    req.auth = user;
+    return next();
+  } catch (error) {
+    console.error('Failed to authorize profile request:', error.message);
+    return res.status(500).json({ success: false, message: 'Unable to verify your session.' });
+  }
+};
+
+const requireEmployeeAdmin = (req, res, next) => {
   if (!req.auth) {
     return res.status(401).json({ success: false, message: 'Administrator login is required' });
   }
@@ -116,6 +130,8 @@ router.get('/health', (req, res) => {
 router.post('/users/register', optionalAuth, register);
 router.post('/users/login', login);
 router.post('/users/google-login', googleLogin);
+router.get('/users/profile/:profileId', requireAuthenticatedUser, getProfile);
+router.put('/users/profile/:profileId', requireAuthenticatedUser, updateProfile);
 router.get('/users', requireAdmin, listUsers);
 router.put('/users/:userId', requireAdmin, updateUser);
 router.delete('/users/:userId', requireAdmin, removeUser);
@@ -126,8 +142,8 @@ router.use('/banners', bannersRouter);
 router.use('/coupons', couponsRouter);
 router.use('/reviews', reviewsRouter);
 router.use('/videos', videosRouter);
-router.get('/employees', optionalAuth, requireAdmin, listEmployees);
-router.get('/employees/documents/:filename', optionalAuth, requireAdmin, (req, res) => {
+router.get('/employees', optionalAuth, requireEmployeeAdmin, listEmployees);
+router.get('/employees/documents/:filename', optionalAuth, requireEmployeeAdmin, (req, res) => {
   const filename = req.params.filename;
   if (path.basename(filename) !== filename || filename === '.' || filename === '..') {
     return res.status(400).json({ success: false, message: 'Invalid document name' });
@@ -148,10 +164,10 @@ router.get('/employees/documents/:filename', optionalAuth, requireAdmin, (req, r
   );
   return downloadFromDirectory(employeeUploadDirectory);
 });
-router.get('/employees/:employeeId', optionalAuth, requireAdmin, getEmployee);
-router.put('/employees/:employeeId', optionalAuth, requireAdmin, employeeUpload.any(), updateEmployee);
-router.delete('/employees/:employeeId', optionalAuth, requireAdmin, deleteEmployee);
-router.post('/employees', optionalAuth, requireAdmin, employeeUpload.any(), createEmployee);
+router.get('/employees/:employeeId', optionalAuth, requireEmployeeAdmin, getEmployee);
+router.put('/employees/:employeeId', optionalAuth, requireEmployeeAdmin, employeeUpload.any(), updateEmployee);
+router.delete('/employees/:employeeId', optionalAuth, requireEmployeeAdmin, deleteEmployee);
+router.post('/employees', optionalAuth, requireEmployeeAdmin, employeeUpload.any(), createEmployee);
 
 router.post('/upload', upload.single('file'), (req, res) => {
   if (!req.file) {

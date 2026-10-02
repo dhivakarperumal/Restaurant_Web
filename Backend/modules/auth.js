@@ -217,6 +217,27 @@ async function findUserById(userId) {
   return rows[0] || null;
 }
 
+async function findUserProfile(identifier) {
+  const value = String(identifier);
+  const [rows] = await db.execute(
+    `SELECT id, user_id, username, email, mobile_number, role, status, created_at
+     FROM users WHERE CAST(id AS CHAR) = ? OR user_id = ? LIMIT 1`,
+    [value, value]
+  );
+  return rows[0] || null;
+}
+
+async function updateUserProfile(identifier, { username, mobile_number }) {
+  const value = String(identifier);
+  const [result] = await db.execute(
+    `UPDATE users SET username = ?, mobile_number = ?
+     WHERE CAST(id AS CHAR) = ? OR user_id = ?`,
+    [username, mobile_number || null, value, value]
+  );
+  if (!result.affectedRows) return null;
+  return findUserProfile(value);
+}
+
 async function findUserByIdentifier(identifier) {
   const [rows] = await db.execute(
     `SELECT id, user_id, username, email, mobile_number, password_hash, role, status
@@ -279,10 +300,12 @@ module.exports = {
   createUser,
   deleteUser,
   findUserByIdentifier,
+  findUserProfile,
   findUserByToken,
   hashPassword,
   initializeAuthSchema,
   listUsers,
   updateUser,
+  updateUserProfile,
   verifyPassword,
 };
