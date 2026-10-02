@@ -48,6 +48,7 @@ import {
   Lock,
   Settings,
   MessageSquare,
+  UtensilsCrossed,
 } from "lucide-react";
 
 import { useAuth } from "../PrivateRouter/AuthContext";
@@ -56,10 +57,15 @@ const Logo = "/favicon.svg";
 /* ================= NAV ITEMS ================= */
 const navItems = [
   {
-    path: "/admin",
+    path: "/server",
     label: "Dashboard",
     icon: LayoutDashboard,
     exact: true,
+  },
+  {
+    path: "/server/tables",
+    label: "Server Tables",
+    icon: UtensilsCrossed,
   },
 
 

@@ -12,6 +12,7 @@ const {
   updateEmployee,
 } = require('../controllers/employeeController');
 const { findUserByToken } = require('../modules/auth');
+const serverTableRouter = require('./serverTableRouter');
 
 const router = express.Router();
 const uploadDirectory = path.join(__dirname, '..', 'upload');
@@ -110,6 +111,9 @@ router.get('/employees/:employeeId', optionalAuth, requireAdmin, getEmployee);
 router.put('/employees/:employeeId', optionalAuth, requireAdmin, employeeUpload.any(), updateEmployee);
 router.delete('/employees/:employeeId', optionalAuth, requireAdmin, deleteEmployee);
 router.post('/employees', optionalAuth, requireAdmin, employeeUpload.any(), createEmployee);
+
+router.use('/server-tables', optionalAuth, serverTableRouter);
+router.use('/tables', optionalAuth, serverTableRouter);
 
 router.post('/upload', upload.single('file'), (req, res) => {
   if (!req.file) {
