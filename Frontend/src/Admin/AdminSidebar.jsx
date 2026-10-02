@@ -100,6 +100,12 @@ const navItems = [
     icon: Users,
   },
 
+  {
+    path: "/admin/employees/add",
+    label: "Add Employee",
+    icon: UserRoundPlus,
+  },
+
  
 
   {

@@ -3,7 +3,7 @@ import { useNavigate, Link, useLocation } from "react-router-dom";
 import {
   Menu, Search, Bell, Settings, User, LogOut, ChevronDown,
   ShoppingBag, Package, Clock, X, LayoutDashboard, MessageSquare,
-  Users, CreditCard, UserCheck, ClipboardList, Activity, UserRound,
+  Users, CreditCard, UserCheck, ClipboardList, Activity, UserRound, UserRoundPlus,
   CalendarCheck, Receipt, ShoppingCart, BarChart3, Dumbbell, Send,
   Boxes, Plus, PhoneCall, HeartPulse, FolderKanban, CheckSquare,
   DollarSign, CalendarOff, BookOpen, GraduationCap, CalendarDays,
@@ -32,6 +32,7 @@ const pageInfo = {
   "/admin/gifts":                   { title: "Gifts",                  icon: Package },
   "/admin/products/add":             { title: "Add Product",             icon: Plus },
   "/admin/customers":               { title: "Customers",              icon: Users },
+  "/admin/employees/add":           { title: "Add Employee",           icon: UserRoundPlus },
   "/admin/reviews":                 { title: "Reviews",                icon: HeartPulse },
   "/admin/banners":                 { title: "Banners",                icon: Boxes },
   "/admin/videos":                  { title: "Videos Management",       icon: Boxes },
