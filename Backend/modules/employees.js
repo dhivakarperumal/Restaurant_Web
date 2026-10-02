@@ -252,6 +252,11 @@ async function deleteEmployeeWithUser(employeeId) {
       return null;
     }
 
+    try {
+      await connection.execute('UPDATE server_table SET assigned_server_id = NULL, assigned_at = NULL WHERE assigned_server_id = ?', [employeeId]);
+    } catch (ignoreTableError) {
+      // If server_table doesn't exist yet, ignore
+    }
     await connection.execute('DELETE FROM employees WHERE employee_id = ?', [employeeId]);
     await connection.execute('DELETE FROM users WHERE user_id = ?', [rows[0].user_id]);
     await connection.commit();
