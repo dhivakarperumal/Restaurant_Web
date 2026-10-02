@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { Search, UserRoundPlus, Users } from "lucide-react";
+import { Eye, Pencil, Search, Trash2, UserRoundPlus, Users, X } from "lucide-react";
 import api from "../api";
 
 const AllEmployees = () => {
@@ -8,6 +8,11 @@ const AllEmployees = () => {
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [selectedEmployee, setSelectedEmployee] = useState(null);
+  const [detailsLoading, setDetailsLoading] = useState(false);
+  const [detailsError, setDetailsError] = useState("");
+  const [deletingEmployeeId, setDeletingEmployeeId] = useState("");
+  const [actionError, setActionError] = useState("");
 
   useEffect(() => {
     let isMounted = true;
@@ -24,6 +29,53 @@ const AllEmployees = () => {
 
     return () => { isMounted = false; };
   }, []);
+
+  const viewEmployee = async (employeeId) => {
+    setSelectedEmployee(null);
+    setDetailsError("");
+    setDetailsLoading(true);
+    try {
+      const response = await api.get(`/employees/${encodeURIComponent(employeeId)}`);
+      setSelectedEmployee(response.data?.employee || null);
+    } catch (requestError) {
+      setDetailsError(requestError.response?.data?.message || "Employee details could not be loaded.");
+    } finally {
+      setDetailsLoading(false);
+    }
+  };
+
+  const deleteEmployee = async (employee) => {
+    if (!window.confirm(`Delete ${employee.full_name}'s employee record? This also removes their account.`)) return;
+    setActionError("");
+    setDeletingEmployeeId(employee.employee_id);
+    try {
+      await api.delete(`/employees/${encodeURIComponent(employee.employee_id)}`);
+      setEmployees((currentEmployees) => currentEmployees.filter(
+        (item) => item.employee_id !== employee.employee_id,
+      ));
+      if (selectedEmployee?.employee_id === employee.employee_id) setSelectedEmployee(null);
+    } catch (requestError) {
+      setActionError(requestError.response?.data?.message || "Employee could not be deleted.");
+    } finally {
+      setDeletingEmployeeId("");
+    }
+  };
+
+  const downloadDocument = async (filename) => {
+    try {
+      const response = await api.get(`/employees/documents/${encodeURIComponent(filename)}`, {
+        responseType: "blob",
+      });
+      const url = window.URL.createObjectURL(response.data);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = filename;
+      link.click();
+      window.setTimeout(() => window.URL.revokeObjectURL(url), 1000);
+    } catch (requestError) {
+      setDetailsError(requestError.response?.data?.message || "Document could not be downloaded.");
+    }
+  };
 
   const normalizedSearch = search.trim().toLowerCase();
   const visibleEmployees = employees.filter((employee) => [
@@ -57,7 +109,8 @@ const AllEmployees = () => {
       </div>
 
       <div className="overflow-x-auto">
-        <table className="w-full min-w-[640px] border-collapse text-left">
+        {actionError && <p role="alert" className="border-b border-[#edc7c1] bg-[#fff4f1] px-5 py-3 text-sm text-[#a13e30]">{actionError}</p>}
+        <table className="w-full min-w-[760px] border-collapse text-left">
           <thead className="bg-[#f7f9f6] text-[11px] font-bold uppercase tracking-wide text-[#718076]">
             <tr>
               <th className="px-5 py-3">Employee</th>
@@ -65,13 +118,14 @@ const AllEmployees = () => {
               <th className="px-5 py-3">Employee Type</th>
               <th className="px-5 py-3">Phone Number</th>
               <th className="px-5 py-3">Status</th>
+              <th className="px-5 py-3 text-right">Actions</th>
             </tr>
           </thead>
           <tbody>
             {loading ? (
-              <tr><td colSpan={5} className="px-5 py-12 text-center text-sm text-[#849087]">Loading employees...</td></tr>
+              <tr><td colSpan={6} className="px-5 py-12 text-center text-sm text-[#849087]">Loading employees...</td></tr>
             ) : error ? (
-              <tr><td colSpan={5} role="alert" className="px-5 py-12 text-center text-sm text-[#a13e30]">{error}</td></tr>
+              <tr><td colSpan={6} role="alert" className="px-5 py-12 text-center text-sm text-[#a13e30]">{error}</td></tr>
             ) : visibleEmployees.length > 0 ? visibleEmployees.map((employee) => (
               <tr key={employee.employee_id} className="border-t border-[#edf0ec] text-sm text-[#34443b]">
                 <td className="px-5 py-3.5"><div className="font-semibold text-[#23342b]">{employee.full_name}</div><div className="mt-0.5 text-xs text-[#849087]">{employee.email}</div></td>
@@ -79,10 +133,17 @@ const AllEmployees = () => {
                 <td className="px-5 py-3.5">{employee.employee_type}</td>
                 <td className="px-5 py-3.5">{employee.phone_number}</td>
                 <td className="px-5 py-3.5"><span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${employee.status === "Active" ? "bg-[#edf6ef] text-[#3d7450]" : "bg-[#f1f2f0] text-[#727a73]"}`}>{employee.status}</span></td>
+                <td className="px-5 py-3.5">
+                  <div className="flex justify-end gap-1">
+                    <button type="button" onClick={() => viewEmployee(employee.employee_id)} title="View employee" aria-label={`View ${employee.full_name}`} className="rounded-md p-2 text-[#42694f] transition hover:bg-[#edf3ed]"><Eye className="h-4 w-4" /></button>
+                    <Link to={`/admin/employees/${encodeURIComponent(employee.employee_id)}/edit`} title="Edit employee" aria-label={`Edit ${employee.full_name}`} className="rounded-md p-2 text-[#42694f] transition hover:bg-[#edf3ed]"><Pencil className="h-4 w-4" /></Link>
+                    <button type="button" onClick={() => deleteEmployee(employee)} disabled={deletingEmployeeId === employee.employee_id} title="Delete employee" aria-label={`Delete ${employee.full_name}`} className="rounded-md p-2 text-[#a13e30] transition hover:bg-[#fff0ed] disabled:opacity-50"><Trash2 className="h-4 w-4" /></button>
+                  </div>
+                </td>
               </tr>
             )) : (
               <tr>
-                <td colSpan={5} className="px-5 py-16 text-center">
+                <td colSpan={6} className="px-5 py-16 text-center">
                   <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-[#eef3ed] text-[#42694f]"><Users className="h-6 w-6" /></div>
                   <p className="mt-4 text-sm font-bold text-[#34443b]">{normalizedSearch ? "No matching employees" : "No employee records yet"}</p>
                   <p className="mt-1 text-xs text-[#849087]">{normalizedSearch ? "Try another name, ID, role, email, or phone number." : "Add an employee to start building your directory."}</p>
@@ -94,6 +155,48 @@ const AllEmployees = () => {
         </table>
       </div>
     </section>
+    {(detailsLoading || selectedEmployee || detailsError) && (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" role="presentation" onClick={(event) => {
+        if (event.target === event.currentTarget) {
+          setSelectedEmployee(null);
+          setDetailsError("");
+        }
+      }}>
+        <section role="dialog" aria-modal="true" aria-labelledby="employee-details-title" className="max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-xl bg-white shadow-xl">
+          <div className="sticky top-0 flex items-center justify-between border-b border-[#edf0ec] bg-white px-5 py-4">
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-[0.17em] text-[#9a7442]">Employee record</p>
+              <h2 id="employee-details-title" className="mt-1 text-lg font-bold text-[#203129]">{selectedEmployee?.full_name || (detailsLoading ? "Loading employee..." : "Employee details")}</h2>
+            </div>
+            <button type="button" onClick={() => { setSelectedEmployee(null); setDetailsError(""); }} aria-label="Close employee details" className="rounded-md p-2 text-[#758179] hover:bg-[#f2f5f1]"><X className="h-5 w-5" /></button>
+          </div>
+          {detailsLoading ? (
+            <p className="p-8 text-center text-sm text-[#849087]">Loading employee details...</p>
+          ) : detailsError ? (
+            <p role="alert" className="m-5 rounded-lg border border-[#edc7c1] bg-[#fff4f1] px-4 py-3 text-sm text-[#a13e30]">{detailsError}</p>
+          ) : selectedEmployee && (
+            <div className="grid gap-3 p-5 sm:grid-cols-2">
+              {Object.entries(selectedEmployee)
+                .filter(([key, value]) => value !== null && value !== "" && !["user_id", "created_by", "updated_by"].includes(key))
+                .map(([key, value]) => {
+                  const isDocument = /(_upload|_proof|_photo|_card|_certificate|_book|_documents)$/.test(key)
+                    && typeof value === "string";
+                  return (
+                    <div key={key} className="min-w-0 rounded-lg border border-[#edf0ec] p-3">
+                      <p className="text-[10px] font-bold uppercase tracking-wide text-[#849087]">{key.replaceAll("_", " ")}</p>
+                      {isDocument ? (
+                        <button type="button" onClick={() => downloadDocument(value)} className="mt-1 break-all text-left text-sm font-semibold text-[#42694f] underline decoration-[#b8caba] underline-offset-2 hover:text-[#244b36]">{value}</button>
+                      ) : (
+                        <p className="mt-1 break-words text-sm text-[#34443b]">{typeof value === "object" ? JSON.stringify(value) : String(value)}</p>
+                      )}
+                    </div>
+                  );
+                })}
+            </div>
+          )}
+        </section>
+      </div>
+    )}
   </main>
   );
 };

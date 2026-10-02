@@ -78,6 +78,10 @@ const router = createHashRouter([
             path: 'employees/add/:employeeType',
             element: <AddEmployee />,
           },
+          {
+            path: 'employees/:employeeId/edit',
+            element: <AddEmployee />,
+          },
         ],
       },
 

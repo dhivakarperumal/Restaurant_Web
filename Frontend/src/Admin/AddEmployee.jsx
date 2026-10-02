@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   ArrowLeft,
   Banknote,
@@ -17,7 +17,7 @@ import {
   UserRound,
   Utensils,
 } from "lucide-react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import api from "../api";
 
 const employeeTypes = ["Chef", "Delivery Partner", "Server", "Cashier", "Manager", "Cleaner"];
@@ -87,11 +87,11 @@ const LocationFields = ({ showCoordinates, delivery }) => (
   </Section>
 );
 
-const EmployeeFields = ({ employeeType, employeeId }) => {
+const EmployeeFields = ({ employeeType, employeeId, isEditing, initialData }) => {
   const isChef = employeeType === "Chef";
   const isDelivery = employeeType === "Delivery Partner";
   const isBasic = !isChef && !isDelivery;
-  const [deliverySalaryType, setDeliverySalaryType] = useState("Monthly Basis");
+  const [deliverySalaryType, setDeliverySalaryType] = useState(initialData?.salary_type || "Monthly Basis");
 
   return (
     <>
@@ -108,8 +108,8 @@ const EmployeeFields = ({ employeeType, employeeId }) => {
           <input readOnly value={employeeId} placeholder="Generated automatically on save" className={`${fieldStyles} bg-[#f2f5f1] text-[#66746a]`} />
         </label>
         <Field label="Status" options={["Active", "Inactive"]} />
-        <Field label="Password" type="password" name="password" required />
-        <Field label="Confirm Password" type="password" name="confirm_password" required />
+        <Field label="Password" type="password" name="password" required={!isEditing} />
+        <Field label="Confirm Password" type="password" name="confirm_password" required={!isEditing} />
       </Section>
 
       {isChef && (
@@ -186,6 +186,7 @@ const EmployeeFields = ({ employeeType, employeeId }) => {
             <div className="relative">
               <select
                 id="delivery-salary-type"
+                name="salary_type"
                 value={deliverySalaryType}
                 onChange={(event) => setDeliverySalaryType(event.target.value)}
                 className={`${fieldStyles} appearance-none pr-9`}
@@ -244,19 +245,82 @@ const EmployeeFields = ({ employeeType, employeeId }) => {
 };
 
 const AddEmployee = () => {
-  const { employeeType: routeEmployeeType } = useParams();
+  const { employeeType: routeEmployeeType, employeeId: routeEmployeeId } = useParams();
+  const navigate = useNavigate();
+  const formRef = useRef(null);
+  const isEditing = Boolean(routeEmployeeId);
   const initialEmployeeType = employeeTypes.find(
     (type) => type.toLowerCase().replaceAll(" ", "-") === routeEmployeeType,
   );
-  const [employeeType, setEmployeeType] = useState(initialEmployeeType || "Chef");
+  const [typeChoice, setTypeChoice] = useState({
+    routeEmployeeType,
+    value: initialEmployeeType || "Chef",
+  });
+  const [employeeData, setEmployeeData] = useState(null);
+  const [isLoadingEmployee, setIsLoadingEmployee] = useState(isEditing);
+  const [loadError, setLoadError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState("");
   const [createdEmployeeId, setCreatedEmployeeId] = useState("");
+  const employeeType = isEditing
+    ? employeeData?.employee_type || initialEmployeeType || "Chef"
+    : typeChoice.routeEmployeeType === routeEmployeeType
+      ? typeChoice.value
+      : initialEmployeeType || "Chef";
 
   useEffect(() => {
-    setEmployeeType(initialEmployeeType || "Chef");
-    setCreatedEmployeeId("");
-  }, [initialEmployeeType]);
+    if (!isEditing) return undefined;
+
+    let isMounted = true;
+    api.get(`/employees/${encodeURIComponent(routeEmployeeId)}`)
+      .then((response) => {
+        if (!isMounted) return;
+        const employee = response.data?.employee;
+        if (!employee) {
+          setLoadError("Employee details could not be loaded.");
+          return;
+        }
+        setEmployeeData(employee);
+        setCreatedEmployeeId(employee.employee_id);
+      })
+      .catch((requestError) => {
+        if (isMounted) setLoadError(requestError.response?.data?.message || "Employee details could not be loaded.");
+      })
+      .finally(() => {
+        if (isMounted) setIsLoadingEmployee(false);
+      });
+
+    return () => { isMounted = false; };
+  }, [initialEmployeeType, isEditing, routeEmployeeId]);
+
+  useEffect(() => {
+    if (!employeeData || !formRef.current) return;
+    const days = Array.isArray(employeeData.working_days)
+      ? employeeData.working_days
+      : (() => {
+        try {
+          return JSON.parse(employeeData.working_days || "[]");
+        } catch {
+          return [];
+        }
+      })();
+
+    Array.from(formRef.current.elements).forEach((field) => {
+      if (!field.name || field.type === "file" || field.type === "password") return;
+      if (field.type === "checkbox") {
+        field.checked = days.includes(field.value);
+        return;
+      }
+      const value = field.name === "description_about_chef"
+        ? employeeData.description
+        : employeeData[field.name];
+      if (value === null || value === undefined) return;
+      const stringValue = String(value);
+      field.value = field.type === "date"
+        ? stringValue.slice(0, 10)
+        : field.type === "time" ? stringValue.slice(0, 5) : stringValue;
+    });
+  }, [employeeData]);
 
   const handleSubmit = async (event) => {
     event.preventDefault();
@@ -264,37 +328,44 @@ const AddEmployee = () => {
 
     const formData = new FormData(event.currentTarget);
     formData.set("employee_type", employeeType);
-    if (formData.get("password") !== formData.get("confirm_password")) {
+    const password = formData.get("password");
+    const confirmPassword = formData.get("confirm_password");
+    if ((!isEditing || password || confirmPassword) && password !== confirmPassword) {
       setSubmitError("Password and confirm password do not match.");
       return;
     }
 
     try {
       setIsSubmitting(true);
-      const response = await api.post("/employees", formData);
-      setCreatedEmployeeId(response.data?.employee?.employee_id || "");
-    } catch (error) {
-      setSubmitError(error.response?.data?.message || "Employee could not be created. Please try again.");
+      if (isEditing) {
+        await api.put(`/employees/${encodeURIComponent(routeEmployeeId)}`, formData);
+        navigate("/admin/employees");
+      } else {
+        const response = await api.post("/employees", formData);
+        setCreatedEmployeeId(response.data?.employee?.employee_id || "");
+      }
+    } catch (requestError) {
+      setSubmitError(requestError.response?.data?.message || `Employee could not be ${isEditing ? "updated" : "created"}. Please try again.`);
     } finally {
       setIsSubmitting(false);
     }
   };
 
   return (
-    <form onSubmit={handleSubmit}>
+    <form ref={formRef} onSubmit={handleSubmit}>
     <main className="mx-auto w-full max-w-6xl px-1 pb-10 pt-2 sm:px-3 sm:pt-4">
       <input type="hidden" name="employee_type" value={employeeType} />
       <div className="mb-6 flex flex-col gap-4 border-b border-[#dfe5df] pb-5 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <Link to="/admin" className="mb-3 inline-flex items-center gap-1.5 text-xs font-semibold text-[#64736a] transition hover:text-[#355443]"><ArrowLeft className="h-3.5 w-3.5" /> Admin dashboard</Link>
           <p className="text-[10px] font-bold uppercase tracking-[0.17em] text-[#9a7442]">People & access</p>
-          <h1 className="mt-1 text-2xl font-bold text-[#203129]">Add employee</h1>
-          <p className="mt-1 text-sm text-[#758179]">Review employee information fields before setting up the workflow.</p>
+          <h1 className="mt-1 text-2xl font-bold text-[#203129]">{isEditing ? "Edit employee" : "Add employee"}</h1>
+          <p className="mt-1 text-sm text-[#758179]">{isEditing ? "Update this employee's details and account access." : "Review employee information fields before setting up the workflow."}</p>
         </div>
         <div className="w-full sm:w-64">
           <label htmlFor="employee-type" className="mb-2 block text-xs font-semibold text-[#34443b]">Employee type <span className="text-[#c16b3a">*</span></label>
           <div className="relative">
-            <select id="employee-type" value={employeeType} onChange={(event) => { setEmployeeType(event.target.value); setCreatedEmployeeId(""); }} className={`${fieldStyles} appearance-none pr-9 font-semibold`}>
+            <select id="employee-type" value={employeeType} disabled={isEditing} onChange={(event) => { setTypeChoice({ routeEmployeeType, value: event.target.value }); setCreatedEmployeeId(""); }} className={`${fieldStyles} appearance-none pr-9 font-semibold disabled:cursor-not-allowed disabled:opacity-70`}>
               {employeeTypes.map((type) => <option key={type} value={type}>{type}</option>)}
             </select>
             <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#75847a]" />
@@ -311,20 +382,29 @@ const AddEmployee = () => {
         <span className="hidden items-center gap-1.5 rounded-full border border-[#d8e4d7] bg-white px-3 py-1.5 text-[11px] font-semibold text-[#55715a] sm:inline-flex"><Check className="h-3.5 w-3.5" /> Draft form</span>
       </div>
 
-      {submitError && <p role="alert" className="mb-4 rounded-lg border border-[#edc7c1] bg-[#fff4f1] px-4 py-3 text-sm text-[#a13e30]">{submitError}</p>}
+      {(loadError || submitError) && <p role="alert" className="mb-4 rounded-lg border border-[#edc7c1] bg-[#fff4f1] px-4 py-3 text-sm text-[#a13e30]">{loadError || submitError}</p>}
       {createdEmployeeId && <p role="status" className="mb-4 rounded-lg border border-[#cfe2d1] bg-[#f2f8f2] px-4 py-3 text-sm font-semibold text-[#315a3c]">Employee created successfully. Employee ID: {createdEmployeeId}</p>}
 
-      <div className="space-y-4">
-        <EmployeeFields employeeType={employeeType} employeeId={createdEmployeeId} />
-      </div>
+      {isLoadingEmployee ? (
+        <p className="rounded-xl border border-[#e1e7e1] bg-white px-5 py-12 text-center text-sm text-[#849087]">Loading employee details...</p>
+      ) : !isEditing || employeeData ? (
+        <div className="space-y-4">
+          <EmployeeFields employeeType={employeeType} employeeId={createdEmployeeId} isEditing={isEditing} initialData={employeeData} />
+        </div>
+      ) : null}
 
       <div className="mt-6 flex flex-col-reverse gap-3 border-t border-[#dfe5df] pt-5 sm:flex-row sm:justify-end">
-        <Link to="/admin" className="inline-flex h-11 items-center justify-center rounded-lg border border-[#d5ddd5] bg-white px-5 text-sm font-semibold text-[#56645a] transition hover:bg-[#f7f8f6]">Cancel</Link>
-        <button type="submit" disabled={isSubmitting} className="inline-flex h-11 items-center justify-center gap-2 rounded-lg bg-[#244b36] px-5 text-sm font-semibold text-white transition hover:bg-[#1b3d2b] disabled:cursor-wait disabled:opacity-60"><Upload className="h-4 w-4" /> {isSubmitting ? "Adding employee..." : "Save employee"}</button>
+        <Link to="/admin/employees" className="inline-flex h-11 items-center justify-center rounded-lg border border-[#d5ddd5] bg-white px-5 text-sm font-semibold text-[#56645a] transition hover:bg-[#f7f8f6]">Cancel</Link>
+        <button type="submit" disabled={isSubmitting || isLoadingEmployee || Boolean(loadError)} className="inline-flex h-11 items-center justify-center gap-2 rounded-lg bg-[#244b36] px-5 text-sm font-semibold text-white transition hover:bg-[#1b3d2b] disabled:cursor-wait disabled:opacity-60"><Upload className="h-4 w-4" /> {isSubmitting ? (isEditing ? "Saving changes..." : "Adding employee...") : (isEditing ? "Save changes" : "Save employee")}</button>
       </div>
     </main>
     </form>
   );
 };
 
-export default AddEmployee;
+const AddEmployeeRoute = () => {
+  const { employeeType: routeEmployeeType, employeeId } = useParams();
+  return <AddEmployee key={employeeId || routeEmployeeType || "new"} />;
+};
+
+export default AddEmployeeRoute;

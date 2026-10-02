@@ -165,9 +165,95 @@ async function findEmployees() {
   return rows;
 }
 
+async function findEmployeeById(employeeId) {
+  const [rows] = await db.execute(
+    'SELECT * FROM employees WHERE employee_id = ? LIMIT 1',
+    [employeeId]
+  );
+  return rows[0] || null;
+}
+
+async function updateEmployeeWithUser({ employeeId, employeeData, updatedBy, password }) {
+  const employeeTypeConfigForRecord = employeeTypeConfig.get(employeeData.employee_type);
+  if (!employeeTypeConfigForRecord) throw new Error('Unsupported employee type');
+
+  const connection = await db.getConnection();
+  try {
+    await connection.beginTransaction();
+    const [rows] = await connection.execute(
+      'SELECT user_id FROM employees WHERE employee_id = ? LIMIT 1 FOR UPDATE',
+      [employeeId]
+    );
+    if (rows.length === 0) {
+      await connection.rollback();
+      return null;
+    }
+
+    const userId = rows[0].user_id;
+    const employeeValues = employeeColumns.map((column) => employeeData[column] ?? null);
+    const employeeAssignments = employeeColumns.map((column) => `\`${column}\` = ?`).join(', ');
+    await connection.execute(
+      `UPDATE employees SET ${employeeAssignments}, updated_by = ? WHERE employee_id = ?`,
+      [...employeeValues, updatedBy || null, employeeId]
+    );
+
+    const userValues = [
+      employeeData.full_name,
+      employeeData.email,
+      employeeData.phone_number,
+      employeeTypeConfigForRecord.role,
+      employeeData.status,
+    ];
+    let userQuery = `UPDATE users SET username = ?, email = ?, mobile_number = ?, role = ?, status = ?`;
+    if (password) {
+      userQuery += ', password_hash = ?';
+      userValues.push(await hashPassword(password));
+    }
+    userQuery += ' WHERE user_id = ?';
+    userValues.push(userId);
+    await connection.execute(userQuery, userValues);
+
+    await connection.commit();
+    return { employee_id: employeeId, user_id: userId };
+  } catch (error) {
+    await connection.rollback();
+    throw error;
+  } finally {
+    connection.release();
+  }
+}
+
+async function deleteEmployeeWithUser(employeeId) {
+  const connection = await db.getConnection();
+  try {
+    await connection.beginTransaction();
+    const [rows] = await connection.execute(
+      'SELECT user_id FROM employees WHERE employee_id = ? LIMIT 1 FOR UPDATE',
+      [employeeId]
+    );
+    if (rows.length === 0) {
+      await connection.rollback();
+      return null;
+    }
+
+    await connection.execute('DELETE FROM employees WHERE employee_id = ?', [employeeId]);
+    await connection.execute('DELETE FROM users WHERE user_id = ?', [rows[0].user_id]);
+    await connection.commit();
+    return rows[0].user_id;
+  } catch (error) {
+    await connection.rollback();
+    throw error;
+  } finally {
+    connection.release();
+  }
+}
+
 module.exports = {
   createEmployeeWithUser,
+  deleteEmployeeWithUser,
   employeeTypeConfig,
+  findEmployeeById,
   findEmployees,
   initializeEmployeeSchema,
+  updateEmployeeWithUser,
 };

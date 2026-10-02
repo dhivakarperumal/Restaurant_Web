@@ -1,14 +1,22 @@
 const express = require('express');
+const { randomUUID } = require('crypto');
 const fs = require('fs');
 const multer = require('multer');
 const path = require('path');
 const { googleLogin, login, register } = require('../controllers/authController');
-const { createEmployee, listEmployees } = require('../controllers/employeeController');
+const {
+  createEmployee,
+  deleteEmployee,
+  getEmployee,
+  listEmployees,
+  updateEmployee,
+} = require('../controllers/employeeController');
 const { findUserByToken } = require('../modules/auth');
 
 const router = express.Router();
 const uploadDirectory = path.join(__dirname, '..', 'upload');
-const employeeUploadDirectory = path.join(__dirname, '..', 'employee_documents');
+const employeeUploadDirectory = path.join(__dirname, '..', 'uploads', 'employee_document');
+const legacyEmployeeUploadDirectory = path.join(__dirname, '..', 'employee_documents');
 
 fs.mkdirSync(uploadDirectory, { recursive: true });
 fs.mkdirSync(employeeUploadDirectory, { recursive: true });
@@ -18,7 +26,8 @@ const createUploadFilename = (req, file, callback) => {
   const basename = path.basename(file.originalname, path.extname(file.originalname))
     .replace(/[^a-z0-9-_]/gi, '-')
     .toLowerCase() || 'document';
-  callback(null, `${Date.now()}-${basename}${extension}`);
+  const fieldName = String(file.fieldname || 'document').replace(/[^a-z0-9-_]/gi, '-').toLowerCase();
+  callback(null, `${fieldName}-${Date.now()}-${randomUUID()}-${basename}${extension}`);
 };
 
 const storage = multer.diskStorage({
@@ -59,7 +68,7 @@ const requireAdmin = (req, res, next) => {
 
   const role = String(req.auth.role || '').trim().toLowerCase();
   if (!['admin', 'super admin', 'superadmin'].includes(role)) {
-    return res.status(403).json({ success: false, message: 'Only an administrator can add employees' });
+    return res.status(403).json({ success: false, message: 'Only an administrator can manage employees' });
   }
 
   return next();
@@ -73,14 +82,35 @@ router.post('/users/register', optionalAuth, register);
 router.post('/users/login', login);
 router.post('/users/google-login', googleLogin);
 router.get('/employees', optionalAuth, requireAdmin, listEmployees);
-router.post('/employees', optionalAuth, requireAdmin, employeeUpload.any(), createEmployee);
 router.get('/employees/documents/:filename', optionalAuth, requireAdmin, (req, res) => {
   const filename = req.params.filename;
   if (path.basename(filename) !== filename || filename === '.' || filename === '..') {
     return res.status(400).json({ success: false, message: 'Invalid document name' });
   }
-  return res.download(path.join(employeeUploadDirectory, filename));
+  return res.download(path.join(employeeUploadDirectory, filename), (error) => {
+    if (error?.code === 'ENOENT' && !res.headersSent) {
+      return res.download(path.join(legacyEmployeeUploadDirectory, filename), (legacyError) => {
+        if (legacyError && !res.headersSent) {
+          res.status(legacyError.code === 'ENOENT' ? 404 : 500).json({
+            success: false,
+            message: legacyError.code === 'ENOENT' ? 'Document was not found' : 'Document could not be downloaded',
+          });
+        }
+      });
+    }
+    if (error && !res.headersSent) {
+      console.error('Employee document download failed:', error.message);
+      res.status(error.code === 'ENOENT' ? 404 : 500).json({
+        success: false,
+        message: error.code === 'ENOENT' ? 'Document was not found' : 'Document could not be downloaded',
+      });
+    }
+  });
 });
+router.get('/employees/:employeeId', optionalAuth, requireAdmin, getEmployee);
+router.put('/employees/:employeeId', optionalAuth, requireAdmin, employeeUpload.any(), updateEmployee);
+router.delete('/employees/:employeeId', optionalAuth, requireAdmin, deleteEmployee);
+router.post('/employees', optionalAuth, requireAdmin, employeeUpload.any(), createEmployee);
 
 router.post('/upload', upload.single('file'), (req, res) => {
   if (!req.file) {
