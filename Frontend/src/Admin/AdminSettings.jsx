@@ -359,7 +359,7 @@ const Settings = () => {
       }
     } catch (error) {
       console.error('Error fetching store settings:', error);
-      toast.error('Failed to load store settings');
+      toast.error('Failed to load restaurant profile');
     }
   };
 
@@ -569,15 +569,7 @@ const Settings = () => {
 
       case 'receipt':
         return (
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "1fr 380px",
-              gap: "2rem",
-              width: "100%",
-              alignItems: "start",
-            }}
-          >
+          <div className="receipt-settings-layout">
             {/* Left Side */}
             <div
               style={{
@@ -611,7 +603,7 @@ const Settings = () => {
 
               <Input
                 label="Email"
-                placeholder="contact@dmart.com"
+                placeholder="contact@foodierestaurant.com"
                 value={receiptSettings.email}
                 onChange={(e) => updateReceiptSetting("email", e.target.value)}
               />
