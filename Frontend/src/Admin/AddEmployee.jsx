@@ -358,7 +358,7 @@ const AddEmployee = () => {
       <input type="hidden" name="employee_type" value={employeeType} />
       <div className="mb-6 flex flex-col gap-4 border-b border-[#dfe5df] pb-5 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <Link to="/admin" className="mb-3 inline-flex items-center gap-1.5 text-xs font-semibold text-[#64736a] transition hover:text-[#355443]"><ArrowLeft className="h-3.5 w-3.5" /> Admin dashboard</Link>
+          <Link to="/admin/employees" className="mb-3 inline-flex items-center gap-1.5 text-xs font-semibold text-[#64736a] transition hover:text-[#355443]"><ArrowLeft className="h-3.5 w-3.5" /> All Employees</Link>
           <p className="text-[10px] font-bold uppercase tracking-[0.17em] text-[#9a7442]">People & access</p>
           <h1 className="mt-1 text-2xl font-bold text-[#203129]">{isEditing ? "Edit employee" : "Add employee"}</h1>
           <p className="mt-1 text-sm text-[#758179]">{isEditing ? "Update this employee's details and account access." : "Review employee information fields before setting up the workflow."}</p>
@@ -380,7 +380,6 @@ const AddEmployee = () => {
           <p className="text-sm font-bold text-[#294333]">{employeeType} profile</p>
           <p className="mt-0.5 text-xs text-[#748177]">Fields marked with <span className="font-bold text-[#c16b3a">*</span> are required.</p>
         </div>
-        <span className="hidden items-center gap-1.5 rounded-full border border-[#d8e4d7] bg-white px-3 py-1.5 text-[11px] font-semibold text-[#55715a] sm:inline-flex"><Check className="h-3.5 w-3.5" /> Draft form</span>
       </div>
 
       {(loadError || submitError) && <p role="alert" className="mb-4 rounded-lg border border-[#edc7c1] bg-[#fff4f1] px-4 py-3 text-sm text-[#a13e30]">{loadError || submitError}</p>}
