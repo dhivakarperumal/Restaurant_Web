@@ -202,8 +202,10 @@ const EmployeeFields = ({ employeeType }) => {
       </Section>
 
       <Section icon={FileCheck2} title="Documents" description="Identity and supporting documents">
+        <Field label="Aadhaar Number" placeholder="Enter Aadhaar number" />
         <UploadField label="Aadhaar / ID Proof" />
-        {(isChef || isBasic || isDelivery) && <UploadField label="PAN Card" />}
+        <Field label="PAN Card Number" placeholder="Enter PAN card number" />
+        <UploadField label="PAN Card" />
         {isChef && <UploadField label="FSSAI Certificate" />}
         {isDelivery && <UploadField label="Driving License" />}
         {isDelivery && <UploadField label="RC Book" />}
