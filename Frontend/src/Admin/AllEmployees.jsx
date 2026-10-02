@@ -1,10 +1,12 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
-import { BriefcaseBusiness, Eye, LayoutGrid, Pencil, Search, Table2, Trash2, UserCheck, UserRound, UserRoundPlus, Users, X } from "lucide-react";
+import { Link, useLocation } from "react-router-dom";
+import { BriefcaseBusiness, Eye, LayoutGrid, Pencil, Search, Table2, Trash2, UserCheck, UserRound, UserRoundPlus, Users, UtensilsCrossed, X } from "lucide-react";
 import api from "../api";
 import EmployeeDocument from "./EmployeeDocument";
+import AssignTableModal from "./AssignTableModal";
 
 const AllEmployees = () => {
+  const location = useLocation();
   const [employees, setEmployees] = useState([]);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
@@ -18,6 +20,39 @@ const AllEmployees = () => {
   const [selectedStatus, setSelectedStatus] = useState("All Status");
   const [sortBy, setSortBy] = useState("latest");
   const [viewMode, setViewMode] = useState("table");
+
+  // State for Assign Tables modal
+  const [assignModalServer, setAssignModalServer] = useState(null);
+  const [serverTableCounts, setServerTableCounts] = useState({});
+
+  const fetchServerTableCounts = async () => {
+    try {
+      const res = await api.get("/server-tables");
+      if (res.data?.success) {
+        const counts = {};
+        (res.data.tables || []).forEach((t) => {
+          if (t.assigned_server_id) {
+            counts[t.assigned_server_id] = (counts[t.assigned_server_id] || 0) + 1;
+          }
+        });
+        setServerTableCounts(counts);
+      }
+    } catch (tableErr) {
+      console.error("Could not load table assignments count:", tableErr);
+    }
+  };
+
+  useEffect(() => {
+    fetchServerTableCounts();
+  }, []);
+
+  // Auto-open modal if navigated from Add Server with state
+  useEffect(() => {
+    if (location.state?.assignServer) {
+      setAssignModalServer(location.state.assignServer);
+      window.history.replaceState({}, document.title);
+    }
+  }, [location.state]);
 
   useEffect(() => {
     let isMounted = true;
@@ -219,7 +254,23 @@ const AllEmployees = () => {
                       <div className="text-xs text-[#7a7a7a]">{employee.email}</div>
                     </td>
                     <td className="px-4 py-4 font-mono text-xs text-[#7a7a7a]">{employee.employee_id}</td>
-                    <td className="px-4 py-4">{employee.employee_type}</td>
+                    <td className="px-4 py-4">
+                      <div className="flex items-center gap-2">
+                        <span>{employee.employee_type}</span>
+                        {employee.employee_type === "Server" && (
+                          <span
+                            className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold ${
+                              (serverTableCounts[employee.employee_id] || 0) > 0
+                                ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                                : "bg-gray-100 text-gray-500"
+                            }`}
+                          >
+                            <Table2 className="h-3 w-3" />
+                            {serverTableCounts[employee.employee_id] || 0} Tables
+                          </span>
+                        )}
+                      </div>
+                    </td>
                     <td className="px-4 py-4">{employee.phone_number}</td>
                     <td className="px-4 py-4">
                       <span className={`inline-flex items-center gap-2 rounded-full px-2.5 py-1 text-xs font-semibold ${employee.status === "Active" ? "bg-[#edf7f1] text-[#2d7b5a]" : "bg-[#f1f2f0] text-[#727a73]"}`}>
@@ -229,6 +280,18 @@ const AllEmployees = () => {
                     </td>
                     <td className="px-4 py-4">
                       <div className="flex items-center gap-2">
+                        {employee.employee_type === "Server" && (
+                          <button
+                            type="button"
+                            onClick={() => setAssignModalServer(employee)}
+                            title="Assign Dining Tables"
+                            aria-label={`Assign tables to ${employee.full_name}`}
+                            className="flex h-9 cursor-pointer items-center gap-1.5 rounded-lg border border-[#1a3c36] bg-[#1a3c36] px-2.5 text-xs font-semibold text-white shadow-sm transition hover:bg-[#25524a]"
+                          >
+                            <UtensilsCrossed className="h-3.5 w-3.5 text-[#d4a843]" />
+                            <span>Assign Table</span>
+                          </button>
+                        )}
                         <button type="button" onClick={() => viewEmployee(employee.employee_id)} title="View employee" aria-label={`View ${employee.full_name}`} className="flex h-9 w-9 items-center justify-center rounded-lg border border-[#e2d9cf] bg-white text-[#4d4d4d] transition hover:border-[#d0b997] hover:text-[#1a1a1a]"><Eye className="h-4 w-4" /></button>
                         <Link to={`/admin/employees/${encodeURIComponent(employee.employee_id)}/edit`} title="Edit employee" aria-label={`Edit ${employee.full_name}`} className="flex h-9 w-9 items-center justify-center rounded-lg border border-[#e2d9cf] bg-white text-[#4d4d4d] transition hover:border-[#d0b997] hover:text-[#1a1a1a]"><Pencil className="h-4 w-4" /></Link>
                         <button type="button" onClick={() => deleteEmployee(employee)} disabled={deletingEmployeeId === employee.employee_id} title="Delete employee" aria-label={`Delete ${employee.full_name}`} className="flex h-9 w-9 items-center justify-center rounded-lg border border-[#f3d7d7] bg-[#fff8f8] text-[#d04d4d] transition hover:bg-[#fff0f0] disabled:opacity-50"><Trash2 className="h-4 w-4" /></button>
@@ -275,7 +338,21 @@ const AllEmployees = () => {
                   </div>
                   <div className="flex items-center justify-between gap-3">
                     <span className="text-xs text-[#849087]">Type</span>
-                    <span className="text-right text-sm font-medium text-[#34443b]">{employee.employee_type}</span>
+                    <span className="text-right text-sm font-medium text-[#34443b] flex items-center gap-1.5">
+                      {employee.employee_type}
+                      {employee.employee_type === "Server" && (
+                        <span
+                          className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold ${
+                            (serverTableCounts[employee.employee_id] || 0) > 0
+                              ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                              : "bg-gray-100 text-gray-500"
+                          }`}
+                        >
+                          <Table2 className="h-3 w-3" />
+                          {serverTableCounts[employee.employee_id] || 0} Tables
+                        </span>
+                      )}
+                    </span>
                   </div>
                   <div className="flex items-center justify-between gap-3">
                     <span className="text-xs text-[#849087]">Phone</span>
@@ -283,6 +360,18 @@ const AllEmployees = () => {
                   </div>
                 </div>
                 <div className="flex items-center justify-end gap-2">
+                  {employee.employee_type === "Server" && (
+                    <button
+                      type="button"
+                      onClick={() => setAssignModalServer(employee)}
+                      title="Assign Dining Tables"
+                      aria-label={`Assign tables to ${employee.full_name}`}
+                      className="flex h-9 cursor-pointer items-center gap-1.5 rounded-lg border border-[#1a3c36] bg-[#1a3c36] px-2.5 text-xs font-semibold text-white shadow-sm transition hover:bg-[#25524a]"
+                    >
+                      <UtensilsCrossed className="h-3.5 w-3.5 text-[#d4a843]" />
+                      <span>Assign Table</span>
+                    </button>
+                  )}
                   <button type="button" onClick={() => viewEmployee(employee.employee_id)} title="View employee" aria-label={`View ${employee.full_name}`} className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-lg border border-[#e2d9cf] bg-white text-[#4d4d4d] transition hover:border-[#d0b997] hover:text-[#1a1a1a]"><Eye className="h-4 w-4" /></button>
                   <Link to={`/admin/employees/${encodeURIComponent(employee.employee_id)}/edit`} title="Edit employee" aria-label={`Edit ${employee.full_name}`} className="flex h-9 w-9 items-center justify-center rounded-lg border border-[#e2d9cf] bg-white text-[#4d4d4d] transition hover:border-[#d0b997] hover:text-[#1a1a1a]"><Pencil className="h-4 w-4" /></Link>
                   <button type="button" onClick={() => deleteEmployee(employee)} disabled={deletingEmployeeId === employee.employee_id} title="Delete employee" aria-label={`Delete ${employee.full_name}`} className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-lg border border-[#f3d7d7] bg-[#fff8f8] text-[#d04d4d] transition hover:bg-[#fff0f0] disabled:cursor-wait disabled:opacity-50"><Trash2 className="h-4 w-4" /></button>
@@ -353,6 +442,17 @@ const AllEmployees = () => {
           )}
         </section>
       </div>
+    )}
+
+    {assignModalServer && (
+      <AssignTableModal
+        isOpen={Boolean(assignModalServer)}
+        server={assignModalServer}
+        onClose={() => setAssignModalServer(null)}
+        onSuccess={() => {
+          fetchServerTableCounts();
+        }}
+      />
     )}
   </main>
   );

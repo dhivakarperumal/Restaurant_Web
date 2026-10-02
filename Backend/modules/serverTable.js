@@ -43,6 +43,18 @@ async function initializeServerTableSchema() {
   } catch (error) {
     // If users table is not yet created or column is missing, skip migration
   }
+
+  // Ensure assigned_server_id and assigned_at columns exist
+  try {
+    const [assignedCols] = await db.query("SHOW COLUMNS FROM server_table LIKE 'assigned_server_id'");
+    if (assignedCols.length === 0) {
+      await db.query("ALTER TABLE server_table ADD COLUMN assigned_server_id VARCHAR(255) NULL AFTER status");
+      await db.query("ALTER TABLE server_table ADD COLUMN assigned_at TIMESTAMP NULL AFTER assigned_server_id");
+      await db.query("ALTER TABLE server_table ADD INDEX server_table_assigned_server_idx (assigned_server_id)");
+    }
+  } catch (error) {
+    console.error('Error adding assigned_server_id column:', error.message);
+  }
 }
 
 /**
@@ -71,6 +83,9 @@ async function createServerTable({ table_number, no_of_seats, status = 'Availabl
     table_number: normalizedTableNumber,
     no_of_seats: seats,
     status: status || 'Available',
+    assigned_server_id: null,
+    assigned_at: null,
+    assigned_server_name: null,
     created_by: created_by || null,
     updated_by: null,
     created_at: new Date(),
@@ -83,27 +98,54 @@ async function createServerTable({ table_number, no_of_seats, status = 'Availabl
  */
 async function findServerTables(filters = {}) {
   let query = `
-    SELECT id, table_id, table_number, no_of_seats, status, created_by, updated_by, created_at, updated_at
-    FROM server_table
+    SELECT 
+      st.id, 
+      st.table_id, 
+      st.table_number, 
+      st.no_of_seats, 
+      st.status, 
+      st.assigned_server_id, 
+      st.assigned_at,
+      e.full_name AS assigned_server_name,
+      e.employee_type AS assigned_server_type,
+      e.email AS assigned_server_email,
+      e.phone_number AS assigned_server_phone,
+      st.created_by, 
+      st.updated_by, 
+      st.created_at, 
+      st.updated_at
+    FROM server_table st
+    LEFT JOIN employees e ON st.assigned_server_id = e.employee_id
   `;
   const conditions = [];
   const params = [];
 
   if (filters.status) {
-    conditions.push('status = ?');
+    conditions.push('st.status = ?');
     params.push(String(filters.status).trim());
   }
 
+  if (filters.assigned_server_id) {
+    conditions.push('st.assigned_server_id = ?');
+    params.push(String(filters.assigned_server_id).trim());
+  }
+
+  if (filters.assignment_status === 'assigned') {
+    conditions.push('st.assigned_server_id IS NOT NULL');
+  } else if (filters.assignment_status === 'unassigned') {
+    conditions.push('st.assigned_server_id IS NULL');
+  }
+
   if (filters.search) {
-    conditions.push('(table_number LIKE ? OR created_by LIKE ?)');
-    params.push(`%${filters.search}%`, `%${filters.search}%`);
+    conditions.push('(st.table_number LIKE ? OR st.created_by LIKE ? OR e.full_name LIKE ?)');
+    params.push(`%${filters.search}%`, `%${filters.search}%`, `%${filters.search}%`);
   }
 
   if (conditions.length > 0) {
     query += ` WHERE ${conditions.join(' AND ')}`;
   }
 
-  query += ' ORDER BY id ASC';
+  query += ' ORDER BY st.id ASC';
 
   const [rows] = await db.execute(query, params);
   return rows;
@@ -116,11 +158,28 @@ async function findServerTableById(idOrTableId) {
   const identifier = String(idOrTableId || '').trim();
   const isNumeric = /^\d+$/.test(identifier);
 
-  const query = isNumeric
-    ? `SELECT id, table_id, table_number, no_of_seats, status, created_by, updated_by, created_at, updated_at
-       FROM server_table WHERE id = ? LIMIT 1`
-    : `SELECT id, table_id, table_number, no_of_seats, status, created_by, updated_by, created_at, updated_at
-       FROM server_table WHERE table_id = ? LIMIT 1`;
+  const query = `
+    SELECT 
+      st.id, 
+      st.table_id, 
+      st.table_number, 
+      st.no_of_seats, 
+      st.status, 
+      st.assigned_server_id, 
+      st.assigned_at,
+      e.full_name AS assigned_server_name,
+      e.employee_type AS assigned_server_type,
+      e.email AS assigned_server_email,
+      e.phone_number AS assigned_server_phone,
+      st.created_by, 
+      st.updated_by, 
+      st.created_at, 
+      st.updated_at
+    FROM server_table st
+    LEFT JOIN employees e ON st.assigned_server_id = e.employee_id
+    WHERE ${isNumeric ? 'st.id = ?' : 'st.table_id = ?'}
+    LIMIT 1
+  `;
 
   const [rows] = await db.execute(query, [identifier]);
   return rows[0] || null;
@@ -132,8 +191,25 @@ async function findServerTableById(idOrTableId) {
 async function findServerTableByNumber(table_number) {
   const normalizedNumber = String(table_number || '').trim();
   const [rows] = await db.execute(
-    `SELECT id, table_id, table_number, no_of_seats, status, created_by, updated_by, created_at, updated_at
-     FROM server_table WHERE table_number = ? LIMIT 1`,
+    `SELECT 
+      st.id, 
+      st.table_id, 
+      st.table_number, 
+      st.no_of_seats, 
+      st.status, 
+      st.assigned_server_id, 
+      st.assigned_at,
+      e.full_name AS assigned_server_name,
+      e.employee_type AS assigned_server_type,
+      e.email AS assigned_server_email,
+      e.phone_number AS assigned_server_phone,
+      st.created_by, 
+      st.updated_by, 
+      st.created_at, 
+      st.updated_at
+     FROM server_table st
+     LEFT JOIN employees e ON st.assigned_server_id = e.employee_id
+     WHERE st.table_number = ? LIMIT 1`,
     [normalizedNumber]
   );
   return rows[0] || null;
@@ -142,7 +218,7 @@ async function findServerTableByNumber(table_number) {
 /**
  * Updates a server table by normal id or table_id (UUID).
  */
-async function updateServerTable(idOrTableId, { table_number, no_of_seats, status, updated_by = null }) {
+async function updateServerTable(idOrTableId, { table_number, no_of_seats, status, assigned_server_id, updated_by = null }) {
   const existingTable = await findServerTableById(idOrTableId);
   if (!existingTable) return null;
 
@@ -164,6 +240,16 @@ async function updateServerTable(idOrTableId, { table_number, no_of_seats, statu
     values.push(String(status).trim());
   }
 
+  if (assigned_server_id !== undefined) {
+    updates.push('assigned_server_id = ?');
+    values.push(assigned_server_id || null);
+    if (assigned_server_id) {
+      updates.push('assigned_at = CURRENT_TIMESTAMP');
+    } else {
+      updates.push('assigned_at = NULL');
+    }
+  }
+
   updates.push('updated_by = ?');
   values.push(updated_by || null);
 
@@ -180,6 +266,71 @@ async function updateServerTable(idOrTableId, { table_number, no_of_seats, statu
 }
 
 /**
+ * Assigns multiple tables to an employee in an atomic transaction.
+ * Also unassigns any tables previously assigned to this employee that are not in tableIds.
+ */
+async function assignTablesToEmployee({ employeeId, tableIds = [], updatedBy = null }) {
+  const connection = await db.getConnection();
+  try {
+    await connection.beginTransaction();
+
+    // 1. Unassign all tables currently assigned to this employee
+    await connection.execute(
+      `UPDATE server_table 
+       SET assigned_server_id = NULL, assigned_at = NULL, updated_by = ? 
+       WHERE assigned_server_id = ?`,
+      [updatedBy || null, employeeId]
+    );
+
+    // 2. If tableIds is provided and non-empty, assign them to this employee
+    if (Array.isArray(tableIds) && tableIds.length > 0) {
+      const placeholders = tableIds.map(() => '?').join(', ');
+      await connection.execute(
+        `UPDATE server_table 
+         SET assigned_server_id = ?, assigned_at = CURRENT_TIMESTAMP, updated_by = ? 
+         WHERE table_id IN (${placeholders}) OR id IN (${placeholders})`,
+        [employeeId, updatedBy || null, ...tableIds, ...tableIds]
+      );
+    }
+
+    await connection.commit();
+    return true;
+  } catch (error) {
+    await connection.rollback();
+    throw error;
+  } finally {
+    connection.release();
+  }
+}
+
+/**
+ * Unassigns a single table by table ID or table_id.
+ */
+async function unassignTableById(idOrTableId, updatedBy = null) {
+  const table = await findServerTableById(idOrTableId);
+  if (!table) return null;
+
+  await db.execute(
+    `UPDATE server_table 
+     SET assigned_server_id = NULL, assigned_at = NULL, updated_by = ? 
+     WHERE id = ?`,
+    [updatedBy || null, table.id]
+  );
+
+  return findServerTableById(table.id);
+}
+
+/**
+ * Unassigns all tables for an employee.
+ */
+async function unassignAllTablesForEmployee(employeeId) {
+  await db.execute(
+    'UPDATE server_table SET assigned_server_id = NULL, assigned_at = NULL WHERE assigned_server_id = ?',
+    [employeeId]
+  );
+}
+
+/**
  * Deletes a server table by normal id or table_id (UUID).
  */
 async function deleteServerTable(idOrTableId) {
@@ -191,11 +342,14 @@ async function deleteServerTable(idOrTableId) {
 }
 
 module.exports = {
+  assignTablesToEmployee,
   createServerTable,
   deleteServerTable,
   findServerTableById,
   findServerTableByNumber,
   findServerTables,
   initializeServerTableSchema,
+  unassignAllTablesForEmployee,
+  unassignTableById,
   updateServerTable,
 };

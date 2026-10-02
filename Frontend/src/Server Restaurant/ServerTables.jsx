@@ -54,6 +54,7 @@ export default function ServerTables() {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [assignmentFilter, setAssignmentFilter] = useState("all");
   const [viewMode, setViewMode] = useState(isAdminTablesPage ? "table" : "grid");
 
   // Modal states
@@ -196,6 +197,31 @@ export default function ServerTables() {
     }
   };
 
+  const handleUnassignTable = async (table) => {
+    if (!table.assigned_server_id) return;
+    if (
+      !window.confirm(
+        `Are you sure you want to unassign Table "${table.table_number}" from ${table.assigned_server_name || "the server"}?`
+      )
+    ) {
+      return;
+    }
+
+    try {
+      const res = await api.post("/server-tables/unassign", {
+        table_id: table.table_id || table.id,
+        user_id: userProfile?.user_id,
+      });
+      if (res.data?.success) {
+        toast.success(`Table "${table.table_number}" unassigned successfully`);
+        fetchTables();
+      }
+    } catch (error) {
+      console.error("Unassign table error:", error);
+      toast.error(error.response?.data?.message || "Failed to unassign table");
+    }
+  };
+
   const copyToClipboard = (text, label = "Table ID") => {
     navigator.clipboard.writeText(text);
     toast.success(`${label} copied to clipboard!`);
@@ -212,6 +238,9 @@ export default function ServerTables() {
         String(table.table_id || "")
           .toLowerCase()
           .includes(searchQuery.toLowerCase()) ||
+        String(table.assigned_server_name || "")
+          .toLowerCase()
+          .includes(searchQuery.toLowerCase()) ||
         String(table.created_by || "")
           .toLowerCase()
           .includes(searchQuery.toLowerCase());
@@ -220,9 +249,16 @@ export default function ServerTables() {
         statusFilter === "all" ||
         String(table.status || "").toLowerCase() === statusFilter.toLowerCase();
 
-      return matchesSearch && matchesStatus;
+      const userEmpId = userProfile?.employee_id || userProfile?.employeeId;
+      const matchesAssignment =
+        assignmentFilter === "all" ||
+        (assignmentFilter === "assigned" && Boolean(table.assigned_server_id)) ||
+        (assignmentFilter === "unassigned" && !table.assigned_server_id) ||
+        (assignmentFilter === "my-tables" && table.assigned_server_id === userEmpId);
+
+      return matchesSearch && matchesStatus && matchesAssignment;
     });
-  }, [tables, searchQuery, statusFilter]);
+  }, [tables, searchQuery, statusFilter, assignmentFilter, userProfile]);
 
   // Statistics
   const stats = useMemo(() => {
@@ -230,8 +266,10 @@ export default function ServerTables() {
     const available = tables.filter((t) => t.status === "Available").length;
     const occupied = tables.filter((t) => t.status === "Occupied").length;
     const reserved = tables.filter((t) => t.status === "Reserved").length;
+    const assigned = tables.filter((t) => Boolean(t.assigned_server_id)).length;
+    const unassigned = tables.length - assigned;
     const totalSeats = tables.reduce((sum, t) => sum + Number(t.no_of_seats || 0), 0);
-    return { total, available, occupied, reserved, totalSeats };
+    return { total, available, occupied, reserved, assigned, unassigned, totalSeats };
   }, [tables]);
 
   return (
@@ -342,6 +380,20 @@ export default function ServerTables() {
             <option value="Maintenance">Maintenance</option>
           </select>
 
+          {/* Assignment filter */}
+          <select
+            value={assignmentFilter}
+            onChange={(e) => setAssignmentFilter(e.target.value)}
+            className={isAdminTablesPage ? "h-[46px] rounded-xl border border-[#dfe2e5] bg-[#faf9f8] px-3 text-[14px] font-medium text-[#2d2d2d] outline-none focus:border-[#d2bc8a]" : "px-3 py-2 text-xs sm:text-sm bg-gray-50 border border-gray-200 rounded-lg text-gray-700 outline-none focus:border-[#d4a843]"}
+          >
+            <option value="all">All Assignments ({tables.length})</option>
+            <option value="assigned">Assigned ({stats.assigned || 0})</option>
+            <option value="unassigned">Unassigned ({stats.unassigned || 0})</option>
+            {userProfile?.role?.toLowerCase() === "server" && (
+              <option value="my-tables">My Assigned Tables</option>
+            )}
+          </select>
+
           {/* View mode toggle */}
           <div className={isAdminTablesPage ? "flex h-[46px] items-center overflow-hidden rounded-xl border border-[#dfe2e5] bg-[#faf9f8]" : "flex items-center rounded-lg border border-gray-200 p-0.5 bg-gray-50"}>
             <button
@@ -450,6 +502,30 @@ export default function ServerTables() {
 
                     <div className="flex items-center justify-between text-xs text-gray-600">
                       <span className="flex items-center gap-1.5 text-gray-500 font-medium">
+                        <UtensilsCrossed className="w-3.5 h-3.5 text-gray-400" />
+                        Server:
+                      </span>
+                      {table.assigned_server_id ? (
+                        <div className="flex items-center gap-1.5">
+                          <span className="font-semibold text-emerald-800 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded text-[11px]">
+                            {table.assigned_server_name || "Assigned"}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => handleUnassignTable(table)}
+                            title="Unassign this server from table"
+                            className="text-gray-400 hover:text-red-600 p-0.5 rounded transition"
+                          >
+                            <X className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      ) : (
+                        <span className="text-gray-400 italic text-[11px]">Unassigned</span>
+                      )}
+                    </div>
+
+                    <div className="flex items-center justify-between text-xs text-gray-600">
+                      <span className="flex items-center gap-1.5 text-gray-500 font-medium">
                         <Hash className="w-3.5 h-3.5 text-gray-400" />
                         UUID:
                       </span>
@@ -545,6 +621,7 @@ export default function ServerTables() {
                   <th className="py-3.5 px-4">Table Number</th>
                   <th className="py-3.5 px-4">Seats</th>
                   <th className="py-3.5 px-4">Status</th>
+                  <th className="py-3.5 px-4">Assigned Server</th>
                   <th className="py-3.5 px-4">UUID (table_id)</th>
                   <th className="py-3.5 px-4">Created By (User ID)</th>
                   <th className="py-3.5 px-4">Updated By (User ID)</th>
@@ -579,6 +656,28 @@ export default function ServerTables() {
                           <span className={`w-1.5 h-1.5 rounded-full ${config.badge}`} />
                           {table.status}
                         </span>
+                      </td>
+                      <td className="py-3 px-4">
+                        {table.assigned_server_id ? (
+                          <div className="flex items-center gap-1.5">
+                            <span className="inline-flex items-center gap-1 font-semibold text-emerald-800 bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 rounded-full text-xs">
+                              <UtensilsCrossed className="w-3 h-3 text-[#d4a843]" />
+                              {table.assigned_server_name || "Assigned"}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => handleUnassignTable(table)}
+                              title="Unassign server"
+                              className="text-gray-400 hover:text-red-600 p-0.5 rounded transition"
+                            >
+                              <X className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        ) : (
+                          <span className="text-gray-400 italic text-xs">
+                            Unassigned
+                          </span>
+                        )}
                       </td>
                       <td className="py-3 px-4">
                         <button

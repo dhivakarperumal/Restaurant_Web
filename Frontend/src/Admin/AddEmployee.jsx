@@ -20,6 +20,7 @@ import {
   UserPlus,
   UserRound,
   Utensils,
+  UtensilsCrossed,
 } from "lucide-react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import api from "../api";
@@ -408,6 +409,7 @@ const AddEmployee = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState("");
   const [createdEmployeeId, setCreatedEmployeeId] = useState("");
+  const [newlyCreatedServer, setNewlyCreatedServer] = useState(null);
   const employeeType = isEditing
     ? employeeData?.employee_type || initialEmployeeType || "Chef"
     : typeChoice.routeEmployeeType === routeEmployeeType
@@ -488,8 +490,12 @@ const AddEmployee = () => {
         await api.put(`/employees/${encodeURIComponent(routeEmployeeId)}`, formData);
         navigate("/admin/employees");
       } else {
-        await api.post("/employees", formData);
-        navigate("/admin/employees");
+        const response = await api.post("/employees", formData);
+        if (employeeType === "Server" && response.data?.employee) {
+          setNewlyCreatedServer(response.data.employee);
+        } else {
+          navigate("/admin/employees");
+        }
       }
     } catch (requestError) {
       setSubmitError(requestError.response?.data?.message || `Employee could not be ${isEditing ? "updated" : "created"}. Please try again.`);
@@ -543,6 +549,42 @@ const AddEmployee = () => {
         <Link to="/admin/employees" className="inline-flex h-11 items-center justify-center rounded-lg border border-[#d5ddd5] bg-white px-5 text-sm font-semibold text-[#56645a] transition hover:bg-[#f7f8f6]">Cancel</Link>
         <button type="submit" disabled={isSubmitting || isLoadingEmployee || Boolean(loadError)} aria-busy={isSubmitting} className="inline-flex h-11 cursor-pointer items-center justify-center gap-2 rounded-lg bg-[#244b36] px-5 text-sm font-semibold text-white transition hover:bg-[#1b3d2b] disabled:opacity-60">{isSubmitting ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />} {isSubmitting ? (isEditing ? "Saving changes..." : "Adding employee...") : (isEditing ? "Save changes" : "Save employee")}</button>
       </div>
+
+      {newlyCreatedServer && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm animate-fadeIn">
+          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl text-center">
+            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-[#1f3228] text-[#d4a843] shadow-md">
+              <UtensilsCrossed className="h-7 w-7" />
+            </div>
+            <h3 className="text-xl font-bold text-gray-900 font-serif">Server Added Successfully!</h3>
+            <p className="mt-2 text-sm text-gray-600">
+              <strong>{newlyCreatedServer.full_name}</strong> has been registered. You can assign dining tables to this server now.
+            </p>
+
+            <div className="mt-6 flex flex-col gap-2.5">
+              <button
+                type="button"
+                onClick={() => {
+                  navigate("/admin/employees", { state: { assignServer: newlyCreatedServer } });
+                }}
+                className="inline-flex h-11 cursor-pointer items-center justify-center gap-2 rounded-xl bg-[#1a3c36] px-4 text-sm font-semibold text-white shadow-md transition hover:bg-[#234e46]"
+              >
+                <UtensilsCrossed className="h-4 w-4 text-[#d4a843]" />
+                <span>Assign Tables Now</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  navigate("/admin/employees");
+                }}
+                className="inline-flex h-11 cursor-pointer items-center justify-center rounded-xl border border-gray-200 bg-white text-sm font-semibold text-gray-700 transition hover:bg-gray-50"
+              >
+                Go to All Employees
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
     </form>
   );
