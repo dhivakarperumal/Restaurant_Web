@@ -88,6 +88,7 @@ const EmployeeFields = ({ employeeType }) => {
   const isChef = employeeType === "Chef";
   const isDelivery = employeeType === "Delivery Partner";
   const isBasic = !isChef && !isDelivery;
+  const [deliverySalaryType, setDeliverySalaryType] = useState("Monthly Basis");
 
   return (
     <>
@@ -173,11 +174,37 @@ const EmployeeFields = ({ employeeType }) => {
       )}
 
       <Section icon={Banknote} title="Salary details" description="Compensation and payroll information">
-        <Field label="Basic Salary" type="number" placeholder="Enter basic salary" required />
-        <Field label="Allowances" type="number" placeholder="Enter allowances" />
-        <Field label="Deductions" type="number" placeholder="Enter deductions" />
-        <Field label="Net Salary" type="number" placeholder="Enter net salary" />
-        <Field label="Payroll Notes" type="textarea" wide />
+        {isDelivery && (
+          <label htmlFor="delivery-salary-type" className="block min-w-0 space-y-2 md:col-span-2 lg:col-span-3">
+            <span className="block text-xs font-semibold text-[#34443b]">Salary Type</span>
+            <div className="relative">
+              <select
+                id="delivery-salary-type"
+                value={deliverySalaryType}
+                onChange={(event) => setDeliverySalaryType(event.target.value)}
+                className={`${fieldStyles} appearance-none pr-9`}
+              >
+                <option value="Monthly Basis">Monthly Basis</option>
+                <option value="Order Basis">Order Basis</option>
+              </select>
+              <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#75847a]" />
+            </div>
+          </label>
+        )}
+        {isDelivery && deliverySalaryType === "Order Basis" ? (
+          <>
+            <Field label="Order Count" type="number" placeholder="Enter order count" />
+            <Field label="Total Order Amount" type="number" placeholder="Enter total order amount" />
+          </>
+        ) : (
+          <>
+            <Field label="Basic Salary" type="number" placeholder="Enter basic salary" required />
+            <Field label="Allowances" type="number" placeholder="Enter allowances" />
+            <Field label="Deductions" type="number" placeholder="Enter deductions" />
+            <Field label="Net Salary" type="number" placeholder="Enter net salary" />
+            <Field label="Payroll Notes" type="textarea" wide />
+          </>
+        )}
       </Section>
 
       <Section icon={FileCheck2} title="Documents" description="Identity and supporting documents">
