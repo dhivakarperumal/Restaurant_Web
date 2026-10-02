@@ -9,6 +9,8 @@ export const getRoleHome = (role) => {
   const normalizedRole = normalizeRole(role);
 
   if (isAdminRole(normalizedRole)) return '/admin';
+  if (normalizedRole === 'chef') return '/chef';
+  if (normalizedRole === 'server') return '/server';
   if (normalizedRole === 'employee') return '/employee';
   if (normalizedRole === 'trainee') return '/trainee';
   return '/';

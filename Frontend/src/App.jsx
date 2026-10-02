@@ -18,12 +18,10 @@ function App() {
   const currentRoute = hash?.startsWith("#") ? hash.slice(1) : pathname;
   const isAuthPage = currentRoute === "/login" || currentRoute === "/register";
   const isAdmin = currentRoute === "/admin" || currentRoute.startsWith("/admin/");
-  const isEmployee =
-    currentRoute === "/employee" ||
-    currentRoute.startsWith("/employee/") ||
-    currentRoute === "/trainee" ||
-    currentRoute.startsWith("/trainee/");
-  const showPublicChrome = !isAuthPage && !isAdmin && !isEmployee;
+  const isStaffRoute = ["/chef", "/server", "/delivery"].some(
+    (route) => currentRoute === route || currentRoute.startsWith(`${route}/`)
+  );
+  const showPublicChrome = !isAuthPage && !isAdmin && !isStaffRoute;
 
   if (loading) {
     return <Loader />;

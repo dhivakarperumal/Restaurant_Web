@@ -15,6 +15,15 @@ import AdminDashboard from './Admin/AdminDashboard.jsx'
 import AdminLayout from './Admin/Adminpanel.jsx'
 
 
+
+import ChefDashboard from './Chef Restaurant/ChefDashboard.jsx'
+import ChefLayout from './Chef Restaurant/Chefpanel.jsx'
+import ServerDashboard from './Server Restaurant/ServerDashboard.jsx'
+import ServerLayout from './Server Restaurant/Serverpanel.jsx'
+import DeliveryDashboard from './Delivery Restaurant/DeliveryDashboard.jsx'
+import DeliveryLayout from './Delivery Restaurant/Deliverypanel.jsx'
+
+
 import { AuthProvider } from './PrivateRouter/AuthContext.jsx'
 import { StoreProvider } from './PrivateRouter/StoreContext.jsx'
 import { AdminProvider } from './PrivateRouter/AdminContext';
@@ -54,6 +63,54 @@ const router = createHashRouter([
           {
             index: true,
             element: <AdminDashboard />,
+          },
+        ],
+      },
+
+
+      {
+        path: 'chef',
+        element: (
+          <PrivateRoute allowedRoles={["Super Admin", "chef"]}>
+            <ChefLayout />
+          </PrivateRoute>
+        ),
+        children: [
+          {
+            index: true,
+            element: <ChefDashboard />,
+          },
+        ],
+      },
+
+
+      {
+        path: 'server',
+        element: (
+          <PrivateRoute allowedRoles={["Super Admin", "server"]}>
+            <ServerLayout />
+          </PrivateRoute>
+        ),
+        children: [
+          {
+            index: true,
+            element: <ServerDashboard />,
+          },
+        ],
+      },
+
+
+      {
+        path: 'delivery',
+        element: (
+          <PrivateRoute allowedRoles={["Super Admin", "delivery"]}>
+            <DeliveryLayout />
+          </PrivateRoute>
+        ),
+        children: [
+          {
+            index: true,
+            element: <DeliveryDashboard />,
           },
         ],
       },
