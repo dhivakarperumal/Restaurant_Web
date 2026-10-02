@@ -1,756 +1,987 @@
-import { useEffect, useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { 
-  Calendar, 
-  ShoppingBag, 
-  IndianRupee, 
-  Users, 
-  Package, 
-  TrendingUp, 
-  ChevronDown,
-  ShoppingCart,
-  User,
-  Image as ImageIcon,
+import React, { useEffect, useMemo, useState } from "react";
+import {
+  AlertCircle,
+  CheckCircle2,
+  ChevronRight,
+  Clock,
+  Eye,
+  Filter,
+  Flame,
+  IndianRupee,
+  Info,
+  Layers,
+  LayoutGrid,
+  Loader2,
+  RefreshCw,
+  Search,
+  ShieldCheck,
+  Sparkles,
+  Table2,
   Tag,
-  Plus,
-  ArrowRight,
-  CircleAlert
-} from 'lucide-react';
-import { 
-  LineChart, 
-  Line, 
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
-  Tooltip, 
-  ResponsiveContainer,
-  PieChart,
-  Pie,
-  Cell
-} from 'recharts';
-import api from '../api';
+  Utensils,
+  UtensilsCrossed,
+  X,
+  XCircle,
+} from "lucide-react";
+import toast from "react-hot-toast";
+import api from "../api";
+import { useAuth } from "../PrivateRouter/AuthContext";
 
-const statusColors = {
-  DELIVERED: '#166534',
-  PROCESSING: '#f59e0b',
-  SHIPPED: '#3b82f6',
-  CANCELLED: '#a855f7',
-  RETURNED: '#9ca3af',
-  PENDING: '#64748b',
+const resolveImageUrl = (img) => {
+  if (!img || typeof img !== "string") return "";
+  if (
+    img.startsWith("http://") ||
+    img.startsWith("https://") ||
+    img.startsWith("data:")
+  ) {
+    return img;
+  }
+  const cleanPath = img.startsWith("/") ? img : `/${img}`;
+  return `http://localhost:5000${cleanPath}`;
 };
 
-const dateKey = (value) => {
-  if (!value) return '';
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return '';
-  return date.toLocaleDateString('en-CA');
-};
+export default function ServerDashboard() {
+  const { userProfile } = useAuth();
+  const [foods, setFoods] = useState([]);
+  const [categories, setCategories] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-const formatDateInput = (date) => {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
-};
+  // Filters & Search
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("all");
+  const [selectedType, setSelectedType] = useState("all"); // 'all' | 'veg' | 'non-veg'
+  const [selectedStatus, setSelectedStatus] = useState("all"); // 'all' | 'available' | 'unavailable'
+  const [sortBy, setSortBy] = useState("latest");
+  const [viewMode, setViewMode] = useState("grid"); // 'grid' | 'table'
 
-const ServerDashboard = () => {
-  const [dashboardCounts, setDashboardCounts] = useState({
-    orders: 0,
-    revenue: 0,
-    customers: 0,
-    products: 0,
-    lowStock: 0,
-    delivered: 0,
-    todayOrders: 0,
-    cancelled: 0,
-  });
-  const navigate = useNavigate();
-  const [orders, setOrders] = useState([]);
-  const [catalogItems, setCatalogItems] = useState({ products: [], albums: [], gifts: [] });
-  const [dateFilter, setDateFilter] = useState('this-month');
-  const [customFrom, setCustomFrom] = useState('');
-  const [customTo, setCustomTo] = useState('');
+  // View Details Modal
+  const [viewingFood, setViewingFood] = useState(null);
+  const [activeImageIndex, setActiveImageIndex] = useState(0);
 
-  const filterLabel = {
-    all: 'All Dates',
-    today: 'Today',
-    yesterday: 'Yesterday',
-    'this-week': 'This Week',
-    'this-month': 'This Month',
-    'last-month': 'Last Month',
-    custom: 'Custom Range',
-  }[dateFilter];
+  const fetchFoodsAndCategories = async () => {
+    try {
+      setLoading(true);
+      const [foodsRes, categoriesRes] = await Promise.allSettled([
+        api.get("/foods"),
+        api.get("/categories"),
+      ]);
 
-  const filteredOrders = useMemo(() => {
-    const now = new Date();
-    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    let from;
-    let to;
+      if (foodsRes.status === "fulfilled" && foodsRes.value.data?.success) {
+        setFoods(foodsRes.value.data.data || []);
+      } else if (
+        foodsRes.status === "fulfilled" &&
+        Array.isArray(foodsRes.value.data)
+      ) {
+        setFoods(foodsRes.value.data);
+      } else {
+        setFoods([]);
+      }
 
-    if (dateFilter === 'today') {
-      from = today;
-      to = today;
-    } else if (dateFilter === 'yesterday') {
-      from = new Date(today);
-      from.setDate(from.getDate() - 1);
-      to = from;
-    } else if (dateFilter === 'this-week') {
-      from = new Date(today);
-      from.setDate(from.getDate() - ((from.getDay() + 6) % 7));
-      to = today;
-    } else if (dateFilter === 'this-month') {
-      from = new Date(today.getFullYear(), today.getMonth(), 1);
-      to = today;
-    } else if (dateFilter === 'last-month') {
-      from = new Date(today.getFullYear(), today.getMonth() - 1, 1);
-      to = new Date(today.getFullYear(), today.getMonth(), 0);
-    } else if (dateFilter === 'custom' && customFrom && customTo) {
-      from = new Date(`${customFrom}T00:00:00`);
-      to = new Date(`${customTo}T00:00:00`);
+      if (
+        categoriesRes.status === "fulfilled" &&
+        categoriesRes.value.data?.data
+      ) {
+        const catList = Array.isArray(categoriesRes.value.data.data)
+          ? categoriesRes.value.data.data
+          : [];
+        setCategories(catList);
+      }
+    } catch (error) {
+      console.error("Error fetching foods:", error);
+      toast.error("Failed to load restaurant food menu");
+    } finally {
+      setLoading(false);
     }
-
-    if (!from || !to || from > to) return dateFilter === 'all' ? orders : [];
-    const fromKey = formatDateInput(from);
-    const toKey = formatDateInput(to);
-    return orders.filter((order) => {
-      const orderKey = dateKey(order.order_date || order.created_at);
-      return orderKey >= fromKey && orderKey <= toKey;
-    });
-  }, [customFrom, customTo, dateFilter, orders]);
-
-  const filteredOrderCounts = useMemo(() => ({
-    orders: filteredOrders.length,
-    revenue: filteredOrders.reduce((sum, order) => sum + Number(order.total_amount || 0), 0),
-    delivered: filteredOrders.filter((order) => ['delivered', 'completed'].includes(String(order.order_status || '').toLowerCase())).length,
-    todayOrders: filteredOrders.filter((order) => dateKey(order.order_date || order.created_at) === dateKey(new Date())).length,
-    cancelled: filteredOrders.filter((order) => String(order.order_status || '').toLowerCase() === 'cancelled').length,
-  }), [filteredOrders]);
-
-  const salesTrendData = useMemo(() => {
-    const revenueByDate = new Map();
-
-    filteredOrders.forEach((order) => {
-      const dayKey = dateKey(order.order_date || order.created_at);
-      if (!dayKey) return;
-      revenueByDate.set(dayKey, (revenueByDate.get(dayKey) || 0) + Number(order.total_amount || 0));
-    });
-
-    const sortedEntries = [...revenueByDate.entries()].sort((a, b) => new Date(a[0]) - new Date(b[0]));
-    if (!sortedEntries.length) {
-      return [{ name: 'No Data', value: 0 }];
-    }
-
-    const recentEntries = sortedEntries.slice(-7);
-    return recentEntries.map(([date, value]) => ({
-      name: new Date(date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' }),
-      value,
-    }));
-  }, [filteredOrders]);
-
-  const quickActions = [
-    { label: 'View Orders', path: '/admin/orders', icon: <ShoppingBag size={16} className="text-emerald-600" />, color: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
-    { label: 'Add Product', path: '/admin/products/add', icon: <Plus size={16} className="text-blue-600" />, color: 'bg-blue-50 text-blue-700 border-blue-200' },
-    { label: 'Manage Albums', path: '/admin/albums', icon: <ImageIcon size={16} className="text-violet-600" />, color: 'bg-violet-50 text-violet-700 border-violet-200' },
-    { label: 'Stock Details', path: '/admin/products/stock-details', icon: <CircleAlert size={16} className="text-amber-600" />, color: 'bg-amber-50 text-amber-700 border-amber-200' },
-    { label: 'Gift Boxes', path: '/admin/gifts', icon: <Tag size={16} className="text-rose-600" />, color: 'bg-rose-50 text-rose-700 border-rose-200' },
-  ];
-
-  const orderStatusData = useMemo(() => {
-    const buckets = {
-      Delivered: 0,
-      Processing: 0,
-      Shipped: 0,
-      Cancelled: 0,
-      Returned: 0,
-    };
-
-    filteredOrders.forEach((order) => {
-      const rawStatus = String(order.order_status || '').trim();
-      const key = rawStatus.toLowerCase();
-      if (['delivered', 'completed'].includes(key)) {
-        buckets.Delivered += 1;
-      } else if (['processing', 'packing', 'ready', 'out for delivery', 'out_for_delivery'].includes(key)) {
-        buckets.Processing += 1;
-      } else if (['shipped'].includes(key)) {
-        buckets.Shipped += 1;
-      } else if (['cancelled'].includes(key)) {
-        buckets.Cancelled += 1;
-      } else if (['returned'].includes(key)) {
-        buckets.Returned += 1;
-      }
-    });
-
-    const total = Object.values(buckets).reduce((sum, value) => sum + value, 0) || 1;
-
-    return [
-      { name: 'Delivered', value: buckets.Delivered, color: statusColors.DELIVERED },
-      { name: 'Processing', value: buckets.Processing, color: statusColors.PROCESSING },
-      { name: 'Shipped', value: buckets.Shipped, color: statusColors.SHIPPED },
-      { name: 'Cancelled', value: buckets.Cancelled, color: statusColors.CANCELLED },
-      { name: 'Returned', value: buckets.Returned, color: statusColors.RETURNED },
-    ].map((entry) => ({
-      ...entry,
-      percent: Math.round((entry.value / total) * 100),
-    }));
-  }, [filteredOrders]);
-
-  const topCategories = useMemo(() => {
-    const counts = new Map();
-    const addEntries = (items, type = 'Category') => {
-      items.forEach((item) => {
-        const label = String(item?.category || item?.sub_category || type || 'General').trim() || type;
-        const key = label.toLowerCase();
-        counts.set(key, (counts.get(key) || 0) + 1);
-      });
-    };
-
-    addEntries(catalogItems.products, 'Photo Frames');
-    addEntries(catalogItems.albums, 'Albums');
-    addEntries(catalogItems.gifts, 'Gifts');
-
-    const entries = [...counts.entries()]
-      .map(([key, value]) => ({
-        name: key === 'general' ? 'General' : key.charAt(0).toUpperCase() + key.slice(1),
-        value,
-      }))
-      .sort((a, b) => b.value - a.value)
-      .slice(0, 4);
-
-    const total = entries.reduce((sum, entry) => sum + entry.value, 0) || 1;
-    return entries.map((entry) => ({
-      ...entry,
-      percent: Math.max(5, Math.round((entry.value / total) * 100)),
-      icon: /gift/.test(entry.name.toLowerCase())
-        ? <Package size={18} className="text-red-600" />
-        : /album/.test(entry.name.toLowerCase())
-          ? <ImageIcon size={18} className="text-emerald-700" />
-          : <ImageIcon size={18} className="text-amber-700" />,
-      iconBg: /gift/.test(entry.name.toLowerCase())
-        ? 'bg-red-100'
-        : /album/.test(entry.name.toLowerCase())
-          ? 'bg-emerald-100'
-          : 'bg-amber-100',
-    }));
-  }, [catalogItems]);
-
-  const lowStockAlerts = useMemo(() => {
-    const items = [];
-
-    catalogItems.products.forEach((product) => {
-      const variantStock = Array.isArray(product.size_variants)
-        ? product.size_variants.reduce((sum, variant) => sum + Number(variant?.stock || 0), 0)
-        : typeof product.size_variants === 'string'
-          ? (() => {
-              try {
-                return JSON.parse(product.size_variants).reduce((sum, variant) => sum + Number(variant?.stock || 0), 0);
-              } catch {
-                return 0;
-              }
-            })()
-          : 0;
-
-      if (variantStock <= 15) {
-        items.push({ name: product.product_name || 'Product', type: 'Product', stock: variantStock });
-      }
-    });
-
-    catalogItems.albums.forEach((album) => {
-      const variantStock = Array.isArray(album.variants)
-        ? album.variants.reduce((sum, variant) => sum + Number(variant?.stock || 0), 0)
-        : typeof album.variants === 'string'
-          ? (() => {
-              try {
-                return JSON.parse(album.variants).reduce((sum, variant) => sum + Number(variant?.stock || 0), 0);
-              } catch {
-                return Number(album.stock_quantity || 0);
-              }
-            })()
-          : Number(album.stock_quantity || 0);
-
-      if (variantStock <= 15) {
-        items.push({ name: album.product_name || 'Album', type: 'Album', stock: variantStock });
-      }
-    });
-
-    catalogItems.gifts.forEach((gift) => {
-      const stock = Number(gift.current_stock ?? gift.stock_quantity ?? 0);
-      if (stock <= 15) {
-        items.push({ name: gift.name || 'Gift Box', type: 'Gift', stock });
-      }
-    });
-
-    return items;
-  }, [catalogItems]);
-
-  const visibleLowStockAlerts = lowStockAlerts.slice(0, 5);
-
-  const paymentBreakdown = useMemo(() => {
-    const totals = new Map();
-    orders.forEach((order) => {
-      const method = String(order.payment_method || 'COD').trim() || 'COD';
-      totals.set(method, (totals.get(method) || 0) + Number(order.total_amount || 0));
-    });
-
-    const total = [...totals.values()].reduce((sum, value) => sum + value, 0) || 1;
-    return [...totals.entries()]
-      .map(([name, value]) => ({
-        name,
-        value,
-        percent: Math.round((value / total) * 100),
-        color: name.toLowerCase().includes('upi') ? '#22c55e' : name.toLowerCase().includes('card') ? '#3b82f6' : name.toLowerCase().includes('wallet') ? '#a855f7' : '#f59e0b',
-      }))
-      .sort((a, b) => b.value - a.value)
-      .slice(0, 4);
-  }, [orders]);
+  };
 
   useEffect(() => {
-    const fetchDashboardCounts = async () => {
-      try {
-        const [ordersResponse, usersResponse, productsResponse, albumsResponse, giftsResponse] = await Promise.all([
-          api.get('/orders'),
-          api.get('/users'),
-          api.get('/products'),
-          api.get('/albums'),
-          api.get('/gift-boxes'),
-        ]);
-        const orders = Array.isArray(ordersResponse.data?.data) ? ordersResponse.data.data : [];
-        const users = Array.isArray(usersResponse.data?.data) ? usersResponse.data.data : [];
-        const products = Array.isArray(productsResponse.data?.data) ? productsResponse.data.data : [];
-        const albums = Array.isArray(albumsResponse.data?.data) ? albumsResponse.data.data : [];
-        const gifts = Array.isArray(giftsResponse.data?.data) ? giftsResponse.data.data : [];
-
-        const lowStockProducts = products.filter((product) => {
-          let variants = [];
-          if (Array.isArray(product.size_variants)) variants = product.size_variants;
-          else if (typeof product.size_variants === 'string') {
-            try { variants = JSON.parse(product.size_variants); } catch (e) { variants = []; }
-          }
-          const stock = variants.length ? variants.reduce((sum, variant) => sum + (Number(variant.stock) || 0), 0) : 0;
-          return stock <= 15;
-        }).length;
-
-        const lowStockAlbums = albums.filter((album) => {
-          let variants = [];
-          if (Array.isArray(album.variants)) variants = album.variants;
-          else if (typeof album.variants === 'string') {
-            try { variants = JSON.parse(album.variants); } catch (e) { variants = []; }
-          }
-          const stock = variants.length ? variants.reduce((sum, variant) => sum + (Number(variant.stock) || 0), 0) : Number(album.stock_quantity || 0);
-          return stock <= 15;
-        }).length;
-
-        const lowStockGifts = gifts.filter((gift) => {
-          const stock = Number(gift.current_stock ?? gift.stock_quantity ?? 0);
-          return stock <= 15;
-        }).length;
-
-        const totalProducts = products.length + albums.length + gifts.length;
-        const totalLowStock = lowStockProducts + lowStockAlbums + lowStockGifts;
-
-        setOrders(orders);
-        setCatalogItems({ products, albums, gifts });
-        setDashboardCounts((current) => ({
-          ...current,
-          customers: users.filter((user) => !['admin', 'super admin'].includes(String(user.role || '').toLowerCase())).length,
-          products: totalProducts,
-          lowStock: totalLowStock,
-        }));
-      } catch (error) {
-        console.error('Failed to load dashboard counts:', error);
-      }
-    };
-
-    fetchDashboardCounts();
+    fetchFoodsAndCategories();
   }, []);
 
+  // Filtered & Sorted Foods
+  const filteredFoods = useMemo(() => {
+    return foods
+      .filter((food) => {
+        const nameMatch =
+          !searchQuery ||
+          String(food.food_name || "")
+            .toLowerCase()
+            .includes(searchQuery.toLowerCase()) ||
+          String(food.food_id || "")
+            .toLowerCase()
+            .includes(searchQuery.toLowerCase()) ||
+          String(food.category_name || "")
+            .toLowerCase()
+            .includes(searchQuery.toLowerCase()) ||
+          String(food.cuisine_name || "")
+            .toLowerCase()
+            .includes(searchQuery.toLowerCase());
+
+        const categoryMatch =
+          selectedCategory === "all" ||
+          String(food.category_id || "") === selectedCategory ||
+          String(food.category_name || "").toLowerCase() ===
+            selectedCategory.toLowerCase();
+
+        const typeMatch =
+          selectedType === "all" ||
+          (selectedType === "veg" &&
+            String(food.food_type || "").toLowerCase() === "veg") ||
+          (selectedType === "non-veg" &&
+            String(food.food_type || "").toLowerCase().includes("non"));
+
+        const isAvailable =
+          Boolean(food.is_available) &&
+          String(food.status || "Active").toLowerCase() === "active";
+
+        const statusMatch =
+          selectedStatus === "all" ||
+          (selectedStatus === "available" && isAvailable) ||
+          (selectedStatus === "unavailable" && !isAvailable);
+
+        return nameMatch && categoryMatch && typeMatch && statusMatch;
+      })
+      .sort((a, b) => {
+        if (sortBy === "latest") {
+          return new Date(b.created_at || 0) - new Date(a.created_at || 0);
+        }
+        if (sortBy === "price-low") {
+          return Number(a.final_price || 0) - Number(b.final_price || 0);
+        }
+        if (sortBy === "price-high") {
+          return Number(b.final_price || 0) - Number(a.final_price || 0);
+        }
+        if (sortBy === "prep-time") {
+          return (
+            Number(a.preparation_time || 0) - Number(b.preparation_time || 0)
+          );
+        }
+        if (sortBy === "name") {
+          return String(a.food_name || "").localeCompare(
+            String(b.food_name || "")
+          );
+        }
+        return 0;
+      });
+  }, [
+    foods,
+    searchQuery,
+    selectedCategory,
+    selectedType,
+    selectedStatus,
+    sortBy,
+  ]);
+
+  // Statistics Summary
+  const stats = useMemo(() => {
+    const total = foods.length;
+    const available = foods.filter(
+      (f) =>
+        Boolean(f.is_available) &&
+        String(f.status || "Active").toLowerCase() === "active"
+    ).length;
+    const vegCount = foods.filter(
+      (f) => String(f.food_type || "").toLowerCase() === "veg"
+    ).length;
+    const nonVegCount = foods.filter((f) =>
+      String(f.food_type || "").toLowerCase().includes("non")
+    ).length;
+
+    const uniqueCategories = new Set(
+      foods.map((f) => f.category_name).filter(Boolean)
+    ).size;
+
+    return { total, available, vegCount, nonVegCount, uniqueCategories };
+  }, [foods]);
+
+  const handleOpenDetails = (food) => {
+    setViewingFood(food);
+    setActiveImageIndex(0);
+  };
+
   return (
-    <div className="p-2  min-h-screen text-gray-800 font-sans">
-      {/* Header */}
-      <div className="flex justify-between items-center mb-6">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Hello, Admin! 👋</h1>
-          <p className="text-gray-500 text-sm mt-1">Here's what's happening with your store today.</p>
-        </div>
-        <div className="flex flex-wrap items-center justify-end gap-2">
-          <label className="flex items-center space-x-2 rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm shadow-sm">
-          <Calendar size={16} className="text-gray-500" />
-          <select
-            value={dateFilter}
-            onChange={(event) => setDateFilter(event.target.value)}
-            className="bg-transparent text-sm text-gray-800 outline-none"
-          >
-            <option value="all">All Dates</option>
-            <option value="today">Today</option>
-            <option value="yesterday">Yesterday</option>
-            <option value="this-week">This Week</option>
-            <option value="this-month">This Month</option>
-            <option value="last-month">Last Month</option>
-            <option value="custom">Custom Range</option>
-          </select>
-          
-          </label>
-          {dateFilter === 'custom' && (
-            <div className="flex items-center gap-2 text-xs text-gray-600">
-              <label className="flex items-center gap-1">
-                From
-                <input type="date" value={customFrom} onChange={(event) => setCustomFrom(event.target.value)} className="rounded border border-gray-200 bg-white px-2 py-2" />
-              </label>
-              <label className="flex items-center gap-1">
-                To
-                <input type="date" value={customTo} onChange={(event) => setCustomTo(event.target.value)} className="rounded border border-gray-200 bg-white px-2 py-2" />
-              </label>
+    <div className="space-y-6">
+      {/* Top Banner / Header */}
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-white p-5 rounded-2xl border border-gray-100 shadow-sm">
+        <div className="flex items-center gap-3">
+          <div className="p-3 rounded-2xl bg-[#1f3228] text-[#d4a843] shadow-inner">
+            <Utensils className="w-6 h-6" />
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <h1 className="text-xl sm:text-2xl font-bold text-gray-900 font-serif">
+                Restaurant Food Menu
+              </h1>
+              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                <ShieldCheck className="w-3 h-3" />
+                View Only
+              </span>
             </div>
-          )}
-          <span className="sr-only">{filterLabel}</span>
+            <p className="text-xs sm:text-sm text-gray-500 mt-0.5">
+              Browse dining dishes and beverages configured by administrator.
+              View ingredients, pricing, and availability.
+            </p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2.5 w-full sm:w-auto">
+          <button
+            onClick={fetchFoodsAndCategories}
+            title="Refresh menu items"
+            className="flex items-center gap-2 px-3.5 py-2.5 rounded-xl border border-gray-200 text-gray-700 hover:bg-gray-50 transition cursor-pointer text-sm font-medium shadow-sm"
+          >
+            <RefreshCw
+              className={`w-4 h-4 ${loading ? "animate-spin text-[#d4a843]" : ""}`}
+            />
+            <span className="hidden sm:inline">Refresh Menu</span>
+          </button>
         </div>
       </div>
 
-      {/* Top Stats Cards */}
-      <div className="grid grid-cols-1 gap-4 mb-6 md:grid-cols-2 lg:grid-cols-4">
+      {/* Stats Summary Cards */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {[
-          { title: 'Total Orders', value: filteredOrderCounts.orders.toLocaleString(), inc: '18.6%', icon: <ShoppingBag size={24} className="text-white" />, iconBg: 'bg-[#22c55e]' }, // Bright Green
-          { title: 'Total Revenue', value: `₹${filteredOrderCounts.revenue.toLocaleString('en-IN')}`, inc: '22.4%', icon: <IndianRupee size={24} className="text-white" />, iconBg: 'bg-[#f59e0b]' }, // Bright Amber
-          { title: 'Total Customers', value: dashboardCounts.customers.toLocaleString(), inc: '15.3%', icon: <Users size={24} className="text-white" />, iconBg: 'bg-[#06b6d4]' }, // Bright Cyan
-          { title: 'Total Products', value: dashboardCounts.products.toLocaleString(), inc: '10.7%', icon: <Package size={24} className="text-white" />, iconBg: 'bg-[#a855f7]' }, // Bright Purple
-          { title: 'Low Stock', value: dashboardCounts.lowStock.toLocaleString(), inc: 'Needs attention', icon: <Package size={24} className="text-white" />, iconBg: 'bg-[#f97316]' },
-          { title: 'Delivered', value: filteredOrderCounts.delivered.toLocaleString(), inc: 'Completed orders', icon: <ShoppingBag size={24} className="text-white" />, iconBg: 'bg-[#166534]' },
-          { title: "Today's Orders", value: filteredOrderCounts.todayOrders.toLocaleString(), inc: 'Since midnight', icon: <Calendar size={24} className="text-white" />, iconBg: 'bg-[#3b82f6]' },
-          { title: 'Cancelled Orders', value: filteredOrderCounts.cancelled.toLocaleString(), inc: 'Cancelled orders', icon: <ShoppingCart size={24} className="text-white" />, iconBg: 'bg-[#dc2626]' },
-        ].map((stat, i) => (
-          <div key={i} className="bg-white rounded-xl p-5 border border-gray-100 shadow-sm relative overflow-hidden flex flex-col h-full">
-            <div className="flex items-start space-x-4 flex-1">
-              <div className={`w-14 h-14 rounded-full flex items-center justify-center shrink-0 ${stat.iconBg}`}>
-                 {stat.icon}
-              </div>
-              <div className="flex flex-col">
-                <p className="text-gray-600 text-xs font-medium mb-1">{stat.title}</p>
-                <h3 className="text-2xl font-bold text-gray-900 mb-3">{stat.value}</h3>
-                <div className="flex flex-col">
-                  <div className="flex items-center text-emerald-600 text-xs font-medium mb-1">
-                    <TrendingUp size={12} className="mr-1" />
-                    <span>{stat.inc}</span>
-                  </div>
-                  <p className="text-gray-400 text-[10px]">from last month</p>
-                </div>
-              </div>
+          {
+            title: "Total Dishes",
+            value: stats.total,
+            desc: "Configured by admin",
+            icon: UtensilsCrossed,
+            iconBg: "bg-[#1f3228] text-[#d4a843]",
+          },
+          {
+            title: "Available Today",
+            value: stats.available,
+            desc: "Ready to serve",
+            icon: CheckCircle2,
+            iconBg: "bg-emerald-500 text-white",
+          },
+          {
+            title: "Pure Veg Items",
+            value: stats.vegCount,
+            desc: "Vegetarian selections",
+            icon: Sparkles,
+            iconBg: "bg-green-600 text-white",
+          },
+          {
+            title: "Non-Veg Dishes",
+            value: stats.nonVegCount,
+            desc: "Meat & poultry specialties",
+            icon: Flame,
+            iconBg: "bg-rose-500 text-white",
+          },
+        ].map(({ title, value, desc, icon: Icon, iconBg }) => (
+          <div
+            key={title}
+            className="bg-white p-4.5 rounded-2xl border border-gray-100 shadow-sm flex items-center gap-3.5 transition hover:shadow-md"
+          >
+            <div
+              className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 ${iconBg} shadow-sm`}
+            >
+              <Icon className="w-6 h-6" />
             </div>
-            {/* Decorative wave at bottom */}
-            <div className="absolute bottom-0 left-0 w-full h-8 overflow-hidden pointer-events-none">
-                <svg viewBox="0 0 100 20" preserveAspectRatio="none" className={`w-full h-full opacity-40`} fill="currentColor" style={{ color: stat.iconBg.replace('bg-[', '').replace(']', '') }}>
-                  <path d="M0,10 C30,25 70,0 100,10 L100,20 L0,20 Z" />
-                </svg>
+            <div>
+              <p className="text-xs font-medium text-gray-500">{title}</p>
+              <h3 className="text-2xl font-bold text-gray-900 leading-tight">
+                {value}
+              </h3>
+              <p className="text-[11px] text-gray-400 mt-0.5">{desc}</p>
             </div>
           </div>
         ))}
       </div>
 
-      {/* Middle Row */}
-      <div className="grid grid-cols-1 gap-6 mb-6 lg:grid-cols-3">
-        {/* Sales Overview Chart */}
-        <div className="bg-white rounded-xl p-5 border border-gray-100 shadow-sm lg:col-span-2">
-          <div className="flex justify-between items-center mb-6">
-            <div className="flex items-center space-x-2">
-              <TrendingUp size={18} className="text-amber-500" />
-              <h2 className="font-semibold text-gray-800">Sales Overview</h2>
-            </div>
-            <button className="flex items-center space-x-1 border border-gray-200 px-3 py-1.5 rounded-lg text-xs">
-              <span>This Month</span>
-              <ChevronDown size={14} />
-            </button>
-          </div>
-          <div className="h-64">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={salesTrendData} margin={{ top: 5, right: 20, bottom: 5, left: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f3f4f6" />
-                <XAxis 
-                  dataKey="name" 
-                  axisLine={false} 
-                  tickLine={false} 
-                  tick={{ fontSize: 10, fill: '#6b7280' }}
-                  dy={10}
-                />
-                <YAxis 
-                  axisLine={false} 
-                  tickLine={false} 
-                  tick={{ fontSize: 10, fill: '#6b7280' }}
-                  tickFormatter={(val) => `₹${val/1000}k`}
-                  dx={-10}
-                />
-                <Tooltip 
-                   contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-                   formatter={(value) => [`₹${Number(value).toLocaleString('en-IN')}`, "Revenue"]}
-                />
-                <Line 
-                  type="monotone" 
-                  dataKey="value" 
-                  stroke="#166534" 
-                  strokeWidth={2} 
-                  dot={{ r: 3, fill: '#166534' }} 
-                  activeDot={{ r: 5 }} 
-                />
-              </LineChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-xl p-5 border border-gray-100 shadow-sm">
-          <div className="flex justify-between items-center mb-4">
-            <div className="flex items-center space-x-2">
-              <TrendingUp size={18} className="text-emerald-600" />
-              <h2 className="font-semibold text-gray-800">Quick Actions</h2>
-            </div>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {quickActions.map((action) => (
+      {/* Search and Filters Bar */}
+      <div className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm space-y-3">
+        <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
+          {/* Search Input */}
+          <div className="relative flex-1 max-w-md">
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <input
+              type="text"
+              placeholder="Search dishes by name, cuisine, category..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-10 pr-4 py-2.5 text-sm bg-gray-50 rounded-xl border border-gray-200 focus:outline-none focus:border-[#d4a843] focus:bg-white transition"
+            />
+            {searchQuery && (
               <button
-                key={action.label}
-                type="button"
-                onClick={() => navigate(action.path)}
-                className={`flex items-center justify-between rounded-xl border px-3 py-3 text-left text-sm font-medium transition hover:-translate-y-0.5 hover:shadow-sm ${action.color}`}
+                onClick={() => setSearchQuery("")}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
               >
-                <span className="flex items-center gap-2">
-                  {action.icon}
-                  {action.label}
-                </span>
-                <ArrowRight size={14} />
+                <X className="w-4 h-4" />
               </button>
-            ))}
+            )}
+          </div>
+
+          {/* Filter Dropdowns and View Mode */}
+          <div className="flex flex-wrap items-center gap-2">
+            {/* Category Dropdown */}
+            <select
+              value={selectedCategory}
+              onChange={(e) => setSelectedCategory(e.target.value)}
+              className="px-3 py-2 text-xs sm:text-sm bg-gray-50 border border-gray-200 rounded-xl text-gray-700 outline-none focus:border-[#d4a843]"
+            >
+              <option value="all">All Categories ({foods.length})</option>
+              {categories.map((cat) => (
+                <option
+                  key={cat.category_id || cat.id}
+                  value={cat.category_id || cat.name}
+                >
+                  {cat.name || cat.category_name}
+                </option>
+              ))}
+            </select>
+
+            {/* Type Dropdown (Veg/Non-Veg) */}
+            <select
+              value={selectedType}
+              onChange={(e) => setSelectedType(e.target.value)}
+              className="px-3 py-2 text-xs sm:text-sm bg-gray-50 border border-gray-200 rounded-xl text-gray-700 outline-none focus:border-[#d4a843]"
+            >
+              <option value="all">All Types</option>
+              <option value="veg">🟢 Veg Only ({stats.vegCount})</option>
+              <option value="non-veg">🔴 Non-Veg ({stats.nonVegCount})</option>
+            </select>
+
+            {/* Availability Filter */}
+            <select
+              value={selectedStatus}
+              onChange={(e) => setSelectedStatus(e.target.value)}
+              className="px-3 py-2 text-xs sm:text-sm bg-gray-50 border border-gray-200 rounded-xl text-gray-700 outline-none focus:border-[#d4a843]"
+            >
+              <option value="all">All Availability</option>
+              <option value="available">Available ({stats.available})</option>
+              <option value="unavailable">
+                Unavailable ({stats.total - stats.available})
+              </option>
+            </select>
+
+            {/* Sort Dropdown */}
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value)}
+              className="px-3 py-2 text-xs sm:text-sm bg-gray-50 border border-gray-200 rounded-xl text-gray-700 outline-none focus:border-[#d4a843]"
+            >
+              <option value="latest">Sort: Latest Added</option>
+              <option value="price-low">Price: Low to High</option>
+              <option value="price-high">Price: High to Low</option>
+              <option value="prep-time">Prep Time: Quickest</option>
+              <option value="name">Name: A to Z</option>
+            </select>
+
+            {/* View Mode Switcher */}
+            <div className="flex items-center rounded-xl border border-gray-200 p-1 bg-gray-50">
+              <button
+                type="button"
+                onClick={() => setViewMode("grid")}
+                className={`cursor-pointer rounded-lg p-1.5 text-xs transition ${viewMode === "grid" ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-900"}`}
+                title="Grid view"
+              >
+                <LayoutGrid className="w-4 h-4" />
+              </button>
+              <button
+                type="button"
+                onClick={() => setViewMode("table")}
+                className={`cursor-pointer rounded-lg p-1.5 text-xs transition ${viewMode === "table" ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-900"}`}
+                title="Table view"
+              >
+                <Table2 className="w-4 h-4" />
+              </button>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Recent Orders Table */}
-      <div className="mb-6">
-        <div className="bg-white rounded-xl p-5 border border-gray-100 shadow-sm w-full">
-          <div className="flex justify-between items-center mb-6">
-            <div className="flex items-center space-x-2">
-               <ShoppingBag size={18} className="text-amber-500" />
-               <h2 className="font-semibold text-gray-800">Recent Orders</h2>
-            </div>
-            <button className="text-xs font-medium text-gray-500 hover:text-gray-800">View All</button>
+      {/* Main Content Area */}
+      {loading ? (
+        <div className="bg-white p-14 rounded-2xl border border-gray-100 flex flex-col items-center justify-center gap-3">
+          <Loader2 className="w-8 h-8 animate-spin text-[#d4a843]" />
+          <p className="text-sm text-gray-500 font-medium">
+            Fetching restaurant foods from database...
+          </p>
+        </div>
+      ) : filteredFoods.length === 0 ? (
+        <div className="bg-white p-14 rounded-2xl border border-gray-100 text-center space-y-4">
+          <div className="w-16 h-16 rounded-full bg-[#1f3228]/10 text-[#1f3228] flex items-center justify-center mx-auto">
+            <UtensilsCrossed className="w-8 h-8 text-[#d4a843]" />
           </div>
+          <div>
+            <h3 className="text-lg font-bold text-gray-800">No dishes found</h3>
+            <p className="text-sm text-gray-500 max-w-sm mx-auto mt-1">
+              {searchQuery ||
+              selectedCategory !== "all" ||
+              selectedType !== "all" ||
+              selectedStatus !== "all"
+                ? "No food items match your filter criteria. Try clearing search or filters."
+                : "No dishes have been added by the administrator yet."}
+            </p>
+          </div>
+          {(searchQuery ||
+            selectedCategory !== "all" ||
+            selectedType !== "all" ||
+            selectedStatus !== "all") && (
+            <button
+              onClick={() => {
+                setSearchQuery("");
+                setSelectedCategory("all");
+                setSelectedType("all");
+                setSelectedStatus("all");
+              }}
+              className="inline-flex items-center gap-1.5 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl text-xs font-semibold transition"
+            >
+              Reset Filters
+            </button>
+          )}
+        </div>
+      ) : viewMode === "grid" ? (
+        /* GRID (CARD) VIEW */
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
+          {filteredFoods.map((food) => {
+            const isVeg = String(food.food_type || "").toLowerCase() === "veg";
+            const isAvailable =
+              Boolean(food.is_available) &&
+              String(food.status || "Active").toLowerCase() === "active";
+            const primaryImage =
+              Array.isArray(food.food_images) && food.food_images.length > 0
+                ? food.food_images[0]
+                : "";
+
+            return (
+              <div
+                key={food.food_id || food.id}
+                className="bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-all flex flex-col justify-between overflow-hidden group"
+              >
+                <div>
+                  {/* Card Image */}
+                  <div className="relative h-44 w-full bg-gray-100 overflow-hidden">
+                    {primaryImage ? (
+                      <img
+                        src={resolveImageUrl(primaryImage)}
+                        alt={food.food_name}
+                        className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                        onError={(e) => {
+                          e.target.style.display = "none";
+                          if (e.target.nextSibling) {
+                            e.target.nextSibling.style.display = "flex";
+                          }
+                        }}
+                      />
+                    ) : null}
+                    <div
+                      style={{ display: primaryImage ? "none" : "flex" }}
+                      className="w-full h-full items-center justify-center bg-gradient-to-br from-[#1f3228]/5 to-[#1f3228]/15 text-[#1f3228]/40"
+                    >
+                      <UtensilsCrossed className="w-12 h-12" />
+                    </div>
+
+                    {/* Top Badges */}
+                    <div className="absolute top-2.5 left-2.5 flex items-center gap-1.5">
+                      {/* Veg / Non-Veg Indicator */}
+                      <span
+                        className={`inline-flex items-center justify-center w-5 h-5 rounded bg-white shadow-sm border ${
+                          isVeg ? "border-green-600" : "border-rose-600"
+                        }`}
+                        title={isVeg ? "Vegetarian" : "Non-Vegetarian"}
+                      >
+                        <span
+                          className={`w-2.5 h-2.5 rounded-full ${
+                            isVeg ? "bg-green-600" : "bg-rose-600"
+                          }`}
+                        />
+                      </span>
+
+                      {food.is_spicy ? (
+                        <span className="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full bg-rose-500 text-white text-[10px] font-bold shadow-sm">
+                          <Flame className="w-3 h-3" /> Spicy
+                        </span>
+                      ) : null}
+                    </div>
+
+                    {/* Availability status badge */}
+                    <div className="absolute top-2.5 right-2.5">
+                      <span
+                        className={`px-2 py-0.5 rounded-full text-[11px] font-semibold shadow-sm backdrop-blur-sm ${
+                          isAvailable
+                            ? "bg-emerald-500/90 text-white"
+                            : "bg-gray-800/80 text-gray-200"
+                        }`}
+                      >
+                        {isAvailable ? "Available" : "Unavailable"}
+                      </span>
+                    </div>
+
+                    {/* Preparation Time */}
+                    {food.preparation_time ? (
+                      <div className="absolute bottom-2.5 right-2.5 bg-black/60 text-white text-[11px] font-medium px-2 py-0.5 rounded-md backdrop-blur-sm flex items-center gap-1">
+                        <Clock className="w-3 h-3" />
+                        <span>{food.preparation_time}m</span>
+                      </div>
+                    ) : null}
+                  </div>
+
+                  {/* Card Content */}
+                  <div className="p-4 space-y-2.5">
+                    <div>
+                      <div className="flex items-center justify-between gap-1 text-[11px] text-gray-400">
+                        <span className="font-mono font-medium">
+                          {food.food_id}
+                        </span>
+                        <span className="truncate max-w-[120px] bg-gray-100 text-gray-600 px-2 py-0.5 rounded text-[10px] font-medium">
+                          {food.category_name || "General"}
+                        </span>
+                      </div>
+                      <h3
+                        className="font-bold text-gray-900 text-base mt-1 line-clamp-1 group-hover:text-[#1a3c36] transition-colors"
+                        title={food.food_name}
+                      >
+                        {food.food_name}
+                      </h3>
+                      {food.cuisine_name ? (
+                        <p className="text-xs text-gray-500 line-clamp-1">
+                          {food.cuisine_name} Cuisine
+                        </p>
+                      ) : null}
+                    </div>
+
+                    {/* Pricing */}
+                    <div className="flex items-baseline gap-2 pt-1 border-t border-gray-100">
+                      <span className="text-lg font-bold text-gray-900">
+                        ₹{Number(food.final_price || 0).toFixed(2)}
+                      </span>
+                      {Number(food.mrp || 0) > Number(food.final_price || 0) && (
+                        <span className="text-xs text-gray-400 line-through">
+                          ₹{Number(food.mrp || 0).toFixed(2)}
+                        </span>
+                      )}
+                      {Number(food.discount || 0) > 0 && (
+                        <span className="text-[10px] font-semibold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded">
+                          {Number(food.discount)}% OFF
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Card Footer: View Details Action */}
+                <div className="p-3 pt-0">
+                  <button
+                    type="button"
+                    onClick={() => handleOpenDetails(food)}
+                    className="w-full flex items-center justify-center gap-2 py-2 px-3 bg-gray-50 hover:bg-[#1f3228] text-gray-700 hover:text-[#d4a843] rounded-xl text-xs font-semibold transition border border-gray-200 hover:border-[#1f3228] cursor-pointer"
+                  >
+                    <Eye className="w-3.5 h-3.5" />
+                    <span>View Food Details</span>
+                  </button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      ) : (
+        /* TABLE (LIST) VIEW */
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm">
-              <thead className="text-xs text-gray-500 bg-white">
+              <thead className="bg-gray-50/75 border-b border-gray-100 text-xs text-gray-500 uppercase tracking-wider font-semibold">
                 <tr>
-                  <th className="pb-3 font-medium">Order ID</th>
-                  <th className="pb-3 font-medium">Customer</th>
-                  <th className="pb-3 font-medium">Amount</th>
-                  <th className="pb-3 font-medium text-right">Status</th>
+                  <th className="py-3.5 px-4">Dish Details</th>
+                  <th className="py-3.5 px-4">Category & Cuisine</th>
+                  <th className="py-3.5 px-4">Type</th>
+                  <th className="py-3.5 px-4">Prep Time</th>
+                  <th className="py-3.5 px-4">Price / MRP</th>
+                  <th className="py-3.5 px-4">Availability</th>
+                  <th className="py-3.5 px-4 text-right">View Only</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-50">
-                {orders.slice(0, 5).map((order, i) => {
-                  const status = String(order.order_status || 'Pending');
-                  const statusLower = status.toLowerCase();
-                  const badgeStyle = ['delivered', 'completed'].includes(statusLower)
-                    ? { bg: 'bg-emerald-100', text: 'text-emerald-700', dot: 'bg-emerald-500' }
-                    : ['processing', 'packing', 'ready', 'out for delivery', 'out_for_delivery'].includes(statusLower)
-                      ? { bg: 'bg-amber-100', text: 'text-amber-700', dot: 'bg-amber-500' }
-                      : ['shipped'].includes(statusLower)
-                        ? { bg: 'bg-blue-100', text: 'text-blue-700', dot: 'bg-blue-500' }
-                        : ['cancelled'].includes(statusLower)
-                          ? { bg: 'bg-rose-100', text: 'text-rose-700', dot: 'bg-rose-500' }
-                          : { bg: 'bg-slate-100', text: 'text-slate-700', dot: 'bg-slate-500' };
+              <tbody className="divide-y divide-gray-100">
+                {filteredFoods.map((food) => {
+                  const isVeg =
+                    String(food.food_type || "").toLowerCase() === "veg";
+                  const isAvailable =
+                    Boolean(food.is_available) &&
+                    String(food.status || "Active").toLowerCase() === "active";
+                  const primaryImage =
+                    Array.isArray(food.food_images) &&
+                    food.food_images.length > 0
+                      ? food.food_images[0]
+                      : "";
 
                   return (
-                    <tr key={order.order_id || order.id || i} className="hover:bg-gray-50/50">
-                      <td className="py-3 flex items-center space-x-2">
-                        <div className="w-6 h-6 bg-gray-200 rounded overflow-hidden">
-                          {i+1}
+                    <tr
+                      key={food.food_id || food.id}
+                      className="hover:bg-gray-50/50 transition-colors"
+                    >
+                      {/* Dish Details */}
+                      <td className="py-3 px-4">
+                        <div className="flex items-center gap-3">
+                          <div className="w-12 h-12 rounded-xl bg-gray-100 shrink-0 overflow-hidden border border-gray-200">
+                            {primaryImage ? (
+                              <img
+                                src={resolveImageUrl(primaryImage)}
+                                alt={food.food_name}
+                                className="w-full h-full object-cover"
+                                onError={(e) => {
+                                  e.target.style.display = "none";
+                                }}
+                              />
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center text-gray-400">
+                                <Utensils className="w-5 h-5" />
+                              </div>
+                            )}
+                          </div>
+                          <div>
+                            <div className="flex items-center gap-1.5">
+                              <h4 className="font-bold text-gray-900 leading-tight">
+                                {food.food_name}
+                              </h4>
+                              {food.is_spicy ? (
+                                <Flame className="w-3.5 h-3.5 text-rose-500" />
+                              ) : null}
+                            </div>
+                            <span className="text-xs text-gray-400 font-mono">
+                              {food.food_id}
+                            </span>
+                          </div>
                         </div>
-                        <span className="font-medium text-gray-700 text-xs">{order.order_id || `#${order.id || i + 1}`}</span>
                       </td>
-                      <td className="py-3 text-xs text-gray-600">{order.customer_name || 'Customer'}</td>
-                      <td className="py-3 text-xs font-medium text-gray-800">₹{Number(order.total_amount || 0).toLocaleString('en-IN')}</td>
-                      <td className="py-3 text-right">
-                        <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium ${badgeStyle.bg} ${badgeStyle.text}`}>
-                          <span className={`w-1.5 h-1.5 rounded-full mr-1 ${badgeStyle.dot}`}></span>
-                          {status}
+
+                      {/* Category & Cuisine */}
+                      <td className="py-3 px-4">
+                        <div className="flex flex-col">
+                          <span className="font-medium text-gray-800 text-xs">
+                            {food.category_name || "General"}
+                          </span>
+                          <span className="text-[11px] text-gray-400">
+                            {food.cuisine_name || "Standard"}
+                          </span>
+                        </div>
+                      </td>
+
+                      {/* Type */}
+                      <td className="py-3 px-4">
+                        <span
+                          className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold ${
+                            isVeg
+                              ? "bg-green-50 text-green-700 border border-green-200"
+                              : "bg-rose-50 text-rose-700 border border-rose-200"
+                          }`}
+                        >
+                          <span
+                            className={`w-1.5 h-1.5 rounded-full ${
+                              isVeg ? "bg-green-600" : "bg-rose-600"
+                            }`}
+                          />
+                          {isVeg ? "Veg" : "Non-Veg"}
                         </span>
+                      </td>
+
+                      {/* Prep Time */}
+                      <td className="py-3 px-4 text-xs text-gray-600">
+                        {food.preparation_time ? (
+                          <span className="inline-flex items-center gap-1 text-gray-700 bg-gray-100 px-2 py-0.5 rounded-md font-medium">
+                            <Clock className="w-3 h-3 text-gray-500" />
+                            {food.preparation_time} min
+                          </span>
+                        ) : (
+                          "—"
+                        )}
+                      </td>
+
+                      {/* Price */}
+                      <td className="py-3 px-4">
+                        <div className="flex flex-col">
+                          <span className="font-bold text-gray-900 text-sm">
+                            ₹{Number(food.final_price || 0).toFixed(2)}
+                          </span>
+                          {Number(food.mrp || 0) >
+                            Number(food.final_price || 0) && (
+                            <span className="text-[11px] text-gray-400 line-through">
+                              ₹{Number(food.mrp || 0).toFixed(2)}
+                            </span>
+                          )}
+                        </div>
+                      </td>
+
+                      {/* Availability */}
+                      <td className="py-3 px-4">
+                        <span
+                          className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold ${
+                            isAvailable
+                              ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                              : "bg-gray-100 text-gray-600 border border-gray-200"
+                          }`}
+                        >
+                          <span
+                            className={`w-1.5 h-1.5 rounded-full ${
+                              isAvailable ? "bg-emerald-500" : "bg-gray-400"
+                            }`}
+                          />
+                          {isAvailable ? "Available" : "Unavailable"}
+                        </span>
+                      </td>
+
+                      {/* Action */}
+                      <td className="py-3 px-4 text-right">
+                        <button
+                          type="button"
+                          onClick={() => handleOpenDetails(food)}
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-gray-200 hover:border-[#1f3228] text-gray-700 hover:text-[#d4a843] hover:bg-[#1f3228] text-xs font-semibold transition cursor-pointer"
+                        >
+                          <Eye className="w-3.5 h-3.5" />
+                          <span>View</span>
+                        </button>
                       </td>
                     </tr>
                   );
                 })}
-                {!orders.length && (
-                  <tr>
-                    <td colSpan="4" className="py-4 text-center text-xs text-gray-500">No recent orders available.</td>
-                  </tr>
-                )}
               </tbody>
             </table>
           </div>
         </div>
-      </div>
+      )}
 
-      {/* Additional Dashboard Panels */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-        <div className="bg-white rounded-xl p-5 border border-gray-100 shadow-sm">
-          <div className="flex items-center justify-between mb-5">
-            <h2 className="font-semibold text-gray-800">Low Stock Alerts</h2>
-            <span className="text-xs text-gray-500">{lowStockAlerts.length} {lowStockAlerts.length === 1 ? 'item' : 'items'}</span>
-          </div>
-          <div className="space-y-4">
-            {visibleLowStockAlerts.length ? visibleLowStockAlerts.map((item, index) => (
-              <div key={`${item.name}-${index}`} className="flex items-center justify-between rounded-lg border border-orange-100 bg-orange-50 px-3 py-2">
-                <div>
-                  <p className="text-sm font-medium text-gray-800">{item.name}</p>
-                  <p className="text-[11px] text-gray-500">{item.type}</p>
-                </div>
-                <span className="rounded-full bg-orange-100 px-2 py-1 text-xs font-semibold text-orange-700">{item.stock} left</span>
-              </div>
-            )) : (
-              <div className="text-sm text-gray-500">No low-stock items right now.</div>
-            )}
-          </div>
-        </div>
-
-        <div className="bg-white rounded-xl p-5 border border-gray-100 shadow-sm">
-          <div className="flex items-center justify-between mb-5">
-            <h2 className="font-semibold text-gray-800">Payment Breakdown</h2>
-            <span className="text-xs text-gray-500">Live orders</span>
-          </div>
-          <div className="space-y-4">
-            {paymentBreakdown.length ? paymentBreakdown.map((method) => (
-              <div key={method.name}>
-                <div className="mb-1 flex items-center justify-between text-xs text-gray-600">
-                  <span>{method.name}</span>
-                  <span>₹{method.value.toLocaleString('en-IN')} ({method.percent}%)</span>
-                </div>
-                <div className="h-2.5 w-full overflow-hidden rounded-full bg-gray-100">
-                  <div className="h-full rounded-full" style={{ width: `${method.percent}%`, backgroundColor: method.color }} />
-                </div>
-              </div>
-            )) : (
-              <div className="text-sm text-gray-500">No payment data available yet.</div>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* Bottom Row */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Top Categories */}
-        <div className="bg-white rounded-xl p-5 border border-gray-100 shadow-sm">
-          <div className="flex justify-between items-center mb-6">
-            <h2 className="font-semibold text-gray-800">Top Categories</h2>
-            <button className="flex items-center space-x-1 border border-gray-200 px-3 py-1.5 rounded-lg text-xs">
-              <span>This Month</span>
-              <ChevronDown size={14} />
+      {/* VIEW-ONLY FOOD DETAILS MODAL */}
+      {viewingFood && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
+          <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto p-6 shadow-2xl border border-gray-100 relative">
+            {/* Close Button */}
+            <button
+              onClick={() => setViewingFood(null)}
+              className="absolute right-4 top-4 p-2 rounded-xl text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition cursor-pointer"
+              title="Close"
+            >
+              <X className="w-5 h-5" />
             </button>
-          </div>
-          <div className="space-y-6">
-            {topCategories.length ? topCategories.map((cat, i) => (
-              <div key={`${cat.name}-${i}`}>
-                <div className="flex justify-between items-center mb-2">
-                  <div className="flex items-center space-x-3">
-                    <div className={`p-1.5 rounded-md ${cat.iconBg}`}>
-                      {cat.icon}
-                    </div>
-                    <span className="text-sm font-medium text-gray-700">{cat.name}</span>
-                  </div>
-                  <span className="text-sm font-bold text-gray-800">{cat.percent}%</span>
+
+            {/* Modal Header */}
+            <div className="flex items-start gap-4 mb-5 pb-4 border-b border-gray-100">
+              <div className="p-3 rounded-2xl bg-[#1f3228] text-[#d4a843] shadow-inner shrink-0">
+                <Utensils className="w-6 h-6" />
+              </div>
+              <div className="pr-8">
+                <div className="flex items-center gap-2">
+                  <span className="font-mono text-xs font-bold text-gray-500 bg-gray-100 px-2 py-0.5 rounded">
+                    {viewingFood.food_id}
+                  </span>
+                  <span
+                    className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold ${
+                      String(viewingFood.food_type || "").toLowerCase() ===
+                      "veg"
+                        ? "bg-green-50 text-green-700 border border-green-200"
+                        : "bg-rose-50 text-rose-700 border border-rose-200"
+                    }`}
+                  >
+                    {String(viewingFood.food_type || "").toLowerCase() ===
+                    "veg"
+                      ? "Pure Veg"
+                      : "Non-Veg"}
+                  </span>
+                  {viewingFood.is_spicy ? (
+                    <span className="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full bg-rose-50 text-rose-700 border border-rose-200 text-xs font-semibold">
+                      <Flame className="w-3 h-3 text-rose-500" /> Spicy
+                    </span>
+                  ) : null}
                 </div>
-                <div className="w-full bg-gray-100 rounded-full h-1.5">
-                  <div className="bg-emerald-800 h-1.5 rounded-full" style={{ width: `${cat.percent}%` }}></div>
+                <h2 className="text-xl font-bold text-gray-900 font-serif mt-1">
+                  {viewingFood.food_name}
+                </h2>
+                <p className="text-xs text-gray-500">
+                  {viewingFood.category_name} • {viewingFood.cuisine_name} Cuisine
+                </p>
+              </div>
+            </div>
+
+            {/* Images Carousel / Gallery */}
+            {Array.isArray(viewingFood.food_images) &&
+            viewingFood.food_images.length > 0 ? (
+              <div className="mb-5 space-y-2">
+                <div className="h-60 w-full rounded-xl bg-gray-100 overflow-hidden border border-gray-200 relative">
+                  <img
+                    src={resolveImageUrl(
+                      viewingFood.food_images[activeImageIndex] ||
+                        viewingFood.food_images[0]
+                    )}
+                    alt={viewingFood.food_name}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+                {viewingFood.food_images.length > 1 && (
+                  <div className="flex items-center gap-2 overflow-x-auto pb-1">
+                    {viewingFood.food_images.map((img, idx) => (
+                      <button
+                        key={idx}
+                        onClick={() => setActiveImageIndex(idx)}
+                        className={`w-14 h-14 rounded-lg overflow-hidden shrink-0 border-2 transition cursor-pointer ${
+                          activeImageIndex === idx
+                            ? "border-[#1f3228] scale-105"
+                            : "border-gray-200 opacity-60 hover:opacity-100"
+                        }`}
+                      >
+                        <img
+                          src={resolveImageUrl(img)}
+                          alt=""
+                          className="w-full h-full object-cover"
+                        />
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ) : null}
+
+            {/* Price & Summary Box */}
+            <div className="bg-gray-50 p-4 rounded-xl border border-gray-100 mb-5 flex flex-wrap items-center justify-between gap-4">
+              <div>
+                <span className="text-xs text-gray-500 font-medium">
+                  Price per item
+                </span>
+                <div className="flex items-baseline gap-2">
+                  <span className="text-2xl font-bold text-gray-900">
+                    ₹{Number(viewingFood.final_price || 0).toFixed(2)}
+                  </span>
+                  {Number(viewingFood.mrp || 0) >
+                    Number(viewingFood.final_price || 0) && (
+                    <span className="text-sm text-gray-400 line-through">
+                      ₹{Number(viewingFood.mrp || 0).toFixed(2)}
+                    </span>
+                  )}
+                  {Number(viewingFood.discount || 0) > 0 && (
+                    <span className="text-xs font-bold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded">
+                      {Number(viewingFood.discount)}% OFF
+                    </span>
+                  )}
                 </div>
               </div>
-            )) : (
-              <div className="text-sm text-gray-500">No category data available yet.</div>
-            )}
-          </div>
-        </div>
 
-        {/* Order Status Overview */}
-        <div className="bg-white rounded-xl p-5 border border-gray-100 shadow-sm">
-          <h2 className="font-semibold text-gray-800 mb-6">Order Status Overview</h2>
-          <div className="flex items-center justify-center">
-             <div className="w-1/2 h-48 relative">
-               <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie
-                      data={orderStatusData}
-                      innerRadius={50}
-                      outerRadius={80}
-                      paddingAngle={2}
-                      dataKey="value"
+              <div className="flex items-center gap-2">
+                <span
+                  className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold ${
+                    Boolean(viewingFood.is_available) &&
+                    String(viewingFood.status || "Active").toLowerCase() ===
+                      "active"
+                      ? "bg-emerald-50 text-emerald-800 border border-emerald-200"
+                      : "bg-gray-200 text-gray-700"
+                  }`}
+                >
+                  <span
+                    className={`w-2 h-2 rounded-full ${
+                      Boolean(viewingFood.is_available) &&
+                      String(viewingFood.status || "Active").toLowerCase() ===
+                        "active"
+                        ? "bg-emerald-500"
+                        : "bg-gray-400"
+                    }`}
+                  />
+                  {Boolean(viewingFood.is_available) &&
+                  String(viewingFood.status || "Active").toLowerCase() ===
+                    "active"
+                    ? "Available in Kitchen"
+                    : "Currently Unavailable"}
+                </span>
+              </div>
+            </div>
+
+            {/* Detailed Properties Grid */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-5 text-xs">
+              <div className="p-3 rounded-xl bg-gray-50 border border-gray-100">
+                <span className="text-gray-400 font-medium">Preparation Time</span>
+                <p className="font-bold text-gray-800 text-sm mt-0.5 flex items-center gap-1">
+                  <Clock className="w-3.5 h-3.5 text-gray-500" />
+                  {viewingFood.preparation_time
+                    ? `${viewingFood.preparation_time} mins`
+                    : "Instant"}
+                </p>
+              </div>
+
+              <div className="p-3 rounded-xl bg-gray-50 border border-gray-100">
+                <span className="text-gray-400 font-medium">Portion / Serving</span>
+                <p className="font-bold text-gray-800 text-sm mt-0.5">
+                  {viewingFood.portion_size || viewingFood.serving_size || "1 Portion"}
+                </p>
+              </div>
+
+              <div className="p-3 rounded-xl bg-gray-50 border border-gray-100">
+                <span className="text-gray-400 font-medium">Cuisine</span>
+                <p className="font-bold text-gray-800 text-sm mt-0.5">
+                  {viewingFood.cuisine_name || "Standard"}
+                </p>
+              </div>
+
+              <div className="p-3 rounded-xl bg-gray-50 border border-gray-100">
+                <span className="text-gray-400 font-medium">Dining Option</span>
+                <p className="font-bold text-emerald-700 text-sm mt-0.5">
+                  {viewingFood.dining_available !== false
+                    ? "✓ Dine-in Available"
+                    : "✗ No Dine-in"}
+                </p>
+              </div>
+
+              <div className="p-3 rounded-xl bg-gray-50 border border-gray-100">
+                <span className="text-gray-400 font-medium">Takeaway</span>
+                <p className="font-bold text-blue-700 text-sm mt-0.5">
+                  {viewingFood.takeaway_available !== false
+                    ? "✓ Takeaway Allowed"
+                    : "✗ No Takeaway"}
+                </p>
+              </div>
+
+              <div className="p-3 rounded-xl bg-gray-50 border border-gray-100">
+                <span className="text-gray-400 font-medium">Delivery</span>
+                <p className="font-bold text-purple-700 text-sm mt-0.5">
+                  {viewingFood.delivery_available !== false
+                    ? "✓ Delivery Available"
+                    : "✗ No Delivery"}
+                </p>
+              </div>
+            </div>
+
+            {/* Description */}
+            {viewingFood.description ? (
+              <div className="mb-5 space-y-1">
+                <h4 className="text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                  Description & Ingredients
+                </h4>
+                <p className="text-xs text-gray-600 leading-relaxed bg-gray-50 p-3 rounded-xl border border-gray-100">
+                  {viewingFood.description}
+                </p>
+              </div>
+            ) : null}
+
+            {/* Addons / Customizations if available */}
+            {Array.isArray(viewingFood.addons) &&
+            viewingFood.addons.length > 0 ? (
+              <div className="mb-5 space-y-1">
+                <h4 className="text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                  Available Add-ons
+                </h4>
+                <div className="flex flex-wrap gap-1.5">
+                  {viewingFood.addons.map((addon, i) => (
+                    <span
+                      key={i}
+                      className="px-2.5 py-1 bg-gray-100 text-gray-800 text-xs rounded-lg font-medium"
                     >
-                      {orderStatusData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.color} />
-                      ))}
-                    </Pie>
-                  </PieChart>
-               </ResponsiveContainer>
-             </div>
-             <div className="w-1/2 pl-4">
-                <ul className="space-y-3">
-                  {orderStatusData.map((status, i) => (
-                    <li key={i} className="flex justify-between items-center text-xs">
-                       <div className="flex items-center space-x-2">
-                         <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: status.color }}></span>
-                         <span className="text-gray-600">{status.name}</span>
-                       </div>
-                       <span className="font-medium text-gray-800">{status.value} ({status.percent}%)</span>
-                    </li>
+                      {addon.name || addon.addon_name || JSON.stringify(addon)}{" "}
+                      {addon.price ? `(+₹${addon.price})` : ""}
+                    </span>
                   ))}
-                </ul>
-             </div>
-          </div>
-        </div>
-
-        {/* Recent Activities */}
-        <div className="bg-white rounded-xl p-5 border border-gray-100 shadow-sm">
-          <div className="flex justify-between items-center mb-6">
-            <h2 className="font-semibold text-gray-800">Recent Activities</h2>
-            <button className="text-xs font-medium text-gray-500 hover:text-gray-800">View All</button>
-          </div>
-          <div className="space-y-5">
-            {[
-              ...orders.slice(0, 3).map((order) => ({
-                text: `New order ${order.order_id || '#ORD'} received for ${order.customer_name || 'Customer'}`,
-                time: order.created_at ? new Date(order.created_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : 'Recently',
-                icon: <ShoppingCart size={14} className="text-white" />,
-                bg: 'bg-emerald-600',
-              })),
-              ...catalogItems.products.slice(0, 1).map((product) => ({
-                text: `Product "${product.product_name || 'Product'}" updated`,
-                time: product.updated_at ? new Date(product.updated_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' }) : 'Today',
-                icon: <Package size={14} className="text-white" />,
-                bg: 'bg-amber-500',
-              })),
-              ...catalogItems.albums.slice(0, 1).map((album) => ({
-                text: `Album "${album.product_name || 'Album'}" added`,
-                time: album.created_at ? new Date(album.created_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' }) : 'Today',
-                icon: <ImageIcon size={14} className="text-white" />,
-                bg: 'bg-purple-500',
-              })),
-              ...catalogItems.gifts.slice(0, 1).map((gift) => ({
-                text: `Gift box "${gift.name || 'Gift'}" created`,
-                time: gift.created_at ? new Date(gift.created_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' }) : 'Today',
-                icon: <Tag size={14} className="text-white" />,
-                bg: 'bg-emerald-700',
-              })),
-            ].slice(0, 5).map((activity, i) => (
-              <div key={`${activity.text}-${i}`} className="flex items-start justify-between">
-                <div className="flex items-center space-x-3">
-                  <div className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 ${activity.bg}`}>
-                    {activity.icon}
-                  </div>
-                  <span className="text-xs text-gray-700">{activity.text}</span>
                 </div>
-                <span className="text-[10px] text-gray-400 whitespace-nowrap">{activity.time}</span>
               </div>
-            ))}
-            {!orders.length && !catalogItems.products.length && !catalogItems.albums.length && !catalogItems.gifts.length && (
-              <div className="text-xs text-gray-500">No recent activity available.</div>
-            )}
+            ) : null}
+
+            {/* Modal Bottom: Close Button */}
+            <div className="pt-3 border-t border-gray-100 flex items-center justify-end">
+              <button
+                type="button"
+                onClick={() => setViewingFood(null)}
+                className="px-5 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-800 rounded-xl text-sm font-semibold transition cursor-pointer"
+              >
+                Close Details
+              </button>
+            </div>
           </div>
         </div>
-      </div>
-
-      
+      )}
     </div>
   );
-};
-
-export default ServerDashboard;
+}

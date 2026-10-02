@@ -70,16 +70,11 @@ const navItems = [
 
 
 
-  /* ---- PRODUCTS ---- */
+  /* ---- FOODS ---- */
   {
-    label: "Foods",
+    path: "/server/foods",
+    label: "Foods (View Only)",
     icon: Package,
-    children: [
-     
-      { path: "/admin/products", label: "All Products", icon: Package },
-      { path: "/admin/products/categories", label: "Category", icon: Layers },
-      { path: "/admin/products/stock-details", label: "Stock Details", icon: ClipboardList },
-    ],
   },
 
 
