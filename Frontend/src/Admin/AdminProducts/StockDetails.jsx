@@ -23,17 +23,6 @@ const normalizeImageUrl = (value) => {
   return `${baseUrl}${value.startsWith('/') ? value : `/${value}`}`;
 };
 
-const parseVariantArray = (value) => {
-  if (Array.isArray(value)) return value;
-  if (typeof value !== 'string') return [];
-  try {
-    const parsed = JSON.parse(value);
-    return Array.isArray(parsed) ? parsed : [];
-  } catch {
-    return [];
-  }
-};
-
 const getVariantColor = (variant) => variant?.color || variant?.colour || variant?.variant_color || '';
 
 const getVariantSize = (variant) => variant?.size || variant?.size_name || variant?.label || variant?.name || variant?.size_description || '';
@@ -135,9 +124,9 @@ const StockDetails = () => {
   const lowStock = stockRows.filter((item) => item.status === 'Low Stock').length;
   const outOfStock = stockRows.filter((item) => item.status === 'Out of Stock').length;
   const statCards = [
-    { title: 'Total Products', value: String(stockRows.length), sub: 'All products', inc: '10.7%', icon: <Package className="h-7 w-7 text-white" />, iconBg: 'bg-[#22c55e]', waveColor: '#22c55e' },
-    { title: 'Total Stock (Units)', value: totalStock.toLocaleString('en-IN'), sub: 'Across all products', inc: '12.4%', icon: <ShoppingBag className="h-7 w-7 text-white" />, iconBg: 'bg-[#f59e0b]', waveColor: '#f59e0b' },
-    { title: 'In Stock', value: String(inStock), sub: 'Products available', inc: '15.3%', icon: <Eye className="h-7 w-7 text-white" />, iconBg: 'bg-[#06b6d4]', waveColor: '#06b6d4' },
+    { title: 'Total Foods', value: String(stockRows.length), sub: 'All menu items', inc: '10.7%', icon: <Package className="h-7 w-7 text-white" />, iconBg: 'bg-[#22c55e]', waveColor: '#22c55e' },
+    { title: 'Total Stock (Units)', value: totalStock.toLocaleString('en-IN'), sub: 'Across all foods', inc: '12.4%', icon: <ShoppingBag className="h-7 w-7 text-white" />, iconBg: 'bg-[#f59e0b]', waveColor: '#f59e0b' },
+    { title: 'In Stock', value: String(inStock), sub: 'Foods available', inc: '15.3%', icon: <Eye className="h-7 w-7 text-white" />, iconBg: 'bg-[#06b6d4]', waveColor: '#06b6d4' },
     { title: 'Low Stock', value: String(lowStock), sub: 'Reorder needed', inc: '9.2%', icon: <AlertTriangle className="h-7 w-7 text-white" />, iconBg: 'bg-[#a855f7]', waveColor: '#a855f7' },
     { title: 'Out of Stock', value: String(outOfStock), sub: 'Need attention', inc: '0%', icon: <Package className="h-7 w-7 text-white" />, iconBg: 'bg-[#f97316]', waveColor: '#f97316' },
   ];
@@ -145,35 +134,12 @@ const StockDetails = () => {
   const openStockEditor = (row) => {
     setEditingProduct(row);
     setReportOpen(true);
-
-    if (row.type === 'product') {
-      const variants = Array.isArray(row.rawData?.size_variants) ? row.rawData.size_variants : [];
-      setStockValues(variants.map((variant) => ({
-        ...variant,
-        stock: Number(variant.stock) || 0,
-        add: 0,
-      })));
-      return;
-    }
-
-    if (row.type === 'album') {
-      const variants = parseVariantArray(row.rawData?.variants);
-      if (variants.length) {
-        setStockValues(variants.map((variant) => ({
-          ...variant,
-          stock: Number(variant.stock ?? variant.quantity ?? 0) || 0,
-          add: 0,
-        })));
-      } else {
-        setStockValues([{ size: row.rawData?.size || 'Standard', color: '', stock: Number(row.rawData?.stock_quantity ?? row.currentStock ?? 0) || 0, add: 0 }]);
-      }
-      return;
-    }
-
-    if (row.type === 'gift') {
-      const stock = Number(row.rawData?.current_stock ?? row.rawData?.stock_quantity ?? row.rawData?.currentStock ?? row.currentStock ?? 0);
-      setStockValues([{ size: 'Gift Box', color: '', stock, add: 0 }]);
-    }
+    setStockValues([{
+      size: row.rawData?.portion_size || row.rawData?.serving_size || 'Units',
+      color: '',
+      stock: Number(row.rawData?.stock_quantity ?? 0),
+      add: 0,
+    }]);
   };
 
   const openStockReport = () => {
@@ -197,75 +163,21 @@ const StockDetails = () => {
   const totalCurrentStock = stockValues.reduce((sum, variant) => sum + Number(variant.stock || 0), 0);
   const totalAddedStock = stockValues.reduce((sum, variant) => sum + Number(variant.add || 0), 0);
   const totalProjectedStock = totalCurrentStock + totalAddedStock;
-
   const saveStock = async (event) => {
     event.preventDefault();
     if (!editingProduct) return;
 
     try {
       setSavingStock(true);
-
-      if (editingProduct.type === 'product') {
-        const productVariants = stockValues.map((variant) => {
-          const oldStock = Number(variant.stock ?? 0);
-          const addQty = Number(variant.add ?? 0);
-          return {
-            ...variant,
-            stock: Math.max(0, oldStock + addQty),
-          };
-        });
-
-        await api.put(`/products/${editingProduct.rawData?.id ?? editingProduct.id}`, {
-          ...editingProduct.rawData,
-          size_variants: productVariants,
-        });
-      }
-
-      if (editingProduct.type === 'album') {
-        const nextVariants = stockValues.map((variant) => {
-          const oldStock = Number(variant.stock ?? variant.quantity ?? 0);
-          const addQty = Number(variant.add ?? 0);
-          return {
-            ...variant,
-            stock: Math.max(0, oldStock + addQty),
-            quantity: Math.max(0, oldStock + addQty),
-          };
-        });
-        const totalStock = nextVariants.reduce((sum, variant) => sum + Number(variant.stock || variant.quantity || 0), 0);
-
-        await api.put(`/albums/${editingProduct.rawData?.product_id ?? editingProduct.rawData?.id ?? editingProduct.id}`, {
-          ...editingProduct.rawData,
-          variants: nextVariants,
-          stock_quantity: totalStock,
-          stock_status: totalStock <= 0 ? 'Out of Stock' : 'In Stock',
-        });
-      }
-
-      if (editingProduct.type === 'gift') {
-        const oldStock = Number(editingProduct.rawData?.current_stock ?? editingProduct.rawData?.stock_quantity ?? editingProduct.rawData?.currentStock ?? 0);
-        const addQty = Number(stockValues[0]?.add ?? 0);
-        const nextStock = Math.max(0, oldStock + addQty);
-
-        await api.put(`/gift-boxes/${editingProduct.rawData?.gift_box_id ?? editingProduct.rawData?.id ?? editingProduct.id}`, {
-          ...editingProduct.rawData,
-          current_stock: nextStock,
-          stock_status: nextStock <= 0 ? 'Out of Stock' : 'Available',
-        });
-      }
-
+      await api.put(`/foods/${editingProduct.rawData.food_id}`, {
+        ...editingProduct.rawData,
+        stock_quantity: totalProjectedStock,
+      });
       toast.success('Stock updated successfully');
       setEditingProduct(null);
       setReportOpen(false);
-
-      const [productsResponse, albumsResponse, giftsResponse] = await Promise.all([
-        api.get('/products'),
-        api.get('/albums'),
-        api.get('/gift-boxes'),
-      ]);
-
-      setProducts(Array.isArray(productsResponse?.data?.data) ? productsResponse.data.data : []);
-      setAlbums(Array.isArray(albumsResponse?.data?.data) ? albumsResponse.data.data : []);
-      setGifts(Array.isArray(giftsResponse?.data?.data) ? giftsResponse.data.data : []);
+      const response = await api.get('/foods');
+      setFoods(Array.isArray(response?.data?.data) ? response.data.data : []);
     } catch (error) {
       console.error('Failed to update stock:', error);
       toast.error(error?.response?.data?.message || 'Failed to update stock');
