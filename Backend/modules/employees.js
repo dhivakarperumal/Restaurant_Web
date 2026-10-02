@@ -201,7 +201,7 @@ async function updateEmployeeWithUser({ employeeId, employeeData, updatedBy, pas
     const employeeValues = employeeColumns.map((column) => employeeData[column] ?? null);
     const employeeAssignments = employeeColumns.map((column) => `\`${column}\` = ?`).join(', ');
     await connection.execute(
-      `UPDATE employees SET ${employeeAssignments}, updated_by = ? WHERE employee_id = ?`,
+      `UPDATE employees SET ${employeeAssignments}, updated_by = ?, updated_at = CURRENT_TIMESTAMP WHERE employee_id = ?`,
       [...employeeValues, updatedBy || null, employeeId]
     );
 
