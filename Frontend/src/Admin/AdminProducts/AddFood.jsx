@@ -17,6 +17,7 @@ const blankFood = (foodId = '', actor = '') => ({
   mrp: '',
   discount: '0',
   rating: '0',
+  stockQuantity: '0',
   servingSize: '',
   portionSize: 'Full',
   preparationTime: '0',
@@ -182,6 +183,7 @@ const AddFood = ({ drawer = false, onClose, onSaved }) => {
             mrp: String(food.mrp ?? ''),
             discount: String(food.discount ?? 0),
             rating: String(food.rating ?? 0),
+            stockQuantity: String(food.stock_quantity ?? 0),
             servingSize: food.serving_size || '',
             portionSize: food.portion_size || 'Full',
             preparationTime: String(food.preparation_time ?? 0),
@@ -359,6 +361,7 @@ const AddFood = ({ drawer = false, onClose, onSaved }) => {
       mrp: Number(form.mrp),
       discount: Number(form.discount),
       rating: Number(form.rating),
+      stock_quantity: Number(form.stockQuantity),
       serving_size: form.servingSize.trim(),
       portion_size: form.portionSize,
       preparation_time: Number(form.preparationTime),
@@ -477,6 +480,9 @@ const AddFood = ({ drawer = false, onClose, onSaved }) => {
             </label>
             <label className="block text-sm font-medium text-gray-700">Food rating (0–5)
               <input type="number" min="0" max="5" step="0.1" value={form.rating} onChange={(event) => setValue('rating', event.target.value)} className="mt-1.5 h-10 w-full rounded-md border border-gray-300 px-3 outline-none focus:border-emerald-700" />
+            </label>
+            <label className="block text-sm font-medium text-gray-700">Stock quantity (units)
+              <input type="number" min="0" step="1" value={form.stockQuantity} onChange={(event) => setValue('stockQuantity', event.target.value)} className="mt-1.5 h-10 w-full rounded-md border border-gray-300 px-3 outline-none focus:border-emerald-700" />
             </label>
             <label className="block text-sm font-medium text-gray-700">Is spicy?
               <select value={form.isSpicy ? 'Yes' : 'No'} onChange={(event) => setValue('isSpicy', event.target.value === 'Yes')} className="mt-1.5 h-10 w-full rounded-md border border-gray-300 bg-white px-3"><option>No</option><option>Yes</option></select>

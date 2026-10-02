@@ -25,6 +25,7 @@ import AdminCategories from './Admin/AdminProducts/Categories.jsx'
 import AddCategory from './Admin/AdminProducts/AddCategory.jsx'
 import Cuisines from './Admin/AdminProducts/Cuisines.jsx'
 import AdminProducts from './Admin/AdminProducts/AdminProducts.jsx'
+import StockDetails from './Admin/AdminProducts/StockDetails.jsx'
 import AddFood from './Admin/AdminProducts/AddFood.jsx'
 import AdminReviews from './Admin/AdminReviews/AdminReviews.jsx'
 import PointOfSale from './Admin/Billings/PointOfSale.jsx'
@@ -149,6 +150,10 @@ const router = createHashRouter([
           {
             path: 'products/cuisines',
             element: <Cuisines />,
+          },
+          {
+            path: 'products/stock-details',
+            element: <StockDetails />,
           },
           {
             path: 'reviews',

@@ -48,19 +48,6 @@ const getVariantDisplayLabel = (variant, index = 0) => {
   return `Variant ${index + 1}`;
 };
 
-const getProductVariantStock = (data) => {
-  const variants = parseVariantArray(data?.size_variants);
-  return variants.reduce((sum, variant) => sum + Number(variant?.stock || 0), 0);
-};
-
-const getAlbumVariantStock = (album) => {
-  const variants = parseVariantArray(album?.variants);
-  if (variants.length) {
-    return variants.reduce((sum, variant) => sum + Number(variant?.stock || variant?.quantity || 0), 0);
-  }
-  return Number(album?.stock_quantity || 0);
-};
-
 const getStatusLabel = (currentStock) => {
   if (currentStock === 0) return 'Out of Stock';
   if (currentStock <= 15) return 'Low Stock';
@@ -68,9 +55,7 @@ const getStatusLabel = (currentStock) => {
 };
 
 const StockDetails = () => {
-  const [products, setProducts] = useState([]);
-  const [albums, setAlbums] = useState([]);
-  const [gifts, setGifts] = useState([]);
+  const [foods, setFoods] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All Categories');
@@ -87,20 +72,11 @@ const StockDetails = () => {
   useEffect(() => {
     const fetchCatalog = async () => {
       try {
-        const [productsResponse, albumsResponse, giftsResponse] = await Promise.all([
-          api.get('/products'),
-          api.get('/albums'),
-          api.get('/gift-boxes'),
-        ]);
-
-        setProducts(Array.isArray(productsResponse?.data?.data) ? productsResponse.data.data : []);
-        setAlbums(Array.isArray(albumsResponse?.data?.data) ? albumsResponse.data.data : []);
-        setGifts(Array.isArray(giftsResponse?.data?.data) ? giftsResponse.data.data : []);
+        const response = await api.get('/foods');
+        setFoods(Array.isArray(response?.data?.data) ? response.data.data : []);
       } catch (error) {
         console.error('Failed to load stock details:', error);
-        setProducts([]);
-        setAlbums([]);
-        setGifts([]);
+        setFoods([]);
       } finally {
         setLoading(false);
       }
@@ -110,85 +86,29 @@ const StockDetails = () => {
   }, []);
 
   const stockRows = useMemo(() => {
-    const productRows = products.map((product) => {
-      const variants = parseVariantArray(product.size_variants);
-      const currentStock = variants.reduce((sum, variant) => sum + (Number(variant.stock) || 0), 0);
-      const firstVariant = variants[0] || {};
+    return foods.map((food) => {
+      const currentStock = Number(food.stock_quantity || 0);
       const status = getStatusLabel(currentStock);
-      const image = normalizeImageUrl(product.product_images?.[0] || product.frame_data?.frame_image || '');
+      const image = normalizeImageUrl(food.food_images?.[0] || '');
 
       return {
-        id: `product-${product.id || product.product_id || product.product_code || ''}`,
-        type: 'product',
-        product: product.product_name || 'Untitled Product',
-        sku: product.product_id || product.product_code || '—',
-        category: product.category || 'Uncategorized',
-        price: Number(firstVariant.offer_price || product.selling_price || product.price || 0),
-        offerPrice: Number(firstVariant.mrp || product.mrp || product.selling_price || 0),
+        id: `food-${food.food_id || food.id}`,
+        type: 'food',
+        product: food.food_name || 'Untitled Food',
+        sku: food.food_id || food.id || '—',
+        category: food.category_name || 'Uncategorized',
+        price: Number(food.final_price || food.mrp || 0),
+        offerPrice: Number(food.mrp || 0),
         currentStock,
         available: currentStock,
         reserved: 0,
         status,
-        lastUpdated: product.updated_at || product.created_at || '',
+        lastUpdated: food.updated_at || food.created_at || '',
         image,
-        rawData: product,
+        rawData: food,
       };
     });
-
-    const albumRows = albums.map((album) => {
-      const variants = parseVariantArray(album.variants);
-      const currentStock = getAlbumVariantStock(album);
-      const status = getStatusLabel(currentStock);
-      const image = normalizeImageUrl(
-        album.product_images?.[0] ||
-        album.thumbnail_image ||
-        (Array.isArray(album.images) ? album.images[0] : '') ||
-        (variants[0]?.image || variants[0]?.images?.[0] || '')
-      );
-
-      return {
-        id: `album-${album.id || album.product_id || album.product_code || ''}`,
-        type: 'album',
-        product: album.product_name || 'Untitled Album',
-        sku: album.product_code || album.product_id || album.id || '—',
-        category: album.category || 'Albums',
-        price: Number(album.discount_price || album.selling_price || album.price || 0),
-        offerPrice: Number(album.mrp || album.selling_price || album.discount_price || 0),
-        currentStock,
-        available: currentStock,
-        reserved: 0,
-        status,
-        lastUpdated: album.updated_at || album.created_at || '',
-        image,
-        rawData: album,
-      };
-    });
-
-    const giftRows = gifts.map((gift) => {
-      const currentStock = Number(gift.current_stock ?? gift.stock_quantity ?? gift.currentStock ?? 0);
-      const status = getStatusLabel(currentStock);
-      const image = normalizeImageUrl(gift.image || gift.images?.[0] || '');
-
-      return {
-        id: `gift-${gift.id || gift.gift_box_id || gift.product_id || ''}`,
-        type: 'gift',
-        product: gift.name || 'Untitled Gift Box',
-        sku: gift.gift_box_id || gift.product_code || gift.id || '—',
-        category: gift.category || 'Gift Boxes',
-        price: Number(gift.selling_price || gift.mrp || 0),
-        offerPrice: Number(gift.mrp || gift.selling_price || 0),
-        currentStock,
-        available: currentStock,
-        reserved: 0,
-        status,
-        lastUpdated: gift.updated_at || gift.created_at || '',
-        image,
-        rawData: gift,
-      };
-    });
-
-    return [...productRows, ...albumRows, ...giftRows];
-  }, [products, albums, gifts]);
+  }, [foods]);
 
   const categories = [...new Set(stockRows.map((item) => item.category))].sort();
   const filteredRows = stockRows

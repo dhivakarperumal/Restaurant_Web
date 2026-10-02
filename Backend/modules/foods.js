@@ -17,6 +17,7 @@ const initializeFoodSchema = async () => {
       discount DECIMAL(5,2) NOT NULL DEFAULT 0,
       final_price DECIMAL(10,2) NOT NULL DEFAULT 0,
       rating DECIMAL(2,1) NOT NULL DEFAULT 0,
+      stock_quantity INT UNSIGNED NOT NULL DEFAULT 0,
       serving_size VARCHAR(100) NULL,
       portion_size VARCHAR(30) NOT NULL,
       preparation_time SMALLINT UNSIGNED NOT NULL DEFAULT 0,
@@ -43,6 +44,11 @@ const initializeFoodSchema = async () => {
   const [ratingColumns] = await db.query("SHOW COLUMNS FROM foods LIKE 'rating'");
   if (!ratingColumns.length) {
     await db.query('ALTER TABLE foods ADD COLUMN rating DECIMAL(2,1) NOT NULL DEFAULT 0 AFTER final_price');
+  }
+
+  const [stockColumns] = await db.query("SHOW COLUMNS FROM foods LIKE 'stock_quantity'");
+  if (!stockColumns.length) {
+    await db.query('ALTER TABLE foods ADD COLUMN stock_quantity INT UNSIGNED NOT NULL DEFAULT 0 AFTER rating');
   }
 };
 
@@ -103,6 +109,7 @@ const foodValues = (food) => [
   food.discount,
   food.final_price,
   food.rating,
+  food.stock_quantity,
   food.serving_size || null,
   food.portion_size,
   food.preparation_time,
@@ -124,10 +131,10 @@ const createFood = async (food) => {
   await db.execute(
     `INSERT INTO foods (
       food_id, food_name, cuisine_id, cuisine_name, category_id, category_name, subcategory_name,
-      description, food_images, mrp, discount, final_price, rating, serving_size, portion_size,
+      description, food_images, mrp, discount, final_price, rating, stock_quantity, serving_size, portion_size,
       preparation_time, food_type, is_spicy, is_available, dining_available, takeaway_available,
       delivery_available, featured, status, addons, customizations, created_by, updated_by
-    ) VALUES (${Array(28).fill('?').join(', ')})`,
+    ) VALUES (${Array(29).fill('?').join(', ')})`,
     foodValues(food)
   );
   return findFoodById(food.food_id);
@@ -140,7 +147,7 @@ const updateFood = async (foodId, food) => {
   await db.execute(
     `UPDATE foods SET
       food_name = ?, cuisine_id = ?, cuisine_name = ?, category_id = ?, category_name = ?, subcategory_name = ?,
-      description = ?, food_images = ?, mrp = ?, discount = ?, final_price = ?, rating = ?, serving_size = ?, portion_size = ?,
+      description = ?, food_images = ?, mrp = ?, discount = ?, final_price = ?, rating = ?, stock_quantity = ?, serving_size = ?, portion_size = ?,
       preparation_time = ?, food_type = ?, is_spicy = ?, is_available = ?, dining_available = ?, takeaway_available = ?,
       delivery_available = ?, featured = ?, status = ?, addons = ?, customizations = ?, updated_by = ?
      WHERE food_id = ?`,
