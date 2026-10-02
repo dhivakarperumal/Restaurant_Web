@@ -213,6 +213,10 @@ const router = createHashRouter([
             element: <ServerDashboard />,
           },
           {
+            path: 'foods',
+            element: <ServerDashboard />,
+          },
+          {
             path: 'tables',
             element: <ServerTables />,
           },
