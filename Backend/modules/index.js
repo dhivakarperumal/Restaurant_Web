@@ -4,6 +4,7 @@ const { initializeCategorySchema } = require('./categories');
 const { initializeCuisineSchema } = require('./cuisines');
 const { initializeFoodSchema } = require('./foods');
 const { initializeBannerSchema } = require('./banners');
+const { initializeCouponSchema } = require('./coupons');
 
 module.exports = {
   db,
@@ -12,5 +13,6 @@ module.exports = {
   initializeCuisineSchema,
   initializeFoodSchema,
   initializeBannerSchema,
+  initializeCouponSchema,
   testConnection: db.testConnection,
 };

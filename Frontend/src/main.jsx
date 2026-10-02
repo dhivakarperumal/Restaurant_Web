@@ -14,6 +14,7 @@ import PrivateRoute from './PrivateRouter/PrivateRouter.jsx'
 import AdminDashboard from './Admin/AdminDashboard.jsx'
 import AdminCustomers from './Admin/AdminCustomers.jsx'
 import BannerManagement from './Admin/Marketting/BannerManagement.jsx'
+import Coupons from './Admin/Marketting/Coupons.jsx'
 import AdminLayout from './Admin/Adminpanel.jsx'
 import AdminCategories from './Admin/AdminProducts/Categories.jsx'
 import AddCategory from './Admin/AdminProducts/AddCategory.jsx'
@@ -79,6 +80,10 @@ const router = createHashRouter([
           {
             path: 'banners',
             element: <BannerManagement />,
+          },
+          {
+            path: 'coupons',
+            element: <Coupons />,
           },
           {
             path: 'products',
