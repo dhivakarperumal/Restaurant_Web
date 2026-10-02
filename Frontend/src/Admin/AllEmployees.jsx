@@ -172,7 +172,16 @@ const AllEmployees = () => {
                       {isDocument ? (
                         <EmployeeDocument filename={value} />
                       ) : (
-                        <p className="mt-1 break-words text-sm text-[#34443b]">{typeof value === "object" ? JSON.stringify(value) : String(value)}</p>
+                        <p className="mt-1 break-words text-sm text-[#34443b]">
+                          {key === "special_dishes" ? (() => {
+                            try {
+                              const dishes = JSON.parse(value);
+                              return Array.isArray(dishes) ? dishes.join(", ") : String(value);
+                            } catch {
+                              return String(value);
+                            }
+                          })() : typeof value === "object" ? JSON.stringify(value) : String(value)}
+                        </p>
                       )}
                     </div>
                   );

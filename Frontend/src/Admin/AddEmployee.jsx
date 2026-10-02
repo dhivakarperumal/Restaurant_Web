@@ -11,6 +11,8 @@ import {
   LocateFixed,
   LoaderCircle,
   MapPin,
+  Plus,
+  Trash2,
   ShieldCheck,
   Upload,
   UserPlus,
@@ -22,11 +24,61 @@ import api from "../api";
 import EmployeeDocument from "./EmployeeDocument";
 
 const employeeTypes = ["Chef", "Delivery Partner", "Server", "Cashier", "Manager", "Cleaner"];
+const indiaStatesAndTerritories = [
+  "Andaman and Nicobar Islands",
+  "Andhra Pradesh",
+  "Arunachal Pradesh",
+  "Assam",
+  "Bihar",
+  "Chandigarh",
+  "Chhattisgarh",
+  "Dadra and Nagar Haveli and Daman and Diu",
+  "Delhi",
+  "Goa",
+  "Gujarat",
+  "Haryana",
+  "Himachal Pradesh",
+  "Jammu and Kashmir",
+  "Jharkhand",
+  "Karnataka",
+  "Kerala",
+  "Ladakh",
+  "Lakshadweep",
+  "Madhya Pradesh",
+  "Maharashtra",
+  "Manipur",
+  "Meghalaya",
+  "Mizoram",
+  "Nagaland",
+  "Odisha",
+  "Puducherry",
+  "Punjab",
+  "Rajasthan",
+  "Sikkim",
+  "Tamil Nadu",
+  "Telangana",
+  "Tripura",
+  "Uttar Pradesh",
+  "Uttarakhand",
+  "West Bengal",
+];
 
 const fieldStyles =
   "h-11 w-full rounded-lg border border-[#dce3dd] bg-[#fbfcfa] px-3.5 text-sm text-[#20312a] outline-none transition placeholder:text-[#9aa59d] focus:border-[#4d765c] focus:ring-2 focus:ring-[#4d765c]/10";
 
 const fieldNameFromLabel = (label) => label.toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_|_$/g, "");
+
+const parseSpecialDishes = (value) => {
+  if (!value) return [""];
+  if (Array.isArray(value)) return value.length ? value.map((dish) => String(dish || "")) : [""];
+  try {
+    const dishes = JSON.parse(value);
+    if (Array.isArray(dishes)) return dishes.length ? dishes.map((dish) => String(dish || "")) : [""];
+  } catch {
+    return [String(value)];
+  }
+  return [String(value)];
+};
 
 const Field = ({ label, required = false, type = "text", options, placeholder, wide = false, name = fieldNameFromLabel(label), existingDocument }) => {
   if (type === "file") {
@@ -98,7 +150,7 @@ const LocationFields = ({ showCoordinates, delivery }) => (
     <Field label="Area / Locality" required />
     <Field label="City" required />
     <Field label="District" required />
-    <Field label="State" required />
+    <Field label="State" required options={indiaStatesAndTerritories} />
     <Field label="Pincode" required />
     {showCoordinates && <Field label="Latitude" placeholder="Optional" />}
     {showCoordinates && <Field label="Longitude" placeholder="Optional" />}
@@ -111,6 +163,48 @@ const LocationFields = ({ showCoordinates, delivery }) => (
     )}
   </Section>
 );
+
+const SpecialDishesField = ({ initialValue }) => {
+  const [dishes, setDishes] = useState(() => parseSpecialDishes(initialValue));
+
+  const updateDish = (index, value) => {
+    setDishes((current) => current.map((dish, dishIndex) => (dishIndex === index ? value : dish)));
+  };
+
+  const removeDish = (index) => {
+    setDishes((current) => {
+      const next = current.filter((_, dishIndex) => dishIndex !== index);
+      return next.length ? next : [""];
+    });
+  };
+
+  return (
+    <div className="min-w-0 space-y-2">
+      <span className="block text-xs font-semibold text-[#34443b]">Special Dishes</span>
+      <div className="space-y-2">
+        {dishes.map((dish, index) => (
+          <div key={index} className="flex items-center gap-2">
+            <input
+              name="special_dishes"
+              value={dish}
+              onChange={(event) => updateDish(index, event.target.value)}
+              placeholder="e.g. signature biryani"
+              className={fieldStyles}
+            />
+            {dishes.length > 1 && (
+              <button type="button" onClick={() => removeDish(index)} aria-label={`Remove dish ${index + 1}`} className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-[#ead8d3] text-[#a13e30] hover:bg-[#fff4f1]">
+                <Trash2 className="h-4 w-4" />
+              </button>
+            )}
+          </div>
+        ))}
+      </div>
+      <button type="button" onClick={() => setDishes((current) => [...current, ""])} className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-[#cfdacf] bg-[#f5f8f4] px-3 text-xs font-semibold text-[#355443] transition hover:bg-[#edf3eb]">
+        <Plus className="h-4 w-4" /> Add dish
+      </button>
+    </div>
+  );
+};
 
 const EmployeeFields = ({ employeeType, employeeId, isEditing, initialData }) => {
   const isChef = employeeType === "Chef";
@@ -143,7 +237,7 @@ const EmployeeFields = ({ employeeType, employeeId, isEditing, initialData }) =>
           <Field label="Specialization" />
           <Field label="Experience (Years)" type="number" />
           <Field label="Food Preference" options={["Veg", "Non-Veg", "Both"]} />
-          <Field label="Special Dishes" placeholder="e.g. signature biryani, dosa" />
+          <SpecialDishesField initialValue={initialData?.special_dishes} />
           <Field label="Description / About Chef" type="textarea" wide />
         </Section>
       )}
@@ -332,6 +426,7 @@ const AddEmployee = () => {
 
     Array.from(formRef.current.elements).forEach((field) => {
       if (!field.name || field.type === "file" || field.type === "password") return;
+      if (field.name === "special_dishes") return;
       if (field.type === "checkbox") {
         field.checked = days.includes(field.value);
         return;
