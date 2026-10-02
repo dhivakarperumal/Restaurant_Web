@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { BriefcaseBusiness, Eye, Pencil, Search, Trash2, UserCheck, UserRound, UserRoundPlus, Users, X } from "lucide-react";
+import { BriefcaseBusiness, Eye, LayoutGrid, Pencil, Search, Table2, Trash2, UserCheck, UserRound, UserRoundPlus, Users, X } from "lucide-react";
 import api from "../api";
 import EmployeeDocument from "./EmployeeDocument";
 
@@ -17,6 +17,7 @@ const AllEmployees = () => {
   const [selectedEmployeeType, setSelectedEmployeeType] = useState("All Types");
   const [selectedStatus, setSelectedStatus] = useState("All Status");
   const [sortBy, setSortBy] = useState("latest");
+  const [viewMode, setViewMode] = useState("table");
 
   useEffect(() => {
     let isMounted = true;
@@ -158,14 +159,39 @@ const AllEmployees = () => {
               </select>
             </div>
           </div>
-          <select value={sortBy} onChange={(event) => setSortBy(event.target.value)} className="h-[46px] rounded-xl border border-[#dfe2e5] bg-[#faf9f8] px-3 text-[14px] font-medium text-[#2d2d2d] outline-none focus:border-[#d2bc8a]">
-            <option value="latest">Sort by: Latest</option>
-            <option value="name">Name: A to Z</option>
-            <option value="id">ID: Low to High</option>
-          </select>
+          <div className="flex flex-wrap items-center gap-3">
+            <select value={sortBy} onChange={(event) => setSortBy(event.target.value)} className="h-[46px] rounded-xl border border-[#dfe2e5] bg-[#faf9f8] px-3 text-[14px] font-medium text-[#2d2d2d] outline-none focus:border-[#d2bc8a]">
+              <option value="latest">Sort by: Latest</option>
+              <option value="name">Name: A to Z</option>
+              <option value="id">ID: Low to High</option>
+            </select>
+            <div className="flex h-[46px] items-center overflow-hidden rounded-xl border border-[#dfe2e5] bg-[#faf9f8]">
+              <button
+                type="button"
+                onClick={() => setViewMode("card")}
+                aria-label="Card view"
+                aria-pressed={viewMode === "card"}
+                title="Card view"
+                className={`flex h-[46px] w-[46px] cursor-pointer items-center justify-center transition ${viewMode === "card" ? "bg-[#1a3c36] text-white" : "text-[#4d4d4d] hover:bg-white"}`}
+              >
+                <LayoutGrid className="h-4 w-4" />
+              </button>
+              <button
+                type="button"
+                onClick={() => setViewMode("table")}
+                aria-label="Table view"
+                aria-pressed={viewMode === "table"}
+                title="Table view"
+                className={`flex h-[46px] w-[46px] cursor-pointer items-center justify-center border-l border-[#dfe2e5] transition ${viewMode === "table" ? "bg-[#1a3c36] text-white" : "text-[#4d4d4d] hover:bg-white"}`}
+              >
+                <Table2 className="h-4 w-4" />
+              </button>
+            </div>
+          </div>
         </div>
 
         {actionError && <p role="alert" className="mb-4 rounded-lg border border-[#edc7c1] bg-[#fff4f1] px-4 py-3 text-sm text-[#a13e30]">{actionError}</p>}
+        {viewMode === "table" ? (
         <div className="overflow-hidden rounded-md border border-[#e8e4df]">
           <div className="overflow-x-auto">
             <table className="min-w-full border-separate border-spacing-0 text-left">
@@ -223,6 +249,55 @@ const AllEmployees = () => {
             </table>
           </div>
         </div>
+        ) : loading ? (
+          <div className="rounded-[18px] border border-[#e7e0d8] bg-white py-16 text-center text-sm text-[#777]">Loading employees...</div>
+        ) : error ? (
+          <div role="alert" className="rounded-[18px] border border-[#edc7c1] bg-white py-16 text-center text-sm text-[#a13e30]">{error}</div>
+        ) : visibleEmployees.length > 0 ? (
+          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+            {visibleEmployees.map((employee) => (
+              <article key={employee.employee_id} className="rounded-xl border border-[#e8e4df] bg-white p-5 shadow-sm transition hover:shadow-md">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="text-[10px] font-bold uppercase tracking-wide text-[#849087]">ID {employee.id ?? "—"}</p>
+                    <h3 className="mt-1 truncate text-base font-bold text-[#1f1f1f]">{employee.full_name}</h3>
+                    <p className="mt-0.5 truncate text-xs text-[#7a7a7a]">{employee.email}</p>
+                  </div>
+                  <span className={`inline-flex shrink-0 items-center gap-2 rounded-full px-2.5 py-1 text-xs font-semibold ${employee.status === "Active" ? "bg-[#edf7f1] text-[#2d7b5a]" : "bg-[#f1f2f0] text-[#727a73]"}`}>
+                    <span className={`h-2 w-2 rounded-full ${employee.status === "Active" ? "bg-[#2d7b5a]" : "bg-[#929892]"}`} />
+                    {employee.status}
+                  </span>
+                </div>
+                <div className="my-4 space-y-2 border-y border-[#f0ebe6] py-3 text-sm">
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="text-xs text-[#849087]">Employee ID</span>
+                    <span className="truncate font-mono text-xs text-[#4d4d4d]">{employee.employee_id}</span>
+                  </div>
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="text-xs text-[#849087]">Type</span>
+                    <span className="text-right text-sm font-medium text-[#34443b]">{employee.employee_type}</span>
+                  </div>
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="text-xs text-[#849087]">Phone</span>
+                    <span className="text-right text-sm text-[#34443b]">{employee.phone_number}</span>
+                  </div>
+                </div>
+                <div className="flex items-center justify-end gap-2">
+                  <button type="button" onClick={() => viewEmployee(employee.employee_id)} title="View employee" aria-label={`View ${employee.full_name}`} className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-lg border border-[#e2d9cf] bg-white text-[#4d4d4d] transition hover:border-[#d0b997] hover:text-[#1a1a1a]"><Eye className="h-4 w-4" /></button>
+                  <Link to={`/admin/employees/${encodeURIComponent(employee.employee_id)}/edit`} title="Edit employee" aria-label={`Edit ${employee.full_name}`} className="flex h-9 w-9 items-center justify-center rounded-lg border border-[#e2d9cf] bg-white text-[#4d4d4d] transition hover:border-[#d0b997] hover:text-[#1a1a1a]"><Pencil className="h-4 w-4" /></Link>
+                  <button type="button" onClick={() => deleteEmployee(employee)} disabled={deletingEmployeeId === employee.employee_id} title="Delete employee" aria-label={`Delete ${employee.full_name}`} className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-lg border border-[#f3d7d7] bg-[#fff8f8] text-[#d04d4d] transition hover:bg-[#fff0f0] disabled:cursor-wait disabled:opacity-50"><Trash2 className="h-4 w-4" /></button>
+                </div>
+              </article>
+            ))}
+          </div>
+        ) : (
+          <div className="rounded-[18px] border-2 border-dashed border-[#e6ddd1] bg-[#faf9f8] py-16 text-center">
+            <div className="mb-3 flex justify-center text-[#8a8a8a]"><Users className="h-10 w-10" /></div>
+            <p className="text-base font-bold text-[#333]">{normalizedSearch || selectedStatus !== "All Status" || selectedEmployeeType !== "All Types" ? "No matching employees" : "No employee records yet"}</p>
+            <p className="mx-auto mt-1 max-w-sm text-xs text-[#888]">{normalizedSearch || selectedStatus !== "All Status" || selectedEmployeeType !== "All Types" ? "Try another search or adjust the selected filters." : "Add an employee to start building your directory."}</p>
+            {!normalizedSearch && selectedStatus === "All Status" && selectedEmployeeType === "All Types" && <Link to="/admin/employees/add" className="mt-4 inline-flex items-center gap-2 text-xs font-bold text-[#42694f] hover:text-[#244b36]"><UserRoundPlus className="h-4 w-4" /> Add your first employee</Link>}
+          </div>
+        )}
         <div className="mt-5 border-t border-[#efebe7] pt-4 text-sm text-[#6a6a6a]">
           Showing {visibleEmployees.length} of {employees.length} employees
         </div>
