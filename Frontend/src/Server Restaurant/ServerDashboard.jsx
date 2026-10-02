@@ -13,9 +13,12 @@ import {
   Layers,
   LayoutGrid,
   Loader2,
+  Minus,
+  Plus,
   RefreshCw,
   Search,
   ShieldCheck,
+  ShoppingCart,
   Sparkles,
   Table2,
   Tag,
@@ -57,6 +60,8 @@ export default function ServerDashboard() {
   const [selectedStatus, setSelectedStatus] = useState("all"); // 'all' | 'available' | 'unavailable'
   const [sortBy, setSortBy] = useState("latest");
   const [viewMode, setViewMode] = useState("grid"); // 'grid' | 'table'
+  const [cart, setCart] = useState({});
+  const [submittingOrder, setSubmittingOrder] = useState(false);
 
   // View Details Modal
   const [viewingFood, setViewingFood] = useState(null);
@@ -136,7 +141,8 @@ export default function ServerDashboard() {
 
         const isAvailable =
           Boolean(food.is_available) &&
-          String(food.status || "Active").toLowerCase() === "active";
+          String(food.status || "Active").toLowerCase() === "active" &&
+          (!selectedTable || food.dining_available !== false);
 
         const statusMatch =
           selectedStatus === "all" ||
@@ -203,6 +209,46 @@ export default function ServerDashboard() {
     setActiveImageIndex(0);
   };
 
+  const updateCartQuantity = (food, quantity) => {
+    const foodId = food.food_id || food.id;
+    setCart((currentCart) => {
+      const nextCart = { ...currentCart };
+      if (quantity <= 0) {
+        delete nextCart[foodId];
+      } else {
+        nextCart[foodId] = { food, quantity: Math.min(quantity, 99) };
+      }
+      return nextCart;
+    });
+  };
+
+  const cartItems = Object.entries(cart);
+  const cartQuantity = cartItems.reduce((total, [, item]) => total + item.quantity, 0);
+  const cartTotal = cartItems.reduce(
+    (total, [, item]) => total + Number(item.food.final_price || 0) * item.quantity,
+    0,
+  );
+
+  const submitOrder = async () => {
+    if (!selectedTable?.table_id || cartItems.length === 0) return;
+    try {
+      setSubmittingOrder(true);
+      const response = await api.post("/kitchen-orders", {
+        table_id: selectedTable.table_id,
+        items: cartItems.map(([foodId, item]) => ({
+          food_id: foodId,
+          quantity: item.quantity,
+        })),
+      });
+      setCart({});
+      toast.success(`Order sent to kitchen for ${response.data?.order?.table_number || selectedTable.table_number}`);
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Could not send this order to the kitchen.");
+    } finally {
+      setSubmittingOrder(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Top Banner / Header */}
@@ -218,12 +264,13 @@ export default function ServerDashboard() {
               </h1>
               <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
                 <ShieldCheck className="w-3 h-3" />
-                View Only
+                {selectedTable ? "Dine-in Ordering" : "View Only"}
               </span>
             </div>
             <p className="text-xs sm:text-sm text-gray-500 mt-0.5">
-              Browse dining dishes and beverages configured by administrator.
-              View ingredients, pricing, and availability.
+              {selectedTable
+                ? "Select dishes and quantities to send this table's order to the kitchen."
+                : "Browse dining dishes and beverages configured by administrator."}
             </p>
           </div>
         </div>
@@ -264,6 +311,57 @@ export default function ServerDashboard() {
             Change Table
           </button>
         </div>
+      )}
+
+      {selectedTable && (
+        <section className="rounded-2xl border border-[#e7e0d8] bg-white p-5 shadow-sm">
+          <div className="mb-4 flex flex-col gap-3 border-b border-gray-100 pb-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#1a3c36] text-white">
+                <ShoppingCart className="h-5 w-5" />
+              </div>
+              <div>
+                <h2 className="text-base font-bold text-gray-900">Order for {selectedTable.table_number}</h2>
+                <p className="text-xs text-gray-500">{cartQuantity} item{cartQuantity === 1 ? "" : "s"} selected</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-3">
+              <p className="text-sm font-bold text-gray-900">Total: ₹{cartTotal.toFixed(2)}</p>
+              <button
+                type="button"
+                onClick={submitOrder}
+                disabled={cartItems.length === 0 || submittingOrder}
+                className="inline-flex h-10 cursor-pointer items-center justify-center gap-2 rounded-xl bg-[#1a3c36] px-4 text-sm font-semibold text-white transition hover:bg-[#214a42] disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {submittingOrder ? <Loader2 className="h-4 w-4 animate-spin" /> : <ShoppingCart className="h-4 w-4" />}
+                {submittingOrder ? "Sending..." : "Send Order to Kitchen"}
+              </button>
+            </div>
+          </div>
+          {cartItems.length ? (
+            <div className="space-y-3">
+              {cartItems.map(([foodId, item]) => (
+                <div key={foodId} className="flex flex-wrap items-center justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-semibold text-gray-800">{item.food.food_name}</p>
+                    <p className="text-xs text-gray-500">₹{Number(item.food.final_price || 0).toFixed(2)} each</p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button type="button" onClick={() => updateCartQuantity(item.food, item.quantity - 1)} aria-label={`Decrease ${item.food.food_name} quantity`} className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg border border-gray-200 text-gray-700 hover:bg-gray-50">
+                      <Minus className="h-4 w-4" />
+                    </button>
+                    <span className="w-6 text-center text-sm font-bold text-gray-800">{item.quantity}</span>
+                    <button type="button" onClick={() => updateCartQuantity(item.food, item.quantity + 1)} aria-label={`Increase ${item.food.food_name} quantity`} disabled={item.quantity >= 99} className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg border border-gray-200 text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50">
+                      <Plus className="h-4 w-4" />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-sm text-gray-500">Add available dishes below to start this order.</p>
+          )}
+        </section>
       )}
 
       {/* Stats Summary Cards */}
@@ -468,7 +566,8 @@ export default function ServerDashboard() {
             const isVeg = String(food.food_type || "").toLowerCase() === "veg";
             const isAvailable =
               Boolean(food.is_available) &&
-              String(food.status || "Active").toLowerCase() === "active";
+              String(food.status || "Active").toLowerCase() === "active" &&
+              (!selectedTable || food.dining_available !== false);
             const primaryImage =
               Array.isArray(food.food_images) && food.food_images.length > 0
                 ? food.food_images[0]
@@ -591,7 +690,21 @@ export default function ServerDashboard() {
                 </div>
 
                 {/* Card Footer: View Details Action */}
-                <div className="p-3 pt-0">
+                <div className="space-y-2 p-3 pt-0">
+                  {selectedTable && (
+                    <div className="flex items-center justify-between rounded-xl bg-gray-50 p-2">
+                      <span className="text-xs font-medium text-gray-600">Quantity</span>
+                      <div className="flex items-center gap-2">
+                        <button type="button" onClick={() => updateCartQuantity(food, (cart[food.food_id || food.id]?.quantity || 0) - 1)} aria-label={`Decrease ${food.food_name} quantity`} disabled={!cart[food.food_id || food.id]} className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-700 disabled:cursor-not-allowed disabled:opacity-40">
+                          <Minus className="h-4 w-4" />
+                        </button>
+                        <span className="w-5 text-center text-sm font-bold">{cart[food.food_id || food.id]?.quantity || 0}</span>
+                        <button type="button" onClick={() => updateCartQuantity(food, (cart[food.food_id || food.id]?.quantity || 0) + 1)} aria-label={`Increase ${food.food_name} quantity`} disabled={!isAvailable || (cart[food.food_id || food.id]?.quantity || 0) >= 99} className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-700 disabled:cursor-not-allowed disabled:opacity-40">
+                          <Plus className="h-4 w-4" />
+                        </button>
+                      </div>
+                    </div>
+                  )}
                   <button
                     type="button"
                     onClick={() => handleOpenDetails(food)}
@@ -618,7 +731,7 @@ export default function ServerDashboard() {
                   <th className="py-3.5 px-4">Prep Time</th>
                   <th className="py-3.5 px-4">Price / MRP</th>
                   <th className="py-3.5 px-4">Availability</th>
-                  <th className="py-3.5 px-4 text-right">View Only</th>
+                  <th className="py-3.5 px-4 text-right">{selectedTable ? "Order / Details" : "Details"}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
@@ -751,14 +864,27 @@ export default function ServerDashboard() {
 
                       {/* Action */}
                       <td className="py-3 px-4 text-right">
-                        <button
-                          type="button"
-                          onClick={() => handleOpenDetails(food)}
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-gray-200 hover:border-[#1f3228] text-gray-700 hover:text-[#d4a843] hover:bg-[#1f3228] text-xs font-semibold transition cursor-pointer"
-                        >
-                          <Eye className="w-3.5 h-3.5" />
-                          <span>View</span>
-                        </button>
+                        <div className="flex items-center justify-end gap-2">
+                          {selectedTable && (
+                            <div className="flex items-center gap-1.5">
+                              <button type="button" onClick={() => updateCartQuantity(food, (cart[food.food_id || food.id]?.quantity || 0) - 1)} aria-label={`Decrease ${food.food_name} quantity`} disabled={!cart[food.food_id || food.id]} className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg border border-gray-200 disabled:cursor-not-allowed disabled:opacity-40">
+                                <Minus className="h-3.5 w-3.5" />
+                              </button>
+                              <span className="w-5 text-center text-xs font-bold">{cart[food.food_id || food.id]?.quantity || 0}</span>
+                              <button type="button" onClick={() => updateCartQuantity(food, (cart[food.food_id || food.id]?.quantity || 0) + 1)} aria-label={`Increase ${food.food_name} quantity`} disabled={!isAvailable || (cart[food.food_id || food.id]?.quantity || 0) >= 99} className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg border border-gray-200 disabled:cursor-not-allowed disabled:opacity-40">
+                                <Plus className="h-3.5 w-3.5" />
+                              </button>
+                            </div>
+                          )}
+                          <button
+                            type="button"
+                            onClick={() => handleOpenDetails(food)}
+                            className="inline-flex cursor-pointer items-center gap-1.5 rounded-xl border border-gray-200 px-3 py-1.5 text-xs font-semibold text-gray-700 transition hover:border-[#1f3228] hover:bg-[#1f3228] hover:text-[#d4a843]"
+                          >
+                            <Eye className="h-3.5 w-3.5" />
+                            <span>View</span>
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   );

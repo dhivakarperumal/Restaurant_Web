@@ -8,6 +8,7 @@ import {
   Boxes, Plus, PhoneCall, HeartPulse, FolderKanban, CheckSquare,
   DollarSign, CalendarOff, BookOpen, GraduationCap, CalendarDays,
   CalendarClock, TrendingUp, Tag,
+  UtensilsCrossed,
 } from "lucide-react";
 import api from "../api";
 import { useAuth } from "../PrivateRouter/AuthContext";
@@ -15,6 +16,7 @@ import dayjs from "dayjs";
 
 /* ── page title map ── */
 const pageInfo = {
+  "/chef/orders":                 { title: "Kitchen Orders",          icon: UtensilsCrossed },
   "/admin":                         { title: "Dashboard",             icon: LayoutDashboard },
   "/admin/billing":                 { title: "Billing",               icon: Receipt },
   "/admin/billing/new":             { title: "New Billing",            icon: Plus },
