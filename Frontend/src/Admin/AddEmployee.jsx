@@ -157,7 +157,7 @@ const EmployeeFields = ({ employeeType }) => {
           <Field label="IFSC Code" />
           <Field label="UPI ID" />
           {(isChef || isBasic) && <Field label="PAN Number" />}
-          <UploadField label="Cancelled Cheque / Bank Proof Upload" />
+          <UploadField label="Bank Passbook" />
         </Section>
       )}
 
