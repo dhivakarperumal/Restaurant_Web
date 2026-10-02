@@ -191,12 +191,7 @@ const EmployeeFields = ({ employeeType }) => {
             </div>
           </label>
         )}
-        {isDelivery && deliverySalaryType === "Order Basis" ? (
-          <>
-            <Field label="Order Count" type="number" placeholder="Enter order count" />
-            <Field label="Total Order Amount" type="number" placeholder="Enter total order amount" />
-          </>
-        ) : (
+        {(!isDelivery || deliverySalaryType === "Monthly Basis") && (
           <>
             <Field label="Basic Salary" type="number" placeholder="Enter basic salary" required />
             <Field label="Allowances" type="number" placeholder="Enter allowances" />
