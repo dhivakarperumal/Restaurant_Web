@@ -4,9 +4,7 @@ import {
   Armchair,
   CheckCircle2,
   Clock,
-  Copy,
   Edit2,
-  Hash,
   Layers,
   LayoutGrid,
   Loader2,
@@ -222,11 +220,6 @@ export default function ServerTables() {
     }
   };
 
-  const copyToClipboard = (text, label = "Table ID") => {
-    navigator.clipboard.writeText(text);
-    toast.success(`${label} copied to clipboard!`);
-  };
-
   const currentServerEmployeeId = userProfile?.employee_id || userProfile?.employeeId;
   const currentUserId = userProfile?.user_id || userProfile?.id || userProfile?.uuid;
   const currentUserName = userProfile?.name || userProfile?.displayName || userProfile?.full_name || userProfile?.username;
@@ -416,7 +409,7 @@ export default function ServerTables() {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
           <input
             type="text"
-            placeholder={isAdminTablesPage ? "Search by table number, UUID, or creator..." : "Search by table number..."}
+            placeholder={isAdminTablesPage ? "Search by table number or server..." : "Search by table number..."}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className={isAdminTablesPage ? "h-[46px] w-full rounded-xl border border-[#dfe2e5] bg-[#faf9f8] pl-10 pr-3 text-[14px] text-[#2d2d2d] outline-none placeholder:text-[#8a8a8a] focus:border-[#d2bc8a]" : "w-full pl-9 pr-4 py-2 text-sm bg-gray-50 rounded-lg border border-gray-200 focus:outline-none focus:border-[#d4a843] focus:bg-white transition"}
@@ -603,52 +596,6 @@ export default function ServerTables() {
                         </span>
                       </div>
                     )}
-
-                    {isAdminTablesPage && (
-                      <>
-                        <div className="flex items-center justify-between text-xs text-gray-600">
-                          <span className="flex items-center gap-1.5 text-gray-500 font-medium">
-                            <Hash className="w-3.5 h-3.5 text-gray-400" />
-                            UUID:
-                          </span>
-                          <button
-                            onClick={() => copyToClipboard(table.table_id, "UUID")}
-                            title="Click to copy full UUID"
-                            className="font-mono text-[11px] text-blue-600 hover:text-blue-800 flex items-center gap-1 hover:underline"
-                          >
-                            {String(table.table_id || "").slice(0, 8)}...
-                            <Copy className="w-3 h-3" />
-                          </button>
-                        </div>
-
-                        {table.created_by && (
-                          <div className="flex items-center justify-between text-xs text-gray-500">
-                            <span>Created by:</span>
-                            <button
-                              onClick={() => copyToClipboard(table.created_by, "Created By User ID")}
-                              title={`User ID: ${table.created_by}`}
-                              className="font-mono text-[11px] text-blue-600 hover:text-blue-800 flex items-center gap-1 hover:underline"
-                            >
-                              {String(table.created_by).slice(0, 8)}...
-                              <Copy className="w-2.5 h-2.5" />
-                            </button>
-                          </div>
-                        )}
-                        {table.updated_by && (
-                          <div className="flex items-center justify-between text-xs text-gray-500">
-                            <span>Updated by:</span>
-                            <button
-                              onClick={() => copyToClipboard(table.updated_by, "Updated By User ID")}
-                              title={`User ID: ${table.updated_by}`}
-                              className="font-mono text-[11px] text-blue-600 hover:text-blue-800 flex items-center gap-1 hover:underline"
-                            >
-                              {String(table.updated_by).slice(0, 8)}...
-                              <Copy className="w-2.5 h-2.5" />
-                            </button>
-                          </div>
-                        )}
-                      </>
-                    )}
                   </div>
                 </div>
 
@@ -703,17 +650,13 @@ export default function ServerTables() {
             <table className="w-full text-left text-sm">
               <thead className={isAdminTablesPage ? "border-b border-[#e8e4df] bg-[#f0e6d2] text-left text-sm font-semibold text-[#3d3d3d]" : "bg-gray-50/75 border-b border-gray-100 text-xs text-gray-500 uppercase tracking-wider font-semibold"}>
                 <tr>
+                  {isAdminTablesPage && <th className="py-3.5 px-4"># ID</th>}
                   <th className="py-3.5 px-4">Table Number</th>
                   <th className="py-3.5 px-4">Seats</th>
                   <th className="py-3.5 px-4">Status</th>
                   {isAdminTablesPage ? (
                     <>
-                      <th className="py-3.5 px-4"># ID</th>
                       <th className="py-3.5 px-4">Assigned Server</th>
-                      <th className="py-3.5 px-4">UUID (table_id)</th>
-                      <th className="py-3.5 px-4">Created By</th>
-                      <th className="py-3.5 px-4">Updated By</th>
-                      <th className="py-3.5 px-4">Created At</th>
                       <th className="py-3.5 px-4 text-right">Actions</th>
                     </>
                   ) : (
@@ -732,6 +675,11 @@ export default function ServerTables() {
                       key={table.table_id || table.id}
                       className="hover:bg-gray-50/50 transition-colors"
                     >
+                      {isAdminTablesPage && (
+                        <td className="py-3 px-4 font-mono font-bold text-xs text-gray-700">
+                          #{table.id}
+                        </td>
+                      )}
                       <td className="py-3 px-4 font-semibold text-gray-900">
                         <div className="flex items-center gap-2">
                           <div className="w-8 h-8 rounded-lg bg-[#1f3228] text-[#d4a843] flex items-center justify-center font-bold text-xs font-serif">
@@ -756,9 +704,6 @@ export default function ServerTables() {
                       </td>
                       {isAdminTablesPage ? (
                         <>
-                          <td className="py-3 px-4 font-mono font-bold text-xs text-gray-700">
-                            #{table.id}
-                          </td>
                           <td className="py-3 px-4">
                             {table.assigned_server_id ? (
                               <div className="flex items-center gap-1.5">
@@ -780,53 +725,6 @@ export default function ServerTables() {
                                 Unassigned
                               </span>
                             )}
-                          </td>
-                          <td className="py-3 px-4">
-                            <button
-                              onClick={() => copyToClipboard(table.table_id, "UUID")}
-                              className="font-mono text-xs text-blue-600 hover:underline flex items-center gap-1 cursor-pointer"
-                              title="Click to copy full UUID"
-                            >
-                              {String(table.table_id || "").slice(0, 12)}...
-                              <Copy className="w-3 h-3" />
-                            </button>
-                          </td>
-                          <td className="py-3 px-4 text-xs text-gray-600">
-                            {table.created_by ? (
-                              <button
-                                onClick={() => copyToClipboard(table.created_by, "Created By User ID")}
-                                className="font-mono text-xs text-blue-600 hover:underline flex items-center gap-1 cursor-pointer"
-                                title={`Full User ID: ${table.created_by}`}
-                              >
-                                {String(table.created_by).slice(0, 10)}...
-                                <Copy className="w-3 h-3" />
-                              </button>
-                            ) : (
-                              "—"
-                            )}
-                          </td>
-                          <td className="py-3 px-4 text-xs text-gray-600">
-                            {table.updated_by ? (
-                              <button
-                                onClick={() => copyToClipboard(table.updated_by, "Updated By User ID")}
-                                className="font-mono text-xs text-blue-600 hover:underline flex items-center gap-1 cursor-pointer"
-                                title={`Full User ID: ${table.updated_by}`}
-                              >
-                                {String(table.updated_by).slice(0, 10)}...
-                                <Copy className="w-3 h-3" />
-                              </button>
-                            ) : (
-                              "—"
-                            )}
-                          </td>
-                          <td className="py-3 px-4 text-xs text-gray-500">
-                            {table.created_at
-                              ? new Date(table.created_at).toLocaleDateString("en-IN", {
-                                  day: "2-digit",
-                                  month: "short",
-                                  year: "numeric",
-                                })
-                              : "—"}
                           </td>
                           <td className="py-3 px-4 text-right">
                             <div className="flex items-center justify-end gap-1.5">
@@ -983,12 +881,8 @@ export default function ServerTables() {
               {editingTable && (
                 <div className="p-3 bg-gray-50 rounded-xl border border-gray-100 text-xs space-y-1 text-gray-500">
                   <p>
-                    <span className="font-semibold text-gray-700">Normal ID:</span>{" "}
+                    <span className="font-semibold text-gray-700">Table ID:</span>{" "}
                     #{editingTable.id}
-                  </p>
-                  <p className="truncate">
-                    <span className="font-semibold text-gray-700">UUID (table_id):</span>{" "}
-                    {editingTable.table_id}
                   </p>
                 </div>
               )}
