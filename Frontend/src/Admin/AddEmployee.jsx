@@ -7,6 +7,8 @@ import {
   ChevronDown,
   Clock3,
   CreditCard,
+  Eye,
+  EyeOff,
   FileCheck2,
   LocateFixed,
   LoaderCircle,
@@ -81,6 +83,8 @@ const parseStringList = (value) => {
 };
 
 const Field = ({ label, required = false, type = "text", options, placeholder, wide = false, name = fieldNameFromLabel(label), existingDocument }) => {
+  const [isPasswordVisible, setIsPasswordVisible] = useState(false);
+
   if (type === "file") {
     return (
       <div className={`block min-w-0 space-y-2 ${wide ? "md:col-span-2" : ""}`}>
@@ -94,6 +98,30 @@ const Field = ({ label, required = false, type = "text", options, placeholder, w
             <EmployeeDocument filename={existingDocument} />
           </div>
         )}
+      </div>
+    );
+  }
+
+  if (type === "password") {
+    const inputId = `employee-${name}`;
+
+    return (
+      <div className={`block min-w-0 space-y-2 ${wide ? "md:col-span-2" : ""}`}>
+        <label htmlFor={inputId} className="block text-xs font-semibold text-[#34443b]">
+          {label}{required && <span className="ml-1 text-[#c16b3a]">*</span>}
+        </label>
+        <div className="relative">
+          <input id={inputId} name={name} type={isPasswordVisible ? "text" : "password"} required={required} placeholder={placeholder || `Enter ${label.toLowerCase()}`} className={`${fieldStyles} pr-11`} />
+          <button
+            type="button"
+            aria-label={isPasswordVisible ? `Hide ${label.toLowerCase()}` : `Show ${label.toLowerCase()}`}
+            aria-pressed={isPasswordVisible}
+            onClick={() => setIsPasswordVisible((visible) => !visible)}
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-[#75847a] transition hover:text-[#355443] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4d765c]/40"
+          >
+            {isPasswordVisible ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+          </button>
+        </div>
       </div>
     );
   }
