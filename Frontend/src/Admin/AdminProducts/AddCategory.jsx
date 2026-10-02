@@ -6,7 +6,6 @@ import {
   Check,
   FolderPlus,
   ImagePlus,
-  ListFilter,
   Save,
   ShieldCheck,
   Sparkles,
@@ -17,7 +16,6 @@ import {
 import api from '../../api';
 import { useAuth } from '../../PrivateRouter/AuthContext';
 
-const categoryTypes = ['Frame', 'Gift', 'Albums'];
 const subCategoryOptions = [
   'Wooden Frames',
   'LED Frames',
@@ -28,15 +26,6 @@ const subCategoryOptions = [
   'Photo Books',
   'Wall Decor',
 ];
-
-const formatDate = (date) =>
-  new Intl.DateTimeFormat('en-GB', {
-    day: '2-digit',
-    month: 'short',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  }).format(date);
 
 const normalizeImageUrl = (value) => {
   if (!value) return '';
@@ -55,15 +44,12 @@ const AddCategory = () => {
 
   const [formData, setFormData] = useState({
     categoryId: getInitialCategoryId(),
-    categoryType: 'Frame',
     categoryName: 'Photo Frames',
+    description: '',
     subCategories: ['Wooden Frames', 'Collage Frames'],
-    sortOrder: 1,
     status: true,
     createdBy: profileName || 'Admin',
     updatedBy: 'Super Admin',
-    createdDate: formatDate(new Date()),
-    updatedDate: formatDate(new Date()),
   });
 
   const fetchNextCategoryId = async () => {
@@ -92,15 +78,12 @@ const AddCategory = () => {
 
           setFormData({
             categoryId: item.category_id || categoryId,
-            categoryType: item.category_type || 'Frame',
             categoryName: item.category_name || '',
+            description: item.description || '',
             subCategories: Array.isArray(item.sub_categories) ? item.sub_categories : [],
-            sortOrder: Number(item.sort_order || 1),
             status: item.status !== 'Inactive',
             createdBy: item.created_by || profileName || 'Admin',
             updatedBy: item.updated_by || profileName || 'Admin',
-            createdDate: item.created_date ? formatDate(new Date(item.created_date)) : formatDate(new Date()),
-            updatedDate: item.updated_date ? formatDate(new Date(item.updated_date)) : formatDate(new Date()),
           });
           setUploadedImageUrl(normalizeImageUrl(item.category_image || ''));
           setPreviewUrl(normalizeImageUrl(item.category_image || ''));
@@ -128,7 +111,7 @@ const AddCategory = () => {
 
     setFormData((current) => ({
       ...current,
-      [name]: name === 'sortOrder' ? Number(value) : value,
+      [name]: value,
     }));
   };
 
@@ -200,15 +183,12 @@ const AddCategory = () => {
     await fetchNextCategoryId();
     setFormData((current) => ({
       ...current,
-      categoryType: 'Frame',
       categoryName: '',
+      description: '',
       subCategories: [],
-      sortOrder: 1,
       status: true,
       createdBy: profileName || 'Admin',
       updatedBy: 'Super Admin',
-      createdDate: formatDate(new Date()),
-      updatedDate: formatDate(new Date()),
     }));
     setImageFile(null);
     setUploadedImageUrl('');
@@ -220,16 +200,13 @@ const AddCategory = () => {
 
     const payload = {
       category_id: formData.categoryId,
-      category_type: formData.categoryType,
       category_name: formData.categoryName,
+      description: formData.description,
       sub_categories: formData.subCategories,
       category_image: normalizeImageUrl(uploadedImageUrl || previewUrl || ''),
-      sort_order: formData.sortOrder,
       status: formData.status ? 'Active' : 'Inactive',
       created_by: formData.createdBy,
       updated_by: formData.updatedBy || profileName || 'Admin',
-      created_date: formData.createdDate,
-      updated_date: formatDate(new Date()),
     };
 
     try {
@@ -297,7 +274,7 @@ const AddCategory = () => {
 
             <div className="grid gap-6 xl:grid-cols-[1.4fr_0.8fr]">
               <div className="space-y-5">
-                <div className="grid gap-5 md:grid-cols-2">
+                <div className="grid gap-5">
                   <div className="space-y-2">
                     <label className="text-[13px] font-semibold uppercase tracking-[0.14em] text-[#6b6b6b]">Category ID</label>
                     <input
@@ -309,22 +286,6 @@ const AddCategory = () => {
                     />
                   </div>
 
-                  <div className="space-y-2">
-                    <label className="text-[13px] font-semibold uppercase tracking-[0.14em] text-[#6b6b6b]">Category Type</label>
-                    <div className="relative">
-                      <select
-                        name="categoryType"
-                        value={formData.categoryType}
-                        onChange={handleChange}
-                        className="h-[52px] w-full appearance-none rounded-2xl border border-[#e8e1d9] bg-white px-4 pr-10 text-[15px] text-[#2a2a2a] shadow-sm outline-none transition focus:border-[#d4a553]"
-                      >
-                        {categoryTypes.map((type) => (
-                          <option key={type} value={type}>{type}</option>
-                        ))}
-                      </select>
-                      <ListFilter className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#7a7a7a]" />
-                    </div>
-                  </div>
                 </div>
 
                 <div className="space-y-2">
@@ -336,6 +297,19 @@ const AddCategory = () => {
                     onChange={handleChange}
                     placeholder="Photo Frames"
                     className="h-[52px] w-full rounded-2xl border border-[#e8e1d9] bg-white px-4 text-[15px] text-[#2a2a2a] shadow-sm outline-none transition placeholder:text-[#9a9a9a] focus:border-[#d4a553]"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-[13px] font-semibold uppercase tracking-[0.14em] text-[#6b6b6b]">Description</label>
+                  <textarea
+                    name="description"
+                    value={formData.description}
+                    onChange={handleChange}
+                    rows={3}
+                    maxLength={1000}
+                    placeholder="Describe this category"
+                    className="w-full resize-y rounded-2xl border border-[#e8e1d9] bg-white px-4 py-3 text-[15px] text-[#2a2a2a] shadow-sm outline-none transition placeholder:text-[#9a9a9a] focus:border-[#d4a553]"
                   />
                 </div>
 
@@ -521,18 +495,6 @@ const AddCategory = () => {
                           }`}
                         />
                       </button>
-                    </div>
-
-                    <div className="space-y-2">
-                      <label className="text-[12px] uppercase tracking-[0.12em] text-[#6b6b6b]">Sort Order</label>
-                      <input
-                        type="number"
-                        name="sortOrder"
-                        min="1"
-                        value={formData.sortOrder}
-                        onChange={handleChange}
-                        className="h-[48px] w-full rounded-2xl border border-[#e8e1d9] bg-white px-3 text-[15px] text-[#2a2a2a] outline-none focus:border-[#d4a553]"
-                      />
                     </div>
 
                     <div className="rounded-2xl border border-[#eae4dc] bg-white p-3">

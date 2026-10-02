@@ -5,9 +5,15 @@ import { toast } from "react-hot-toast";
 import api from "../../api";
 import Loader from "../../CommonComponents/Loader";
 
+const formatDateTime = (value) => {
+  if (!value) return "—";
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? "—" : date.toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" });
+};
+
 const Coupons = () => {
   const [coupons, setCoupons] = useState([]);
-  const [products, setProducts] = useState([]);
+  const [foods, setFoods] = useState([]);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -39,7 +45,7 @@ const Coupons = () => {
       setLoading(true);
       const { data } = await api.get('/coupons');
       if (data.success) {
-        setCoupons(data.coupons);
+        setCoupons(Array.isArray(data.coupons) ? data.coupons : []);
       }
     } catch (err) {
       toast.error('Failed to fetch coupons');
@@ -51,16 +57,16 @@ const Coupons = () => {
   const fetchOptions = async () => {
     try {
       const [prodRes, catRes] = await Promise.all([
-        api.get('/albums').catch(() => ({ data: { data: [] } })),
+        api.get('/foods').catch(() => ({ data: { data: [] } })),
         api.get('/categories').catch(() => ({ data: { data: [] } }))
       ]);
 
-      const allProducts = Array.isArray(prodRes.data?.data) ? prodRes.data.data : [];
-      const prodList = allProducts.map((p) => ({
-        value: p.product_id || p.id,
-        label: p.product_name || p.name || 'Product',
+      const allFoods = Array.isArray(prodRes.data?.data) ? prodRes.data.data : [];
+      const foodList = allFoods.map((food) => ({
+        value: String(food.food_id || food.id),
+        label: food.food_name || `Food ${food.food_id || food.id}`,
       }));
-      setProducts(prodList);
+      setFoods(foodList);
 
       const allCategories = Array.isArray(catRes.data?.data) ? catRes.data.data : [];
       const catList = allCategories.map((c) => ({
@@ -283,6 +289,7 @@ const Coupons = () => {
                 <th className="px-4 py-4 text-xs font-bold ">Discount</th>
                 <th className="px-4 py-4 text-xs font-bold ">Validity</th>
                 <th className="px-4 py-4 text-xs font-bold ">Usage</th>
+                <th className="px-4 py-4 text-xs font-bold ">Created</th>
                 <th className="px-4 py-4 text-xs font-bold ">Scope</th>
                 <th className="px-4 py-4 text-xs font-bold  text-center">Status</th>
                 <th className="px-4 py-4 text-xs font-bold  text-right">Actions</th>
@@ -291,7 +298,7 @@ const Coupons = () => {
             <tbody className="divide-y divide-slate-100">
               {filteredCoupons.length === 0 ? (
                 <tr>
-                  <td colSpan="8" className="p-8 text-center text-slate-500 font-semibold">
+                  <td colSpan="10" className="p-8 text-center text-slate-500 font-semibold">
                     No coupons found. Create one to get started.
                   </td>
                 </tr>
@@ -320,6 +327,7 @@ const Coupons = () => {
                     <td className="px-6 py-4">
                       <div className="text-xs font-bold text-slate-700">{coupon.usage_count} {coupon.usage_limit_global ? `/ ${coupon.usage_limit_global}` : 'used'}</div>
                     </td>
+                    <td className="px-6 py-4 text-xs font-semibold text-slate-600">{formatDateTime(coupon.created_at)}</td>
                     <td className="px-6 py-4">
                       <div className="text-xs font-bold text-slate-700 capitalize">
                         {coupon.coupon_scope ? coupon.coupon_scope.replace(/_/g, ' ') : 'All'}
@@ -385,6 +393,10 @@ const Coupons = () => {
                   <div>
                     <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Valid Until</p>
                     <div className="font-bold text-slate-700 text-sm">{new Date(coupon.expiry_date).toLocaleDateString()}</div>
+                  </div>
+                  <div className="col-span-2 border-t border-slate-200 pt-3">
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Created</p>
+                    <div className="font-bold text-slate-700 text-sm">{formatDateTime(coupon.created_at)}</div>
                   </div>
                 </div>
 
@@ -483,24 +495,24 @@ const Coupons = () => {
                       <option value="all">All Products (Global)</option>
                       <option value="first_order_only">First Order Only</option>
                       <option value="new_customers_only">New Customers Only</option>
-                      <option value="specific_products">Specific Product(s)</option>
+                      <option value="specific_products">Specific Food(s)</option>
                       <option value="specific_categories">Specific Category(s)</option>
                     </select>
 
                     {formData.coupon_scope === 'specific_products' && (
                       <div className="mb-4 animate-in fade-in zoom-in-95 duration-300">
-                        <label className="text-[10px] font-black text-slate-900 uppercase tracking-widest ml-1 mb-2 block">Select Products</label>
+                        <label className="text-[10px] font-black text-slate-900 uppercase tracking-widest ml-1 mb-2 block">Select Foods</label>
                         <select
                           multiple
-                          size={Math.min(products.length || 4, 8)}
+                          size={Math.min(foods.length || 4, 8)}
                           value={formData.applicable_product_ids}
                           onChange={(event) => handleSelectChange(event, 'applicable_product_ids')}
                           className="w-full min-h-[120px] rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm text-black outline-none focus:border-blue-600"
                         >
-                          {products.length ? (
-                            products.map((product) => (
-                              <option key={product.value} value={product.value}>
-                                {product.label}
+                          {foods.length ? (
+                            foods.map((food) => (
+                              <option key={food.value} value={food.value}>
+                                {food.label}
                               </option>
                             ))
                           ) : (

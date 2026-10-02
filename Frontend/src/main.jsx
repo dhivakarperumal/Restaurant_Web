@@ -14,7 +14,21 @@ import PrivateRoute from './PrivateRouter/PrivateRouter.jsx'
 import AdminDashboard from './Admin/AdminDashboard.jsx'
 import AddEmployee from './Admin/AddEmployee.jsx'
 import AllEmployees from './Admin/AllEmployees.jsx'
+import AdminCustomers from './Admin/AdminCustomers.jsx'
+import BannerManagement from './Admin/Marketting/BannerManagement.jsx'
+import Coupons from './Admin/Marketting/Coupons.jsx'
+import VideoManagement from './Admin/Marketting/VideoManagement.jsx'
 import AdminLayout from './Admin/Adminpanel.jsx'
+import AdminCategories from './Admin/AdminProducts/Categories.jsx'
+import AddCategory from './Admin/AdminProducts/AddCategory.jsx'
+import Cuisines from './Admin/AdminProducts/Cuisines.jsx'
+import AdminProducts from './Admin/AdminProducts/AdminProducts.jsx'
+import AddFood from './Admin/AdminProducts/AddFood.jsx'
+import AdminReviews from './Admin/AdminReviews/AdminReviews.jsx'
+import PointOfSale from './Admin/Billings/PointOfSale.jsx'
+import Billing from './Admin/Billings/Billing.jsx'
+import NewBilling from './Admin/Billings/NewBilling.jsx'
+import OrderDetails from './Admin/Billings/OrderDetails.jsx'
 
 
 
@@ -86,6 +100,70 @@ const router = createHashRouter([
           {
             path: 'tables',
             element: <ServerTables />,
+          },
+          {
+            path: 'customers',
+            element: <AdminCustomers />,
+          },
+          {
+            path: 'banners',
+            element: <BannerManagement />,
+          },
+          {
+            path: 'coupons',
+            element: <Coupons />,
+          },
+          {
+            path: 'videos',
+            element: <VideoManagement />,
+          },
+          {
+            path: 'products',
+            element: <AdminProducts />,
+          },
+          {
+            path: 'products/add',
+            element: <AddFood />,
+          },
+          {
+            path: 'products/edit/:foodId',
+            element: <AddFood />,
+          },
+          {
+            path: 'products/categories',
+            element: <AdminCategories />,
+          },
+          {
+            path: 'products/categories/add',
+            element: <AddCategory />,
+          },
+          {
+            path: 'products/categories/edit/:categoryId',
+            element: <AddCategory />,
+          },
+          {
+            path: 'products/cuisines',
+            element: <Cuisines />,
+          },
+          {
+            path: 'reviews',
+            element: <AdminReviews />,
+          },
+          {
+            path: 'billing',
+            element: <PointOfSale />,
+          },
+          {
+            path: 'billing/new',
+            element: <NewBilling />,
+          },
+          {
+            path: 'billing/history',
+            element: <Billing />,
+          },
+          {
+            path: 'billing/:orderId',
+            element: <OrderDetails />,
           },
         ],
       },

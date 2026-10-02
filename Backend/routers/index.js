@@ -3,7 +3,7 @@ const { randomUUID } = require('crypto');
 const fs = require('fs');
 const multer = require('multer');
 const path = require('path');
-const { googleLogin, login, register } = require('../controllers/authController');
+const { googleLogin, listUsers, login, register, removeUser, updateUser } = require('../controllers/authController');
 const {
   createEmployee,
   deleteEmployee,
@@ -13,6 +13,13 @@ const {
 } = require('../controllers/employeeController');
 const { findUserByToken } = require('../modules/auth');
 const serverTableRouter = require('./serverTableRouter');
+const categoriesRouter = require('./categories');
+const cuisinesRouter = require('./cuisines');
+const foodsRouter = require('./foods');
+const bannersRouter = require('./banners');
+const couponsRouter = require('./coupons');
+const reviewsRouter = require('./reviews');
+const videosRouter = require('./videos');
 
 const router = express.Router();
 const uploadDirectory = path.join(__dirname, '..', 'upload');
@@ -23,6 +30,8 @@ const legacyEmployeeUploadDirectories = [
 ];
 
 fs.mkdirSync(uploadDirectory, { recursive: true });
+
+const uploadFolders = new Set(['categories', 'cuisines', 'foods', 'banners', 'review']);
 fs.mkdirSync(employeeUploadDirectory, { recursive: true });
 
 const createUploadFilename = (req, file, callback) => {
@@ -35,7 +44,12 @@ const createUploadFilename = (req, file, callback) => {
 };
 
 const storage = multer.diskStorage({
-  destination: uploadDirectory,
+  destination: (req, _file, callback) => {
+    const folder = String(req.body?.folder || '').toLowerCase();
+    const destination = uploadFolders.has(folder) ? path.join(uploadDirectory, folder) : uploadDirectory;
+    fs.mkdirSync(destination, { recursive: true });
+    callback(null, destination);
+  },
   filename: createUploadFilename,
 });
 
@@ -65,6 +79,24 @@ const optionalAuth = async (req, res, next) => {
   }
 };
 
+const requireAdmin = async (req, res, next) => {
+  const token = req.get('authorization')?.replace(/^Bearer\s+/i, '');
+  if (!token) return res.status(401).json({ success: false, message: 'Administrator login is required.' });
+
+  try {
+    const user = await findUserByToken(token);
+    if (!user) return res.status(401).json({ success: false, message: 'Your session is invalid or expired.' });
+    if (!['admin', 'super admin', 'superadmin'].includes(String(user.role || '').trim().toLowerCase())) {
+      return res.status(403).json({ success: false, message: 'Administrator access is required.' });
+    }
+    req.auth = user;
+    return next();
+  } catch (error) {
+    console.error('Failed to authorize user management request:', error.message);
+    return res.status(500).json({ success: false, message: 'Unable to verify administrator access.' });
+  }
+};
+
 const requireAdmin = (req, res, next) => {
   if (!req.auth) {
     return res.status(401).json({ success: false, message: 'Administrator login is required' });
@@ -85,6 +117,16 @@ router.get('/health', (req, res) => {
 router.post('/users/register', optionalAuth, register);
 router.post('/users/login', login);
 router.post('/users/google-login', googleLogin);
+router.get('/users', requireAdmin, listUsers);
+router.put('/users/:userId', requireAdmin, updateUser);
+router.delete('/users/:userId', requireAdmin, removeUser);
+router.use('/categories', categoriesRouter);
+router.use('/cuisines', cuisinesRouter);
+router.use('/foods', foodsRouter);
+router.use('/banners', bannersRouter);
+router.use('/coupons', couponsRouter);
+router.use('/reviews', reviewsRouter);
+router.use('/videos', videosRouter);
 router.get('/employees', optionalAuth, requireAdmin, listEmployees);
 router.get('/employees/documents/:filename', optionalAuth, requireAdmin, (req, res) => {
   const filename = req.params.filename;
@@ -120,10 +162,16 @@ router.post('/upload', upload.single('file'), (req, res) => {
     return res.status(400).json({ success: false, message: 'A file is required' });
   }
 
+  const relativePath = path.relative(uploadDirectory, req.file.path)
+    .split(path.sep)
+    .map(encodeURIComponent)
+    .join('/');
+  const backendUrl = (process.env.BACKEND_URL || `http://localhost:${process.env.PORT || 5000}`).replace(/\/+$/, '');
+
   return res.status(201).json({
     success: true,
     filename: req.file.filename,
-    url: `${process.env.BACKEND_URL || `http://localhost:${process.env.PORT || 5000}`}/uploads/${req.file.filename}`,
+    url: `${backendUrl}/uploads/${relativePath}`,
   });
 });
 

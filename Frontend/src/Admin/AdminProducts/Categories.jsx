@@ -1,17 +1,15 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import {
-  Grid2x2,
   ImageIcon,
+  ImagePlus,
   LayoutGrid,
-  PackageCheck,
   Pencil,
   Plus,
   Search,
-  ShoppingBag,
   Table2,
   Trash2,
-  TrendingUp,
+  X,
 } from 'lucide-react';
 import api from '../../api';
 
@@ -34,16 +32,27 @@ const AdminCategories = () => {
   const [viewMode, setViewMode] = useState('table');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedStatus, setSelectedStatus] = useState('All Status');
-  const [selectedParent, setSelectedParent] = useState('All Parent Categories');
   const [sortBy, setSortBy] = useState('latest');
+  const [isAddOpen, setIsAddOpen] = useState(false);
+  const [isSavingCategory, setIsSavingCategory] = useState(false);
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const [isGeneratingCategoryId, setIsGeneratingCategoryId] = useState(false);
+  const [newSubcategory, setNewSubcategory] = useState('');
+  const [imagePreview, setImagePreview] = useState('');
+  const [categoryForm, setCategoryForm] = useState({
+    categoryId: '',
+    categoryName: '',
+    description: '',
+    subcategories: [],
+    image: '',
+  });
+  const [modalError, setModalError] = useState('');
 
   const fetchCategories = async () => {
     try {
       setLoading(true);
-      const [categoryResponse, productResponse] = await Promise.all([
-        api.get('/categories'),
-        api.get('/products'),
-      ]);
+      const categoryResponse = await api.get('/categories');
+      const productResponse = await api.get('/products').catch(() => null);
       const items = Array.isArray(categoryResponse?.data?.data) ? categoryResponse.data.data : [];
       const productItems = Array.isArray(productResponse?.data?.data) ? productResponse.data.data : [];
       setCategories(items);
@@ -62,6 +71,107 @@ const AdminCategories = () => {
   useEffect(() => {
     fetchCategories();
   }, []);
+
+  useEffect(() => {
+    if (!isAddOpen) return undefined;
+    const handleKeyDown = (event) => {
+      if (event.key === 'Escape' && !isSavingCategory && !isUploadingImage) {
+        setIsAddOpen(false);
+        setImagePreview('');
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isAddOpen, isSavingCategory, isUploadingImage]);
+
+  useEffect(() => () => {
+    if (imagePreview.startsWith('blob:')) URL.revokeObjectURL(imagePreview);
+  }, [imagePreview]);
+
+  const openAddCategory = async () => {
+    setModalError('');
+    setCategoryForm({ categoryId: '', categoryName: '', description: '', subcategories: [], image: '' });
+    setNewSubcategory('');
+    setImagePreview('');
+    setIsAddOpen(true);
+    setIsGeneratingCategoryId(true);
+    try {
+      const response = await api.get('/categories/next-id');
+      setCategoryForm((current) => ({ ...current, categoryId: response?.data?.data || '' }));
+    } catch (err) {
+      setModalError(err?.response?.data?.message || 'Could not generate a category ID. It will be assigned when saved.');
+    } finally {
+      setIsGeneratingCategoryId(false);
+    }
+  };
+
+  const handleAddSubcategory = () => {
+    const value = newSubcategory.trim();
+    if (!value) return;
+    setCategoryForm((current) => (
+      current.subcategories.some((item) => item.toLowerCase() === value.toLowerCase())
+        ? current
+        : { ...current, subcategories: [...current.subcategories, value] }
+    ));
+    setNewSubcategory('');
+  };
+
+  const handleImageSelection = async (event) => {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+    if (!file) return;
+    if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
+      setModalError('Choose a JPG, PNG, or WEBP image.');
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      setModalError('Image size must be 5 MB or less.');
+      return;
+    }
+
+    setModalError('');
+    setImagePreview(URL.createObjectURL(file));
+    setIsUploadingImage(true);
+    const uploadData = new FormData();
+    uploadData.append('folder', 'categories');
+    uploadData.append('file', file);
+
+    try {
+      const response = await api.post('/upload', uploadData);
+      const imageUrl = response?.data?.url || response?.data?.urls?.[0] || '';
+      if (!imageUrl) throw new Error('The upload did not return an image URL.');
+      setCategoryForm((current) => ({ ...current, image: imageUrl }));
+    } catch (err) {
+      setImagePreview('');
+      setModalError(err?.response?.data?.message || err.message || 'Image upload failed. Please try again.');
+    } finally {
+      setIsUploadingImage(false);
+    }
+  };
+
+  const handleCreateCategory = async (event) => {
+    event.preventDefault();
+    setIsSavingCategory(true);
+    setModalError('');
+
+    try {
+      await api.post('/categories', {
+        categoryId: categoryForm.categoryId,
+        categoryName: categoryForm.categoryName.trim(),
+        description: categoryForm.description.trim(),
+        subcategories: categoryForm.subcategories,
+        image: categoryForm.image,
+        status: 'Active',
+      });
+      await fetchCategories();
+      setIsAddOpen(false);
+      setImagePreview('');
+    } catch (err) {
+      setModalError(err?.response?.data?.message || 'Unable to create category. Please try again.');
+    } finally {
+      setIsSavingCategory(false);
+    }
+  };
 
   const handleDeleteCategory = async (categoryId) => {
     if (!categoryId) return;
@@ -91,7 +201,14 @@ const AdminCategories = () => {
         status: item.status === 'Inactive' ? 'Inactive' : 'Active',
         parentCategory: item.parent_category || item.parent_category_name || '',
         sortOrder: item.sort_order || index + 1,
-        createdAt: item.created_date ? new Date(item.created_date).toLocaleString('en-GB', {
+        createdAt: item.created_at ? new Date(item.created_at).toLocaleString('en-GB', {
+          day: '2-digit',
+          month: 'short',
+          year: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit',
+        }) : '—',
+        updatedAt: item.updated_at ? new Date(item.updated_at).toLocaleString('en-GB', {
           day: '2-digit',
           month: 'short',
           year: 'numeric',
@@ -103,8 +220,6 @@ const AdminCategories = () => {
   }, [categories, products]);
 
   const activeCount = listData.filter((item) => item.status === 'Active').length;
-  const latestCategory = listData[0];
-  const parentCategories = [...new Set(listData.map((item) => item.parentCategory).filter(Boolean))];
   const filteredCategories = listData
     .filter((item) => {
       const searchValue = searchTerm.toLowerCase();
@@ -112,8 +227,7 @@ const AdminCategories = () => {
         String(value).toLowerCase().includes(searchValue)
       );
       const matchesStatus = selectedStatus === 'All Status' || item.status === selectedStatus;
-      const matchesParent = selectedParent === 'All Parent Categories' || item.parentCategory === selectedParent;
-      return matchesSearch && matchesStatus && matchesParent;
+      return matchesSearch && matchesStatus;
     })
     .sort((a, b) => {
       if (sortBy === 'name') return a.name.localeCompare(b.name);
@@ -121,56 +235,24 @@ const AdminCategories = () => {
       if (sortBy === 'products-low') return a.products - b.products;
       return a.sortOrder - b.sortOrder;
     });
-  const statValues = [
-    { title: 'Total Categories', value: String(listData.length), inc: '10.7%', icon: <Grid2x2 className="h-7 w-7 text-white" />, iconBg: 'bg-[#22c55e]', waveColor: '#22c55e' },
-    { title: 'Active Categories', value: String(activeCount), inc: '9.2%', icon: <PackageCheck className="h-7 w-7 text-white" />, iconBg: 'bg-[#f59e0b]', waveColor: '#f59e0b' },
-    { title: 'Total Products', value: String(listData.reduce((sum, item) => sum + Number(item.products || 0), 0)), inc: '12.4%', icon: <ShoppingBag className="h-7 w-7 text-white" />, iconBg: 'bg-[#06b6d4]', waveColor: '#06b6d4' },
-    { title: 'Latest Category', value: String(latestCategory?.products || 0), inc: '12.5%', sub: latestCategory?.name || 'No categories yet', icon: <Grid2x2 className="h-7 w-7 text-white" />, iconBg: 'bg-[#a855f7]', waveColor: '#a855f7' },
-  ];
+  const productCount = listData.reduce((sum, item) => sum + Number(item.products || 0), 0);
 
   return (
     <div className="min-h-screen bg-[#f3f4f1] p-4 md:p-6">
       <div className="mx-auto max-w-[1500px]">
-      
+        <header className="mb-5 flex flex-col gap-4 border-b border-gray-200 pb-4 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <h1 className="text-2xl font-semibold text-gray-900">Categories</h1>
+            <p className="mt-1 text-sm text-gray-600">Manage product categories and subcategories.</p>
+          </div>
+          <dl className="flex flex-wrap gap-x-7 gap-y-2 text-sm">
+            <div><dt className="text-gray-500">Total</dt><dd className="font-semibold text-gray-900">{listData.length}</dd></div>
+            <div><dt className="text-gray-500">Active</dt><dd className="font-semibold text-emerald-800">{activeCount}</dd></div>
+            <div><dt className="text-gray-500">Products</dt><dd className="font-semibold text-gray-900">{productCount}</dd></div>
+          </dl>
+        </header>
 
-        <div className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
-          {statValues.map((stat, index) => (
-            <div
-              key={index}
-              className="relative flex h-full min-h-[170px] flex-col overflow-hidden rounded-xl border border-gray-100 bg-white p-5 shadow-sm"
-            >
-              <div className="flex flex-1 items-start gap-4">
-                <div className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-full ${stat.iconBg}`}>
-                  {stat.icon}
-                </div>
-                <div className="flex flex-col">
-                  <p className="mb-1 text-xs font-medium text-gray-600">{stat.title}</p>
-                  <h3 className="mb-3 text-2xl font-bold text-gray-900">{stat.value}</h3>
-                  <div className="flex flex-col">
-                    <div className="mb-1 flex items-center text-xs font-medium text-emerald-600">
-                      <TrendingUp size={12} className="mr-1" />
-                      <span>{stat.inc}</span>
-                    </div>
-                    <p className="text-[10px] text-gray-400">{stat.sub || 'from last month'}</p>
-                  </div>
-                </div>
-              </div>
-              <div className="pointer-events-none absolute bottom-0 left-0 h-8 w-full overflow-hidden">
-                <svg
-                  viewBox="0 0 100 20"
-                  preserveAspectRatio="none"
-                  className="h-full w-full opacity-40"
-                  style={{ color: stat.waveColor }}
-                  fill="currentColor"
-                >
-                  <path d="M0,10 C30,25 70,0 100,10 L100,20 L0,20 Z" />
-                </svg>
-              </div>
-            </div>
-          ))}
-        </div>
-
-        <div className="rounded-[18px] border border-[#e7e0d8] bg-white p-3 shadow-[0_1px_0_rgba(16,24,40,0.02)]">
+        <div className="rounded-lg border border-[#e7e0d8] bg-white p-3 shadow-sm">
           <div className="mb-4 flex flex-col gap-3 lg:flex-row lg:items-center">
             <div className="flex flex-1 flex-wrap items-center gap-3">
               <div className="relative w-full max-w-[340px]">
@@ -233,13 +315,14 @@ const AdminCategories = () => {
                   <LayoutGrid className="h-4 w-4" />
                 </button>
               </div>
-              <Link
-              to="/admin/products/categories/add"
-              className="inline-flex h-[46px] items-center gap-2 rounded-xl bg-[#1a3c36] px-4 text-[15px] font-semibold text-white shadow-[0_6px_14px_rgba(26,60,54,0.18)] transition hover:bg-[#214a42]"
-            >
-              <Plus className="h-4 w-4" />
-              Add New Category
-            </Link>
+              <button
+                type="button"
+                onClick={openAddCategory}
+                className="inline-flex h-[46px] items-center gap-2 rounded-xl bg-[#1a3c36] px-4 text-[15px] font-semibold text-white shadow-[0_6px_14px_rgba(26,60,54,0.18)] transition hover:bg-[#214a42]"
+              >
+                <Plus className="h-4 w-4" />
+                Add New Category
+              </button>
             </div>
           </div>
 
@@ -316,6 +399,8 @@ const AdminCategories = () => {
                         <th className="px-4 py-4">S.No</th>
                         <th className="px-4 py-4">Category</th>
                         <th className="px-4 py-4">Subcategories</th>
+                        <th className="px-4 py-4">Created At</th>
+                        <th className="px-4 py-4">Updated At</th>
                         <th className="px-4 py-4">Products</th>
                         <th className="px-4 py-4">Status</th>
                         <th className="px-4 py-4 text-right">Actions</th>
@@ -340,6 +425,8 @@ const AdminCategories = () => {
                           <td className="px-4 py-4 text-[#5d5d5d]">
                             {item.subCategories.length ? item.subCategories.join(', ') : 'No subcategories'}
                           </td>
+                          <td className="whitespace-nowrap px-4 py-4">{item.createdAt}</td>
+                          <td className="whitespace-nowrap px-4 py-4">{item.updatedAt}</td>
                           <td className="px-4 py-4">{item.products}</td>
                           <td className="px-4 py-4">
                             <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-medium ${item.status === 'Active' ? 'bg-[#eaf7ef] text-[#2b7a4b]' : 'bg-[#fdf1f1] text-[#b85c5c]'}`}>
@@ -386,6 +473,164 @@ const AdminCategories = () => {
           )}
         </div>
       </div>
+
+      {isAddOpen && (
+        <div
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-4"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget && !isSavingCategory && !isUploadingImage) {
+              setIsAddOpen(false);
+              setImagePreview('');
+            }
+          }}
+        >
+          <section
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="add-category-title"
+            className="max-h-[92vh] w-full max-w-2xl overflow-y-auto rounded-lg bg-white shadow-2xl"
+          >
+            <form onSubmit={handleCreateCategory}>
+              <header className="flex items-center justify-between border-b border-gray-200 px-5 py-4 sm:px-6">
+                <div>
+                  <h2 id="add-category-title" className="text-xl font-semibold text-gray-900">Add category</h2>
+                  <p className="mt-1 text-sm text-gray-500">Create a category and its subcategories.</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsAddOpen(false);
+                    setImagePreview('');
+                  }}
+                  disabled={isSavingCategory || isUploadingImage}
+                  className="rounded-md p-2 text-gray-500 hover:bg-gray-100 hover:text-gray-800 disabled:opacity-50"
+                  aria-label="Close add category dialog"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </header>
+
+              <div className="grid gap-4 px-5 py-5 sm:grid-cols-2 sm:px-6">
+                <label className="space-y-1.5 text-sm font-medium text-gray-700">
+                  Category ID
+                  <input value={categoryForm.categoryId} readOnly placeholder="Assigned on save" className="h-10 w-full rounded-md border border-gray-300 bg-gray-50 px-3 text-gray-500" />
+                </label>
+                <label className="space-y-1.5 text-sm font-medium text-gray-700">
+                  Category name
+                  <input
+                    autoFocus
+                    required
+                    maxLength={150}
+                    value={categoryForm.categoryName}
+                    onChange={(event) => setCategoryForm((current) => ({ ...current, categoryName: event.target.value }))}
+                    placeholder="e.g. Biryani"
+                    className="h-10 w-full rounded-md border border-gray-300 px-3 outline-none focus:border-emerald-700 focus:ring-1 focus:ring-emerald-700"
+                  />
+                </label>
+                <label className="space-y-1.5 text-sm font-medium text-gray-700 sm:col-span-2">
+                  Description
+                  <textarea
+                    rows={3}
+                    maxLength={1000}
+                    value={categoryForm.description}
+                    onChange={(event) => setCategoryForm((current) => ({ ...current, description: event.target.value }))}
+                    placeholder="Describe this category"
+                    className="w-full resize-y rounded-md border border-gray-300 px-3 py-2 outline-none focus:border-emerald-700 focus:ring-1 focus:ring-emerald-700"
+                  />
+                </label>
+                <div className="space-y-2 text-sm font-medium text-gray-700 sm:col-span-2">
+                  <label htmlFor="category-subcategory-input">Subcategories</label>
+                  <div className="flex gap-2">
+                    <input
+                      id="category-subcategory-input"
+                      value={newSubcategory}
+                      onChange={(event) => setNewSubcategory(event.target.value)}
+                      onKeyDown={(event) => {
+                        if (event.key === 'Enter') {
+                          event.preventDefault();
+                          handleAddSubcategory();
+                        }
+                      }}
+                      placeholder="e.g. Chicken Biryani"
+                      className="h-10 min-w-0 flex-1 rounded-md border border-gray-300 px-3 outline-none focus:border-emerald-700 focus:ring-1 focus:ring-emerald-700"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleAddSubcategory}
+                      className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-[#1a3c36] text-white hover:bg-[#214a42]"
+                      aria-label="Add subcategory"
+                      title="Add subcategory"
+                    >
+                      <Plus className="h-4 w-4" />
+                    </button>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {categoryForm.subcategories.map((subcategory) => (
+                      <span key={subcategory} className="inline-flex items-center gap-1 rounded-md bg-emerald-50 px-2.5 py-1 text-xs text-emerald-900">
+                        {subcategory}
+                        <button
+                          type="button"
+                          onClick={() => setCategoryForm((current) => ({
+                            ...current,
+                            subcategories: current.subcategories.filter((item) => item !== subcategory),
+                          }))}
+                          className="rounded p-0.5 hover:bg-emerald-100"
+                          aria-label={`Remove ${subcategory}`}
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                </div>
+                <div className="space-y-2 text-sm font-medium text-gray-700 sm:col-span-2">
+                  <label htmlFor="category-image-input">Category image</label>
+                  <div className="flex flex-wrap items-center gap-3">
+                    <input
+                      id="category-image-input"
+                      type="file"
+                      accept=".jpg,.jpeg,.png,.webp"
+                      onChange={handleImageSelection}
+                      disabled={isUploadingImage}
+                      className="block w-full max-w-md text-sm file:mr-3 file:rounded-md file:border-0 file:bg-gray-100 file:px-3 file:py-2 file:text-sm file:font-medium file:text-gray-700 hover:file:bg-gray-200"
+                    />
+                    {isUploadingImage && <span className="text-xs text-gray-500">Uploading...</span>}
+                  </div>
+                  {imagePreview && (
+                    <div className="flex items-center gap-3">
+                      <img src={imagePreview} alt="Category preview" className="h-16 w-16 rounded-md border border-gray-200 object-cover" />
+                      <span className="text-xs font-normal text-gray-500">{categoryForm.image ? 'Image uploaded' : 'Preparing image...'}</span>
+                    </div>
+                  )}
+                </div>
+                {modalError && <p role="alert" className="text-sm text-red-700 sm:col-span-2">{modalError}</p>}
+              </div>
+
+              <footer className="flex justify-end gap-2 border-t border-gray-200 px-5 py-4 sm:px-6">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsAddOpen(false);
+                    setImagePreview('');
+                  }}
+                  disabled={isSavingCategory || isUploadingImage}
+                  className="h-10 rounded-md border border-gray-300 px-4 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSavingCategory || isUploadingImage || isGeneratingCategoryId}
+                  className="inline-flex h-10 items-center gap-2 rounded-md bg-[#1a3c36] px-4 text-sm font-semibold text-white hover:bg-[#214a42] disabled:cursor-wait disabled:opacity-60"
+                >
+                  <Plus className="h-4 w-4" />
+                  {isUploadingImage ? 'Uploading image...' : isSavingCategory ? 'Saving...' : 'Save category'}
+                </button>
+              </footer>
+            </form>
+          </section>
+        </div>
+      )}
     </div>
   );
 };

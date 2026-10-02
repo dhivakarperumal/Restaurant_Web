@@ -45,6 +45,7 @@ import {
   Star,
   Zap,
   Tag,
+  Utensils,
   Lock,
   Settings,
   MessageSquare,
@@ -73,6 +74,7 @@ const navItems = [
      
       { path: "/admin/products", label: "All Products", icon: Package },
       { path: "/admin/products/categories", label: "Category", icon: Layers },
+      { path: "/admin/products/cuisines", label: "Cuisine", icon: Utensils },
       { path: "/admin/products/stock-details", label: "Stock Details", icon: ClipboardList },
     ],
   },
@@ -143,7 +145,7 @@ const navItems = [
     children: [
       { path: "/admin/banners", label: "Banners", icon: Image },
       { path: "/admin/videos", label: "Videos Management", icon: Image },
-      { path: "/admin/gallery", label: "Gallery", icon: Image },
+      // { path: "/admin/gallery", label: "Gallery", icon: Image },
       { path: "/admin/coupons", label: "Coupons & Offers", icon: Tag },
     ],
   },
