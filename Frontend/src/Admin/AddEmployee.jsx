@@ -117,7 +117,7 @@ const Field = ({ label, required = false, type = "text", options, placeholder, w
             aria-label={isPasswordVisible ? `Hide ${label.toLowerCase()}` : `Show ${label.toLowerCase()}`}
             aria-pressed={isPasswordVisible}
             onClick={() => setIsPasswordVisible((visible) => !visible)}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-[#75847a] transition hover:text-[#355443] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4d765c]/40"
+            className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer text-[#75847a] transition hover:text-[#355443] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4d765c]/40"
           >
             {isPasswordVisible ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
           </button>
@@ -184,7 +184,7 @@ const LocationFields = ({ showCoordinates, delivery }) => (
     {showCoordinates && <Field label="Longitude" placeholder="Optional" />}
     {showCoordinates && (
       <div className="flex items-end">
-        <button type="button" className="inline-flex h-11 items-center gap-2 rounded-lg border border-[#cfdacf] bg-[#f5f8f4] px-4 text-sm font-semibold text-[#355443] transition hover:bg-[#edf3eb]">
+        <button type="button" className="inline-flex h-11 cursor-pointer items-center gap-2 rounded-lg border border-[#cfdacf] bg-[#f5f8f4] px-4 text-sm font-semibold text-[#355443] transition hover:bg-[#edf3eb]">
           <LocateFixed className="h-4 w-4" /> {delivery ? "Get Current Location" : "Get Location"}
         </button>
       </div>
@@ -220,14 +220,14 @@ const StringListField = ({ name, label, initialValue, placeholder }) => {
               className={fieldStyles}
             />
             {items.length > 1 && (
-              <button type="button" onClick={() => removeItem(index)} aria-label={`Remove ${label.toLowerCase()} ${index + 1}`} className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-[#ead8d3] text-[#a13e30] hover:bg-[#fff4f1]">
+              <button type="button" onClick={() => removeItem(index)} aria-label={`Remove ${label.toLowerCase()} ${index + 1}`} className="flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-lg border border-[#ead8d3] text-[#a13e30] hover:bg-[#fff4f1]">
                 <Trash2 className="h-4 w-4" />
               </button>
             )}
           </div>
         ))}
       </div>
-      <button type="button" onClick={() => setItems((current) => [...current, ""])} className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-[#cfdacf] bg-[#f5f8f4] px-3 text-xs font-semibold text-[#355443] transition hover:bg-[#edf3eb]">
+      <button type="button" onClick={() => setItems((current) => [...current, ""])} className="inline-flex h-9 cursor-pointer items-center gap-1.5 rounded-lg border border-[#cfdacf] bg-[#f5f8f4] px-3 text-xs font-semibold text-[#355443] transition hover:bg-[#edf3eb]">
         <Plus className="h-4 w-4" /> Add {label.toLowerCase().replace(/s$/, "")}
       </button>
     </div>
@@ -541,7 +541,7 @@ const AddEmployee = () => {
 
       <div className="mt-6 flex flex-col-reverse gap-3 border-t border-[#dfe5df] pt-5 sm:flex-row sm:justify-end">
         <Link to="/admin/employees" className="inline-flex h-11 items-center justify-center rounded-lg border border-[#d5ddd5] bg-white px-5 text-sm font-semibold text-[#56645a] transition hover:bg-[#f7f8f6]">Cancel</Link>
-        <button type="submit" disabled={isSubmitting || isLoadingEmployee || Boolean(loadError)} aria-busy={isSubmitting} className="inline-flex h-11 items-center justify-center gap-2 rounded-lg bg-[#244b36] px-5 text-sm font-semibold text-white transition hover:bg-[#1b3d2b] disabled:cursor-wait disabled:opacity-60">{isSubmitting ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />} {isSubmitting ? (isEditing ? "Saving changes..." : "Adding employee...") : (isEditing ? "Save changes" : "Save employee")}</button>
+        <button type="submit" disabled={isSubmitting || isLoadingEmployee || Boolean(loadError)} aria-busy={isSubmitting} className="inline-flex h-11 cursor-pointer items-center justify-center gap-2 rounded-lg bg-[#244b36] px-5 text-sm font-semibold text-white transition hover:bg-[#1b3d2b] disabled:opacity-60">{isSubmitting ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />} {isSubmitting ? (isEditing ? "Saving changes..." : "Adding employee...") : (isEditing ? "Save changes" : "Save employee")}</button>
       </div>
     </main>
     </form>
