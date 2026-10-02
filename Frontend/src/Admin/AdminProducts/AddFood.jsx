@@ -407,11 +407,12 @@ const AddFood = ({ drawer = false, onClose, onSaved }) => {
     >
     <form onSubmit={handleSave} className={drawer ? 'scrollbar-hide h-full w-full max-w-4xl overflow-y-auto bg-[#f4f5f2] p-4 shadow-2xl md:p-6' : 'min-h-screen bg-[#f4f5f2] p-4 md:p-6'}>
       <div className="mx-auto max-w-5xl pb-24">
-        <header className="mb-5 flex flex-wrap items-end justify-between gap-4 border-b border-gray-200 pb-4">
+        <header className="mb-5 flex flex-wrap items-end justify-between gap-4 border-b border-gray-200  pb-4">
           <div>
-            <button type="button" onClick={closeForm} className="mb-3 inline-flex items-center gap-1.5 text-sm text-gray-600 hover:text-emerald-800"><ArrowLeft className="h-4 w-4" /> Products</button>
-            <div className="flex items-center gap-2 text-emerald-800"><Utensils className="h-5 w-5" /><span className="text-xs font-semibold uppercase tracking-[0.14em]">Restaurant menu</span></div>
+            
+            
             <h1 className="mt-1 text-2xl font-semibold text-gray-900">{editingFoodId ? 'Edit Food' : 'Add Food'}</h1>
+            <div className="flex items-center gap-2 text-emerald-800"><Utensils className="h-5 w-5" /><span className="text-xs font-semibold uppercase tracking-[0.14em]">Restaurant menu</span></div>
             <p className="mt-1 text-sm text-gray-600">Create a menu item with pricing, availability, add-ons, and customizations.</p>
           </div>
           <div className="flex items-center gap-2">

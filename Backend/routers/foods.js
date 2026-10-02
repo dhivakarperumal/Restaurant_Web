@@ -6,7 +6,7 @@ const router = express.Router();
 const isAdminRole = (role) => ['admin', 'super admin', 'superadmin'].includes(String(role || '').trim().toLowerCase());
 
 const requireAdmin = async (req, res, next) => {
-  const token = req.get('authorization')?.replace(/^Bearer\\s+/i, '');
+  const token = req.get('authorization')?.replace(/^Bearer\s+/i, '');
   if (!token) return res.status(401).json({ success: false, message: 'Administrator login is required.' });
   try {
     const user = await findUserByToken(token);
