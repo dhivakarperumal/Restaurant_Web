@@ -47,10 +47,10 @@ const parseWorkingDays = (value) => {
   return JSON.stringify(values.map((day) => String(day).trim()).filter(Boolean));
 };
 
-const parseSpecialDishes = (value) => {
+const parseStringList = (value) => {
   const values = Array.isArray(value) ? value : value ? [value] : [];
-  const dishes = values.flatMap((dish) => {
-    const normalized = String(dish || '').trim();
+  const items = values.flatMap((item) => {
+    const normalized = String(item || '').trim();
     if (!normalized) return [];
     try {
       const parsed = JSON.parse(normalized);
@@ -58,8 +58,8 @@ const parseSpecialDishes = (value) => {
     } catch {
       return [normalized];
     }
-  }).map((dish) => String(dish).trim()).filter(Boolean);
-  return dishes.length ? JSON.stringify(dishes) : null;
+  }).map((item) => String(item).trim()).filter(Boolean);
+  return items.length ? JSON.stringify(items) : null;
 };
 
 const removeUploadedFiles = async (files) => {
@@ -100,10 +100,10 @@ const buildEmployeeData = (body, employeeType) => ({
   email: getValue(body.email).toLowerCase(),
   status: ['Active', 'Inactive'].includes(getValue(body.status)) ? getValue(body.status) : 'Active',
   cuisine_type: nullableValue(body.cuisine_type),
-  specialization: nullableValue(body.specialization),
+  specialization: parseStringList(body.specialization),
   experience_years: nullableNumber(body.experience_years),
   description: nullableValue(body.description || body.description_about_chef),
-  special_dishes: parseSpecialDishes(body.special_dishes),
+  special_dishes: parseStringList(body.special_dishes),
   food_preference: nullableValue(body.food_preference),
   address: getValue(body.address),
   area_locality: getValue(body.area_locality),

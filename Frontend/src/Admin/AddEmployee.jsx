@@ -68,7 +68,7 @@ const fieldStyles =
 
 const fieldNameFromLabel = (label) => label.toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_|_$/g, "");
 
-const parseSpecialDishes = (value) => {
+const parseStringList = (value) => {
   if (!value) return [""];
   if (Array.isArray(value)) return value.length ? value.map((dish) => String(dish || "")) : [""];
   try {
@@ -164,43 +164,43 @@ const LocationFields = ({ showCoordinates, delivery }) => (
   </Section>
 );
 
-const SpecialDishesField = ({ initialValue }) => {
-  const [dishes, setDishes] = useState(() => parseSpecialDishes(initialValue));
+const StringListField = ({ name, label, initialValue, placeholder }) => {
+  const [items, setItems] = useState(() => parseStringList(initialValue));
 
-  const updateDish = (index, value) => {
-    setDishes((current) => current.map((dish, dishIndex) => (dishIndex === index ? value : dish)));
+  const updateItem = (index, value) => {
+    setItems((current) => current.map((item, itemIndex) => (itemIndex === index ? value : item)));
   };
 
-  const removeDish = (index) => {
-    setDishes((current) => {
-      const next = current.filter((_, dishIndex) => dishIndex !== index);
+  const removeItem = (index) => {
+    setItems((current) => {
+      const next = current.filter((_, itemIndex) => itemIndex !== index);
       return next.length ? next : [""];
     });
   };
 
   return (
     <div className="min-w-0 space-y-2">
-      <span className="block text-xs font-semibold text-[#34443b]">Special Dishes</span>
+      <span className="block text-xs font-semibold text-[#34443b]">{label}</span>
       <div className="space-y-2">
-        {dishes.map((dish, index) => (
+        {items.map((item, index) => (
           <div key={index} className="flex items-center gap-2">
             <input
-              name="special_dishes"
-              value={dish}
-              onChange={(event) => updateDish(index, event.target.value)}
-              placeholder="e.g. signature biryani"
+              name={name}
+              value={item}
+              onChange={(event) => updateItem(index, event.target.value)}
+              placeholder={placeholder}
               className={fieldStyles}
             />
-            {dishes.length > 1 && (
-              <button type="button" onClick={() => removeDish(index)} aria-label={`Remove dish ${index + 1}`} className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-[#ead8d3] text-[#a13e30] hover:bg-[#fff4f1]">
+            {items.length > 1 && (
+              <button type="button" onClick={() => removeItem(index)} aria-label={`Remove ${label.toLowerCase()} ${index + 1}`} className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-[#ead8d3] text-[#a13e30] hover:bg-[#fff4f1]">
                 <Trash2 className="h-4 w-4" />
               </button>
             )}
           </div>
         ))}
       </div>
-      <button type="button" onClick={() => setDishes((current) => [...current, ""])} className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-[#cfdacf] bg-[#f5f8f4] px-3 text-xs font-semibold text-[#355443] transition hover:bg-[#edf3eb]">
-        <Plus className="h-4 w-4" /> Add dish
+      <button type="button" onClick={() => setItems((current) => [...current, ""])} className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-[#cfdacf] bg-[#f5f8f4] px-3 text-xs font-semibold text-[#355443] transition hover:bg-[#edf3eb]">
+        <Plus className="h-4 w-4" /> Add {label.toLowerCase().replace(/s$/, "")}
       </button>
     </div>
   );
@@ -234,10 +234,10 @@ const EmployeeFields = ({ employeeType, employeeId, isEditing, initialData }) =>
       {isChef && (
         <Section icon={Utensils} title="Restaurant details" description="Cuisine, experience and food specialties">
           <Field label="Cuisine Type" required options={["South Indian", "North Indian", "Chinese", "Bakery", "Italian", "Continental", "Other"]} />
-          <Field label="Specialization" />
+          <StringListField name="specialization" label="Specialization" initialValue={initialData?.specialization} placeholder="e.g. Tandoor, pastry, or food plating" />
           <Field label="Experience (Years)" type="number" />
           <Field label="Food Preference" options={["Veg", "Non-Veg", "Both"]} />
-          <SpecialDishesField initialValue={initialData?.special_dishes} />
+          <StringListField name="special_dishes" label="Special Dishes" initialValue={initialData?.special_dishes} placeholder="e.g. signature biryani" />
           <Field label="Description / About Chef" type="textarea" wide />
         </Section>
       )}
@@ -426,7 +426,7 @@ const AddEmployee = () => {
 
     Array.from(formRef.current.elements).forEach((field) => {
       if (!field.name || field.type === "file" || field.type === "password") return;
-      if (field.name === "special_dishes") return;
+      if (["special_dishes", "specialization"].includes(field.name)) return;
       if (field.type === "checkbox") {
         field.checked = days.includes(field.value);
         return;

@@ -173,10 +173,10 @@ const AllEmployees = () => {
                         <EmployeeDocument filename={value} />
                       ) : (
                         <p className="mt-1 break-words text-sm text-[#34443b]">
-                          {key === "special_dishes" ? (() => {
+                          {["special_dishes", "specialization"].includes(key) ? (() => {
                             try {
-                              const dishes = JSON.parse(value);
-                              return Array.isArray(dishes) ? dishes.join(", ") : String(value);
+                              const items = JSON.parse(value);
+                              return Array.isArray(items) ? items.join(", ") : String(value);
                             } catch {
                               return String(value);
                             }

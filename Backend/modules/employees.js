@@ -42,7 +42,7 @@ async function initializeEmployeeSchema() {
       email VARCHAR(255) NOT NULL UNIQUE,
       status VARCHAR(20) NOT NULL DEFAULT 'Active',
       cuisine_type VARCHAR(100) NULL,
-      specialization VARCHAR(150) NULL,
+      specialization TEXT NULL,
       experience_years DECIMAL(6,2) NULL,
       description TEXT NULL,
       special_dishes TEXT NULL,
@@ -111,6 +111,11 @@ async function initializeEmployeeSchema() {
         REFERENCES users (user_id) ON DELETE CASCADE
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
   `);
+
+  const [specializationColumns] = await db.query("SHOW COLUMNS FROM employees LIKE 'specialization'");
+  if (specializationColumns[0]?.Type.toLowerCase().startsWith('varchar(')) {
+    await db.query('ALTER TABLE employees MODIFY COLUMN specialization TEXT NULL');
+  }
 }
 
 async function createEmployeeWithUser({ employeeData, createdBy, password }) {
