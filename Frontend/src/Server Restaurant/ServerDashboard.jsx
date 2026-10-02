@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import {
   AlertCircle,
   CheckCircle2,
@@ -42,6 +43,9 @@ const resolveImageUrl = (img) => {
 
 export default function ServerDashboard() {
   const { userProfile } = useAuth();
+  const location = useLocation();
+  const navigate = useNavigate();
+  const selectedTable = location.state?.selectedTable;
   const [foods, setFoods] = useState([]);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -237,6 +241,30 @@ export default function ServerDashboard() {
           </button>
         </div>
       </div>
+
+      {selectedTable && (
+        <div className="flex flex-col gap-3 rounded-2xl border border-[#d8e5da] bg-white p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#1a3c36] text-white">
+              <Table2 className="h-5 w-5" />
+            </div>
+            <div>
+              <p className="text-xs font-medium text-gray-500">Selected table</p>
+              <p className="text-sm font-bold text-gray-900">
+                {selectedTable.table_number}
+                {selectedTable.no_of_seats ? ` · ${selectedTable.no_of_seats} seats` : ""}
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => navigate("/server/tables")}
+            className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-[#dfe2e5] bg-[#faf9f8] px-4 py-2.5 text-sm font-semibold text-[#2d2d2d] transition hover:bg-white"
+          >
+            Change Table
+          </button>
+        </div>
+      )}
 
       {/* Stats Summary Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
