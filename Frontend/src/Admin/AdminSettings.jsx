@@ -70,9 +70,9 @@ const SETTINGS_CATEGORIES = [
   { id: 'coupon', title: 'Offers & Coupons', desc: 'Manage dining and delivery promotions.', icon: <Ticket size={24} /> }
 ];
 
-const Settings = () => {
+const Settings = ({ initialTab = null }) => {
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState(null);
+  const [activeTab, setActiveTab] = useState(initialTab);
 
   // States for Printer specific UI
   const [connectionType, setConnectionType] = useState('USB');
@@ -126,6 +126,17 @@ const Settings = () => {
     taxMode: 'Tax Exclusive'
   });
 
+  const [deliverySettings, setDeliverySettings] = useState({
+    baseCharge: '50',
+    freeMinimum: '500',
+    perKmCharge: '10',
+    maxDistance: '15',
+    areaScope: 'Local',
+    expressEnabled: true,
+    expressCharge: '100',
+    estimatedTime: '30 Mins',
+  });
+
   const [storeSettings, setStoreSettings] = useState({
     storeName: '',
     storeLogo: null,
@@ -152,6 +163,10 @@ const Settings = () => {
 
   const updateStoreSetting = (key, value) => {
     setStoreSettings(prev => ({ ...prev, [key]: value }));
+  };
+
+  const updateDeliverySetting = (key, value) => {
+    setDeliverySettings((previous) => ({ ...previous, [key]: value }));
   };
 
   const handleFetchLiveLocation = () => {
@@ -210,6 +225,7 @@ const Settings = () => {
     fetchPaymentSettings();
     fetchTaxSettings();
     fetchStoreSettings();
+    fetchDeliverySettings();
   }, []);
 
   const fetchTaxSettings = async () => {
@@ -363,6 +379,26 @@ const Settings = () => {
     }
   };
 
+  const fetchDeliverySettings = async () => {
+    try {
+      const response = await api.get('/settings/delivery');
+      const data = response.data?.data || {};
+      setDeliverySettings({
+        baseCharge: data.base_charge ?? '50',
+        freeMinimum: data.free_minimum ?? '500',
+        perKmCharge: data.per_km_charge ?? '10',
+        maxDistance: data.max_distance ?? '15',
+        areaScope: data.area_scope || 'Local',
+        expressEnabled: data.express_enabled !== 0 && data.express_enabled !== '0',
+        expressCharge: data.express_charge ?? '100',
+        estimatedTime: data.estimated_time || '30 Mins',
+      });
+    } catch (error) {
+      console.error('Error fetching delivery settings:', error);
+      toast.error('Failed to load delivery settings');
+    }
+  };
+
   const handleStoreLogoUpload = async (e) => {
     try {
       const file = e.target.files?.[0];
@@ -418,10 +454,23 @@ const Settings = () => {
         console.error("Error saving restaurant profile:", error);
         toast.error("Failed to save restaurant profile.");
       }
+    } else if (activeTab === 'delivery') {
+      try {
+        const response = await api.post('/settings/delivery', deliverySettings);
+        if (response.data?.success) {
+          toast.success('Delivery settings saved successfully!');
+        } else {
+          toast.error('Failed to save delivery settings.');
+        }
+      } catch (error) {
+        console.error('Error saving delivery settings:', error);
+        toast.error('Failed to save delivery settings.');
+      }
     } else {
       toast.success("Settings saved successfully!");
     }
-    setActiveTab(null);
+    if (initialTab) navigate('/admin/settings');
+    else setActiveTab(null);
   };
 
   const handleScanBluetooth = () => {
@@ -1117,11 +1166,11 @@ const Settings = () => {
             <div style={{ gridColumn: '1 / -1', background: '#f8fafc', padding: '1.25rem', borderRadius: '12px', border: '1px solid #e2e8f0', marginBottom: '1rem' }}>
               <h4 style={{ marginBottom: '1rem', color: '#1e293b', fontSize: '1rem', fontWeight: 'bold' }}>Restaurant Delivery Fees</h4>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '1rem' }}>
-                <Input label="Base Delivery Fee (₹)" type="number" placeholder="e.g. 50" />
-                <Input label="Free Delivery Minimum Order Value (₹)" type="number" placeholder="e.g. 500" />
-                <Input label="Delivery Fee per KM (₹)" type="number" placeholder="e.g. 10" />
-                <Input label="Maximum Delivery Radius (KM)" type="number" placeholder="e.g. 15" />
-                <Select label="Delivery Service Area" options={['Local', 'City', 'Custom Radius']} />
+                <Input label="Base Delivery Fee (₹)" type="number" placeholder="e.g. 50" value={deliverySettings.baseCharge} onChange={(event) => updateDeliverySetting('baseCharge', event.target.value)} />
+                <Input label="Free Delivery Minimum Order Value (₹)" type="number" placeholder="e.g. 500" value={deliverySettings.freeMinimum} onChange={(event) => updateDeliverySetting('freeMinimum', event.target.value)} />
+                <Input label="Delivery Fee per KM (₹)" type="number" placeholder="e.g. 10" value={deliverySettings.perKmCharge} onChange={(event) => updateDeliverySetting('perKmCharge', event.target.value)} />
+                <Input label="Maximum Delivery Radius (KM)" type="number" placeholder="e.g. 15" value={deliverySettings.maxDistance} onChange={(event) => updateDeliverySetting('maxDistance', event.target.value)} />
+                <Select label="Delivery Service Area" options={['Local', 'City', 'Custom Radius']} value={deliverySettings.areaScope} onChange={(event) => updateDeliverySetting('areaScope', event.target.value)} />
               </div>
             </div>
 
@@ -1131,11 +1180,11 @@ const Settings = () => {
                   <Truck size={20} style={{ color: '#0284c7' }} />
                   <h4 style={{ margin: 0, color: '#0284c7', fontSize: '1rem', fontWeight: 'bold' }}>Express Delivery</h4>
                 </div>
-                <Toggle label="Enable Express Delivery" defaultChecked />
+                <Toggle label="Enable Express Delivery" checked={deliverySettings.expressEnabled} onChange={(event) => updateDeliverySetting('expressEnabled', event.target.checked)} />
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '1rem' }}>
-                <Input label="Express Delivery Charge (₹)" type="number" placeholder="e.g. 100" />
-                <Input label="Estimated Delivery Time" placeholder="e.g. 30 Mins" />
+                <Input label="Express Delivery Charge (₹)" type="number" placeholder="e.g. 100" value={deliverySettings.expressCharge} onChange={(event) => updateDeliverySetting('expressCharge', event.target.value)} />
+                <Input label="Estimated Delivery Time" placeholder="e.g. 30 Mins" value={deliverySettings.estimatedTime} onChange={(event) => updateDeliverySetting('estimatedTime', event.target.value)} />
               </div>
             </div>
           </>
@@ -1188,7 +1237,7 @@ const Settings = () => {
       ) : (
         <div className="glass-card detail-view animate-fade-in">
           <div className="detail-header">
-            <button className="back-button" onClick={() => setActiveTab(null)}>
+            <button className="back-button" onClick={() => initialTab ? navigate('/admin/settings') : setActiveTab(null)}>
               <ArrowLeft size={20} /> Back
             </button>
             <div className="detail-title-area">
@@ -1202,7 +1251,7 @@ const Settings = () => {
           </div>
 
           <div className="detail-actions">
-            <button className="btn-secondary" onClick={() => setActiveTab(null)}>Cancel</button>
+            <button className="btn-secondary" onClick={() => initialTab ? navigate('/admin/settings') : setActiveTab(null)}>Cancel</button>
             <button className="btn-secondary" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
               <RotateCcw size={18} /> Reset
             </button>

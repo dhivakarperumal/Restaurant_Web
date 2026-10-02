@@ -1,6 +1,6 @@
 const { getSettings, saveSettings } = require('../modules/settings');
 
-const sections = new Set(['payment', 'receipt', 'store', 'tax']);
+const sections = new Set(['payment', 'receipt', 'store', 'tax', 'delivery']);
 
 const toSettingKey = (section, key) => {
   if (section === 'payment' && key === 'cardSupport') return 'credit_debit_card';

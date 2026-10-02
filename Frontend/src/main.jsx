@@ -113,6 +113,10 @@ const router = createHashRouter([
             element: <AdminSettings />,
           },
           {
+            path: 'delivery-charges',
+            element: <AdminSettings initialTab="delivery" />,
+          },
+          {
             path: 'settings/profile',
             element: <AdminProfile />,
           },
