@@ -17,7 +17,7 @@ import {
   UserRound,
   Utensils,
 } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 
 const employeeTypes = ["Chef", "Delivery Partner", "Server", "Cashier", "Manager", "Cleaner"];
 
@@ -238,7 +238,11 @@ const EmployeeFields = ({ employeeType }) => {
 };
 
 const AddEmployee = () => {
-  const [employeeType, setEmployeeType] = useState("Chef");
+  const { employeeType: routeEmployeeType } = useParams();
+  const initialEmployeeType = employeeTypes.find(
+    (type) => type.toLowerCase().replaceAll(" ", "-") === routeEmployeeType,
+  );
+  const [employeeType, setEmployeeType] = useState(initialEmployeeType || "Chef");
 
   return (
     <main className="mx-auto w-full max-w-6xl px-1 pb-10 pt-2 sm:px-3 sm:pt-4">

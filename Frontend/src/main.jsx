@@ -13,6 +13,7 @@ import PrivateRoute from './PrivateRouter/PrivateRouter.jsx'
 
 import AdminDashboard from './Admin/AdminDashboard.jsx'
 import AddEmployee from './Admin/AddEmployee.jsx'
+import AllEmployees from './Admin/AllEmployees.jsx'
 import AdminLayout from './Admin/Adminpanel.jsx'
 
 
@@ -66,7 +67,15 @@ const router = createHashRouter([
             element: <AdminDashboard />,
           },
           {
+            path: 'employees',
+            element: <AllEmployees />,
+          },
+          {
             path: 'employees/add',
+            element: <AddEmployee />,
+          },
+          {
+            path: 'employees/add/:employeeType',
             element: <AddEmployee />,
           },
         ],

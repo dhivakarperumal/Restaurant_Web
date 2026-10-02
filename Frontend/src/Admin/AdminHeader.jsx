@@ -32,6 +32,7 @@ const pageInfo = {
   "/admin/gifts":                   { title: "Gifts",                  icon: Package },
   "/admin/products/add":             { title: "Add Product",             icon: Plus },
   "/admin/customers":               { title: "Customers",              icon: Users },
+  "/admin/employees":               { title: "All Employee",            icon: Users },
   "/admin/employees/add":           { title: "Add Employee",           icon: UserRoundPlus },
   "/admin/reviews":                 { title: "Reviews",                icon: HeartPulse },
   "/admin/banners":                 { title: "Banners",                icon: Boxes },
