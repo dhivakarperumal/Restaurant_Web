@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useLocation } from "react-router-dom";
 import {
   Armchair,
   CheckCircle2,
@@ -8,11 +9,11 @@ import {
   Hash,
   Layers,
   LayoutGrid,
-  List,
   Loader2,
   Plus,
   RefreshCw,
   Search,
+  Table2,
   Trash2,
   Users,
   UtensilsCrossed,
@@ -47,11 +48,13 @@ const statusConfig = {
 
 export default function ServerTables() {
   const { userProfile } = useAuth();
+  const location = useLocation();
+  const isAdminTablesPage = location.pathname.startsWith("/admin/tables");
   const [tables, setTables] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
-  const [viewMode, setViewMode] = useState("grid"); // 'grid' | 'table'
+  const [viewMode, setViewMode] = useState(isAdminTablesPage ? "table" : "grid");
 
   // Modal states
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -232,20 +235,21 @@ export default function ServerTables() {
   }, [tables]);
 
   return (
-    <div className="space-y-6">
+    <div className={isAdminTablesPage ? "min-h-screen bg-[#f2f3f0] p-4 md:p-6" : "space-y-6"}>
+      <div className={isAdminTablesPage ? "mx-auto max-w-[1500px] space-y-6" : "space-y-6"}>
       {/* Top Banner / Header */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-white p-5 rounded-2xl border border-gray-100 shadow-sm">
+      <div className={isAdminTablesPage ? "mb-5 flex flex-col gap-4 md:flex-row md:items-center md:justify-between" : "flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-white p-5 rounded-2xl border border-gray-100 shadow-sm"}>
         <div>
           <div className="flex items-center gap-2">
-            <div className="p-2 rounded-xl bg-[#1f3228] text-[#d4a843]">
+            {!isAdminTablesPage && <div className="p-2 rounded-xl bg-[#1f3228] text-[#d4a843]">
               <UtensilsCrossed className="w-5 h-5" />
-            </div>
+            </div>}
             <div>
-              <h1 className="text-xl sm:text-2xl font-bold text-gray-900 font-serif">
-                Server Tables
+              <h1 className={isAdminTablesPage ? "text-[2.1rem] font-bold tracking-[-0.05em] text-[#1f1d1b]" : "text-xl sm:text-2xl font-bold text-gray-900 font-serif"}>
+                {isAdminTablesPage ? "Tables" : "Server Tables"}
               </h1>
-              <p className="text-xs sm:text-sm text-gray-500">
-                Manage restaurant dining tables, seating capacity, and real-time status.
+              <p className={isAdminTablesPage ? "mt-2 text-[13px] text-[#646464]" : "text-xs sm:text-sm text-gray-500"}>
+                {isAdminTablesPage ? <>Dashboard <span className="mx-2 text-[#9a9a9a]">&gt;</span> <span className="font-medium text-[#2a2a2a]">Tables</span></> : "Manage restaurant dining tables, seating capacity, and real-time status."}
               </p>
             </div>
           </div>
@@ -255,65 +259,64 @@ export default function ServerTables() {
           <button
             onClick={fetchTables}
             title="Refresh tables"
-            className="p-2.5 rounded-xl border border-gray-200 text-gray-600 hover:bg-gray-50 transition"
+            className={isAdminTablesPage ? "flex h-[46px] w-[46px] cursor-pointer items-center justify-center rounded-xl border border-[#dfe2e5] bg-white text-gray-600 transition hover:bg-[#faf9f8]" : "p-2.5 rounded-xl border border-gray-200 text-gray-600 hover:bg-gray-50 transition"}
           >
             <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
           </button>
           <button
             onClick={handleOpenAddModal}
-            className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-[#1f3228] hover:bg-[#162420] text-[#d4a843] font-semibold text-sm shadow-md transition hover:scale-[1.02] active:scale-[0.98]"
+            className={isAdminTablesPage ? "inline-flex h-[46px] cursor-pointer items-center justify-center gap-2 rounded-xl bg-[#1a3c36] px-4 text-[15px] font-semibold text-white shadow-[0_6px_14px_rgba(26,60,54,0.18)] transition hover:bg-[#214a42]" : "flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-[#1f3228] hover:bg-[#162420] text-[#d4a843] font-semibold text-sm shadow-md transition hover:scale-[1.02] active:scale-[0.98]"}
           >
-            <Plus className="w-4 h-4 text-[#d4a843]" />
+            <Plus className={`w-4 h-4 ${isAdminTablesPage ? "" : "text-[#d4a843]"}`} />
             <span>Add Table</span>
           </button>
         </div>
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm flex items-center gap-4">
-          <div className="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
-            <Layers className="w-6 h-6" />
+      <div className={isAdminTablesPage ? "mb-6 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4" : "grid grid-cols-2 lg:grid-cols-4 gap-4"}>
+        {[
+          { title: "Total Tables", value: stats.total, icon: Layers, iconBg: "bg-[#22c55e]", waveColor: "#22c55e", description: "Dining tables" },
+          { title: "Available", value: stats.available, icon: CheckCircle2, iconBg: "bg-[#f59e0b]", waveColor: "#f59e0b", description: "Ready for guests" },
+          { title: "Occupied", value: stats.occupied, icon: Clock, iconBg: "bg-[#06b6d4]", waveColor: "#06b6d4", description: "Currently in use" },
+          { title: "Total Seats", value: stats.totalSeats, icon: Armchair, iconBg: "bg-[#a855f7]", waveColor: "#a855f7", description: "Dining capacity" },
+        ].map(({ title, value, icon: Icon, iconBg, waveColor, description }) => (
+          <div key={title} className={isAdminTablesPage ? "relative flex h-full min-h-[170px] flex-col overflow-hidden rounded-xl border border-gray-100 bg-white p-5 shadow-sm" : "bg-white p-4 rounded-xl border border-gray-100 shadow-sm flex items-center gap-4"}>
+            {isAdminTablesPage ? (
+              <div className="flex flex-1 items-start gap-4">
+                <div className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-full ${iconBg} text-white`}>
+                  <Icon className="h-7 w-7" />
+                </div>
+                <div>
+                  <p className="mb-1 text-xs font-medium text-gray-600">{title}</p>
+                  <h3 className="mb-3 text-2xl font-bold text-gray-900">{value}</h3>
+                  <p className="text-[10px] text-gray-400">{description}</p>
+                </div>
+              </div>
+            ) : (
+              <>
+                <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl ${iconBg} text-white`}>
+                  <Icon className="w-6 h-6" />
+                </div>
+                <div>
+                  <p className="text-xs font-medium text-gray-500">{title}</p>
+                  <h3 className="text-2xl font-bold text-gray-900">{value}</h3>
+                </div>
+              </>
+            )}
+            {isAdminTablesPage && (
+              <div className="pointer-events-none absolute bottom-0 left-0 h-8 w-full overflow-hidden">
+                <svg viewBox="0 0 100 20" preserveAspectRatio="none" className="h-full w-full opacity-40" style={{ color: waveColor }} fill="currentColor">
+                  <path d="M0,10 C30,25 70,0 100,10 L100,20 L0,20 Z" />
+                </svg>
+              </div>
+            )}
           </div>
-          <div>
-            <p className="text-xs text-gray-500 font-medium">Total Tables</p>
-            <h3 className="text-2xl font-bold text-gray-900">{stats.total}</h3>
-          </div>
-        </div>
-
-        <div className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm flex items-center gap-4">
-          <div className="w-12 h-12 rounded-xl bg-green-50 text-green-600 flex items-center justify-center shrink-0">
-            <CheckCircle2 className="w-6 h-6" />
-          </div>
-          <div>
-            <p className="text-xs text-gray-500 font-medium">Available</p>
-            <h3 className="text-2xl font-bold text-green-700">{stats.available}</h3>
-          </div>
-        </div>
-
-        <div className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm flex items-center gap-4">
-          <div className="w-12 h-12 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center shrink-0">
-            <Clock className="w-6 h-6" />
-          </div>
-          <div>
-            <p className="text-xs text-gray-500 font-medium">Occupied</p>
-            <h3 className="text-2xl font-bold text-amber-700">{stats.occupied}</h3>
-          </div>
-        </div>
-
-        <div className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm flex items-center gap-4">
-          <div className="w-12 h-12 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
-            <Armchair className="w-6 h-6" />
-          </div>
-          <div>
-            <p className="text-xs text-gray-500 font-medium">Total Seats</p>
-            <h3 className="text-2xl font-bold text-blue-700">{stats.totalSeats}</h3>
-          </div>
-        </div>
+        ))}
       </div>
 
       {/* Filter and Search Bar */}
-      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-white p-4 rounded-xl border border-gray-100 shadow-sm">
+      <div className={isAdminTablesPage ? "flex flex-col gap-3 rounded-[18px] border border-[#e7e0d8] bg-white p-4 shadow-[0_1px_0_rgba(16,24,40,0.02)] sm:flex-row sm:items-center sm:justify-between" : "flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-white p-4 rounded-xl border border-gray-100 shadow-sm"}>
         <div className="relative flex-1 max-w-md">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
           <input
@@ -321,16 +324,16 @@ export default function ServerTables() {
             placeholder="Search by table number, UUID, or creator..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-9 pr-4 py-2 text-sm bg-gray-50 rounded-lg border border-gray-200 focus:outline-none focus:border-[#d4a843] focus:bg-white transition"
+            className={isAdminTablesPage ? "h-[46px] w-full rounded-xl border border-[#dfe2e5] bg-[#faf9f8] pl-10 pr-3 text-[14px] text-[#2d2d2d] outline-none placeholder:text-[#8a8a8a] focus:border-[#d2bc8a]" : "w-full pl-9 pr-4 py-2 text-sm bg-gray-50 rounded-lg border border-gray-200 focus:outline-none focus:border-[#d4a843] focus:bg-white transition"}
           />
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           {/* Status filter tabs */}
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="px-3 py-2 text-xs sm:text-sm bg-gray-50 border border-gray-200 rounded-lg text-gray-700 outline-none focus:border-[#d4a843]"
+            className={isAdminTablesPage ? "h-[46px] rounded-xl border border-[#dfe2e5] bg-[#faf9f8] px-3 text-[14px] font-medium text-[#2d2d2d] outline-none focus:border-[#d2bc8a]" : "px-3 py-2 text-xs sm:text-sm bg-gray-50 border border-gray-200 rounded-lg text-gray-700 outline-none focus:border-[#d4a843]"}
           >
             <option value="all">All Statuses ({tables.length})</option>
             <option value="Available">Available ({stats.available})</option>
@@ -340,28 +343,30 @@ export default function ServerTables() {
           </select>
 
           {/* View mode toggle */}
-          <div className="flex items-center rounded-lg border border-gray-200 p-0.5 bg-gray-50">
+          <div className={isAdminTablesPage ? "flex h-[46px] items-center overflow-hidden rounded-xl border border-[#dfe2e5] bg-[#faf9f8]" : "flex items-center rounded-lg border border-gray-200 p-0.5 bg-gray-50"}>
             <button
+              type="button"
               onClick={() => setViewMode("grid")}
-              className={`p-1.5 rounded-md text-xs transition ${
-                viewMode === "grid"
-                  ? "bg-white text-gray-900 shadow-sm"
-                  : "text-gray-500 hover:text-gray-900"
-              }`}
-              title="Grid View"
+              className={isAdminTablesPage
+                ? `flex h-[46px] w-[46px] cursor-pointer items-center justify-center transition ${viewMode === "grid" ? "bg-[#1a3c36] text-white" : "text-[#4d4d4d] hover:bg-white"}`
+                : `cursor-pointer rounded-md p-1.5 text-xs transition ${viewMode === "grid" ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-900"}`}
+              aria-label="Card view"
+              aria-pressed={viewMode === "grid"}
+              title="Card view"
             >
               <LayoutGrid className="w-4 h-4" />
             </button>
             <button
+              type="button"
               onClick={() => setViewMode("table")}
-              className={`p-1.5 rounded-md text-xs transition ${
-                viewMode === "table"
-                  ? "bg-white text-gray-900 shadow-sm"
-                  : "text-gray-500 hover:text-gray-900"
-              }`}
-              title="Table View"
+              className={isAdminTablesPage
+                ? `flex h-[46px] w-[46px] cursor-pointer items-center justify-center border-l border-[#dfe2e5] transition ${viewMode === "table" ? "bg-[#1a3c36] text-white" : "text-[#4d4d4d] hover:bg-white"}`
+                : `cursor-pointer rounded-md p-1.5 text-xs transition ${viewMode === "table" ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-900"}`}
+              aria-label="Table view"
+              aria-pressed={viewMode === "table"}
+              title="Table view"
             >
-              <List className="w-4 h-4" />
+              <Table2 className="w-4 h-4" />
             </button>
           </div>
         </div>
@@ -369,12 +374,12 @@ export default function ServerTables() {
 
       {/* Main Content: Grid or List */}
       {loading ? (
-        <div className="bg-white p-12 rounded-2xl border border-gray-100 flex flex-col items-center justify-center gap-3">
+        <div className={isAdminTablesPage ? "flex flex-col items-center justify-center gap-3 rounded-[18px] border border-[#e7e0d8] bg-white p-12" : "bg-white p-12 rounded-2xl border border-gray-100 flex flex-col items-center justify-center gap-3"}>
           <Loader2 className="w-8 h-8 animate-spin text-[#d4a843]" />
           <p className="text-sm text-gray-500 font-medium">Loading server tables...</p>
         </div>
       ) : filteredTables.length === 0 ? (
-        <div className="bg-white p-12 rounded-2xl border border-gray-100 text-center space-y-4">
+        <div className={isAdminTablesPage ? "space-y-4 rounded-[18px] border border-[#e7e0d8] bg-white p-12 text-center" : "bg-white p-12 rounded-2xl border border-gray-100 text-center space-y-4"}>
           <div className="w-16 h-16 rounded-full bg-[#1f3228]/10 text-[#1f3228] flex items-center justify-center mx-auto">
             <UtensilsCrossed className="w-8 h-8" />
           </div>
@@ -389,7 +394,7 @@ export default function ServerTables() {
           {!searchQuery && statusFilter === "all" && (
             <button
               onClick={handleOpenAddModal}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-[#1f3228] text-[#d4a843] rounded-xl text-sm font-semibold shadow hover:bg-[#162420] transition"
+              className={isAdminTablesPage ? "inline-flex cursor-pointer items-center gap-2 rounded-xl bg-[#1a3c36] px-4 py-2 text-sm font-semibold text-white shadow transition hover:bg-[#214a42]" : "inline-flex items-center gap-2 px-4 py-2 bg-[#1f3228] text-[#d4a843] rounded-xl text-sm font-semibold shadow hover:bg-[#162420] transition"}
             >
               <Plus className="w-4 h-4" />
               Add First Table
@@ -398,13 +403,13 @@ export default function ServerTables() {
         </div>
       ) : viewMode === "grid" ? (
         /* GRID VIEW */
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+        <div className={`grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 ${isAdminTablesPage ? "rounded-[18px]" : ""}`}>
           {filteredTables.map((table) => {
             const config = statusConfig[table.status] || statusConfig.Available;
             return (
               <div
                 key={table.table_id || table.id}
-                className="bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition p-5 flex flex-col justify-between relative group"
+                className={isAdminTablesPage ? "relative flex flex-col justify-between rounded-xl border border-[#e7e0d8] bg-white p-5 shadow-sm transition hover:shadow-md" : "bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition p-5 flex flex-col justify-between relative group"}
               >
                 <div>
                   {/* Top Bar: Table Number & Status */}
@@ -531,10 +536,10 @@ export default function ServerTables() {
         </div>
       ) : (
         /* TABLE LIST VIEW */
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+        <div className={isAdminTablesPage ? "overflow-hidden rounded-md border border-[#e8e4df] bg-white" : "bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden"}>
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm">
-              <thead className="bg-gray-50/75 border-b border-gray-100 text-xs text-gray-500 uppercase tracking-wider font-semibold">
+              <thead className={isAdminTablesPage ? "border-b border-[#e8e4df] bg-[#f0e6d2] text-left text-sm font-semibold text-[#3d3d3d]" : "bg-gray-50/75 border-b border-gray-100 text-xs text-gray-500 uppercase tracking-wider font-semibold"}>
                 <tr>
                   <th className="py-3.5 px-4"># ID</th>
                   <th className="py-3.5 px-4">Table Number</th>
@@ -782,6 +787,7 @@ export default function ServerTables() {
           </div>
         </div>
       )}
+      </div>
     </div>
   );
 }
