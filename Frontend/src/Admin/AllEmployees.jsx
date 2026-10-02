@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { Eye, Pencil, Search, Trash2, UserRoundPlus, Users, X } from "lucide-react";
 import api from "../api";
+import EmployeeDocument from "./EmployeeDocument";
 
 const AllEmployees = () => {
   const [employees, setEmployees] = useState([]);
@@ -58,22 +59,6 @@ const AllEmployees = () => {
       setActionError(requestError.response?.data?.message || "Employee could not be deleted.");
     } finally {
       setDeletingEmployeeId("");
-    }
-  };
-
-  const downloadDocument = async (filename) => {
-    try {
-      const response = await api.get(`/employees/documents/${encodeURIComponent(filename)}`, {
-        responseType: "blob",
-      });
-      const url = window.URL.createObjectURL(response.data);
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = filename;
-      link.click();
-      window.setTimeout(() => window.URL.revokeObjectURL(url), 1000);
-    } catch (requestError) {
-      setDetailsError(requestError.response?.data?.message || "Document could not be downloaded.");
     }
   };
 
@@ -179,13 +164,13 @@ const AllEmployees = () => {
               {Object.entries(selectedEmployee)
                 .filter(([key, value]) => value !== null && value !== "" && !["user_id", "created_by", "updated_by"].includes(key))
                 .map(([key, value]) => {
-                  const isDocument = /(_upload|_proof|_photo|_card|_certificate|_book|_documents)$/.test(key)
+                  const isDocument = /(_upload|_proof|_photo|_card|_certificate|_book|_license|_documents)$/.test(key)
                     && typeof value === "string";
                   return (
                     <div key={key} className="min-w-0 rounded-lg border border-[#edf0ec] p-3">
                       <p className="text-[10px] font-bold uppercase tracking-wide text-[#849087]">{key.replaceAll("_", " ")}</p>
                       {isDocument ? (
-                        <button type="button" onClick={() => downloadDocument(value)} className="mt-1 break-all text-left text-sm font-semibold text-[#42694f] underline decoration-[#b8caba] underline-offset-2 hover:text-[#244b36]">{value}</button>
+                        <EmployeeDocument filename={value} />
                       ) : (
                         <p className="mt-1 break-words text-sm text-[#34443b]">{typeof value === "object" ? JSON.stringify(value) : String(value)}</p>
                       )}

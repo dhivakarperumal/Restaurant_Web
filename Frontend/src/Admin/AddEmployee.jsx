@@ -4,7 +4,6 @@ import {
   Banknote,
   Bike,
   BriefcaseBusiness,
-  Check,
   ChevronDown,
   Clock3,
   CreditCard,
@@ -20,6 +19,7 @@ import {
 } from "lucide-react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import api from "../api";
+import EmployeeDocument from "./EmployeeDocument";
 
 const employeeTypes = ["Chef", "Delivery Partner", "Server", "Cashier", "Manager", "Cleaner"];
 
@@ -28,28 +28,45 @@ const fieldStyles =
 
 const fieldNameFromLabel = (label) => label.toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_|_$/g, "");
 
-const Field = ({ label, required = false, type = "text", options, placeholder, wide = false, name = fieldNameFromLabel(label) }) => (
-  <label className={`block min-w-0 space-y-2 ${wide ? "md:col-span-2" : ""}`}>
-    <span className="block text-xs font-semibold text-[#34443b]">
-      {label}{required && <span className="ml-1 text-[#c16b3a]">*</span>}
-    </span>
-    {options ? (
-      <div className="relative">
-        <select name={name} required={required} className={`${fieldStyles} appearance-none pr-9`} defaultValue="">
-          <option value="" disabled>Select {label.toLowerCase()}</option>
-          {options.map((option) => <option key={option} value={option}>{option}</option>)}
-        </select>
-        <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#75847a]" />
+const Field = ({ label, required = false, type = "text", options, placeholder, wide = false, name = fieldNameFromLabel(label), existingDocument }) => {
+  if (type === "file") {
+    return (
+      <div className={`block min-w-0 space-y-2 ${wide ? "md:col-span-2" : ""}`}>
+        <label className="block space-y-2 text-xs font-semibold text-[#34443b]">
+          <span>{label}{required && <span className="ml-1 text-[#c16b3a]">*</span>}</span>
+          <input name={name} type="file" className={`${fieldStyles} cursor-pointer py-2 text-xs file:mr-3 file:rounded-md file:border-0 file:bg-[#edf2ed] file:px-2.5 file:py-1 file:text-xs file:font-semibold file:text-[#355443]`} />
+        </label>
+        {existingDocument && (
+          <div>
+            <p className="text-[11px] font-semibold text-[#55715a]">Saved document (kept unless you choose a replacement)</p>
+            <EmployeeDocument filename={existingDocument} />
+          </div>
+        )}
       </div>
-    ) : type === "file" ? (
-      <input name={name} type="file" className={`${fieldStyles} cursor-pointer py-2 text-xs file:mr-3 file:rounded-md file:border-0 file:bg-[#edf2ed] file:px-2.5 file:py-1 file:text-xs file:font-semibold file:text-[#355443]`} />
-    ) : type === "textarea" ? (
-      <textarea name={name} required={required} rows={3} placeholder={placeholder || `Enter ${label.toLowerCase()}`} className={`${fieldStyles} h-auto min-h-24 resize-y py-3`} />
-    ) : (
-      <input name={name} type={type} required={required} placeholder={placeholder || `Enter ${label.toLowerCase()}`} className={fieldStyles} />
-    )}
-  </label>
-);
+    );
+  }
+
+  return (
+    <label className={`block min-w-0 space-y-2 ${wide ? "md:col-span-2" : ""}`}>
+      <span className="block text-xs font-semibold text-[#34443b]">
+        {label}{required && <span className="ml-1 text-[#c16b3a]">*</span>}
+      </span>
+      {options ? (
+        <div className="relative">
+          <select name={name} required={required} className={`${fieldStyles} appearance-none pr-9`} defaultValue="">
+            <option value="" disabled>Select {label.toLowerCase()}</option>
+            {options.map((option) => <option key={option} value={option}>{option}</option>)}
+          </select>
+          <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#75847a]" />
+        </div>
+      ) : type === "textarea" ? (
+        <textarea name={name} required={required} rows={3} placeholder={placeholder || `Enter ${label.toLowerCase()}`} className={`${fieldStyles} h-auto min-h-24 resize-y py-3`} />
+      ) : (
+        <input name={name} type={type} required={required} placeholder={placeholder || `Enter ${label.toLowerCase()}`} className={fieldStyles} />
+      )}
+    </label>
+  );
+};
 
 const Section = ({ icon: Icon, title, description, children }) => (
   <section className="overflow-hidden rounded-xl border border-[#e1e7e1] bg-white shadow-[0_2px_10px_rgba(31,48,38,0.035)]">
@@ -64,9 +81,16 @@ const Section = ({ icon: Icon, title, description, children }) => (
   </section>
 );
 
-const UploadField = ({ label }) => (
-  <Field label={label} type="file" />
-);
+const uploadColumnByFieldName = {
+  bank_passbook: "bank_proof_upload",
+  cancelled_cheque_bank_proof: "bank_proof_upload",
+};
+
+const UploadField = ({ label, initialData }) => {
+  const fieldName = fieldNameFromLabel(label);
+  const column = uploadColumnByFieldName[fieldName] || fieldName;
+  return <Field label={label} type="file" existingDocument={initialData?.[column]} />;
+};
 
 const LocationFields = ({ showCoordinates, delivery }) => (
   <Section icon={MapPin} title="Location details" description="Primary address and service location">
@@ -98,7 +122,7 @@ const EmployeeFields = ({ employeeType, employeeId, isEditing, initialData }) =>
     <>
       <Section icon={UserRound} title="Personal details" description="Identity, contact and account access">
         <Field label={isChef ? "Chef Name" : "Full Name"} name="full_name" required />
-        <UploadField label="Profile Photo" />
+        <UploadField label="Profile Photo" initialData={initialData} />
         <Field label="Gender" options={["Female", "Male", "Non-binary", "Prefer not to say"]} />
         <Field label="Date of Birth" type="date" />
         <Field label="Phone Number" type="tel" required />
@@ -134,9 +158,9 @@ const EmployeeFields = ({ employeeType, employeeId, isEditing, initialData }) =>
           <Field label="Driving License Number" required />
           <Field label="Driving License Expiry Date" type="date" />
           <Field label="RC Number" />
-          <UploadField label="RC Document Upload" />
-          <UploadField label="Driving License Upload" />
-          <UploadField label="Vehicle Photo" />
+          <UploadField label="RC Document Upload" initialData={initialData} />
+          <UploadField label="Driving License Upload" initialData={initialData} />
+          <UploadField label="Vehicle Photo" initialData={initialData} />
         </Section>
       )}
 
@@ -165,7 +189,7 @@ const EmployeeFields = ({ employeeType, employeeId, isEditing, initialData }) =>
           <Field label="IFSC Code" />
           <Field label="UPI ID" />
           {(isChef || isBasic) && <Field label="PAN Number" />}
-          <UploadField label="Bank Passbook" />
+          <UploadField label="Bank Passbook" initialData={initialData} />
         </Section>
       )}
 
@@ -176,7 +200,7 @@ const EmployeeFields = ({ employeeType, employeeId, isEditing, initialData }) =>
           <Field label="Account Number" />
           <Field label="IFSC Code" />
           <Field label="UPI ID" />
-          <UploadField label="Cancelled Cheque / Bank Proof" />
+          <UploadField label="Cancelled Cheque / Bank Proof" initialData={initialData} />
         </Section>
       )}
 
@@ -212,17 +236,17 @@ const EmployeeFields = ({ employeeType, employeeId, isEditing, initialData }) =>
 
       <Section icon={FileCheck2} title="Documents" description="Identity and supporting documents">
         <Field label="Aadhaar Number" placeholder="Enter Aadhaar number" />
-        <UploadField label="Aadhaar / ID Proof" />
+        <UploadField label="Aadhaar / ID Proof" initialData={initialData} />
         <Field label="PAN Card Number" placeholder="Enter PAN card number" />
-        <UploadField label="PAN Card" />
-        {isChef && <UploadField label="FSSAI Certificate" />}
-        {isDelivery && <UploadField label="Driving License" />}
-        {isDelivery && <UploadField label="RC Book" />}
-        {isDelivery && <UploadField label="Insurance Certificate" />}
-        <UploadField label="Address Proof" />
-        {isChef && <UploadField label="Chef Photo" />}
-        {isDelivery && <UploadField label="Profile Photo" />}
-        <UploadField label="Other Documents" />
+        <UploadField label="PAN Card" initialData={initialData} />
+        {isChef && <UploadField label="FSSAI Certificate" initialData={initialData} />}
+        {isDelivery && <UploadField label="Driving License" initialData={initialData} />}
+        {isDelivery && <UploadField label="RC Book" initialData={initialData} />}
+        {isDelivery && <UploadField label="Insurance Certificate" initialData={initialData} />}
+        <UploadField label="Address Proof" initialData={initialData} />
+        {isChef && <UploadField label="Chef Photo" initialData={initialData} />}
+        {isDelivery && <UploadField label="Profile Photo" initialData={initialData} />}
+        <UploadField label="Other Documents" initialData={initialData} />
       </Section>
 
       {isDelivery && (
