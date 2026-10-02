@@ -36,7 +36,7 @@ function App() {
       )}
       <div className="print:hidden">
         <ScrollToTop />
-        <FloatingSupport />
+        {showPublicChrome && <FloatingSupport />}
       </div>
       <CartSidebar />
       <FavoritesSidebar />

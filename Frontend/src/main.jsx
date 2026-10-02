@@ -16,6 +16,8 @@ import AdminLayout from './Admin/Adminpanel.jsx'
 import AdminCategories from './Admin/AdminProducts/Categories.jsx'
 import AddCategory from './Admin/AdminProducts/AddCategory.jsx'
 import Cuisines from './Admin/AdminProducts/Cuisines.jsx'
+import AdminProducts from './Admin/AdminProducts/AdminProducts.jsx'
+import AddFood from './Admin/AdminProducts/AddFood.jsx'
 
 
 
@@ -66,6 +68,18 @@ const router = createHashRouter([
           {
             index: true,
             element: <AdminDashboard />,
+          },
+          {
+            path: 'products',
+            element: <AdminProducts />,
+          },
+          {
+            path: 'products/add',
+            element: <AddFood />,
+          },
+          {
+            path: 'products/edit/:foodId',
+            element: <AddFood />,
           },
           {
             path: 'products/categories',

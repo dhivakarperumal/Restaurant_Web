@@ -27,6 +27,7 @@ const Cuisines = () => {
   const { profileName } = useAuth();
   const [cuisines, setCuisines] = useState([]);
   const [search, setSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState('All statuses');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [modalOpen, setModalOpen] = useState(false);
@@ -61,8 +62,12 @@ const Cuisines = () => {
   const visibleCuisines = useMemo(() => {
     const query = search.trim().toLowerCase();
     return cuisines.filter((cuisine) => [cuisine.cuisine_id, cuisine.cuisine_name, cuisine.description]
-      .some((value) => String(value || '').toLowerCase().includes(query)));
-  }, [cuisines, search]);
+      .some((value) => String(value || '').toLowerCase().includes(query))
+      && (statusFilter === 'All statuses' || cuisine.status === statusFilter));
+  }, [cuisines, search, statusFilter]);
+
+  const activeCount = cuisines.filter((cuisine) => cuisine.status === 'Active').length;
+  const featuredCount = cuisines.filter((cuisine) => cuisine.featured).length;
 
   const openCreate = async () => {
     setEditingId('');
@@ -174,33 +179,57 @@ const Cuisines = () => {
   return (
     <div className="min-h-screen bg-[#f3f4f1] p-4 md:p-6">
       <div className="mx-auto max-w-[1500px]">
-        <header className="mb-5 flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <h1 className="text-2xl font-semibold text-gray-900">Cuisines</h1>
-            <p className="mt-1 text-sm text-gray-600">Manage cuisine names, images, and website display.</p>
-          </div>
-          <button type="button" onClick={openCreate} className="inline-flex h-10 items-center gap-2 rounded-md bg-[#1a3c36] px-4 text-sm font-semibold text-white hover:bg-[#214a42]">
+        <header className="mb-5 border-b border-gray-200 pb-4">
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <div>
+              <p className="mb-1 text-xs font-semibold uppercase tracking-[0.12em] text-emerald-800">Menu catalog</p>
+              <h1 className="text-2xl font-semibold text-gray-900">Cuisines</h1>
+              <p className="mt-1 text-sm text-gray-600">Manage cuisine names, images, and website visibility.</p>
+            </div>
+            <button type="button" onClick={openCreate} className="inline-flex h-10 items-center gap-2 rounded-md bg-[#1a3c36] px-4 text-sm font-semibold text-white hover:bg-[#214a42]">
             <Plus className="h-4 w-4" /> Add cuisine
-          </button>
+            </button>
+          </div>
+          <dl className="mt-5 flex flex-wrap gap-x-8 gap-y-2 text-sm">
+            <div className="flex items-baseline gap-2"><dt className="text-gray-500">Total</dt><dd className="font-semibold text-gray-900">{cuisines.length}</dd></div>
+            <div className="flex items-baseline gap-2"><dt className="text-gray-500">Active</dt><dd className="font-semibold text-emerald-800">{activeCount}</dd></div>
+            <div className="flex items-baseline gap-2"><dt className="text-gray-500">Featured</dt><dd className="font-semibold text-amber-700">{featuredCount}</dd></div>
+          </dl>
         </header>
 
-        <section className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
-          <div className="relative mb-4 max-w-sm">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-            <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search cuisines" className="h-10 w-full rounded-md border border-gray-300 pl-9 pr-3 text-sm outline-none focus:border-emerald-700" />
+        <section className="overflow-hidden rounded-lg border border-gray-200 bg-white">
+          <div className="flex flex-col gap-3 border-b border-gray-200 p-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="relative w-full sm:max-w-sm">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+              <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search by name, ID, or description" className="h-10 w-full rounded-md border border-gray-300 pl-9 pr-3 text-sm outline-none focus:border-emerald-700" />
+            </div>
+            <div className="flex items-center justify-between gap-3 sm:justify-end">
+              <span className="text-xs text-gray-500">{visibleCuisines.length} of {cuisines.length}</span>
+              <select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)} aria-label="Filter cuisines by status" className="h-10 rounded-md border border-gray-300 bg-white px-3 text-sm text-gray-700 outline-none focus:border-emerald-700">
+                <option>All statuses</option>
+                <option>Active</option>
+                <option>Inactive</option>
+              </select>
+            </div>
           </div>
-          {error && <p role="alert" className="mb-4 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}
-          {loading ? <p className="py-12 text-center text-sm text-gray-500">Loading cuisines...</p> : !visibleCuisines.length ? (
-            <p className="py-12 text-center text-sm text-gray-500">{search ? 'No matching cuisines.' : 'No cuisines added yet.'}</p>
+          {error && <p role="alert" className="m-4 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}
+          {loading ? <p className="py-14 text-center text-sm text-gray-500">Loading cuisines...</p> : !visibleCuisines.length ? (
+            <div className="flex min-h-56 flex-col items-center justify-center px-5 py-10 text-center">
+              <span className="mb-3 flex h-12 w-12 items-center justify-center rounded-md bg-emerald-50 text-emerald-800"><Utensils className="h-5 w-5" /></span>
+              <p className="font-medium text-gray-900">{search || statusFilter !== 'All statuses' ? 'No matching cuisines' : 'No cuisines yet'}</p>
+              <p className="mt-1 max-w-sm text-sm text-gray-500">{search || statusFilter !== 'All statuses' ? 'Try another search or status filter.' : 'Add your first cuisine to start organizing menu items.'}</p>
+              {!search && statusFilter === 'All statuses' && <button type="button" onClick={openCreate} className="mt-4 inline-flex h-9 items-center gap-2 rounded-md border border-gray-300 px-3 text-sm font-medium text-gray-700 hover:bg-gray-50"><Plus className="h-4 w-4" /> Add cuisine</button>}
+            </div>
           ) : (
             <div className="overflow-x-auto">
-              <table className="w-full min-w-[900px] text-left text-sm">
+              <table className="w-full min-w-[980px] text-left text-sm">
                 <thead className="border-b border-gray-200 bg-gray-50 text-xs uppercase text-gray-600">
                   <tr>
                     <th className="px-3 py-3">Cuisine</th>
                     <th className="px-3 py-3">Description</th>
                     <th className="px-3 py-3">Featured</th>
                     <th className="px-3 py-3">Status</th>
+                    <th className="px-3 py-3">Created</th>
                     <th className="px-3 py-3">Updated</th>
                     <th className="px-3 py-3 text-right">Actions</th>
                   </tr>
@@ -214,9 +243,10 @@ const Cuisines = () => {
                           <span><span className="block font-medium text-gray-900">{cuisine.cuisine_name}</span><span className="text-xs text-gray-500">{cuisine.cuisine_id}</span></span>
                         </div>
                       </td>
-                      <td className="max-w-xs px-3 py-3">{cuisine.description || '—'}</td>
+                      <td className="max-w-xs truncate px-3 py-3" title={cuisine.description || ''}>{cuisine.description || '—'}</td>
                       <td className="px-3 py-3">{cuisine.featured ? <Star className="h-4 w-4 fill-amber-400 text-amber-500" aria-label="Featured" /> : '—'}</td>
-                      <td className="px-3 py-3">{cuisine.status}</td>
+                      <td className="px-3 py-3"><span className={`inline-flex rounded-full px-2 py-1 text-xs font-medium ${cuisine.status === 'Active' ? 'bg-emerald-50 text-emerald-800' : 'bg-gray-100 text-gray-600'}`}>{cuisine.status}</span></td>
+                      <td className="whitespace-nowrap px-3 py-3">{formatDate(cuisine.created_at)}</td>
                       <td className="whitespace-nowrap px-3 py-3">{formatDate(cuisine.updated_at)}</td>
                       <td className="px-3 py-3">
                         <div className="flex justify-end gap-2">

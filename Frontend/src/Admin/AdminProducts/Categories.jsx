@@ -1,18 +1,14 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  Grid2x2,
   ImageIcon,
   ImagePlus,
   LayoutGrid,
-  PackageCheck,
   Pencil,
   Plus,
   Search,
-  ShoppingBag,
   Table2,
   Trash2,
-  TrendingUp,
   X,
 } from 'lucide-react';
 import api from '../../api';
@@ -36,7 +32,6 @@ const AdminCategories = () => {
   const [viewMode, setViewMode] = useState('table');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedStatus, setSelectedStatus] = useState('All Status');
-  const [selectedParent, setSelectedParent] = useState('All Parent Categories');
   const [sortBy, setSortBy] = useState('latest');
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [isSavingCategory, setIsSavingCategory] = useState(false);
@@ -225,8 +220,6 @@ const AdminCategories = () => {
   }, [categories, products]);
 
   const activeCount = listData.filter((item) => item.status === 'Active').length;
-  const latestCategory = listData[0];
-  const parentCategories = [...new Set(listData.map((item) => item.parentCategory).filter(Boolean))];
   const filteredCategories = listData
     .filter((item) => {
       const searchValue = searchTerm.toLowerCase();
@@ -234,8 +227,7 @@ const AdminCategories = () => {
         String(value).toLowerCase().includes(searchValue)
       );
       const matchesStatus = selectedStatus === 'All Status' || item.status === selectedStatus;
-      const matchesParent = selectedParent === 'All Parent Categories' || item.parentCategory === selectedParent;
-      return matchesSearch && matchesStatus && matchesParent;
+      return matchesSearch && matchesStatus;
     })
     .sort((a, b) => {
       if (sortBy === 'name') return a.name.localeCompare(b.name);
@@ -243,56 +235,24 @@ const AdminCategories = () => {
       if (sortBy === 'products-low') return a.products - b.products;
       return a.sortOrder - b.sortOrder;
     });
-  const statValues = [
-    { title: 'Total Categories', value: String(listData.length), inc: '10.7%', icon: <Grid2x2 className="h-7 w-7 text-white" />, iconBg: 'bg-[#22c55e]', waveColor: '#22c55e' },
-    { title: 'Active Categories', value: String(activeCount), inc: '9.2%', icon: <PackageCheck className="h-7 w-7 text-white" />, iconBg: 'bg-[#f59e0b]', waveColor: '#f59e0b' },
-    { title: 'Total Products', value: String(listData.reduce((sum, item) => sum + Number(item.products || 0), 0)), inc: '12.4%', icon: <ShoppingBag className="h-7 w-7 text-white" />, iconBg: 'bg-[#06b6d4]', waveColor: '#06b6d4' },
-    { title: 'Latest Category', value: String(latestCategory?.products || 0), inc: '12.5%', sub: latestCategory?.name || 'No categories yet', icon: <Grid2x2 className="h-7 w-7 text-white" />, iconBg: 'bg-[#a855f7]', waveColor: '#a855f7' },
-  ];
+  const productCount = listData.reduce((sum, item) => sum + Number(item.products || 0), 0);
 
   return (
     <div className="min-h-screen bg-[#f3f4f1] p-4 md:p-6">
       <div className="mx-auto max-w-[1500px]">
-      
+        <header className="mb-5 flex flex-col gap-4 border-b border-gray-200 pb-4 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <h1 className="text-2xl font-semibold text-gray-900">Categories</h1>
+            <p className="mt-1 text-sm text-gray-600">Manage product categories and subcategories.</p>
+          </div>
+          <dl className="flex flex-wrap gap-x-7 gap-y-2 text-sm">
+            <div><dt className="text-gray-500">Total</dt><dd className="font-semibold text-gray-900">{listData.length}</dd></div>
+            <div><dt className="text-gray-500">Active</dt><dd className="font-semibold text-emerald-800">{activeCount}</dd></div>
+            <div><dt className="text-gray-500">Products</dt><dd className="font-semibold text-gray-900">{productCount}</dd></div>
+          </dl>
+        </header>
 
-        <div className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
-          {statValues.map((stat, index) => (
-            <div
-              key={index}
-              className="relative flex h-full min-h-[170px] flex-col overflow-hidden rounded-xl border border-gray-100 bg-white p-5 shadow-sm"
-            >
-              <div className="flex flex-1 items-start gap-4">
-                <div className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-full ${stat.iconBg}`}>
-                  {stat.icon}
-                </div>
-                <div className="flex flex-col">
-                  <p className="mb-1 text-xs font-medium text-gray-600">{stat.title}</p>
-                  <h3 className="mb-3 text-2xl font-bold text-gray-900">{stat.value}</h3>
-                  <div className="flex flex-col">
-                    <div className="mb-1 flex items-center text-xs font-medium text-emerald-600">
-                      <TrendingUp size={12} className="mr-1" />
-                      <span>{stat.inc}</span>
-                    </div>
-                    <p className="text-[10px] text-gray-400">{stat.sub || 'from last month'}</p>
-                  </div>
-                </div>
-              </div>
-              <div className="pointer-events-none absolute bottom-0 left-0 h-8 w-full overflow-hidden">
-                <svg
-                  viewBox="0 0 100 20"
-                  preserveAspectRatio="none"
-                  className="h-full w-full opacity-40"
-                  style={{ color: stat.waveColor }}
-                  fill="currentColor"
-                >
-                  <path d="M0,10 C30,25 70,0 100,10 L100,20 L0,20 Z" />
-                </svg>
-              </div>
-            </div>
-          ))}
-        </div>
-
-        <div className="rounded-[18px] border border-[#e7e0d8] bg-white p-3 shadow-[0_1px_0_rgba(16,24,40,0.02)]">
+        <div className="rounded-lg border border-[#e7e0d8] bg-white p-3 shadow-sm">
           <div className="mb-4 flex flex-col gap-3 lg:flex-row lg:items-center">
             <div className="flex flex-1 flex-wrap items-center gap-3">
               <div className="relative w-full max-w-[340px]">

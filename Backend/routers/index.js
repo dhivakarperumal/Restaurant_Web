@@ -6,13 +6,14 @@ const { googleLogin, login, register } = require('../controllers/authController'
 const { findUserByToken } = require('../modules/auth');
 const categoriesRouter = require('./categories');
 const cuisinesRouter = require('./cuisines');
+const foodsRouter = require('./foods');
 
 const router = express.Router();
 const uploadDirectory = path.join(__dirname, '..', 'upload');
 
 fs.mkdirSync(uploadDirectory, { recursive: true });
 
-const uploadFolders = new Set(['categories', 'cuisines']);
+const uploadFolders = new Set(['categories', 'cuisines', 'foods']);
 
 const storage = multer.diskStorage({
   destination: (req, _file, callback) => {
@@ -56,6 +57,7 @@ router.post('/users/login', login);
 router.post('/users/google-login', googleLogin);
 router.use('/categories', categoriesRouter);
 router.use('/cuisines', cuisinesRouter);
+router.use('/foods', foodsRouter);
 
 router.post('/upload', upload.single('file'), (req, res) => {
   if (!req.file) {
