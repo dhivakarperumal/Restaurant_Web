@@ -2,7 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const path = require('path');
 const { initializeAuthSchema, initializeBannerSchema, initializeCategorySchema, initializeCouponSchema, initializeCuisineSchema, initializeFoodSchema, initializeReviewSchema, initializeVideoSchema, initializeEmployeeSchema, testConnection } = require('./modules/modules');
-const apiRouter = require('./routers');
+const apiRouter = require('./routers/routes');
 
 require('dotenv').config({ path: path.join(__dirname, '.env') });
 
