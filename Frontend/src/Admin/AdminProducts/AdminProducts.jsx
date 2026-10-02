@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import {
   ArrowDownUp,
   ArrowUpRight,
@@ -24,11 +24,11 @@ import {
   TrendingUp,
   Trash2,
   Upload,
-  Users,
   X,
 } from 'lucide-react';
 import api from '../../api';
 import toast from 'react-hot-toast';
+import AddFood from './AddFood.jsx';
 
 const AdminProducts = () => {
   const navigate = useNavigate();
@@ -44,48 +44,35 @@ const AdminProducts = () => {
   const [sortBy, setSortBy] = useState('latest');
   const [viewMode, setViewMode] = useState('table');
   const [selectedProductView, setSelectedProductView] = useState(null);
+  const [addFoodOpen, setAddFoodOpen] = useState(false);
 
   const fetchProducts = async () => {
     try {
       setLoading(true);
-      const res = await api.get('/products');
+      const res = await api.get('/foods');
       if (res.data?.data && Array.isArray(res.data.data)) {
-        // Map database products
-        const mapped = res.data.data.map((p) => {
-          const firstVariant = p.size_variants?.[0] || {};
-          const totalStock = (p.size_variants || []).reduce(
-            (acc, curr) => acc + (Number(curr.stock) || 0),
-            0
-          );
-          const minOfferPrice = firstVariant.offer_price ? `₹${firstVariant.offer_price}` : '₹--';
-          const minMrp = firstVariant.mrp ? `₹${firstVariant.mrp}` : '';
-
-          // Prefer composite image (product_images[0]), then frame image
-          const primaryImg = p.product_images?.[0] || p.frame_data?.frame_image || '';
-
-          return {
-            id: p.id,
-            uuid: p.uuid,
-            name: p.product_name,
-            code: p.product_id,
-            category: p.category,
-            price: minOfferPrice,
-            oldPrice: minMrp,
-            stock: totalStock,
-            stockLabel: totalStock <= 15 ? 'Low Stock' : 'In Stock',
-            status: p.status || 'Active',
-            views: 0,
-            image: primaryImg,
-            rawData: p,
-            isDbProduct: true,
-          };
-        });
+        const mapped = res.data.data.map((food) => ({
+          id: food.food_id,
+          uuid: food.food_id,
+          name: food.food_name,
+          code: food.food_id,
+          category: food.category_name,
+          price: `₹${Number(food.final_price || 0).toFixed(2)}`,
+          oldPrice: `₹${Number(food.mrp || 0).toFixed(2)}`,
+          stock: Number(food.preparation_time) || 0,
+          stockLabel: 'min',
+          status: food.status || 'Active',
+          views: 0,
+          image: food.food_images?.[0] || '',
+          rawData: food,
+          isDbProduct: true,
+        }));
         setProductsList(mapped);
       } else {
         setProductsList([]);
       }
     } catch (err) {
-      console.warn('Could not fetch products from database:', err);
+      console.warn('Could not fetch foods from database:', err);
       setProductsList([]);
     } finally {
       setLoading(false);
@@ -111,8 +98,8 @@ const AdminProducts = () => {
     if (!window.confirm('Are you sure you want to delete this product?')) return;
 
     try {
-      await api.delete(`/products/${id}`);
-      toast.success('Product deleted successfully');
+      await api.delete(`/foods/${id}`);
+      toast.success('Food deleted successfully');
       fetchProducts();
     } catch (err) {
       toast.error('Failed to delete product');
@@ -141,40 +128,33 @@ const AdminProducts = () => {
     })
     .sort((a, b) => {
       if (sortBy === 'latest') {
-        return (b.id || 0) - (a.id || 0);
+        return new Date(b.rawData?.created_at || 0) - new Date(a.rawData?.created_at || 0);
       }
 
-      if (sortBy === 'low-stock') {
+      if (sortBy === 'prep-time') {
         return (a.stock || 0) - (b.stock || 0);
       }
 
       if (sortBy === 'price-high') {
-        return Number(b.rawData?.size_variants?.[0]?.offer_price || 0) - Number(a.rawData?.size_variants?.[0]?.offer_price || 0);
+        return Number(b.rawData?.final_price || 0) - Number(a.rawData?.final_price || 0);
       }
 
       if (sortBy === 'price-low') {
-        return Number(a.rawData?.size_variants?.[0]?.offer_price || 0) - Number(b.rawData?.size_variants?.[0]?.offer_price || 0);
+        return Number(a.rawData?.final_price || 0) - Number(b.rawData?.final_price || 0);
       }
 
       return 0;
     });
 
   const activeProducts = productsList.filter((p) => (p.status || 'Active') === 'Active').length;
-  const totalUnitsInStock = productsList.reduce((sum, p) => sum + (Number(p.stock) || 0), 0);
-  const totalProductAmount = productsList.reduce((sum, p) => {
-    const variants = Array.isArray(p.rawData?.size_variants) ? p.rawData.size_variants : [];
-    const value = variants.reduce((variantSum, variant) => {
-      const offerPrice = Number(variant.offer_price || 0);
-      const stock = Number(variant.stock || 0);
-      return variantSum + (offerPrice * stock);
-    }, 0);
-
-    return sum + value;
-  }, 0);
+  const featuredFoodCount = productsList.filter((product) => product.rawData?.featured).length;
+  const averageFoodPrice = productsList.length
+    ? productsList.reduce((sum, product) => sum + Number(product.rawData?.final_price || 0), 0) / productsList.length
+    : 0;
 
   const statCards = [
     {
-      title: 'No of Products',
+      title: 'Foods',
       value: String(productsList.length || 0),
       inc: productsList.length > 0 ? '18.6%' : '0%',
       icon: <PackageCheck className="h-7 w-7 text-white" />,
@@ -182,7 +162,7 @@ const AdminProducts = () => {
       waveColor: '#22c55e',
     },
     {
-      title: 'Active Products',
+      title: 'Active Foods',
       value: String(activeProducts),
       inc: productsList.length > 0 ? '12.4%' : '0%',
       icon: <ShoppingBag className="h-7 w-7 text-white" />,
@@ -190,16 +170,16 @@ const AdminProducts = () => {
       waveColor: '#f59e0b',
     },
     {
-      title: 'Total Orders',
-      value: String(Math.max(totalUnitsInStock, productsList.length || 0)),
+      title: 'Featured Foods',
+      value: String(featuredFoodCount),
       inc: productsList.length > 0 ? '15.3%' : '0%',
-      icon: <Users className="h-7 w-7 text-white" />,
+      icon: <Star className="h-7 w-7 text-white" />,
       iconBg: 'bg-[#06b6d4]',
       waveColor: '#06b6d4',
     },
     {
-      title: 'Total Amount',
-      value: `₹${totalProductAmount.toLocaleString('en-IN')}`,
+      title: 'Average Price',
+      value: `₹${averageFoodPrice.toFixed(2)}`,
       inc: productsList.length > 0 ? '10.7%' : '0%',
       icon: <IndianRupee className="h-7 w-7 text-white" />,
       iconBg: 'bg-[#a855f7]',
@@ -222,13 +202,14 @@ const AdminProducts = () => {
           <div className="flex flex-wrap items-center gap-3">
 
             {/* ADD NEW PRODUCT BUTTON */}
-            <Link
-              to="/admin/products/add"
+            <button
+              type="button"
+              onClick={() => setAddFoodOpen(true)}
               className="inline-flex h-[46px] items-center gap-2 rounded-xl bg-[#1a3c36] px-4 text-[15px] font-semibold text-white shadow-[0_6px_14px_rgba(26,60,54,0.18)] transition hover:bg-[#214a42]"
             >
               <Plus className="h-4 w-4" />
-              Add New Product
-            </Link>
+              Add Food
+            </button>
           </div>
         </div>
 
@@ -325,7 +306,7 @@ const AdminProducts = () => {
                 className="h-[46px] rounded-xl border border-[#dfe2e5] bg-[#faf9f8] px-3 text-[14px] font-medium text-[#2d2d2d] outline-none focus:border-[#d2bc8a]"
               >
                 <option value="latest">Sort by: Latest</option>
-                <option value="low-stock">Low Stock</option>
+                <option value="prep-time">Preparation: Shortest first</option>
                 <option value="price-high">Price: High to Low</option>
                 <option value="price-low">Price: Low to High</option>
               </select>
@@ -355,24 +336,25 @@ const AdminProducts = () => {
 
           {loading ? (
             <div className="py-16 text-center text-sm text-[#777]">
-              Loading products...
+              Loading foods...
             </div>
           ) : filteredProducts.length === 0 ? (
             <div className="rounded-2xl border-2 border-dashed border-[#e6ddd1] bg-[#faf9f8] py-16 text-center">
               <div className="mb-3 text-5xl">📦</div>
-              <h3 className="text-base font-bold text-[#333]">No Products Found</h3>
+              <h3 className="text-base font-bold text-[#333]">No Foods Found</h3>
               <p className="mx-auto mt-1 max-w-sm text-xs text-[#888]">
                 {searchTerm
                   ? 'No products match your search keyword.'
-                  : 'No products are currently in your store. Click "Add New Product" to create your first product.'}
+                  : 'No foods are currently in your menu. Add your first food to get started.'}
               </p>
-              <Link
-                to="/admin/products/add"
+              <button
+                type="button"
+                onClick={() => setAddFoodOpen(true)}
                 className="mt-5 inline-flex items-center gap-2 rounded-xl bg-[#1a3c36] px-5 py-2.5 text-xs font-bold text-white shadow-sm transition hover:bg-[#235048]"
               >
                 <Plus className="h-4 w-4" />
-                Add New Product
-              </Link>
+                Add Food
+              </button>
             </div>
           ) : (
             <>
@@ -391,7 +373,7 @@ const AdminProducts = () => {
                       <p className="mt-1 font-mono text-xs text-[#7a7a7a]">{product.code}</p>
                       <div className="mt-3 flex items-center justify-between text-sm">
                         <span className="font-bold text-[#1e1e1e]">{product.price}</span>
-                        <span className="text-[#666]">Stock: {product.stock}</span>
+                        <span className="text-[#666]">{product.stock} min</span>
                       </div>
                       <div className="mt-3 flex items-center justify-between">
                         <span className="inline-flex items-center gap-1.5 rounded-full bg-[#edf7f1] px-2.5 py-1 text-xs font-semibold text-[#2d7b5a]">
@@ -416,7 +398,7 @@ const AdminProducts = () => {
                       <th className="px-4 py-4">Product</th>
                       <th className="px-4 py-4">Category</th>
                       <th className="px-4 py-4">Price</th>
-                      <th className="px-4 py-4">Stock</th>
+                      <th className="px-4 py-4">Prep time</th>
                       <th className="px-4 py-4">Status</th>
                       {/* <th className="px-4 py-4">Views</th> */}
                       <th className="px-4 py-4">Actions</th>
@@ -425,9 +407,6 @@ const AdminProducts = () => {
 
                   <tbody>
                     {filteredProducts.map((product, index) => {
-                      const lowStock = product.stock <= 18;
-                      const stockClass = lowStock ? 'bg-[#fff0f0] text-[#d04d4d]' : 'bg-[#eaf7ee] text-[#2d7b5a]';
-
                       return (
                         <tr key={product.id || index} className="border-t border-[#f0ebe6] align-middle">
                           <td className="px-4 py-4">{index + 1}</td>
@@ -465,10 +444,7 @@ const AdminProducts = () => {
 
                           <td className="px-4 py-4">
                             <div className="flex items-center gap-3">
-                              <div className="text-sm font-medium text-[#333]">{product.stock}</div>
-                              <span className={`rounded-full px-2.5 py-1 text-xs font-medium ${stockClass}`}>
-                                {product.stockLabel}
-                              </span>
+                              <div className="text-sm font-medium text-[#333]">{product.stock} min</div>
                             </div>
                           </td>
 
@@ -607,6 +583,13 @@ const AdminProducts = () => {
               </div>
             </div>
           </div>
+        )}
+        {addFoodOpen && (
+          <AddFood
+            drawer
+            onClose={() => setAddFoodOpen(false)}
+            onSaved={fetchProducts}
+          />
         )}
       </div>
     </div>

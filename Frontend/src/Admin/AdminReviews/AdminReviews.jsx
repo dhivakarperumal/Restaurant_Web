@@ -63,13 +63,14 @@ const getCatalogKey = (item) => {
 };
 
 const getCatalogLabel = (item) => {
-  if (!item) return "Select product";
+  if (!item) return "Select food";
 
   const type = item.type || "product";
-  const typeName = type === "album" ? "Album" : type === "giftbox" ? "Gift Box" : "Product";
+  const typeName = type === "food" ? "Food" : type === "album" ? "Album" : type === "giftbox" ? "Gift Box" : "Product";
   const name = item.product_name || item.name || item.productName || "Untitled item";
   const code = item.product_code || item.product_id || item.gift_box_id || item.code || item.productCode || "";
 
+  if (type === "food") return code ? `${name} (${code})` : name;
   return `${name} (${typeName}${code ? ` - ${code}` : ""})`;
 };
 
@@ -146,62 +147,23 @@ const AdminReviews = () => {
   const fileInputRef = useRef(null);
 
   // ==========================================
-  // FETCH PRODUCTS, USERS, REVIEWS & STATS
+  // FETCH FOODS, USERS, REVIEWS & STATS
   // ==========================================
   const fetchProducts = async () => {
     try {
-      const [productResult, albumResult, giftBoxResult] = await Promise.allSettled([
-        api.get("/products"),
-        api.get("/albums"),
-        api.get("/gift-boxes"),
-      ]);
-
-      const catalog = [];
-
-      if (productResult.status === "fulfilled" && Array.isArray(productResult.value?.data?.data)) {
-        productResult.value.data.data.forEach((item) => {
-          catalog.push({
-            ...item,
-            type: "product",
-            product_name: item.product_name || item.name,
-            product_code: item.product_code || item.product_id || item.code,
-            product_image: item.product_image || item.image || item.product_images?.[0] || item.frame_data?.frame_image || "",
-            id: item.id,
-          });
-        });
-      }
-
-      if (albumResult.status === "fulfilled" && Array.isArray(albumResult.value?.data?.data)) {
-        albumResult.value.data.data.forEach((item) => {
-          catalog.push({
-            ...item,
-            type: "album",
-            product_name: item.product_name || item.name,
-            product_code: item.product_code || item.product_id || item.code || item.album_code,
-            product_id: item.product_id || item.id,
-            product_image: item.product_image || item.image || item.product_images?.[0] || item.thumbnail_image || "",
-            id: item.id,
-          });
-        });
-      }
-
-      if (giftBoxResult.status === "fulfilled" && Array.isArray(giftBoxResult.value?.data?.data)) {
-        giftBoxResult.value.data.data.forEach((item) => {
-          catalog.push({
-            ...item,
-            type: "giftbox",
-            product_name: item.name || item.product_name,
-            product_code: item.gift_box_id || item.product_code || item.product_id || item.code,
-            product_id: item.gift_box_id || item.product_id || item.product_code || item.code,
-            product_image: item.image || item.images?.[0] || item.product_image || "",
-            id: item.id,
-          });
-        });
-      }
-
-      setProductsList(catalog);
+      const response = await api.get("/foods");
+      const foods = Array.isArray(response.data?.data) ? response.data.data : [];
+      setProductsList(foods.map((item) => ({
+        ...item,
+        type: "food",
+        product_name: item.food_name || item.name,
+        product_code: item.food_id || item.id,
+        product_id: item.food_id || item.id,
+        product_image: item.food_images?.[0] || item.image || "",
+        id: item.id || item.food_id,
+      })));
     } catch (err) {
-      console.warn("Could not fetch reviews catalog:", err);
+      console.warn("Could not fetch foods for reviews:", err);
       setProductsList([]);
     }
   };
@@ -923,7 +885,7 @@ const AdminReviews = () => {
                 <div className="grid gap-4 sm:grid-cols-2">
                   <div>
                     <label className="mb-1 block text-xs font-semibold uppercase tracking-wider text-[#6b6b6b]">
-                      Review ID (Unique)
+                      Review Id
                     </label>
                     <input
                       type="text"
@@ -935,7 +897,7 @@ const AdminReviews = () => {
 
                   <div>
                     <label className="mb-1 block text-xs font-semibold uppercase tracking-wider text-[#6b6b6b]">
-                      Select Product <span className="text-red-500">*</span>
+                      Select Food <span className="text-red-500">*</span>
                     </label>
                     <select
                       value={getCatalogKey(formProduct)}
@@ -960,7 +922,7 @@ const AdminReviews = () => {
                 <div className="grid gap-4 sm:grid-cols-2">
                   <div>
                     <label className="mb-1 block text-xs font-semibold uppercase tracking-wider text-[#6b6b6b]">
-                      Reviewer Name <span className="text-red-500">*</span>
+                      Name <span className="text-red-500">*</span>
                     </label>
                     <input
                       type="text"
@@ -974,7 +936,7 @@ const AdminReviews = () => {
 
                   <div>
                     <label className="mb-1 block text-xs font-semibold uppercase tracking-wider text-[#6b6b6b]">
-                      Reviewer Email / Location (Optional)
+                      Email
                     </label>
                     <input
                       type="text"
@@ -1033,7 +995,7 @@ const AdminReviews = () => {
                   {/* REVIEW COMMENT */}
                   <div>
                     <label className="mb-1 block text-xs font-semibold uppercase tracking-wider text-[#6b6b6b]">
-                      Review Description <span className="text-red-500">*</span>
+                      Description <span className="text-red-500">*</span>
                     </label>
                     <textarea
                       rows={4}
@@ -1050,7 +1012,7 @@ const AdminReviews = () => {
                 <div>
                   <div className="mb-1 flex items-center justify-between">
                     <label className="text-xs font-semibold uppercase tracking-wider text-[#6b6b6b]">
-                      Customer Review Photo (Saved in <code className="text-[#1a3c36]">uploads/review/</code>)
+                      Upload Photo 
                     </label>
                     {formPhoto && (
                       <button

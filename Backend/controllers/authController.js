@@ -1,7 +1,10 @@
 const {
   createSession,
   createUser,
+  deleteUser: deleteUserRecord,
   findUserByIdentifier,
+  listUsers: listUsersRecord,
+  updateUser: updateUserRecord,
   verifyPassword,
 } = require('../modules/auth');
 
@@ -84,6 +87,58 @@ async function login(req, res) {
   }
 }
 
+async function listUsers(_req, res) {
+  try {
+    return res.json({ success: true, data: await listUsersRecord() });
+  } catch (error) {
+    console.error('Failed to list users:', error.message);
+    return res.status(500).json({ success: false, message: 'Unable to load users.' });
+  }
+}
+
+async function updateUser(req, res) {
+  const username = String(req.body.username || '').trim();
+  const mobileNumber = String(req.body.mobile_number || '').trim();
+  const role = supportedRoles.get(String(req.body.role || '').trim().toLowerCase());
+  const statusValue = String(req.body.status || '').trim().toLowerCase();
+
+  if (!/^\d+$/.test(req.params.userId) || !username || username.length > 100 || mobileNumber.length > 32 || !role || !['active', 'inactive'].includes(statusValue)) {
+    return res.status(400).json({ success: false, message: 'Valid user details are required.' });
+  }
+
+  try {
+    const user = await updateUserRecord(req.params.userId, {
+      username,
+      mobile_number: mobileNumber,
+      role,
+      status: statusValue === 'inactive' ? 'Inactive' : 'Active',
+    });
+    if (!user) return res.status(404).json({ success: false, message: 'User not found.' });
+    return res.json({ success: true, data: user });
+  } catch (error) {
+    console.error('Failed to update user:', error.message);
+    return res.status(500).json({ success: false, message: 'Unable to update user.' });
+  }
+}
+
+async function removeUser(req, res) {
+  if (!/^\d+$/.test(req.params.userId)) {
+    return res.status(400).json({ success: false, message: 'A valid user ID is required.' });
+  }
+  if (String(req.auth.id) === req.params.userId) {
+    return res.status(400).json({ success: false, message: 'You cannot delete your own account.' });
+  }
+
+  try {
+    const deleted = await deleteUserRecord(req.params.userId);
+    if (!deleted) return res.status(404).json({ success: false, message: 'User not found.' });
+    return res.json({ success: true, message: 'User deleted.' });
+  } catch (error) {
+    console.error('Failed to delete user:', error.message);
+    return res.status(500).json({ success: false, message: 'Unable to delete user.' });
+  }
+}
+
 async function googleLogin(req, res) {
   const credential = String(req.body.credential || '').trim();
   if (!credential) {
@@ -128,4 +183,4 @@ async function googleLogin(req, res) {
   }
 }
 
-module.exports = { googleLogin, login, register };
+module.exports = { googleLogin, listUsers, login, register, removeUser, updateUser };
