@@ -461,9 +461,27 @@ export default function ServerTables() {
                     {table.created_by && (
                       <div className="flex items-center justify-between text-xs text-gray-500">
                         <span>Created by:</span>
-                        <span className="font-medium text-gray-700 truncate max-w-[130px]">
-                          {table.created_by}
-                        </span>
+                        <button
+                          onClick={() => copyToClipboard(table.created_by, "Created By User ID")}
+                          title={`User ID: ${table.created_by}`}
+                          className="font-mono text-[11px] text-blue-600 hover:text-blue-800 flex items-center gap-1 hover:underline"
+                        >
+                          {String(table.created_by).slice(0, 8)}...
+                          <Copy className="w-2.5 h-2.5" />
+                        </button>
+                      </div>
+                    )}
+                    {table.updated_by && (
+                      <div className="flex items-center justify-between text-xs text-gray-500">
+                        <span>Updated by:</span>
+                        <button
+                          onClick={() => copyToClipboard(table.updated_by, "Updated By User ID")}
+                          title={`User ID: ${table.updated_by}`}
+                          className="font-mono text-[11px] text-blue-600 hover:text-blue-800 flex items-center gap-1 hover:underline"
+                        >
+                          {String(table.updated_by).slice(0, 8)}...
+                          <Copy className="w-2.5 h-2.5" />
+                        </button>
                       </div>
                     )}
                   </div>
@@ -523,7 +541,8 @@ export default function ServerTables() {
                   <th className="py-3.5 px-4">Seats</th>
                   <th className="py-3.5 px-4">Status</th>
                   <th className="py-3.5 px-4">UUID (table_id)</th>
-                  <th className="py-3.5 px-4">Created By</th>
+                  <th className="py-3.5 px-4">Created By (User ID)</th>
+                  <th className="py-3.5 px-4">Updated By (User ID)</th>
                   <th className="py-3.5 px-4">Created At</th>
                   <th className="py-3.5 px-4 text-right">Actions</th>
                 </tr>
@@ -567,7 +586,32 @@ export default function ServerTables() {
                         </button>
                       </td>
                       <td className="py-3 px-4 text-xs text-gray-600">
-                        {table.created_by || "—"}
+                        {table.created_by ? (
+                          <button
+                            onClick={() => copyToClipboard(table.created_by, "Created By User ID")}
+                            className="font-mono text-xs text-blue-600 hover:underline flex items-center gap-1"
+                            title={`Full User ID: ${table.created_by}`}
+                          >
+                            {String(table.created_by).slice(0, 10)}...
+                            <Copy className="w-3 h-3" />
+                          </button>
+                        ) : (
+                          "—"
+                        )}
+                      </td>
+                      <td className="py-3 px-4 text-xs text-gray-600">
+                        {table.updated_by ? (
+                          <button
+                            onClick={() => copyToClipboard(table.updated_by, "Updated By User ID")}
+                            className="font-mono text-xs text-blue-600 hover:underline flex items-center gap-1"
+                            title={`Full User ID: ${table.updated_by}`}
+                          >
+                            {String(table.updated_by).slice(0, 10)}...
+                            <Copy className="w-3 h-3" />
+                          </button>
+                        ) : (
+                          "—"
+                        )}
                       </td>
                       <td className="py-3 px-4 text-xs text-gray-500">
                         {table.created_at
