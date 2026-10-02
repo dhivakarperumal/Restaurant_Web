@@ -15,6 +15,7 @@ import AdminDashboard from './Admin/AdminDashboard.jsx'
 import AdminCustomers from './Admin/AdminCustomers.jsx'
 import BannerManagement from './Admin/Marketting/BannerManagement.jsx'
 import Coupons from './Admin/Marketting/Coupons.jsx'
+import VideoManagement from './Admin/Marketting/VideoManagement.jsx'
 import AdminLayout from './Admin/Adminpanel.jsx'
 import AdminCategories from './Admin/AdminProducts/Categories.jsx'
 import AddCategory from './Admin/AdminProducts/AddCategory.jsx'
@@ -84,6 +85,10 @@ const router = createHashRouter([
           {
             path: 'coupons',
             element: <Coupons />,
+          },
+          {
+            path: 'videos',
+            element: <VideoManagement />,
           },
           {
             path: 'products',

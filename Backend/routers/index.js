@@ -10,6 +10,7 @@ const foodsRouter = require('./foods');
 const bannersRouter = require('./banners');
 const couponsRouter = require('./coupons');
 const reviewsRouter = require('./reviews');
+const videosRouter = require('./videos');
 
 const router = express.Router();
 const uploadDirectory = path.join(__dirname, '..', 'upload');
@@ -85,6 +86,7 @@ router.use('/foods', foodsRouter);
 router.use('/banners', bannersRouter);
 router.use('/coupons', couponsRouter);
 router.use('/reviews', reviewsRouter);
+router.use('/videos', videosRouter);
 
 router.post('/upload', upload.single('file'), (req, res) => {
   if (!req.file) {

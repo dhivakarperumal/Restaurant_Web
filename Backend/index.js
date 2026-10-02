@@ -1,7 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
-const { initializeAuthSchema, initializeBannerSchema, initializeCategorySchema, initializeCouponSchema, initializeCuisineSchema, initializeFoodSchema, initializeReviewSchema, testConnection } = require('./modules');
+const { initializeAuthSchema, initializeBannerSchema, initializeCategorySchema, initializeCouponSchema, initializeCuisineSchema, initializeFoodSchema, initializeReviewSchema, initializeVideoSchema, testConnection } = require('./modules');
 const apiRouter = require('./routers');
 
 require('dotenv').config({ path: path.join(__dirname, '.env') });
@@ -55,6 +55,8 @@ async function startServer() {
     console.log('Coupon tables ready');
     await initializeReviewSchema();
     console.log('Review tables ready');
+    await initializeVideoSchema();
+    console.log('Video tables ready');
   } catch (error) {
     console.error(`Database initialization failed: ${error.message}`);
   }
