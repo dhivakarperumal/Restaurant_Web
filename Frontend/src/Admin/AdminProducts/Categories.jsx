@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import {
   ImageIcon,
   ImagePlus,
@@ -24,7 +23,6 @@ const normalizeImageUrl = (value) => {
 };
 
 const AdminCategories = () => {
-  const navigate = useNavigate();
   const [categories, setCategories] = useState([]);
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -37,6 +35,7 @@ const AdminCategories = () => {
   const [isSavingCategory, setIsSavingCategory] = useState(false);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [isGeneratingCategoryId, setIsGeneratingCategoryId] = useState(false);
+  const [editingCategoryId, setEditingCategoryId] = useState('');
   const [newSubcategory, setNewSubcategory] = useState('');
   const [imagePreview, setImagePreview] = useState('');
   const [categoryForm, setCategoryForm] = useState({
@@ -45,6 +44,7 @@ const AdminCategories = () => {
     description: '',
     subcategories: [],
     image: '',
+    status: 'Active',
   });
   const [modalError, setModalError] = useState('');
 
@@ -90,7 +90,8 @@ const AdminCategories = () => {
 
   const openAddCategory = async () => {
     setModalError('');
-    setCategoryForm({ categoryId: '', categoryName: '', description: '', subcategories: [], image: '' });
+    setEditingCategoryId('');
+    setCategoryForm({ categoryId: '', categoryName: '', description: '', subcategories: [], image: '', status: 'Active' });
     setNewSubcategory('');
     setImagePreview('');
     setIsAddOpen(true);
@@ -102,6 +103,30 @@ const AdminCategories = () => {
       setModalError(err?.response?.data?.message || 'Could not generate a category ID. It will be assigned when saved.');
     } finally {
       setIsGeneratingCategoryId(false);
+    }
+  };
+
+  const openEditCategory = async (categoryId) => {
+    setError('');
+    setModalError('');
+    try {
+      const response = await api.get(`/categories/${categoryId}`);
+      const category = response?.data?.data;
+      if (!category) throw new Error('Category not found.');
+      setEditingCategoryId(categoryId);
+      setCategoryForm({
+        categoryId: category.category_id || categoryId,
+        categoryName: category.category_name || '',
+        description: category.description || '',
+        subcategories: Array.isArray(category.sub_categories) ? category.sub_categories : [],
+        image: category.category_image || '',
+        status: category.status === 'Inactive' ? 'Inactive' : 'Active',
+      });
+      setNewSubcategory('');
+      setImagePreview(normalizeImageUrl(category.category_image || ''));
+      setIsAddOpen(true);
+    } catch (err) {
+      setError(err?.response?.data?.message || err.message || 'Unable to load category details.');
     }
   };
 
@@ -149,20 +174,25 @@ const AdminCategories = () => {
     }
   };
 
-  const handleCreateCategory = async (event) => {
+  const handleSaveCategory = async (event) => {
     event.preventDefault();
     setIsSavingCategory(true);
     setModalError('');
 
     try {
-      await api.post('/categories', {
+      const categoryData = {
         categoryId: categoryForm.categoryId,
         categoryName: categoryForm.categoryName.trim(),
         description: categoryForm.description.trim(),
         subcategories: categoryForm.subcategories,
         image: categoryForm.image,
-        status: 'Active',
-      });
+        status: categoryForm.status,
+      };
+      if (editingCategoryId) {
+        await api.put(`/categories/${editingCategoryId}`, categoryData);
+      } else {
+        await api.post('/categories', categoryData);
+      }
       await fetchCategories();
       setIsAddOpen(false);
       setImagePreview('');
@@ -354,7 +384,7 @@ const AdminCategories = () => {
                         <div className="flex items-center gap-2">
                           <button
                             type="button"
-                            onClick={() => navigate(`/admin/products/categories/edit/${category.id}`)}
+                            onClick={() => openEditCategory(category.id)}
                             className="flex h-8 w-8 items-center justify-center rounded-lg border border-[#e7e0d8] bg-white text-[#4d4d4d] hover:bg-[#f8f6f3]"
                             aria-label={`Edit ${category.name}`}
                             title="Edit category"
@@ -438,7 +468,7 @@ const AdminCategories = () => {
                             <div className="flex items-center justify-end gap-2">
                               <button
                                 type="button"
-                                onClick={() => navigate(`/admin/products/categories/edit/${item.id}`)}
+                                onClick={() => openEditCategory(item.id)}
                                 className="rounded-lg border border-[#e7e0d8] bg-white p-2 text-[#4d4d4d] hover:bg-[#f8f6f3]"
                                 aria-label={`Edit ${item.name}`}
                               >
@@ -487,14 +517,14 @@ const AdminCategories = () => {
           <section
             role="dialog"
             aria-modal="true"
-            aria-labelledby="add-category-title"
+            aria-labelledby="category-modal-title"
             className="max-h-[92vh] w-full max-w-2xl overflow-y-auto rounded-lg bg-white shadow-2xl"
           >
-            <form onSubmit={handleCreateCategory}>
+            <form onSubmit={handleSaveCategory}>
               <header className="flex items-center justify-between border-b border-gray-200 px-5 py-4 sm:px-6">
                 <div>
-                  <h2 id="add-category-title" className="text-xl font-semibold text-gray-900">Add category</h2>
-                  <p className="mt-1 text-sm text-gray-500">Create a category and its subcategories.</p>
+                  <h2 id="category-modal-title" className="text-xl font-semibold text-gray-900">{editingCategoryId ? 'Edit category' : 'Add category'}</h2>
+                  <p className="mt-1 text-sm text-gray-500">{editingCategoryId ? 'Update category details and subcategories.' : 'Create a category and its subcategories.'}</p>
                 </div>
                 <button
                   type="button"
@@ -504,7 +534,7 @@ const AdminCategories = () => {
                   }}
                   disabled={isSavingCategory || isUploadingImage}
                   className="rounded-md p-2 text-gray-500 hover:bg-gray-100 hover:text-gray-800 disabled:opacity-50"
-                  aria-label="Close add category dialog"
+                  aria-label="Close category dialog"
                 >
                   <X className="h-5 w-5" />
                 </button>
@@ -583,7 +613,7 @@ const AdminCategories = () => {
                     ))}
                   </div>
                 </div>
-                <div className="space-y-2 text-sm font-medium text-gray-700 sm:col-span-2">
+                <div className="space-y-2 text-sm font-medium text-gray-700">
                   <label htmlFor="category-image-input">Category image</label>
                   <div className="flex flex-wrap items-center gap-3">
                     <input
@@ -603,6 +633,17 @@ const AdminCategories = () => {
                     </div>
                   )}
                 </div>
+                <label className="space-y-1.5 text-sm font-medium text-gray-700">
+                  Status
+                  <select
+                    value={categoryForm.status}
+                    onChange={(event) => setCategoryForm((current) => ({ ...current, status: event.target.value }))}
+                    className="h-10 w-full rounded-md border border-gray-300 bg-white px-3 outline-none focus:border-emerald-700 focus:ring-1 focus:ring-emerald-700"
+                  >
+                    <option>Active</option>
+                    <option>Inactive</option>
+                  </select>
+                </label>
                 {modalError && <p role="alert" className="text-sm text-red-700 sm:col-span-2">{modalError}</p>}
               </div>
 
@@ -623,8 +664,8 @@ const AdminCategories = () => {
                   disabled={isSavingCategory || isUploadingImage || isGeneratingCategoryId}
                   className="inline-flex h-10 items-center gap-2 rounded-md bg-[#1a3c36] px-4 text-sm font-semibold text-white hover:bg-[#214a42] disabled:cursor-wait disabled:opacity-60"
                 >
-                  <Plus className="h-4 w-4" />
-                  {isUploadingImage ? 'Uploading image...' : isSavingCategory ? 'Saving...' : 'Save category'}
+                  {editingCategoryId ? <Pencil className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
+                  {isUploadingImage ? 'Uploading image...' : isSavingCategory ? 'Saving...' : editingCategoryId ? 'Update category' : 'Save category'}
                 </button>
               </footer>
             </form>

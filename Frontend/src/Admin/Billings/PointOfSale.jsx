@@ -155,7 +155,7 @@ const PointOfSale = () => {
         </div>
       </header>
 
-      <main className="pos-layout grid min-h-0 flex-1 gap-3 p-3 md:grid-cols-[104px_minmax(0,0.9fr)_minmax(0,1.25fr)] md:gap-2 md:p-2">
+      <main className="pos-layout grid min-h-0 flex-1 gap-3 p-3 md:grid-cols-[104px_minmax(0,2.8fr)_minmax(300px,1fr)] md:gap-2 md:p-2">
         <nav className="pos-category-rail flex gap-2 overflow-x-auto rounded-lg bg-[#f3f4f6] p-2 md:flex-col md:overflow-y-auto">
           <button type="button" onClick={() => setSelectedCategory("all")} className={`flex min-w-[88px] items-center gap-2 rounded-md px-2 py-3 text-left text-xs font-semibold transition md:min-w-0 ${selectedCategory === "all" ? "bg-[#1a3c36] text-white shadow-sm" : "text-[#1f2937] hover:bg-white/80"}`}><Utensils className="h-5 w-5 shrink-0" /><span>All Items</span></button>
           {menuCategories.map((category) => {
@@ -168,7 +168,7 @@ const PointOfSale = () => {
 
         <section className="pos-menu min-h-[35vh] overflow-y-auto rounded-lg bg-white p-2 md:min-h-0 md:p-1">
           {loading ? <div className="flex h-full min-h-40 items-center justify-center text-sm font-medium text-[#806b5e]">Loading menu...</div> : visibleFoods.length ? (
-            <div className="grid grid-cols-2 gap-2 xl:grid-cols-3">
+            <div className="grid grid-cols-2 gap-2 xl:grid-cols-5">
               {visibleFoods.map((food) => {
                 const id = String(food.food_id || food.id);
                 const inCart = cart.some((item) => item.id === id);
@@ -187,7 +187,7 @@ const PointOfSale = () => {
           ) : <div className="flex h-full min-h-48 flex-col items-center justify-center gap-2 text-center text-[#66736e]"><Utensils className="h-8 w-8" /><p className="text-sm font-semibold">No food items found</p><p className="text-xs">Try another category or search.</p></div>}
         </section>
 
-        <section className="pos-bill flex min-h-[420px] w-full max-w-[560px] justify-self-center flex-col overflow-hidden rounded-lg border border-[#dfe2e5] bg-white shadow-sm md:min-h-0">
+        <section className="pos-bill flex min-h-[420px] w-full flex-col overflow-hidden rounded-lg border border-[#dfe2e5] bg-white shadow-sm md:min-h-0">
           <div className="flex items-center justify-between bg-[#1a3c36] px-4 py-3 text-white"><h2 className="flex items-center gap-2 text-lg font-bold"><Printer className="h-5 w-5" />Invoice / Bill</h2><button type="button" onClick={generateBill} disabled={!cart.length} className={`inline-flex h-9 w-9 items-center justify-center rounded-md disabled:cursor-not-allowed disabled:opacity-60 ${billGenerated ? "bg-[#347d52]" : "bg-[#214a42] hover:bg-[#2b5b50]"}`} aria-label={billGenerated ? "Bill generated" : "Generate bill"} title={billGenerated ? "Bill generated" : "Generate bill"}><Check className="h-4 w-4" /></button></div>
           <div className="grid grid-cols-2 gap-x-4 gap-y-1 bg-[#f8faf9] px-4 py-3 text-[11px] text-[#4b5563] sm:text-xs">
             <p className="flex justify-between gap-2"><span>Bill No</span><strong className="text-[#1f2937]">{invoiceNumber}</strong></p><p className="flex justify-between gap-2"><span>Date</span><strong>{now.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })}</strong></p>
