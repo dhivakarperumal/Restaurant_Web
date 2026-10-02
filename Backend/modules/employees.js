@@ -141,7 +141,7 @@ async function createEmployeeWithUser({ employeeData, createdBy, password }) {
       userId,
       ...employeeColumns.map((column) => employeeData[column] ?? null),
       createdBy || null,
-      createdBy || null,
+      null,
     ];
     const columnSql = columns.map((column) => `\`${column}\``).join(', ');
     const placeholders = columns.map(() => '?').join(', ');
