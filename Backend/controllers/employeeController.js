@@ -59,7 +59,8 @@ const removeUploadedFiles = async (files) => {
 
 const removeEmployeeDocuments = async (employee) => {
   const documentDirectories = [
-    path.join(__dirname, '..', 'uploads', 'employee_document'),
+    path.join(__dirname, '..', 'upload', 'employee_documents'),
+    path.join(__dirname, '..', 'upload'),
     path.join(__dirname, '..', 'employee_documents'),
   ];
   const filenames = new Set(Object.values(uploadColumnByFieldName)

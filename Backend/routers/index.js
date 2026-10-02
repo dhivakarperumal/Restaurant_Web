@@ -15,8 +15,11 @@ const { findUserByToken } = require('../modules/auth');
 
 const router = express.Router();
 const uploadDirectory = path.join(__dirname, '..', 'upload');
-const employeeUploadDirectory = path.join(__dirname, '..', 'uploads', 'employee_document');
-const legacyEmployeeUploadDirectory = path.join(__dirname, '..', 'employee_documents');
+const employeeUploadDirectory = path.join(uploadDirectory, 'employee_documents');
+const legacyEmployeeUploadDirectories = [
+  uploadDirectory,
+  path.join(__dirname, '..', 'employee_documents'),
+];
 
 fs.mkdirSync(uploadDirectory, { recursive: true });
 fs.mkdirSync(employeeUploadDirectory, { recursive: true });
@@ -87,25 +90,21 @@ router.get('/employees/documents/:filename', optionalAuth, requireAdmin, (req, r
   if (path.basename(filename) !== filename || filename === '.' || filename === '..') {
     return res.status(400).json({ success: false, message: 'Invalid document name' });
   }
-  return res.download(path.join(employeeUploadDirectory, filename), (error) => {
-    if (error?.code === 'ENOENT' && !res.headersSent) {
-      return res.download(path.join(legacyEmployeeUploadDirectory, filename), (legacyError) => {
-        if (legacyError && !res.headersSent) {
-          res.status(legacyError.code === 'ENOENT' ? 404 : 500).json({
-            success: false,
-            message: legacyError.code === 'ENOENT' ? 'Document was not found' : 'Document could not be downloaded',
-          });
-        }
-      });
-    }
-    if (error && !res.headersSent) {
+  const downloadFromDirectory = (directory, fallbackIndex = 0) => res.download(
+    path.join(directory, filename),
+    (error) => {
+      if (!error || res.headersSent) return;
+      if (error.code === 'ENOENT' && fallbackIndex < legacyEmployeeUploadDirectories.length) {
+        return downloadFromDirectory(legacyEmployeeUploadDirectories[fallbackIndex], fallbackIndex + 1);
+      }
       console.error('Employee document download failed:', error.message);
       res.status(error.code === 'ENOENT' ? 404 : 500).json({
         success: false,
         message: error.code === 'ENOENT' ? 'Document was not found' : 'Document could not be downloaded',
       });
     }
-  });
+  );
+  return downloadFromDirectory(employeeUploadDirectory);
 });
 router.get('/employees/:employeeId', optionalAuth, requireAdmin, getEmployee);
 router.put('/employees/:employeeId', optionalAuth, requireAdmin, employeeUpload.any(), updateEmployee);
