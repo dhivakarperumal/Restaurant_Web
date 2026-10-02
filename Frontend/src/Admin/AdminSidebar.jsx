@@ -45,6 +45,7 @@ import {
   Star,
   Zap,
   Tag,
+  Utensils,
   Lock,
   Settings,
   MessageSquare,
@@ -72,6 +73,7 @@ const navItems = [
      
       { path: "/admin/products", label: "All Products", icon: Package },
       { path: "/admin/products/categories", label: "Category", icon: Layers },
+      { path: "/admin/products/cuisines", label: "Cuisine", icon: Utensils },
       { path: "/admin/products/stock-details", label: "Stock Details", icon: ClipboardList },
     ],
   },

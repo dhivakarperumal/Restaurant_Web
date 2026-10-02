@@ -13,6 +13,9 @@ import PrivateRoute from './PrivateRouter/PrivateRouter.jsx'
 
 import AdminDashboard from './Admin/AdminDashboard.jsx'
 import AdminLayout from './Admin/Adminpanel.jsx'
+import AdminCategories from './Admin/AdminProducts/Categories.jsx'
+import AddCategory from './Admin/AdminProducts/AddCategory.jsx'
+import Cuisines from './Admin/AdminProducts/Cuisines.jsx'
 
 
 
@@ -63,6 +66,22 @@ const router = createHashRouter([
           {
             index: true,
             element: <AdminDashboard />,
+          },
+          {
+            path: 'products/categories',
+            element: <AdminCategories />,
+          },
+          {
+            path: 'products/categories/add',
+            element: <AddCategory />,
+          },
+          {
+            path: 'products/categories/edit/:categoryId',
+            element: <AddCategory />,
+          },
+          {
+            path: 'products/cuisines',
+            element: <Cuisines />,
           },
         ],
       },

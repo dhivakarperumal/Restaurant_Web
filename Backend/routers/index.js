@@ -4,14 +4,23 @@ const multer = require('multer');
 const path = require('path');
 const { googleLogin, login, register } = require('../controllers/authController');
 const { findUserByToken } = require('../modules/auth');
+const categoriesRouter = require('./categories');
+const cuisinesRouter = require('./cuisines');
 
 const router = express.Router();
 const uploadDirectory = path.join(__dirname, '..', 'upload');
 
 fs.mkdirSync(uploadDirectory, { recursive: true });
 
+const uploadFolders = new Set(['categories', 'cuisines']);
+
 const storage = multer.diskStorage({
-  destination: uploadDirectory,
+  destination: (req, _file, callback) => {
+    const folder = String(req.body?.folder || '').toLowerCase();
+    const destination = uploadFolders.has(folder) ? path.join(uploadDirectory, folder) : uploadDirectory;
+    fs.mkdirSync(destination, { recursive: true });
+    callback(null, destination);
+  },
   filename: (req, file, callback) => {
     const extension = path.extname(file.originalname);
     const basename = path.basename(file.originalname, extension)
@@ -45,16 +54,24 @@ router.get('/health', (req, res) => {
 router.post('/users/register', optionalAuth, register);
 router.post('/users/login', login);
 router.post('/users/google-login', googleLogin);
+router.use('/categories', categoriesRouter);
+router.use('/cuisines', cuisinesRouter);
 
 router.post('/upload', upload.single('file'), (req, res) => {
   if (!req.file) {
     return res.status(400).json({ success: false, message: 'A file is required' });
   }
 
+  const relativePath = path.relative(uploadDirectory, req.file.path)
+    .split(path.sep)
+    .map(encodeURIComponent)
+    .join('/');
+  const backendUrl = (process.env.BACKEND_URL || `http://localhost:${process.env.PORT || 5000}`).replace(/\/+$/, '');
+
   return res.status(201).json({
     success: true,
     filename: req.file.filename,
-    url: `${process.env.BACKEND_URL || `http://localhost:${process.env.PORT || 5000}`}/uploads/${req.file.filename}`,
+    url: `${backendUrl}/uploads/${relativePath}`,
   });
 });
 
