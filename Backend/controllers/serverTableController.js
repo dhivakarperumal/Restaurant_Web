@@ -1,3 +1,4 @@
+const db = require('../config/db');
 const {
   createServerTable,
   deleteServerTable,
@@ -9,8 +10,36 @@ const {
 const getValue = (val) => String(val || '').trim();
 
 /**
+ * Resolves user_id strictly.
+ * 1. If auth user is attached (req.auth?.user_id), returns that user_id.
+ * 2. If a value is provided in body, checks if it's already a valid user_id or resolves username/email to user_id.
+ */
+async function resolveUserId(val, authUser) {
+  if (authUser?.user_id) {
+    return authUser.user_id;
+  }
+  const input = getValue(val);
+  if (!input) return null;
+
+  try {
+    const [rows] = await db.execute(
+      'SELECT user_id FROM users WHERE user_id = ? OR username = ? OR email = ? LIMIT 1',
+      [input, input, input]
+    );
+    if (rows.length > 0) {
+      return rows[0].user_id;
+    }
+  } catch (err) {
+    console.error('Error resolving user_id:', err.message);
+  }
+
+  return input;
+}
+
+/**
  * Creates a new server table.
- * Expected input fields: table_number, no_of_seats, status (optional), created_by (optional)
+ * Expected input fields: table_number, no_of_seats, status (optional), user_id / created_by (optional)
+ * created_by will store the user_id (not name).
  */
 async function createTable(req, res) {
   try {
@@ -32,11 +61,7 @@ async function createTable(req, res) {
       });
     }
 
-    const createdBy = req.auth?.username
-      || req.auth?.full_name
-      || req.auth?.user_id
-      || getValue(req.body?.created_by)
-      || null;
+    const createdBy = await resolveUserId(req.body?.user_id || req.body?.created_by, req.auth);
 
     const newTable = await createServerTable({
       table_number: normalizedTableNumber,
@@ -120,6 +145,7 @@ async function getTable(req, res) {
 
 /**
  * Updates an existing server table.
+ * updated_by will store the user_id (not name).
  */
 async function updateTable(req, res) {
   try {
@@ -162,11 +188,7 @@ async function updateTable(req, res) {
       payload.status = getValue(status) || existingTable.status;
     }
 
-    payload.updated_by = req.auth?.username
-      || req.auth?.full_name
-      || req.auth?.user_id
-      || getValue(req.body?.updated_by)
-      || null;
+    payload.updated_by = await resolveUserId(req.body?.user_id || req.body?.updated_by, req.auth);
 
     const updatedTable = await updateServerTable(id, payload);
 

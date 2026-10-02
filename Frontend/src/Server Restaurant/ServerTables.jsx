@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import toast from "react-hot-toast";
 import api from "../api";
+import { useAuth } from "../PrivateRouter/AuthContext";
 
 const statusConfig = {
   Available: {
@@ -45,6 +46,7 @@ const statusConfig = {
 };
 
 export default function ServerTables() {
+  const { userProfile } = useAuth();
   const [tables, setTables] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
@@ -125,6 +127,7 @@ export default function ServerTables() {
           table_number: tableNumber,
           no_of_seats: seats,
           status: formData.status,
+          user_id: userProfile?.user_id,
         });
         if (res.data?.success) {
           toast.success("Table updated successfully!");
@@ -136,6 +139,7 @@ export default function ServerTables() {
           table_number: tableNumber,
           no_of_seats: seats,
           status: formData.status,
+          user_id: userProfile?.user_id,
         });
         if (res.data?.success) {
           toast.success(`Table "${tableNumber}" added successfully!`);
@@ -175,6 +179,7 @@ export default function ServerTables() {
     try {
       const res = await api.put(`/server-tables/${tableIdentifier}`, {
         status: newStatus,
+        user_id: userProfile?.user_id,
       });
       if (res.data?.success) {
         toast.success(`Table ${table.table_number} marked as ${newStatus}`);

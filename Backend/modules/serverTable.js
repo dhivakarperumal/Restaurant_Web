@@ -25,6 +25,24 @@ async function initializeServerTableSchema() {
   await db.query(
     'ALTER TABLE server_table MODIFY updated_at TIMESTAMP NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP'
   );
+
+  // Migrate any legacy names stored in created_by or updated_by to user_id
+  try {
+    await db.query(`
+      UPDATE server_table st
+      JOIN users u ON (st.created_by = u.username OR st.created_by = u.role)
+      SET st.created_by = u.user_id
+      WHERE st.created_by IS NOT NULL AND st.created_by NOT LIKE '%-%'
+    `);
+    await db.query(`
+      UPDATE server_table st
+      JOIN users u ON (st.updated_by = u.username OR st.updated_by = u.role)
+      SET st.updated_by = u.user_id
+      WHERE st.updated_by IS NOT NULL AND st.updated_by NOT LIKE '%-%'
+    `);
+  } catch (error) {
+    // If users table is not yet created or column is missing, skip migration
+  }
 }
 
 /**
