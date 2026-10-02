@@ -123,7 +123,6 @@ const EmployeeFields = ({ employeeType }) => {
           <Field label="Vehicle Type" required options={["Bike", "Scooter", "Bicycle", "Electric Vehicle"]} />
           <Field label="Vehicle Number" required />
           <Field label="Vehicle Model" />
-          <Field label="Vehicle Color" />
           <Field label="Driving License Number" required />
           <Field label="Driving License Expiry Date" type="date" />
           <Field label="RC Number" />
