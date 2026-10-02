@@ -9,13 +9,14 @@ const cuisinesRouter = require('./cuisines');
 const foodsRouter = require('./foods');
 const bannersRouter = require('./banners');
 const couponsRouter = require('./coupons');
+const reviewsRouter = require('./reviews');
 
 const router = express.Router();
 const uploadDirectory = path.join(__dirname, '..', 'upload');
 
 fs.mkdirSync(uploadDirectory, { recursive: true });
 
-const uploadFolders = new Set(['categories', 'cuisines', 'foods', 'banners']);
+const uploadFolders = new Set(['categories', 'cuisines', 'foods', 'banners', 'review']);
 
 const storage = multer.diskStorage({
   destination: (req, _file, callback) => {
@@ -83,6 +84,7 @@ router.use('/cuisines', cuisinesRouter);
 router.use('/foods', foodsRouter);
 router.use('/banners', bannersRouter);
 router.use('/coupons', couponsRouter);
+router.use('/reviews', reviewsRouter);
 
 router.post('/upload', upload.single('file'), (req, res) => {
   if (!req.file) {

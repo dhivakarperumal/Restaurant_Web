@@ -49,6 +49,7 @@ const normalizeFood = (body = {}, actor = '') => {
     mrp,
     discount: Number.isFinite(discount) ? discount : 0,
     final_price: Number((mrp - (mrp * (Number.isFinite(discount) ? discount : 0) / 100)).toFixed(2)),
+    rating: Number(body.rating ?? 0),
     serving_size: String(getField(body, 'serving_size', 'servingSize', '') || '').trim(),
     portion_size: String(getField(body, 'portion_size', 'portionSize', 'Full')).trim(),
     preparation_time: Math.floor(nonNegativeNumber(getField(body, 'preparation_time', 'preparationTime', 0))),
@@ -74,6 +75,7 @@ const validateFood = (food) => {
   if (!food.subcategory_name) return 'Choose a subcategory.';
   if (food.mrp < 0) return 'MRP cannot be negative.';
   if (food.discount < 0 || food.discount > 100) return 'Discount must be between 0 and 100.';
+  if (!Number.isFinite(food.rating) || food.rating < 0 || food.rating > 5) return 'Food rating must be between 0 and 5.';
   if (!['Half', 'Full', 'Your Choice'].includes(food.portion_size)) return 'Choose a valid portion size.';
   if (!['Veg', 'Non-Veg'].includes(food.food_type)) return 'Choose a valid food type.';
   if (food.addons.some((item) => item.price < 0)) return 'Add-on prices cannot be negative.';

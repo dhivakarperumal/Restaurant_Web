@@ -16,6 +16,7 @@ const blankFood = (foodId = '', actor = '') => ({
   description: '',
   mrp: '',
   discount: '0',
+  rating: '0',
   servingSize: '',
   portionSize: 'Full',
   preparationTime: '0',
@@ -180,6 +181,7 @@ const AddFood = ({ drawer = false, onClose, onSaved }) => {
             description: food.description || '',
             mrp: String(food.mrp ?? ''),
             discount: String(food.discount ?? 0),
+            rating: String(food.rating ?? 0),
             servingSize: food.serving_size || '',
             portionSize: food.portion_size || 'Full',
             preparationTime: String(food.preparation_time ?? 0),
@@ -356,6 +358,7 @@ const AddFood = ({ drawer = false, onClose, onSaved }) => {
       food_images: images.map((image) => image.url),
       mrp: Number(form.mrp),
       discount: Number(form.discount),
+      rating: Number(form.rating),
       serving_size: form.servingSize.trim(),
       portion_size: form.portionSize,
       preparation_time: Number(form.preparationTime),
@@ -467,19 +470,22 @@ const AddFood = ({ drawer = false, onClose, onSaved }) => {
             </label>
           </Section>
 
-          <Section number="03" title="Food details">
+          <Section number="03" title="Food details" columns={3}>
+            <label className="block text-sm font-medium text-gray-700">Preparation time (minutes)
+              <input type="number" min="0" step="1" value={form.preparationTime} onChange={(event) => setValue('preparationTime', event.target.value)} className={`mt-1.5 h-10 w-full rounded-md border px-3 outline-none focus:border-emerald-700 ${errors.preparationTime ? 'border-red-500' : 'border-gray-300'}`} />
+              {errors.preparationTime && <span className="mt-1 block text-xs text-red-700">{errors.preparationTime}</span>}
+            </label>
+            <label className="block text-sm font-medium text-gray-700">Food rating (0–5)
+              <input type="number" min="0" max="5" step="0.1" value={form.rating} onChange={(event) => setValue('rating', event.target.value)} className="mt-1.5 h-10 w-full rounded-md border border-gray-300 px-3 outline-none focus:border-emerald-700" />
+            </label>
+            <label className="block text-sm font-medium text-gray-700">Is spicy?
+              <select value={form.isSpicy ? 'Yes' : 'No'} onChange={(event) => setValue('isSpicy', event.target.value === 'Yes')} className="mt-1.5 h-10 w-full rounded-md border border-gray-300 bg-white px-3"><option>No</option><option>Yes</option></select>
+            </label>
             <label className="block text-sm font-medium text-gray-700">Serving size
               <input value={form.servingSize} onChange={(event) => setValue('servingSize', event.target.value)} placeholder="e.g. Serves 1" className="mt-1.5 h-10 w-full rounded-md border border-gray-300 px-3 outline-none focus:border-emerald-700" />
             </label>
             <label className="block text-sm font-medium text-gray-700">Portion size
               <select value={form.portionSize} onChange={(event) => setValue('portionSize', event.target.value)} className="mt-1.5 h-10 w-full rounded-md border border-gray-300 bg-white px-3"><option>Half</option><option>Full</option><option>Your Choice</option></select>
-            </label>
-            <label className="block text-sm font-medium text-gray-700">Preparation time (minutes)
-              <input type="number" min="0" step="1" value={form.preparationTime} onChange={(event) => setValue('preparationTime', event.target.value)} className={`mt-1.5 h-10 w-full rounded-md border px-3 outline-none focus:border-emerald-700 ${errors.preparationTime ? 'border-red-500' : 'border-gray-300'}`} />
-              {errors.preparationTime && <span className="mt-1 block text-xs text-red-700">{errors.preparationTime}</span>}
-            </label>
-            <label className="block text-sm font-medium text-gray-700">Is spicy?
-              <select value={form.isSpicy ? 'Yes' : 'No'} onChange={(event) => setValue('isSpicy', event.target.value === 'Yes')} className="mt-1.5 h-10 w-full rounded-md border border-gray-300 bg-white px-3"><option>No</option><option>Yes</option></select>
             </label>
           </Section>
 

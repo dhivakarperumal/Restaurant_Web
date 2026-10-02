@@ -16,6 +16,7 @@ const initializeFoodSchema = async () => {
       mrp DECIMAL(10,2) NOT NULL DEFAULT 0,
       discount DECIMAL(5,2) NOT NULL DEFAULT 0,
       final_price DECIMAL(10,2) NOT NULL DEFAULT 0,
+      rating DECIMAL(2,1) NOT NULL DEFAULT 0,
       serving_size VARCHAR(100) NULL,
       portion_size VARCHAR(30) NOT NULL,
       preparation_time SMALLINT UNSIGNED NOT NULL DEFAULT 0,
@@ -38,6 +39,11 @@ const initializeFoodSchema = async () => {
       INDEX foods_status_idx (status)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
   `);
+
+  const [ratingColumns] = await db.query("SHOW COLUMNS FROM foods LIKE 'rating'");
+  if (!ratingColumns.length) {
+    await db.query('ALTER TABLE foods ADD COLUMN rating DECIMAL(2,1) NOT NULL DEFAULT 0 AFTER final_price');
+  }
 };
 
 const parseJson = (value, fallback) => {
@@ -96,6 +102,7 @@ const foodValues = (food) => [
   food.mrp,
   food.discount,
   food.final_price,
+  food.rating,
   food.serving_size || null,
   food.portion_size,
   food.preparation_time,
@@ -117,10 +124,10 @@ const createFood = async (food) => {
   await db.execute(
     `INSERT INTO foods (
       food_id, food_name, cuisine_id, cuisine_name, category_id, category_name, subcategory_name,
-      description, food_images, mrp, discount, final_price, serving_size, portion_size,
+      description, food_images, mrp, discount, final_price, rating, serving_size, portion_size,
       preparation_time, food_type, is_spicy, is_available, dining_available, takeaway_available,
       delivery_available, featured, status, addons, customizations, created_by, updated_by
-    ) VALUES (${Array(27).fill('?').join(', ')})`,
+    ) VALUES (${Array(28).fill('?').join(', ')})`,
     foodValues(food)
   );
   return findFoodById(food.food_id);
@@ -133,11 +140,11 @@ const updateFood = async (foodId, food) => {
   await db.execute(
     `UPDATE foods SET
       food_name = ?, cuisine_id = ?, cuisine_name = ?, category_id = ?, category_name = ?, subcategory_name = ?,
-      description = ?, food_images = ?, mrp = ?, discount = ?, final_price = ?, serving_size = ?, portion_size = ?,
+      description = ?, food_images = ?, mrp = ?, discount = ?, final_price = ?, rating = ?, serving_size = ?, portion_size = ?,
       preparation_time = ?, food_type = ?, is_spicy = ?, is_available = ?, dining_available = ?, takeaway_available = ?,
       delivery_available = ?, featured = ?, status = ?, addons = ?, customizations = ?, updated_by = ?
      WHERE food_id = ?`,
-    [...values.slice(0, -1), foodId]
+    [...values.slice(0, -2), food.updated_by, foodId]
   );
   return findFoodById(foodId);
 };
