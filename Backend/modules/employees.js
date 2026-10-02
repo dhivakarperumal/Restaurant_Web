@@ -103,7 +103,7 @@ async function initializeEmployeeSchema() {
       created_by VARCHAR(255) NULL,
       created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
       updated_by VARCHAR(255) NULL,
-      updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
       INDEX employees_type_idx (employee_type),
       INDEX employees_status_idx (status),
       CONSTRAINT employees_user_id_fk FOREIGN KEY (user_id)
@@ -115,6 +115,10 @@ async function initializeEmployeeSchema() {
   if (specializationColumns.length > 0) {
     await db.query('ALTER TABLE employees DROP COLUMN specialization');
   }
+
+  await db.query(
+    'ALTER TABLE employees MODIFY updated_at TIMESTAMP NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP'
+  );
 }
 
 async function createEmployeeWithUser({ employeeData, createdBy, password }) {
