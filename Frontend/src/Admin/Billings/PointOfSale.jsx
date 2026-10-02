@@ -187,7 +187,7 @@ const PointOfSale = () => {
           ) : <div className="flex h-full min-h-48 flex-col items-center justify-center gap-2 text-center text-[#66736e]"><Utensils className="h-8 w-8" /><p className="text-sm font-semibold">No food items found</p><p className="text-xs">Try another category or search.</p></div>}
         </section>
 
-        <section className="pos-bill flex min-h-[420px] flex-col overflow-hidden rounded-lg border border-[#dfe2e5] bg-white shadow-sm md:min-h-0">
+        <section className="pos-bill flex min-h-[420px] w-full max-w-[560px] justify-self-center flex-col overflow-hidden rounded-lg border border-[#dfe2e5] bg-white shadow-sm md:min-h-0">
           <div className="flex items-center justify-between bg-[#1a3c36] px-4 py-3 text-white"><h2 className="flex items-center gap-2 text-lg font-bold"><Printer className="h-5 w-5" />Invoice / Bill</h2><button type="button" onClick={generateBill} disabled={!cart.length} className={`inline-flex h-9 w-9 items-center justify-center rounded-md disabled:cursor-not-allowed disabled:opacity-60 ${billGenerated ? "bg-[#347d52]" : "bg-[#214a42] hover:bg-[#2b5b50]"}`} aria-label={billGenerated ? "Bill generated" : "Generate bill"} title={billGenerated ? "Bill generated" : "Generate bill"}><Check className="h-4 w-4" /></button></div>
           <div className="grid grid-cols-2 gap-x-4 gap-y-1 bg-[#f8faf9] px-4 py-3 text-[11px] text-[#4b5563] sm:text-xs">
             <p className="flex justify-between gap-2"><span>Bill No</span><strong className="text-[#1f2937]">{invoiceNumber}</strong></p><p className="flex justify-between gap-2"><span>Date</span><strong>{now.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })}</strong></p>
