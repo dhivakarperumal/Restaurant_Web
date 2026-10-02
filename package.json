@@ -8,6 +8,7 @@
     "concurrently": "^10.0.5"
   },
   "dependencies": {
-    "browser-image-compression": "^2.0.2"
+    "browser-image-compression": "^2.0.2",
+    "qrcode.react": "^4.2.0"
   }
 }
