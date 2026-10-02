@@ -49,6 +49,7 @@ import {
   Lock,
   Settings,
   MessageSquare,
+  UtensilsCrossed,
 } from "lucide-react";
 
 import { useAuth } from "../PrivateRouter/AuthContext";
@@ -100,6 +101,12 @@ const navItems = [
     path: "/admin/customers",
     label: "Customers",
     icon: Users,
+  },
+
+  {
+    path: "/admin/tables",
+    label: "Server Tables",
+    icon: UtensilsCrossed,
   },
 
   {

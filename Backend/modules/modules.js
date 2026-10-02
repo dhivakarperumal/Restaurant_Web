@@ -8,6 +8,15 @@ const { initializeCouponSchema } = require('./coupons');
 const { initializeReviewSchema } = require('./reviews');
 const { initializeVideoSchema } = require('./videos');
 const { initializeEmployeeSchema } = require('./employees');
+const {
+  initializeServerTableSchema,
+  createServerTable,
+  findServerTables,
+  findServerTableById,
+  findServerTableByNumber,
+  updateServerTable,
+  deleteServerTable,
+} = require('./serverTable');
 
 module.exports = {
   db,
@@ -20,5 +29,12 @@ module.exports = {
   initializeReviewSchema,
   initializeVideoSchema,
   initializeEmployeeSchema,
+  initializeServerTableSchema,
+  createServerTable,
+  findServerTables,
+  findServerTableById,
+  findServerTableByNumber,
+  updateServerTable,
+  deleteServerTable,
   testConnection: db.testConnection,
 };
