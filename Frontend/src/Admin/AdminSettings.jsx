@@ -58,16 +58,16 @@ const Select = ({ label, options, value, onChange }) => (
 );
 
 const SETTINGS_CATEGORIES = [
-  { id: 'print', title: 'Print Setup', desc: 'Configure printers & paper sizes.', icon: <Printer size={24} /> },
-  { id: 'receipt', title: 'Receipt Settings', desc: 'Customize receipt layout and info.', icon: <Receipt size={24} /> },
-  { id: 'payment', title: 'Payment Integration', desc: 'Gateways, UPI, and Card setups.', icon: <CreditCard size={24} /> },
-  { id: 'store', title: 'Store Settings', desc: 'Core business and location info.', icon: <Store size={24} /> },
-  { id: 'tax', title: 'Tax & GST', desc: 'Configure GST, SGST, IGST and HSN.', icon: <Percent size={24} /> },
-  { id: 'localization', title: 'Localization', desc: 'Region, Language & formatting.', icon: <Globe size={24} /> },
+  { id: 'print', title: 'Printer Setup', desc: 'Configure receipt and kitchen printers.', icon: <Printer size={24} /> },
+  { id: 'receipt', title: 'Receipt Settings', desc: 'Set restaurant details and receipt content.', icon: <Receipt size={24} /> },
+  { id: 'payment', title: 'Payment Methods', desc: 'Manage cash, UPI, card, and online payments.', icon: <CreditCard size={24} /> },
+  { id: 'store', title: 'Restaurant Profile', desc: 'Manage restaurant details, location, and hours.', icon: <Store size={24} /> },
+  { id: 'tax', title: 'Tax & GST', desc: 'Configure restaurant GST and tax display.', icon: <Percent size={24} /> },
+  { id: 'localization', title: 'Regional Settings', desc: 'Set region, language, currency, and formats.', icon: <Globe size={24} /> },
 
 
-  { id: 'delivery', title: 'Delivery Charges', desc: 'Manage shipping & delivery fees.', icon: <Truck size={24} /> },
-  { id: 'coupon', title: 'Coupon Settings', desc: 'Configure discount & promo codes.', icon: <Ticket size={24} /> }
+  { id: 'delivery', title: 'Delivery & Service Charges', desc: 'Set delivery fees, minimums, and service areas.', icon: <Truck size={24} /> },
+  { id: 'coupon', title: 'Offers & Coupons', desc: 'Manage dining and delivery promotions.', icon: <Ticket size={24} /> }
 ];
 
 const Settings = () => {
@@ -100,9 +100,9 @@ const Settings = () => {
     taxDisplay: true,
     discountDisplay: true,
     qrCodeDisplay: true,
-    footerMessage: 'Thank you for shopping with us!',
-    thankYouMessage: 'Thank you for shopping with us.',
-    returnPolicy: 'No returns after 7 days.',
+    footerMessage: 'Thank you for dining with us!',
+    thankYouMessage: 'Thank you for choosing us.',
+    returnPolicy: 'Please contact the restaurant for order concerns.',
     storeLogo: ''
   });
 
@@ -138,7 +138,7 @@ const Settings = () => {
     zipCode: '',
     gstin: '',
     fssai: '',
-    businessType: 'Supermarket',
+    businessType: 'Restaurant',
     timezone: 'Asia/Kolkata (IST)',
     language: 'English',
     currency: 'INR (₹)',
@@ -341,7 +341,7 @@ const Settings = () => {
             zipCode: d.zip_code || '',
             gstin: d.gstin || '',
             fssai: d.fssai || '',
-            businessType: d.business_type || 'Supermarket',
+            businessType: d.business_type || 'Restaurant',
             timezone: d.timezone || 'Asia/Kolkata (IST)',
             language: d.language || 'English',
             currency: d.currency || 'INR (₹)',
@@ -405,18 +405,18 @@ const Settings = () => {
       try {
         const response = await api.post("/settings/store", storeSettings);
         if (response.data?.success) {
-          toast.success("Store settings saved successfully!");
+          toast.success("Restaurant profile saved successfully!");
           try {
             localStorage.setItem('store_settings', JSON.stringify(storeSettings));
           } catch (e) {
             console.warn('Unable to persist store settings to localStorage', e);
           }
         } else {
-          toast.error("Failed to save store settings.");
+          toast.error("Failed to save restaurant profile.");
         }
       } catch (error) {
-        console.error("Error saving store settings:", error);
-        toast.error("Failed to save store settings.");
+        console.error("Error saving restaurant profile:", error);
+        toast.error("Failed to save restaurant profile.");
       }
     } else {
       toast.success("Settings saved successfully!");
@@ -556,9 +556,9 @@ const Settings = () => {
 
             <div style={{ gridColumn: '1 / -1', borderTop: '1px solid #e2e8f0', paddingTop: '1rem', marginTop: '0.5rem' }}></div>
 
-            <Toggle label="Auto Print Invoice" defaultChecked />
+            <Toggle label="Auto-print Receipt" defaultChecked />
             <Toggle label="Cash Drawer Trigger" defaultChecked />
-            <Toggle label="Kitchen Printer" />
+            <Toggle label="Kitchen Order Printer" />
             <Toggle label="Barcode Printing" defaultChecked />
             <Toggle label="QR Code Printing" defaultChecked />
             <Toggle label="Print Logo" defaultChecked />
@@ -586,18 +586,18 @@ const Settings = () => {
                 gap: "1rem",
               }}
             >
-              <Input label="Store Logo Upload" type="file" onChange={handleLogoUpload} accept="image/*" />
+              <Input label="Restaurant Logo" type="file" onChange={handleLogoUpload} accept="image/*" />
 
               <Input
-                label="Store Name"
-                placeholder="D-Mart Super Market"
+                label="Restaurant or Hotel Name"
+                placeholder="Foodie Restaurant"
                 value={receiptSettings.storeName}
                 onChange={(e) => updateReceiptSetting("storeName", e.target.value)}
               />
 
               <Input
-                label="Address"
-                placeholder="123 Main Street"
+                label="Restaurant Address"
+                placeholder="123 MG Road"
                 value={receiptSettings.address}
                 onChange={(e) => updateReceiptSetting("address", e.target.value)}
               />
@@ -617,7 +617,7 @@ const Settings = () => {
               />
 
               <Input
-                label="GST Number"
+                label="GSTIN"
                 placeholder="22AAAAA0000A1Z5"
                 value={receiptSettings.gst}
                 onChange={(e) => updateReceiptSetting("gst", e.target.value)}
@@ -678,21 +678,21 @@ const Settings = () => {
 
               <Input
                 label="Footer Message"
-                placeholder="Visit again!"
+                placeholder="Visit us again!"
                 value={receiptSettings.footerMessage}
                 onChange={(e) => updateReceiptSetting("footerMessage", e.target.value)}
               />
 
               <Input
                 label="Thank You Message"
-                placeholder="Thank you for shopping with us."
+                placeholder="Thank you for dining with us."
                 value={receiptSettings.thankYouMessage}
                 onChange={(e) => updateReceiptSetting("thankYouMessage", e.target.value)}
               />
 
               <Input
-                label="Return Policy"
-                placeholder="No returns after 7 days."
+                label="Order Refund Policy"
+                placeholder="Please contact us about order concerns."
                 value={receiptSettings.returnPolicy}
                 onChange={(e) => updateReceiptSetting("returnPolicy", e.target.value)}
               />
@@ -710,10 +710,10 @@ const Settings = () => {
                 <h4 className="receipt-preview-title">Receipt Preview</h4>
                 <div className="receipt-top">
                   {receiptSettings.storeLogo && (
-                    <img src={receiptSettings.storeLogo} alt="Store Logo" />
+                    <img src={receiptSettings.storeLogo} alt="Restaurant logo" />
                   )}
 
-                  <h3>{receiptSettings.storeName || "STORE NAME"}</h3>
+                  <h3>{receiptSettings.storeName || "RESTAURANT NAME"}</h3>
 
                   <div>{receiptSettings.address}</div>
                   <div>Phone: {receiptSettings.phone}</div>
@@ -724,7 +724,7 @@ const Settings = () => {
                 </div>
 
                 <div className="receipt-meta">
-                  <span>Invoice: {receiptSettings.invoicePrefix}0001</span>
+                  <span>Receipt: {receiptSettings.invoicePrefix}0001</span>
                   <span>{new Date().toLocaleDateString()}</span>
                 </div>
 
@@ -736,11 +736,11 @@ const Settings = () => {
                     <span>Total</span>
                   </div>
                   <div className="item">
-                    <span>Apple 1kg</span>
+                    <span>Paneer Tikka</span>
                     <span>{receiptSettings.currency}120.00</span>
                   </div>
                   <div className="item">
-                    <span>Rice 5kg</span>
+                    <span>Masala Dosa</span>
                     <span>{receiptSettings.currency}450.00</span>
                   </div>
                 </div>
@@ -819,7 +819,7 @@ const Settings = () => {
             {paymentSettings.onlinePaymentSupport && (
               <div style={{ marginTop: "1rem", padding: "1rem", border: "1px solid #e5e7eb", borderRadius: "0.75rem", background: "#f9fafb" }}>
                 <h3 style={{ margin: "0 0 0.75rem", fontSize: "1rem", fontWeight: 600 }}>Online Payment Gateway</h3>
-                <p style={{ margin: "0 0 0.75rem", color: "#6b7280", fontSize: "0.9rem" }}>Razorpay is used for online checkout payments.</p>
+                <p style={{ margin: "0 0 0.75rem", color: "#6b7280", fontSize: "0.9rem" }}>Razorpay is used for restaurant order payments.</p>
                 <Toggle label="Enable Razorpay" checked={paymentSettings.razorpayEnabled} onChange={(e) => updatePaymentSetting('razorpayEnabled', e.target.checked)} />
 
                 {paymentSettings.razorpayEnabled && (
@@ -868,23 +868,23 @@ const Settings = () => {
         return (
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.25rem', width: '100%', gridColumn: '1 / -1' }}>
 
-            {/* Store Identity */}
+            {/* Restaurant identity */}
             <div style={{ gridColumn: '1 / -1' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.75rem', paddingBottom: '0.5rem', borderBottom: '2px solid #d1fae5' }}>
                 <Store size={16} style={{ color: '#10b981' }} />
-                <span style={{ fontWeight: '700', fontSize: '0.85rem', color: '#10b981', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Store Identity</span>
+                <span style={{ fontWeight: '700', fontSize: '0.85rem', color: '#10b981', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Restaurant Identity</span>
               </div>
             </div>
 
             <Input
-              label="Store Name"
-              placeholder="D-Mart Super Market"
+              label="Restaurant or Hotel Name"
+              placeholder="Foodie Restaurant"
               value={storeSettings.storeName}
               onChange={(e) => updateStoreSetting('storeName', e.target.value)}
             />
 
             <div className="form-group">
-              <label className="form-label">Store Logo</label>
+              <label className="form-label">Restaurant Logo</label>
               <input
                 type="file"
                 accept="image/*"
@@ -895,7 +895,7 @@ const Settings = () => {
                 <div style={{ marginTop: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                   <img
                     src={storeSettings.storeLogo}
-                    alt="Store Logo Preview"
+                    alt="Restaurant logo preview"
                     style={{ width: '56px', height: '56px', objectFit: 'contain', borderRadius: '8px', border: '1px solid #e2e8f0', background: '#f8fafc', padding: '4px' }}
                   />
                   <span style={{ fontSize: '0.8rem', color: '#10b981', fontWeight: '600' }}>✓ Logo loaded</span>
@@ -905,7 +905,7 @@ const Settings = () => {
 
             <Input
               label="Email"
-              placeholder="admin@dmart.com"
+              placeholder="contact@foodierestaurant.com"
               value={storeSettings.email}
               onChange={(e) => updateStoreSetting('email', e.target.value)}
             />
@@ -919,7 +919,7 @@ const Settings = () => {
 
             <Select
               label="Business Type"
-              options={['Supermarket', 'Grocery', 'Hypermarket']}
+              options={['Restaurant', 'Hotel', 'Cafe', 'Bakery', 'Catering Service', 'Food Truck']}
               value={storeSettings.businessType}
               onChange={(e) => updateStoreSetting('businessType', e.target.value)}
             />
@@ -944,7 +944,7 @@ const Settings = () => {
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem', paddingBottom: '0.5rem', borderBottom: '2px solid #d1fae5' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                   <MapPin size={16} style={{ color: '#10b981' }} />
-                  <span style={{ fontWeight: '700', fontSize: '0.85rem', color: '#10b981', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Store Location</span>
+                  <span style={{ fontWeight: '700', fontSize: '0.85rem', color: '#10b981', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Restaurant Location</span>
                 </div>
                 <button
                   onClick={handleFetchLiveLocation}
@@ -995,7 +995,7 @@ const Settings = () => {
             <div style={{ gridColumn: '1 / -1' }}>
               <Input
                 label="Address"
-                placeholder="Main Branch, 1st Cross"
+                placeholder="123 MG Road"
                 value={storeSettings.address}
                 onChange={(e) => updateStoreSetting('address', e.target.value)}
               />
@@ -1003,7 +1003,7 @@ const Settings = () => {
 
             <Input
               label="City"
-              placeholder="Bangalore"
+              placeholder="Coimbatore"
               value={storeSettings.city}
               onChange={(e) => updateStoreSetting('city', e.target.value)}
             />
@@ -1032,7 +1032,7 @@ const Settings = () => {
             {/* Compliance */}
             <div style={{ gridColumn: '1 / -1', marginTop: '0.5rem' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.75rem', paddingBottom: '0.5rem', borderBottom: '2px solid #d1fae5' }}>
-                <span style={{ fontWeight: '700', fontSize: '0.85rem', color: '#10b981', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Compliance & Preferences</span>
+                <span style={{ fontWeight: '700', fontSize: '0.85rem', color: '#10b981', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Licenses & Preferences</span>
               </div>
             </div>
 
@@ -1076,9 +1076,9 @@ const Settings = () => {
       case 'tax':
         return (
           <>
-            <Toggle label="Enable GST" defaultChecked />
-            <Select label="Default GST Percentage" options={['0%', '5%', '12%', '18%', '28%']} />
-            <Select label="Tax Mode" options={['Tax Exclusive', 'Tax Inclusive']} />
+            <Toggle label="Enable GST Collection" defaultChecked />
+            <Select label="Default GST Rate" options={['0%', '5%', '12%', '18%', '28%']} />
+            <Select label="Tax Calculation Mode" options={['Tax Exclusive', 'Tax Inclusive']} />
           </>
         );
       case 'localization':
@@ -1108,7 +1108,7 @@ const Settings = () => {
       case 'pos':
         return (
           <>
-            <Input label="Default Customer Name" placeholder="Walk-in Customer" />
+            <Input label="Default Guest Name" placeholder="Walk-in Guest" />
             <Select label="Default Payment Method" options={['Cash', 'UPI', 'Card']} />
             <Toggle label="Round Off Bill Amount" defaultChecked />
             <Toggle label="Quick Billing Mode" defaultChecked />
@@ -1123,13 +1123,13 @@ const Settings = () => {
         return (
           <>
             <div style={{ gridColumn: '1 / -1', background: '#f8fafc', padding: '1.25rem', borderRadius: '12px', border: '1px solid #e2e8f0', marginBottom: '1rem' }}>
-              <h4 style={{ marginBottom: '1rem', color: '#1e293b', fontSize: '1rem', fontWeight: 'bold' }}>Standard Delivery Settings</h4>
+              <h4 style={{ marginBottom: '1rem', color: '#1e293b', fontSize: '1rem', fontWeight: 'bold' }}>Restaurant Delivery Fees</h4>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '1rem' }}>
-                <Input label="Base Delivery Charge (₹)" type="number" placeholder="e.g. 50" />
-                <Input label="Free Delivery Minimum Order Amount (₹)" type="number" placeholder="e.g. 500" />
-                <Input label="Per KM Delivery Charge (₹)" type="number" placeholder="e.g. 10" />
-                <Input label="Maximum Delivery Distance (KM)" type="number" placeholder="e.g. 15" />
-                <Select label="Delivery Area Scope" options={['Local', 'City', 'Custom Radius']} />
+                <Input label="Base Delivery Fee (₹)" type="number" placeholder="e.g. 50" />
+                <Input label="Free Delivery Minimum Order Value (₹)" type="number" placeholder="e.g. 500" />
+                <Input label="Delivery Fee per KM (₹)" type="number" placeholder="e.g. 10" />
+                <Input label="Maximum Delivery Radius (KM)" type="number" placeholder="e.g. 15" />
+                <Select label="Delivery Service Area" options={['Local', 'City', 'Custom Radius']} />
               </div>
             </div>
 
@@ -1151,12 +1151,12 @@ const Settings = () => {
       case 'coupon':
         return (
           <>
-            <Toggle label="Enable Coupon System" defaultChecked />
-            <Toggle label="Allow Multiple Coupons per Order" />
+            <Toggle label="Enable Restaurant Offers" defaultChecked />
+            <Toggle label="Allow Multiple Offers per Order" />
             <Select label="Default Discount Type" options={['Percentage (%)', 'Flat Amount (₹)']} />
             <Input label="Maximum Discount Cap (₹)" placeholder="e.g. ₹2000" />
-            <Toggle label="Show Available Coupons at Checkout" defaultChecked />
-            <Toggle label="Auto-apply Best Coupon" />
+            <Toggle label="Show Offers at Checkout" defaultChecked />
+            <Toggle label="Auto-apply Best Offer" />
           </>
         );
       default:
