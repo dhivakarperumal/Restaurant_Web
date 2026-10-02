@@ -1,10 +1,12 @@
 import { useState } from "react";
 import { Download, Eye, LoaderCircle } from "lucide-react";
-import api from "../api";
+import api, { BACKEND_BASE_URL } from "../api";
 
 const EmployeeDocument = ({ filename }) => {
   const [busyAction, setBusyAction] = useState("");
   const [error, setError] = useState("");
+  const documentPath = `/upload/employee_documents/${encodeURIComponent(filename)}`;
+  const documentUrl = `${BACKEND_BASE_URL}${documentPath}`;
 
   const fetchDocument = async () => {
     const response = await api.get(`/employees/documents/${encodeURIComponent(filename)}`, {
@@ -14,24 +16,7 @@ const EmployeeDocument = ({ filename }) => {
   };
 
   const viewDocument = async () => {
-    const previewWindow = window.open("about:blank", "_blank");
-    if (!previewWindow) {
-      setError("Allow pop-ups to view this document.");
-      return;
-    }
-    previewWindow.opener = null;
-    setBusyAction("view");
-    setError("");
-    try {
-      const url = await fetchDocument();
-      previewWindow.location.href = url;
-      window.setTimeout(() => URL.revokeObjectURL(url), 60000);
-    } catch (requestError) {
-      previewWindow.close();
-      setError(requestError.response?.data?.message || "Document could not be opened.");
-    } finally {
-      setBusyAction("");
-    }
+    window.open(documentUrl, "_blank", "noopener,noreferrer");
   };
 
   const downloadDocument = async () => {
@@ -53,10 +38,12 @@ const EmployeeDocument = ({ filename }) => {
 
   return (
     <div className="mt-2 rounded-md bg-[#f5f8f4] p-2.5">
-      <p className="break-all text-xs text-[#526258]">{filename}</p>
+      <a href={documentUrl} target="_blank" rel="noreferrer" className="break-all text-xs font-semibold text-[#355443] underline decoration-[#b8caba] underline-offset-2 hover:text-[#244b36]">
+        {documentPath}
+      </a>
       <div className="mt-2 flex flex-wrap gap-2">
-        <button type="button" onClick={viewDocument} disabled={Boolean(busyAction)} className="inline-flex items-center gap-1.5 rounded-md border border-[#d5e0d4] bg-white px-2.5 py-1.5 text-xs font-semibold text-[#355443] hover:bg-[#edf3ed] disabled:opacity-60">
-          {busyAction === "view" ? <LoaderCircle className="h-3.5 w-3.5 animate-spin" /> : <Eye className="h-3.5 w-3.5" />}
+        <button type="button" onClick={viewDocument} className="inline-flex items-center gap-1.5 rounded-md border border-[#d5e0d4] bg-white px-2.5 py-1.5 text-xs font-semibold text-[#355443] hover:bg-[#edf3ed]">
+          <Eye className="h-3.5 w-3.5" />
           View
         </button>
         <button type="button" onClick={downloadDocument} disabled={Boolean(busyAction)} className="inline-flex items-center gap-1.5 rounded-md border border-[#d5e0d4] bg-white px-2.5 py-1.5 text-xs font-semibold text-[#355443] hover:bg-[#edf3ed] disabled:opacity-60">
