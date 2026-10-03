@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import {
   Armchair,
+  ArrowRight,
   CheckCircle2,
   Clock,
   Edit2,
@@ -47,6 +48,7 @@ const statusConfig = {
 export default function ServerTables() {
   const { userProfile } = useAuth();
   const location = useLocation();
+  const navigate = useNavigate();
   const isAdminTablesPage = location.pathname.startsWith("/admin/tables");
   const [tables, setTables] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -223,6 +225,19 @@ export default function ServerTables() {
   const currentServerEmployeeId = userProfile?.employee_id || userProfile?.employeeId;
   const currentUserId = userProfile?.user_id || userProfile?.id || userProfile?.uuid;
   const currentUserName = userProfile?.name || userProfile?.displayName || userProfile?.full_name || userProfile?.username;
+
+  const selectTableForOrder = (table) => {
+    navigate("/server/foods", {
+      state: {
+        selectedTable: {
+          id: table.id ?? null,
+          table_id: table.table_id || null,
+          table_number: table.table_number,
+          no_of_seats: table.no_of_seats,
+        },
+      },
+    });
+  };
 
   const isCurrentServerTable = (table) => {
     if (!table.assigned_server_id) return false;
@@ -638,6 +653,15 @@ export default function ServerTables() {
                       </button>
                     </div>
                   )}
+                  {!isAdminTablesPage && (
+                    <button
+                      type="button"
+                      onClick={() => selectTableForOrder(table)}
+                      className="mt-2 inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-[#1a3c36] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#214a42]"
+                    >
+                      Select Table <ArrowRight className="h-4 w-4" />
+                    </button>
+                  )}
                 </div>
               </div>
             );
@@ -663,6 +687,7 @@ export default function ServerTables() {
                     <>
                       <th className="py-3.5 px-4">Assignment</th>
                       <th className="py-3.5 px-4 text-right">Quick Status Update</th>
+                      <th className="py-3.5 px-4 text-right">Menu</th>
                     </>
                   )}
                 </tr>
@@ -769,6 +794,15 @@ export default function ServerTables() {
                                 </button>
                               ))}
                             </div>
+                          </td>
+                          <td className="py-3 px-4 text-right">
+                            <button
+                              type="button"
+                              onClick={() => selectTableForOrder(table)}
+                              className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg bg-[#1a3c36] px-3 py-2 text-xs font-semibold text-white transition hover:bg-[#214a42]"
+                            >
+                              Select Table <ArrowRight className="h-3.5 w-3.5" />
+                            </button>
                           </td>
                         </>
                       )}

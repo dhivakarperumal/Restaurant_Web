@@ -21,6 +21,7 @@ const couponsRouter = require('./coupons');
 const reviewsRouter = require('./reviews');
 const videosRouter = require('./videos');
 const settingsRouter = require('./settings');
+const { getKitchenOrders, submitKitchenOrder } = require('../controllers/kitchenOrderController');
 
 const router = express.Router();
 const uploadDirectory = path.join(__dirname, '..', 'upload');
@@ -112,6 +113,25 @@ const requireAuthenticatedUser = async (req, res, next) => {
   }
 };
 
+const requireKitchenRole = (allowedRoles) => async (req, res, next) => {
+  const token = req.get('authorization')?.replace(/^Bearer\s+/i, '');
+  if (!token) return res.status(401).json({ success: false, message: 'Login is required.' });
+
+  try {
+    const user = await findUserByToken(token);
+    if (!user) return res.status(401).json({ success: false, message: 'Your session is invalid or expired.' });
+    const role = String(user.role || '').trim().toLowerCase();
+    if (!allowedRoles.includes(role)) {
+      return res.status(403).json({ success: false, message: 'You are not allowed to access kitchen orders.' });
+    }
+    req.auth = user;
+    return next();
+  } catch (error) {
+    console.error('Failed to authorize kitchen order request:', error.message);
+    return res.status(500).json({ success: false, message: 'Unable to verify your session.' });
+  }
+};
+
 const requireEmployeeAdmin = (req, res, next) => {
   if (!req.auth) {
     return res.status(401).json({ success: false, message: 'Administrator login is required' });
@@ -174,6 +194,8 @@ router.post('/employees', optionalAuth, requireEmployeeAdmin, employeeUpload.any
 
 router.use('/server-tables', optionalAuth, serverTableRouter);
 router.use('/tables', optionalAuth, serverTableRouter);
+router.post('/kitchen-orders', requireKitchenRole(['server']), submitKitchenOrder);
+router.get('/kitchen-orders', requireKitchenRole(['chef', 'super admin', 'admin']), getKitchenOrders);
 
 router.post('/upload', upload.single('file'), (req, res) => {
   if (!req.file) {
