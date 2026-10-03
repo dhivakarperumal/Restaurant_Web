@@ -115,12 +115,12 @@ const navItems = [
     children: [
       { path: "/admin/employees", label: "All Employee", icon: Users },
       { path: "/admin/employees/add", label: "Add Employee", icon: UserRoundPlus },
-      { path: "/admin/employees/add/chef", label: "Add Chef", icon: UserRoundPlus },
+      // { path: "/admin/employees/add/chef", label: "Add Chef", icon: UserRoundPlus },
       { path: "/admin/employees/add/server", label: "Add Server", icon: UserRoundPlus },
       { path: "/admin/employees/add/delivery-partner", label: "Add Delivery Partner", icon: UserRoundPlus },
-      { path: "/admin/employees/add/cashier", label: "Add Cashier", icon: UserRoundPlus },
-      { path: "/admin/employees/add/manager", label: "Add Manager", icon: UserRoundPlus },
-      { path: "/admin/employees/add/cleaner", label: "Add Cleaner", icon: UserRoundPlus },
+      // { path: "/admin/employees/add/cashier", label: "Add Cashier", icon: UserRoundPlus },
+      // { path: "/admin/employees/add/manager", label: "Add Manager", icon: UserRoundPlus },
+      // { path: "/admin/employees/add/cleaner", label: "Add Cleaner", icon: UserRoundPlus },
     ],
   },
 
