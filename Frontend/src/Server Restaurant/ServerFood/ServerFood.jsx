@@ -28,8 +28,8 @@ import {
   XCircle,
 } from "lucide-react";
 import toast from "react-hot-toast";
-import api from "../api";
-import { useAuth } from "../PrivateRouter/AuthContext";
+import api from "../../api";
+import { useAuth } from "../../PrivateRouter/AuthContext";
 
 const resolveImageUrl = (img) => {
   if (!img || typeof img !== "string") return "";

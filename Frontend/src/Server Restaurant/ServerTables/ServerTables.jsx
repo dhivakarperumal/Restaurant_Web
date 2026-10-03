@@ -19,8 +19,8 @@ import {
   X,
 } from "lucide-react";
 import toast from "react-hot-toast";
-import api from "../api";
-import { useAuth } from "../PrivateRouter/AuthContext";
+import api from "../../api";
+import { useAuth } from "../../PrivateRouter/AuthContext";
 
 const statusConfig = {
   Available: {
