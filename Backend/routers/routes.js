@@ -22,7 +22,7 @@ const couponsRouter = require('./coupons');
 const reviewsRouter = require('./reviews');
 const videosRouter = require('./videos');
 const settingsRouter = require('./settings');
-const { getKitchenOrders, submitKitchenOrder } = require('../controllers/kitchenOrderController');
+const { changeKitchenOrderStatus, getKitchenOrders, submitKitchenOrder } = require('../controllers/kitchenOrderController');
 
 const router = express.Router();
 const uploadDirectory = path.join(__dirname, '..', 'upload');
@@ -198,7 +198,9 @@ router.post('/employees', optionalAuth, requireEmployeeAdmin, employeeUpload.any
 router.use('/server-tables', optionalAuth, serverTableRouter);
 router.use('/tables', optionalAuth, serverTableRouter);
 router.post('/kitchen-orders', requireKitchenRole(['server']), submitKitchenOrder);
-router.get('/kitchen-orders', requireKitchenRole(['chef', 'super admin', 'admin']), getKitchenOrders);
+router.get('/kitchen-orders', requireKitchenRole(['chef', 'server', 'super admin', 'admin']), getKitchenOrders);
+router.patch('/kitchen-orders/:orderId/status', requireKitchenRole(['chef', 'server', 'super admin', 'admin']), changeKitchenOrderStatus);
+router.put('/kitchen-orders/:orderId/status', requireKitchenRole(['chef', 'server', 'super admin', 'admin']), changeKitchenOrderStatus);
 
 router.post('/upload', upload.single('file'), (req, res) => {
   if (!req.file) {

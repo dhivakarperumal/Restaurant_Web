@@ -3,9 +3,12 @@ import { useLocation, useNavigate } from "react-router-dom";
 import {
   Armchair,
   ArrowRight,
+  Bell,
+  Check,
   CheckCircle2,
   Clock,
   Edit2,
+  Flame,
   Layers,
   LayoutGrid,
   Loader2,
@@ -56,6 +59,8 @@ export default function ServerTables() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [assignmentFilter, setAssignmentFilter] = useState("all");
   const [viewMode, setViewMode] = useState(isAdminTablesPage ? "table" : "grid");
+  const [kitchenOrders, setKitchenOrders] = useState([]);
+  const [updatingOrderId, setUpdatingOrderId] = useState("");
 
   // Modal states
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -69,6 +74,17 @@ export default function ServerTables() {
     status: "Available",
   });
 
+  const fetchKitchenOrders = async () => {
+    try {
+      const res = await api.get("/kitchen-orders");
+      if (res.data?.orders) {
+        setKitchenOrders(res.data.orders);
+      }
+    } catch {
+      // non-blocking
+    }
+  };
+
   const fetchTables = async () => {
     try {
       setLoading(true);
@@ -76,6 +92,7 @@ export default function ServerTables() {
       if (res.data?.success) {
         setTables(res.data.tables || []);
       }
+      fetchKitchenOrders();
     } catch (error) {
       console.error("Error loading server tables:", error);
       toast.error(error.response?.data?.message || "Failed to load server tables");
@@ -86,6 +103,9 @@ export default function ServerTables() {
 
   useEffect(() => {
     fetchTables();
+    fetchKitchenOrders();
+    const interval = window.setInterval(fetchKitchenOrders, 10000);
+    return () => window.clearInterval(interval);
   }, []);
 
   const handleOpenAddModal = () => {
@@ -222,6 +242,49 @@ export default function ServerTables() {
     }
   };
 
+  const handleMarkServed = async (orderId, tableNumber) => {
+    if (!orderId) return;
+    setUpdatingOrderId(orderId);
+    try {
+      const res = await api.patch(`/kitchen-orders/${encodeURIComponent(orderId)}/status`, {
+        status: "Served",
+      });
+      if (res.data?.success) {
+        toast.success(`Table ${tableNumber ? `"${tableNumber}"` : ""} order marked as Served!`);
+        setKitchenOrders((prev) =>
+          prev.map((o) =>
+            (o.kitchen_order_id === orderId || o.order_id === orderId)
+              ? { ...o, status: "Served" }
+              : o
+          )
+        );
+      }
+    } catch (err) {
+      console.error("Failed to mark order as served:", err);
+      toast.error(err.response?.data?.message || "Failed to mark order as served");
+    } finally {
+      setUpdatingOrderId("");
+    }
+  };
+
+  const getTableActiveOrder = (table) => {
+    if (!kitchenOrders || kitchenOrders.length === 0) return null;
+    const tId = table.table_id || table.id;
+    const tNum = String(table.table_number || "").trim().toLowerCase();
+    return kitchenOrders.find((order) => {
+      const isCurrentTable =
+        (order.table_id && (String(order.table_id) === String(tId) || String(order.table_id) === String(table.id))) ||
+        (order.table_number && String(order.table_number).trim().toLowerCase() === tNum);
+      const isNotCompleted = order.status !== "Served" && order.status !== "Cancelled";
+      return isCurrentTable && isNotCompleted;
+    });
+  };
+
+  const readyToServeOrders = useMemo(() => {
+    if (!kitchenOrders) return [];
+    return kitchenOrders.filter((o) => o.status === "Ready to Serve");
+  }, [kitchenOrders]);
+
   const currentServerEmployeeId = userProfile?.employee_id || userProfile?.employeeId;
   const currentUserId = userProfile?.user_id || userProfile?.id || userProfile?.uuid;
   const currentUserName = userProfile?.name || userProfile?.displayName || userProfile?.full_name || userProfile?.username;
@@ -347,6 +410,34 @@ export default function ServerTables() {
           )}
         </div>
       </div>
+
+      {/* Ready to Serve Alert Banner for Servers */}
+      {!isAdminTablesPage && readyToServeOrders.length > 0 && (
+        <div className="bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-700 text-white p-4 rounded-2xl shadow-md border border-emerald-400/40 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 bg-white/20 backdrop-blur-md rounded-xl text-white">
+              <Bell className="w-5 h-5 animate-bounce" />
+            </div>
+            <div>
+              <h4 className="font-bold text-sm sm:text-base flex items-center gap-2">
+                Order Ready for Pickup! 🔔
+                <span className="bg-white text-emerald-800 text-xs font-bold px-2 py-0.5 rounded-full">
+                  {readyToServeOrders.length} {readyToServeOrders.length === 1 ? "Order" : "Orders"}
+                </span>
+              </h4>
+              <p className="text-xs text-emerald-100 mt-0.5">
+                The kitchen has finished cooking for Table(s):{" "}
+                <span className="font-bold text-white underline">
+                  {readyToServeOrders
+                    .map((o) => o.table_number || "Order #" + (o.order_id || o.kitchen_order_id))
+                    .join(", ")}
+                </span>
+                . Please collect from the chef and serve to guests.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Stats Cards */}
       <div className={isAdminTablesPage ? "mb-6 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4" : "grid grid-cols-2 lg:grid-cols-4 gap-4"}>
@@ -528,10 +619,20 @@ export default function ServerTables() {
         <div className={`grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 ${isAdminTablesPage ? "rounded-[18px]" : ""}`}>
           {filteredTables.map((table) => {
             const config = statusConfig[table.status] || statusConfig.Available;
+            const activeOrder = getTableActiveOrder(table);
+            const isReady = activeOrder?.status === "Ready to Serve";
             return (
               <div
                 key={table.table_id || table.id}
-                className={isAdminTablesPage ? "relative flex flex-col justify-between rounded-xl border border-[#e7e0d8] bg-white p-5 shadow-sm transition hover:shadow-md" : "bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition p-5 flex flex-col justify-between relative group"}
+                className={
+                  isAdminTablesPage
+                    ? "relative flex flex-col justify-between rounded-xl border border-[#e7e0d8] bg-white p-5 shadow-sm transition hover:shadow-md"
+                    : `bg-white rounded-2xl border shadow-sm hover:shadow-md transition p-5 flex flex-col justify-between relative group ${
+                        isReady
+                          ? "border-emerald-400 ring-2 ring-emerald-500/40 bg-emerald-50/20"
+                          : "border-gray-100"
+                      }`
+                }
               >
                 <div>
                   {/* Top Bar: Table Number & Status */}
@@ -612,6 +713,76 @@ export default function ServerTables() {
                       </div>
                     )}
                   </div>
+
+                  {/* Active Kitchen Order Status (Server View) */}
+                  {!isAdminTablesPage && activeOrder && (
+                    <div
+                      className={`mb-3 p-3 rounded-xl border text-xs flex flex-col gap-1.5 transition-all ${
+                        activeOrder.status === "Ready to Serve"
+                          ? "bg-emerald-50 border-emerald-300 text-emerald-900 shadow-sm"
+                          : activeOrder.status === "Preparing"
+                          ? "bg-blue-50 border-blue-200 text-blue-900"
+                          : "bg-amber-50 border-amber-200 text-amber-900"
+                      }`}
+                    >
+                      <div className="flex items-center justify-between font-semibold">
+                        <span className="flex items-center gap-1.5">
+                          {activeOrder.status === "Ready to Serve" && (
+                            <Bell className="w-3.5 h-3.5 text-emerald-600 animate-bounce" />
+                          )}
+                          {activeOrder.status === "Preparing" && (
+                            <Flame className="w-3.5 h-3.5 text-blue-600 animate-pulse" />
+                          )}
+                          {activeOrder.status === "Pending" && (
+                            <Clock className="w-3.5 h-3.5 text-amber-600" />
+                          )}
+                          Kitchen:
+                        </span>
+                        <span
+                          className={`px-2 py-0.5 rounded-full text-[11px] font-bold ${
+                            activeOrder.status === "Ready to Serve"
+                              ? "bg-emerald-600 text-white animate-pulse"
+                              : activeOrder.status === "Preparing"
+                              ? "bg-blue-600 text-white"
+                              : "bg-amber-500 text-white"
+                          }`}
+                        >
+                          {activeOrder.status}
+                        </span>
+                      </div>
+
+                      {activeOrder.items && activeOrder.items.length > 0 && (
+                        <div className="text-[11px] text-gray-600 line-clamp-1">
+                          {activeOrder.items
+                            .map((it) => `${it.food_name || it.name || "Item"} × ${it.quantity || 1}`)
+                            .join(", ")}
+                        </div>
+                      )}
+
+                      {activeOrder.status === "Ready to Serve" && (
+                        <button
+                          type="button"
+                          disabled={
+                            updatingOrderId ===
+                            (activeOrder.kitchen_order_id || activeOrder.order_id)
+                          }
+                          onClick={() =>
+                            handleMarkServed(
+                              activeOrder.kitchen_order_id || activeOrder.order_id,
+                              table.table_number
+                            )
+                          }
+                          className="mt-1 w-full py-2 px-3 rounded-lg bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white text-xs font-bold flex items-center justify-center gap-1.5 shadow transition cursor-pointer disabled:opacity-50"
+                        >
+                          <Check className="w-3.5 h-3.5" />
+                          {updatingOrderId ===
+                          (activeOrder.kitchen_order_id || activeOrder.order_id)
+                            ? "Marking as Served..."
+                            : "Mark as Served ✓"}
+                        </button>
+                      )}
+                    </div>
+                  )}
                 </div>
 
                 {/* Status Quick Switch & Actions */}
@@ -686,6 +857,7 @@ export default function ServerTables() {
                   ) : (
                     <>
                       <th className="py-3.5 px-4">Assignment</th>
+                      <th className="py-3.5 px-4">Kitchen Order</th>
                       <th className="py-3.5 px-4 text-right">Quick Status Update</th>
                       <th className="py-3.5 px-4 text-right">Menu</th>
                     </>
@@ -777,6 +949,42 @@ export default function ServerTables() {
                               <UtensilsCrossed className="w-3 h-3 text-[#d4a843]" />
                               Assigned to You
                             </span>
+                          </td>
+                          <td className="py-3 px-4">
+                            {(() => {
+                              const activeOrder = getTableActiveOrder(table);
+                              if (!activeOrder) {
+                                return <span className="text-gray-400 text-xs italic">No active order</span>;
+                              }
+                              return (
+                                <div className="flex items-center gap-2">
+                                  <span
+                                    className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold ${
+                                      activeOrder.status === "Ready to Serve"
+                                        ? "bg-emerald-100 text-emerald-800 border border-emerald-300 font-bold animate-pulse"
+                                        : activeOrder.status === "Preparing"
+                                        ? "bg-blue-100 text-blue-800 border border-blue-200"
+                                        : "bg-amber-100 text-amber-800 border border-amber-200"
+                                    }`}
+                                  >
+                                    {activeOrder.status === "Ready to Serve" && <Bell className="w-3 h-3 text-emerald-600" />}
+                                    {activeOrder.status === "Preparing" && <Flame className="w-3 h-3 text-blue-600" />}
+                                    {activeOrder.status === "Pending" && <Clock className="w-3 h-3 text-amber-600" />}
+                                    {activeOrder.status}
+                                  </span>
+                                  {activeOrder.status === "Ready to Serve" && (
+                                    <button
+                                      type="button"
+                                      disabled={updatingOrderId === (activeOrder.kitchen_order_id || activeOrder.order_id)}
+                                      onClick={() => handleMarkServed(activeOrder.kitchen_order_id || activeOrder.order_id, table.table_number)}
+                                      className="px-2 py-1 rounded bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition flex items-center gap-1 cursor-pointer disabled:opacity-50"
+                                    >
+                                      <Check className="w-3 h-3" /> Mark Served
+                                    </button>
+                                  )}
+                                </div>
+                              );
+                            })()}
                           </td>
                           <td className="py-3 px-4 text-right">
                             <div className="flex items-center justify-end gap-1.5">

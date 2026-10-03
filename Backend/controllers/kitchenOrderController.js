@@ -1,4 +1,6 @@
-const { createKitchenOrder, listKitchenOrders } = require('../modules/kitchenOrders');
+const { createKitchenOrder, listKitchenOrders, updateKitchenOrderStatus } = require('../modules/kitchenOrders');
+
+const ALLOWED_STATUSES = ['Pending', 'Preparing', 'Ready to Serve', 'Served', 'Cancelled'];
 
 async function submitKitchenOrder(req, res) {
   const tableId = String(req.body?.table_id || '').trim();
@@ -34,9 +36,10 @@ async function submitKitchenOrder(req, res) {
   }
 }
 
-async function getKitchenOrders(_req, res) {
+async function getKitchenOrders(req, res) {
   try {
-    const orders = await listKitchenOrders();
+    const { status, table_id } = req.query || {};
+    const orders = await listKitchenOrders({ status, table_id });
     return res.json({ success: true, orders });
   } catch (error) {
     console.error('Failed to load kitchen orders:', error.message);
@@ -44,4 +47,37 @@ async function getKitchenOrders(_req, res) {
   }
 }
 
-module.exports = { getKitchenOrders, submitKitchenOrder };
+async function changeKitchenOrderStatus(req, res) {
+  const { orderId } = req.params;
+  const rawStatus = String(req.body?.status || '').trim();
+
+  const matchedStatus = ALLOWED_STATUSES.find(
+    (s) => s.toLowerCase() === rawStatus.toLowerCase()
+  );
+
+  if (!matchedStatus) {
+    return res.status(400).json({
+      success: false,
+      message: `Invalid status. Allowed statuses are: ${ALLOWED_STATUSES.join(', ')}`,
+    });
+  }
+
+  try {
+    const updatedOrder = await updateKitchenOrderStatus({
+      orderId,
+      status: matchedStatus,
+    });
+
+    if (!updatedOrder) {
+      return res.status(404).json({ success: false, message: 'Kitchen order not found.' });
+    }
+
+    return res.json({ success: true, message: `Order status updated to ${matchedStatus}`, order: updatedOrder });
+  } catch (error) {
+    console.error('Failed to update kitchen order status:', error.message);
+    return res.status(500).json({ success: false, message: 'Could not update kitchen order status.' });
+  }
+}
+
+module.exports = { changeKitchenOrderStatus, getKitchenOrders, submitKitchenOrder };
+

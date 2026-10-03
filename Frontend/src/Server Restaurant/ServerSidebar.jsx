@@ -155,7 +155,7 @@ const ServerSidebar = ({ isOpen, onClose, collapsed, onToggleCollapse }) => {
     navItems.forEach((item) => {
       if (item.children) {
         const isChildActive = item.children.some((child) =>
-          location.pathname === child.path || location.pathname.startsWith(child.path + "/")
+          isRouteActive(child.path, child.exact)
         );
         if (isChildActive) setOpenMenu(item.label);
       }
@@ -163,9 +163,13 @@ const ServerSidebar = ({ isOpen, onClose, collapsed, onToggleCollapse }) => {
   }, [location.pathname]);
 
   const isRouteActive = (path, exact = false) => {
-    if (path === "/admin" || path === "/") return location.pathname === path;
-    if (exact) return location.pathname === path;
-    return location.pathname === path || location.pathname.startsWith(path + "/");
+    const current = (location.pathname || "").replace(/\/+$/, "") || "/";
+    const target = (path || "").replace(/\/+$/, "") || "/";
+
+    if (target === "/server" || target === "/" || exact) {
+      return current === target;
+    }
+    return current === target || current.startsWith(target + "/");
   };
 
   const toggleMenu = (label) => setOpenMenu(openMenu === label ? null : label);
@@ -230,7 +234,7 @@ const ServerSidebar = ({ isOpen, onClose, collapsed, onToggleCollapse }) => {
             /* ===== DROPDOWN ITEM ===== */
             if (item.children) {
               const isMenuOpen = openMenu === item.label;
-              const isAnyChildActive = item.children.some((c) => isRouteActive(c.path));
+              const isAnyChildActive = item.children.some((c) => isRouteActive(c.path, c.exact));
 
               return (
                 <div key={item.label} className="space-y-1">
@@ -266,12 +270,12 @@ const ServerSidebar = ({ isOpen, onClose, collapsed, onToggleCollapse }) => {
                       {item.children.map((sub) => {
                         const SubIcon = sub.icon;
                         const isActive =
-                          isRouteActive(sub.path) &&
+                          isRouteActive(sub.path, sub.exact) &&
                           !item.children.some(
                             (other) =>
                               other.path !== sub.path &&
                               other.path.length > sub.path.length &&
-                              isRouteActive(other.path),
+                              isRouteActive(other.path, other.exact),
                           );
 
 
@@ -307,7 +311,7 @@ const ServerSidebar = ({ isOpen, onClose, collapsed, onToggleCollapse }) => {
             }
 
             /* ===== NORMAL ITEM ===== */
-            const isActive = isRouteActive(item.path);
+            const isActive = isRouteActive(item.path, item.exact);
             return (
               <NavLink
                 key={item.path}

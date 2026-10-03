@@ -125,11 +125,41 @@ async function createKitchenOrder({ tableId, userId, items }) {
   }
 }
 
-async function listKitchenOrders() {
-  const [orders] = await db.execute(
-    `SELECT order_id, table_id, table_number, status, created_by, created_at
-     FROM kitchen_orders ORDER BY created_at DESC LIMIT 100`
+async function updateKitchenOrderStatus({ orderId, status }) {
+  const [result] = await db.execute(
+    `UPDATE kitchen_orders SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE order_id = ?`,
+    [status, orderId]
   );
+  if (result.affectedRows === 0) return null;
+
+  const [orders] = await db.execute(
+    `SELECT order_id, table_id, table_number, status, created_by, created_at, updated_at
+     FROM kitchen_orders WHERE order_id = ? LIMIT 1`,
+    [orderId]
+  );
+  return orders[0] || null;
+}
+
+async function listKitchenOrders(filters = {}) {
+  let query = `SELECT order_id, table_id, table_number, status, created_by, created_at, updated_at
+               FROM kitchen_orders`;
+  const conditions = [];
+  const params = [];
+
+  if (filters.status) {
+    conditions.push('status = ?');
+    params.push(filters.status);
+  }
+  if (filters.table_id) {
+    conditions.push('table_id = ?');
+    params.push(filters.table_id);
+  }
+  if (conditions.length > 0) {
+    query += ` WHERE ${conditions.join(' AND ')}`;
+  }
+  query += ` ORDER BY created_at DESC LIMIT 100`;
+
+  const [orders] = await db.execute(query, params);
   if (!orders.length) return [];
 
   const orderIds = orders.map((order) => order.order_id);
@@ -157,4 +187,5 @@ async function listKitchenOrders() {
   }));
 }
 
-module.exports = { createKitchenOrder, initializeKitchenOrderSchema, listKitchenOrders };
+module.exports = { createKitchenOrder, initializeKitchenOrderSchema, listKitchenOrders, updateKitchenOrderStatus };
+
