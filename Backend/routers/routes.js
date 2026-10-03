@@ -23,6 +23,7 @@ const reviewsRouter = require('./reviews');
 const videosRouter = require('./videos');
 const settingsRouter = require('./settings');
 const { changeKitchenOrderStatus, getKitchenOrders, submitKitchenOrder } = require('../controllers/kitchenOrderController');
+const { getActiveBill, getAllBills, getBill, settleBill } = require('../controllers/tableBillController');
 
 const router = express.Router();
 const uploadDirectory = path.join(__dirname, '..', 'upload');
@@ -201,6 +202,11 @@ router.post('/kitchen-orders', requireKitchenRole(['server']), submitKitchenOrde
 router.get('/kitchen-orders', requireKitchenRole(['chef', 'server', 'super admin', 'admin']), getKitchenOrders);
 router.patch('/kitchen-orders/:orderId/status', requireKitchenRole(['chef', 'server', 'super admin', 'admin']), changeKitchenOrderStatus);
 router.put('/kitchen-orders/:orderId/status', requireKitchenRole(['chef', 'server', 'super admin', 'admin']), changeKitchenOrderStatus);
+
+router.get('/table-bills/active/:tableId', requireKitchenRole(['server', 'super admin', 'admin']), getActiveBill);
+router.get('/table-bills/:billId', requireKitchenRole(['server', 'super admin', 'admin']), getBill);
+router.post('/table-bills/:billId/settle', requireKitchenRole(['server', 'super admin', 'admin']), settleBill);
+router.get('/table-bills', requireKitchenRole(['server', 'super admin', 'admin']), getAllBills);
 
 router.post('/upload', upload.single('file'), (req, res) => {
   if (!req.file) {

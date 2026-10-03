@@ -8,11 +8,13 @@ import {
   CheckCircle2,
   Clock,
   Edit2,
+  FileText,
   Flame,
   Layers,
   LayoutGrid,
   Loader2,
   Plus,
+  Printer,
   RefreshCw,
   Search,
   Table2,
@@ -61,6 +63,12 @@ export default function ServerTables() {
   const [viewMode, setViewMode] = useState(isAdminTablesPage ? "table" : "grid");
   const [kitchenOrders, setKitchenOrders] = useState([]);
   const [updatingOrderId, setUpdatingOrderId] = useState("");
+  const [activeBills, setActiveBills] = useState([]);
+  const [viewingBill, setViewingBill] = useState(null);
+  const [loadingBillDetails, setLoadingBillDetails] = useState(false);
+  const [settlingBill, setSettlingBill] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState("Cash");
+  const [settleDiscount, setSettleDiscount] = useState(0);
 
   // Modal states
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -73,6 +81,17 @@ export default function ServerTables() {
     no_of_seats: "",
     status: "Available",
   });
+
+  const fetchActiveBills = async () => {
+    try {
+      const res = await api.get("/table-bills?status=Active");
+      if (res.data?.bills) {
+        setActiveBills(res.data.bills);
+      }
+    } catch {
+      // non-blocking
+    }
+  };
 
   const fetchKitchenOrders = async () => {
     try {
@@ -93,6 +112,7 @@ export default function ServerTables() {
         setTables(res.data.tables || []);
       }
       fetchKitchenOrders();
+      fetchActiveBills();
     } catch (error) {
       console.error("Error loading server tables:", error);
       toast.error(error.response?.data?.message || "Failed to load server tables");
@@ -104,7 +124,11 @@ export default function ServerTables() {
   useEffect(() => {
     fetchTables();
     fetchKitchenOrders();
-    const interval = window.setInterval(fetchKitchenOrders, 10000);
+    fetchActiveBills();
+    const interval = window.setInterval(() => {
+      fetchKitchenOrders();
+      fetchActiveBills();
+    }, 10000);
     return () => window.clearInterval(interval);
   }, []);
 
@@ -284,6 +308,72 @@ export default function ServerTables() {
     if (!kitchenOrders) return [];
     return kitchenOrders.filter((o) => o.status === "Ready to Serve");
   }, [kitchenOrders]);
+
+  const getTableActiveBill = (table) => {
+    if (!activeBills || activeBills.length === 0) return null;
+    const tId = table.table_id || table.id;
+    const tNum = String(table.table_number || "").trim().toLowerCase();
+    return activeBills.find((b) =>
+      (b.table_id && (String(b.table_id) === String(tId) || String(b.table_id) === String(table.id))) ||
+      (b.table_number && String(b.table_number).trim().toLowerCase() === tNum)
+    );
+  };
+
+  const handleOpenBillModal = async (tableOrBill) => {
+    try {
+      setLoadingBillDetails(true);
+      let billId = tableOrBill.bill_id;
+      if (!billId) {
+        const found = getTableActiveBill(tableOrBill);
+        billId = found?.bill_id;
+      }
+      if (!billId) {
+        const tId = tableOrBill.table_id || tableOrBill.id;
+        const res = await api.get(`/table-bills/active/${tId}`);
+        if (res.data?.bill) {
+          setViewingBill(res.data.bill);
+          setSettleDiscount(res.data.bill.discount || 0);
+          setPaymentMethod(res.data.bill.payment_method || "Cash");
+          return;
+        }
+        toast.error("No active bill found for this table");
+        return;
+      }
+
+      const res = await api.get(`/table-bills/${billId}`);
+      if (res.data?.bill) {
+        setViewingBill(res.data.bill);
+        setSettleDiscount(res.data.bill.discount || 0);
+        setPaymentMethod(res.data.bill.payment_method || "Cash");
+      }
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Could not load bill details");
+    } finally {
+      setLoadingBillDetails(false);
+    }
+  };
+
+  const handleSettleBill = async () => {
+    if (!viewingBill) return;
+    try {
+      setSettlingBill(true);
+      const res = await api.post(`/table-bills/${viewingBill.bill_id}/settle`, {
+        payment_method: paymentMethod,
+        discount: Number(settleDiscount) || 0,
+      });
+      if (res.data?.success) {
+        toast.success(`Bill #${viewingBill.bill_number} settled for Table ${viewingBill.table_number}. Table is now Available!`);
+        setViewingBill(null);
+        fetchTables();
+        fetchActiveBills();
+        fetchKitchenOrders();
+      }
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Failed to settle bill");
+    } finally {
+      setSettlingBill(false);
+    }
+  };
 
   const currentServerEmployeeId = userProfile?.employee_id || userProfile?.employeeId;
   const currentUserId = userProfile?.user_id || userProfile?.id || userProfile?.uuid;
@@ -620,6 +710,7 @@ export default function ServerTables() {
           {filteredTables.map((table) => {
             const config = statusConfig[table.status] || statusConfig.Available;
             const activeOrder = getTableActiveOrder(table);
+            const activeBill = getTableActiveBill(table);
             const isReady = activeOrder?.status === "Ready to Serve";
             return (
               <div
@@ -825,13 +916,30 @@ export default function ServerTables() {
                     </div>
                   )}
                   {!isAdminTablesPage && (
-                    <button
-                      type="button"
-                      onClick={() => selectTableForOrder(table)}
-                      className="mt-2 inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-[#1a3c36] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#214a42]"
-                    >
-                      Select Table <ArrowRight className="h-4 w-4" />
-                    </button>
+                    <div className="flex flex-col gap-2 mt-2">
+                      {activeBill && (
+                        <button
+                          type="button"
+                          onClick={() => handleOpenBillModal(table)}
+                          className="inline-flex w-full cursor-pointer items-center justify-between rounded-xl border border-emerald-300 bg-emerald-50 px-3 py-2 text-xs font-bold text-emerald-900 transition hover:bg-emerald-100 shadow-sm"
+                        >
+                          <span className="flex items-center gap-1.5">
+                            <FileText className="h-3.5 w-3.5 text-emerald-700" />
+                            Bill #{activeBill.bill_number}
+                          </span>
+                          <span className="font-mono text-emerald-800 text-[11px]">
+                            ₹{Number(activeBill.grand_total || 0).toFixed(0)} ({activeBill.total_items_count || "Items"}) · View & Settle
+                          </span>
+                        </button>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => selectTableForOrder(table)}
+                        className="inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-[#1a3c36] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#214a42]"
+                      >
+                        {activeBill ? "+ Add Round / Items" : "Select Table & Order"} <ArrowRight className="h-4 w-4" />
+                      </button>
+                    </div>
                   )}
                 </div>
               </div>
@@ -1004,13 +1112,31 @@ export default function ServerTables() {
                             </div>
                           </td>
                           <td className="py-3 px-4 text-right">
-                            <button
-                              type="button"
-                              onClick={() => selectTableForOrder(table)}
-                              className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg bg-[#1a3c36] px-3 py-2 text-xs font-semibold text-white transition hover:bg-[#214a42]"
-                            >
-                              Select Table <ArrowRight className="h-3.5 w-3.5" />
-                            </button>
+                            <div className="flex items-center justify-end gap-2">
+                              {(() => {
+                                const activeBill = getTableActiveBill(table);
+                                return (
+                                  <>
+                                    {activeBill && (
+                                      <button
+                                        type="button"
+                                        onClick={() => handleOpenBillModal(table)}
+                                        className="inline-flex cursor-pointer items-center gap-1 rounded-lg border border-emerald-300 bg-emerald-50 px-2.5 py-1.5 text-xs font-bold text-emerald-800 transition hover:bg-emerald-100"
+                                      >
+                                        <FileText className="h-3.5 w-3.5" /> Bill #{activeBill.bill_number} (₹{Number(activeBill.grand_total || 0).toFixed(0)})
+                                      </button>
+                                    )}
+                                    <button
+                                      type="button"
+                                      onClick={() => selectTableForOrder(table)}
+                                      className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg bg-[#1a3c36] px-3 py-2 text-xs font-semibold text-white transition hover:bg-[#214a42]"
+                                    >
+                                      {activeBill ? "+ Add Round" : "Select Table"} <ArrowRight className="h-3.5 w-3.5" />
+                                    </button>
+                                  </>
+                                );
+                              })()}
+                            </div>
                           </td>
                         </>
                       )}
@@ -1149,6 +1275,169 @@ export default function ServerTables() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Table Bill & Settlement Modal */}
+      {viewingBill && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in overflow-y-auto">
+          <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-gray-100 relative my-8">
+            <button
+              onClick={() => !settlingBill && setViewingBill(null)}
+              className="absolute right-4 top-4 p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition cursor-pointer"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            {/* Bill Header */}
+            <div className="border-b border-gray-100 pb-4 mb-4">
+              <div className="flex items-center gap-2 mb-1">
+                <span className="p-2 rounded-xl bg-[#1f3228] text-[#d4a843]">
+                  <UtensilsCrossed className="w-4 h-4" />
+                </span>
+                <div>
+                  <h3 className="text-lg font-bold text-gray-900 font-serif">
+                    Table Dining Bill
+                  </h3>
+                  <p className="text-xs text-gray-500 font-mono">
+                    Bill #{viewingBill.bill_number}
+                  </p>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-2 mt-3 p-3 bg-gray-50 rounded-xl text-xs text-gray-600">
+                <div>
+                  <span className="text-gray-400 block text-[10px]">Table</span>
+                  <strong className="text-gray-900 text-sm">Table {viewingBill.table_number}</strong>
+                </div>
+                <div>
+                  <span className="text-gray-400 block text-[10px]">Server</span>
+                  <strong className="text-gray-900">{viewingBill.server_name || "Assigned Server"}</strong>
+                </div>
+                <div>
+                  <span className="text-gray-400 block text-[10px]">Date & Time</span>
+                  <span>{new Date(viewingBill.created_at).toLocaleString("en-IN", { dateStyle: "short", timeStyle: "short" })}</span>
+                </div>
+                <div>
+                  <span className="text-gray-400 block text-[10px]">Bill Status</span>
+                  <span className={`inline-block px-2 py-0.5 rounded font-bold text-[11px] ${viewingBill.status === 'Paid' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'}`}>
+                    {viewingBill.status === 'Paid' ? 'PAID' : 'ACTIVE / OPEN'}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Rounds & Items Breakdown */}
+            <div className="max-h-64 overflow-y-auto space-y-3 mb-4 pr-1">
+              {viewingBill.rounds && viewingBill.rounds.length > 0 ? (
+                viewingBill.rounds.map((round) => (
+                  <div key={round.order_id} className="border border-gray-100 rounded-xl p-3 bg-gray-50/50">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-xs font-bold text-purple-900 bg-purple-100 px-2 py-0.5 rounded">
+                        Round {round.round_number} {round.round_number > 1 ? "(Add-on)" : "(Initial Order)"}
+                      </span>
+                      <span className="text-[11px] text-gray-500 font-medium">
+                        {round.status}
+                      </span>
+                    </div>
+                    <div className="divide-y divide-gray-100">
+                      {round.items.map((item) => (
+                        <div key={item.id} className="py-1.5 flex justify-between items-center text-xs">
+                          <div>
+                            <span className="font-semibold text-gray-800">{item.food_name}</span>
+                            <span className="text-gray-500 ml-2">× {item.quantity}</span>
+                          </div>
+                          <span className="font-mono text-gray-700">₹{item.total_price.toFixed(2)}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="text-center py-6 text-xs text-gray-400">No items on this bill yet.</div>
+              )}
+            </div>
+
+            {/* Calculations Breakdown */}
+            <div className="border-t border-gray-100 pt-3 space-y-1.5 text-xs text-gray-600 mb-4">
+              <div className="flex justify-between">
+                <span>Subtotal ({viewingBill.total_items_count} items):</span>
+                <span className="font-mono">₹{viewingBill.subtotal.toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between">
+                <span>GST (5%):</span>
+                <span className="font-mono">₹{viewingBill.tax_amount.toFixed(2)}</span>
+              </div>
+              {viewingBill.status !== 'Paid' && (
+                <div className="flex justify-between items-center py-1">
+                  <span>Discount (₹):</span>
+                  <input
+                    type="number"
+                    min="0"
+                    max={viewingBill.subtotal}
+                    value={settleDiscount}
+                    onChange={(e) => setSettleDiscount(e.target.value)}
+                    className="w-20 px-2 py-1 text-right text-xs border border-gray-200 rounded-lg outline-none focus:border-[#1a3c36]"
+                  />
+                </div>
+              )}
+              <div className="flex justify-between text-base font-bold text-gray-900 pt-2 border-t border-gray-200">
+                <span>Grand Total:</span>
+                <span className="font-mono text-emerald-800">
+                  ₹{Math.max(0, viewingBill.subtotal + viewingBill.tax_amount - (Number(settleDiscount) || 0)).toFixed(2)}
+                </span>
+              </div>
+            </div>
+
+            {/* Payment & Actions */}
+            {viewingBill.status !== 'Paid' ? (
+              <div className="space-y-3 pt-2 border-t border-gray-100">
+                <div>
+                  <label className="block text-xs font-semibold text-gray-700 mb-1.5">
+                    Payment Method:
+                  </label>
+                  <div className="grid grid-cols-3 gap-2">
+                    {["Cash", "UPI", "Card"].map((method) => (
+                      <button
+                        key={method}
+                        type="button"
+                        onClick={() => setPaymentMethod(method)}
+                        className={`py-2 px-3 text-xs font-bold rounded-xl border transition cursor-pointer ${
+                          paymentMethod === method
+                            ? "bg-[#1a3c36] text-white border-[#1a3c36] shadow-sm"
+                            : "bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100"
+                        }`}
+                      >
+                        {method}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => window.print()}
+                    className="flex-1 py-2.5 px-3 rounded-xl border border-gray-300 text-gray-700 hover:bg-gray-50 text-xs font-bold flex items-center justify-center gap-1.5 transition cursor-pointer"
+                  >
+                    <Printer className="w-3.5 h-3.5" /> Print Receipt
+                  </button>
+                  <button
+                    type="button"
+                    disabled={settlingBill}
+                    onClick={handleSettleBill}
+                    className="flex-1 py-2.5 px-3 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold flex items-center justify-center gap-1.5 shadow transition cursor-pointer disabled:opacity-50"
+                  >
+                    {settlingBill ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
+                    Settle & Free Table ✓
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-center text-xs text-emerald-800 font-semibold">
+                ✓ Bill Settled & Paid via {viewingBill.payment_method || "Cash"}
+              </div>
+            )}
           </div>
         </div>
       )}

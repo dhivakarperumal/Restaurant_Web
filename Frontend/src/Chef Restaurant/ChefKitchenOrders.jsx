@@ -283,13 +283,24 @@ const ChefKitchenOrders = () => {
                     {/* Header */}
                     <div className="flex items-start justify-between border-b border-[#f0ebe6] pb-3.5">
                       <div>
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 flex-wrap">
                           <span className="rounded-lg bg-[#1a3c36] px-2.5 py-1 font-serif text-sm font-bold text-white">
                             Table {order.table_number}
                           </span>
-                          <span className="font-mono text-[11px] font-semibold text-gray-500">
-                            #{order.order_id.slice(0, 8).toUpperCase()}
+                          <span
+                            className={`px-2 py-0.5 rounded-md text-[11px] font-bold ${
+                              order.round_number > 1
+                                ? "bg-purple-100 text-purple-800 border border-purple-300"
+                                : "bg-emerald-100 text-emerald-800 border border-emerald-200"
+                            }`}
+                          >
+                            {order.round_number > 1 ? `Round ${order.round_number} (Add-on)` : "Round 1"}
                           </span>
+                          {order.bill_number && (
+                            <span className="font-mono text-[11px] font-bold text-gray-600 bg-gray-100 px-2 py-0.5 rounded">
+                              {order.bill_number}
+                            </span>
+                          )}
                         </div>
                         <p className="mt-1.5 flex items-center gap-1.5 text-xs text-gray-400">
                           <Clock3 className="h-3 w-3" />

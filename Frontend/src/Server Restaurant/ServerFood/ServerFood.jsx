@@ -62,10 +62,28 @@ export default function ServerFood() {
   const [viewMode, setViewMode] = useState("grid"); // 'grid' | 'table'
   const [cart, setCart] = useState({});
   const [submittingOrder, setSubmittingOrder] = useState(false);
+  const [activeBill, setActiveBill] = useState(null);
+  const [showBillItems, setShowBillItems] = useState(false);
 
   // View Details Modal
   const [viewingFood, setViewingFood] = useState(null);
   const [activeImageIndex, setActiveImageIndex] = useState(0);
+
+  const fetchActiveBill = async () => {
+    if (!selectedTable?.table_id) return;
+    try {
+      const res = await api.get(`/table-bills/active/${selectedTable.table_id}`);
+      if (res.data?.success) {
+        setActiveBill(res.data.bill || null);
+      }
+    } catch {
+      // non-blocking
+    }
+  };
+
+  useEffect(() => {
+    fetchActiveBill();
+  }, [selectedTable?.table_id]);
 
   const fetchFoodsAndCategories = async () => {
     try {
@@ -241,7 +259,14 @@ export default function ServerFood() {
         })),
       });
       setCart({});
-      toast.success(`Order sent to kitchen for ${response.data?.order?.table_number || selectedTable.table_number}`);
+      const roundNum = response.data?.order?.round_number || (activeBill ? (activeBill.rounds?.length || 1) + 1 : 1);
+      const billNum = response.data?.order?.bill_number || activeBill?.bill_number;
+      if (roundNum > 1) {
+        toast.success(`Round ${roundNum} (Add-on) added to Bill ${billNum ? `#${billNum}` : ''} for Table ${selectedTable.table_number}!`);
+      } else {
+        toast.success(`Order sent to kitchen for Table ${selectedTable.table_number}! Bill ${billNum ? `#${billNum}` : ''} opened.`);
+      }
+      fetchActiveBill();
     } catch (error) {
       toast.error(error.response?.data?.message || "Could not send this order to the kitchen.");
     } finally {
@@ -289,6 +314,56 @@ export default function ServerFood() {
         </div>
       </div>
 
+      {/* Active Dining Bill Banner for Table (Consolidating Rounds) */}
+      {selectedTable && activeBill && (
+        <div className="rounded-2xl border border-blue-200 bg-gradient-to-r from-blue-900 via-indigo-900 to-slate-900 p-4 text-white shadow-sm">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-center gap-3">
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white/10 text-amber-300">
+                <Sparkles className="h-6 w-6" />
+              </div>
+              <div>
+                <h4 className="flex flex-wrap items-center gap-2 text-sm font-bold sm:text-base">
+                  Active Bill #{activeBill.bill_number} for Table {selectedTable.table_number}
+                  <span className="rounded-full bg-amber-400 px-2 py-0.5 text-[11px] font-extrabold text-amber-950">
+                    Round {(activeBill.rounds?.length || 1) + 1} Add-on
+                  </span>
+                </h4>
+                <p className="mt-0.5 text-xs text-blue-200">
+                  {activeBill.total_items_count} item{activeBill.total_items_count === 1 ? "" : "s"} already ordered (Running Total: ₹{activeBill.grand_total.toFixed(2)}).
+                  Any additional dishes selected now will be added to the <strong className="text-white">SAME bill</strong>.
+                </p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => setShowBillItems((prev) => !prev)}
+              className="self-start rounded-xl border border-white/20 bg-white/10 px-3.5 py-1.5 text-xs font-semibold text-white transition hover:bg-white/20 sm:self-auto cursor-pointer"
+            >
+              {showBillItems ? "Hide Ordered Items ▲" : "View Ordered Items ▼"}
+            </button>
+          </div>
+
+          {showBillItems && (
+            <div className="mt-3 rounded-xl border border-blue-400/30 bg-black/20 p-3">
+              <p className="mb-2 text-xs font-bold text-blue-200 uppercase tracking-wider">
+                Previously Ordered Items on this Bill:
+              </p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
+                {activeBill.consolidated_items?.map((it) => (
+                  <div key={it.food_id} className="rounded-lg bg-white/10 p-2 text-xs flex justify-between items-center">
+                    <div>
+                      <p className="font-semibold text-white">{it.food_name}</p>
+                      <p className="text-[11px] text-blue-200">{it.quantity} × ₹{it.unit_price}</p>
+                    </div>
+                    <span className="font-bold text-amber-300">₹{it.total_price.toFixed(2)}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Stats Summary Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -854,12 +929,29 @@ export default function ServerFood() {
                 <ShoppingCart className="h-5 w-5" />
               </div>
               <div>
-                <h2 className="text-base font-bold text-gray-900">Order for {selectedTable.table_number}</h2>
-                <p className="text-xs text-gray-500">{cartQuantity} item{cartQuantity === 1 ? "" : "s"} selected</p>
+                <h2 className="text-base font-bold text-gray-900 flex items-center gap-2 flex-wrap">
+                  Order for {selectedTable.table_number}
+                  {activeBill && (
+                    <span className="text-xs font-bold text-purple-800 bg-purple-100 border border-purple-300 px-2 py-0.5 rounded-full">
+                      Same Bill: #{activeBill.bill_number} (Round {(activeBill.rounds?.length || 1) + 1})
+                    </span>
+                  )}
+                </h2>
+                <p className="text-xs text-gray-500">
+                  {cartQuantity} item{cartQuantity === 1 ? "" : "s"} selected
+                  {activeBill ? ` · ${activeBill.total_items_count} items previously ordered` : ""}
+                </p>
               </div>
             </div>
-            <div className="flex items-center gap-3">
-              <p className="text-sm font-bold text-gray-900">Total: ₹{cartTotal.toFixed(2)}</p>
+            <div className="flex items-center gap-3 flex-wrap">
+              <div className="text-right">
+                <p className="text-sm font-bold text-gray-900">This Round: ₹{cartTotal.toFixed(2)}</p>
+                {activeBill && (
+                  <p className="text-[11px] text-gray-500">
+                    Est. Total: ₹{(Number(activeBill.grand_total || 0) + cartTotal * 1.05).toFixed(2)}
+                  </p>
+                )}
+              </div>
               <button
                 type="button"
                 onClick={submitOrder}
@@ -867,7 +959,11 @@ export default function ServerFood() {
                 className="inline-flex h-10 cursor-pointer items-center justify-center gap-2 rounded-xl bg-[#1a3c36] px-4 text-sm font-semibold text-white transition hover:bg-[#214a42] disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {submittingOrder ? <Loader2 className="h-4 w-4 animate-spin" /> : <ShoppingCart className="h-4 w-4" />}
-                {submittingOrder ? "Sending..." : "Send Order to Kitchen"}
+                {submittingOrder
+                  ? "Sending..."
+                  : activeBill
+                  ? `Add to Bill (Round ${(activeBill.rounds?.length || 1) + 1}) 🍳`
+                  : "Send Order to Kitchen (Round 1) 🍳"}
               </button>
             </div>
           </div>

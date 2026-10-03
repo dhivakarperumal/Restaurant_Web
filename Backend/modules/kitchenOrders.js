@@ -1,5 +1,10 @@
 const { randomUUID } = require('crypto');
 const db = require('../config/db');
+const {
+  findOrCreateActiveBill,
+  initializeTableBillsSchema,
+  recalculateBillTotals,
+} = require('./tableBills');
 
 async function initializeKitchenOrderSchema() {
   await db.query(`
@@ -32,6 +37,8 @@ async function initializeKitchenOrderSchema() {
         REFERENCES kitchen_orders (order_id) ON DELETE CASCADE
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
   `);
+
+  await initializeTableBillsSchema();
 }
 
 async function createKitchenOrder({ tableId, userId, items }) {
@@ -83,10 +90,33 @@ async function createKitchenOrder({ tableId, userId, items }) {
     }
 
     const table = tableRows[0];
+
+    // Resolve server name for billing
+    const [userRows] = await connection.execute(
+      'SELECT name, username FROM users WHERE user_id = ? LIMIT 1',
+      [userId]
+    );
+    const serverName = userRows[0]?.name || userRows[0]?.username || 'Server';
+
+    // Find or create active table bill (consolidates multiple rounds for this table session)
+    const activeBill = await findOrCreateActiveBill(connection, {
+      tableId: table.table_id,
+      tableNumber: table.table_number,
+      serverId: userId,
+      serverName,
+    });
+
+    // Determine round number for this bill
+    const [existingOrders] = await connection.execute(
+      `SELECT COUNT(*) AS count FROM kitchen_orders WHERE bill_id = ?`,
+      [activeBill.bill_id]
+    );
+    const roundNumber = Number(existingOrders[0]?.count || 0) + 1;
+
     await connection.execute(
-      `INSERT INTO kitchen_orders (order_id, table_id, table_number, status, created_by)
-       VALUES (?, ?, ?, 'Pending', ?)`,
-      [orderId, table.table_id, table.table_number, userId]
+      `INSERT INTO kitchen_orders (order_id, bill_id, round_number, table_id, table_number, status, created_by)
+       VALUES (?, ?, ?, ?, ?, 'Pending', ?)`,
+      [orderId, activeBill.bill_id, roundNumber, table.table_id, table.table_number, userId]
     );
 
     for (const item of items) {
@@ -97,6 +127,15 @@ async function createKitchenOrder({ tableId, userId, items }) {
         [orderId, food.food_id, food.food_name, item.quantity, food.final_price]
       );
     }
+
+    // Ensure table status is set to Occupied
+    await connection.execute(
+      `UPDATE server_table SET status = 'Occupied' WHERE table_id = ? AND status = 'Available'`,
+      [table.table_id]
+    );
+
+    // Recalculate bill totals
+    const billTotals = await recalculateBillTotals(connection, activeBill.bill_id);
 
     await connection.commit();
     const orderItems = items.map((item) => {
@@ -110,12 +149,21 @@ async function createKitchenOrder({ tableId, userId, items }) {
     });
     return {
       order_id: orderId,
+      bill_id: activeBill.bill_id,
+      bill_number: activeBill.bill_number,
+      round_number: roundNumber,
       table_id: table.table_id,
       table_number: table.table_number,
       status: 'Pending',
       created_by: userId,
       created_at: new Date(),
       items: orderItems,
+      bill: {
+        bill_id: activeBill.bill_id,
+        bill_number: activeBill.bill_number,
+        round_number: roundNumber,
+        ...billTotals,
+      },
     };
   } catch (error) {
     await connection.rollback();
@@ -133,7 +181,7 @@ async function updateKitchenOrderStatus({ orderId, status }) {
   if (result.affectedRows === 0) return null;
 
   const [orders] = await db.execute(
-    `SELECT order_id, table_id, table_number, status, created_by, created_at, updated_at
+    `SELECT order_id, bill_id, round_number, table_id, table_number, status, created_by, created_at, updated_at
      FROM kitchen_orders WHERE order_id = ? LIMIT 1`,
     [orderId]
   );
@@ -141,23 +189,26 @@ async function updateKitchenOrderStatus({ orderId, status }) {
 }
 
 async function listKitchenOrders(filters = {}) {
-  let query = `SELECT order_id, table_id, table_number, status, created_by, created_at, updated_at
-               FROM kitchen_orders`;
+  let query = `SELECT ko.order_id, ko.bill_id, ko.round_number, ko.table_id, ko.table_number,
+                      ko.status, ko.created_by, ko.created_at, ko.updated_at,
+                      tb.bill_number, tb.status AS bill_status
+               FROM kitchen_orders ko
+               LEFT JOIN table_bills tb ON ko.bill_id = tb.bill_id`;
   const conditions = [];
   const params = [];
 
   if (filters.status) {
-    conditions.push('status = ?');
+    conditions.push('ko.status = ?');
     params.push(filters.status);
   }
   if (filters.table_id) {
-    conditions.push('table_id = ?');
+    conditions.push('ko.table_id = ?');
     params.push(filters.table_id);
   }
   if (conditions.length > 0) {
     query += ` WHERE ${conditions.join(' AND ')}`;
   }
-  query += ` ORDER BY created_at DESC LIMIT 100`;
+  query += ` ORDER BY ko.created_at DESC LIMIT 100`;
 
   const [orders] = await db.execute(query, params);
   if (!orders.length) return [];
@@ -183,6 +234,7 @@ async function listKitchenOrders(filters = {}) {
 
   return orders.map((order) => ({
     ...order,
+    round_number: order.round_number || 1,
     items: itemsByOrder.get(order.order_id) || [],
   }));
 }
