@@ -41,7 +41,7 @@ import ChefDashboard from './Chef Restaurant/ChefDashboard.jsx'
 import ChefKitchenOrders from './Chef Restaurant/ChefKitchenOrders.jsx'
 import ChefLayout from './Chef Restaurant/Chefpanel.jsx'
 import ServerDashboard from './Server Restaurant/ServerDashboard.jsx'
-import ServerFoods from './Server Restaurant/ServerFoods.jsx'
+import ServerFood from './Server Restaurant/ServerFood.jsx'
 import ServerTables from './Server Restaurant/ServerTables.jsx'
 import ServerLayout from './Server Restaurant/Serverpanel.jsx'
 import DeliveryDashboard from './Delivery Restaurant/DeliveryDashboard.jsx'
@@ -242,7 +242,7 @@ const router = createHashRouter([
           },
           {
             path: 'foods',
-            element: <ServerFoods />,
+            element: <ServerFood />,
           },
           {
             path: 'tables',
