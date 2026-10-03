@@ -73,7 +73,7 @@ const navItems = [
   /* ---- FOODS ---- */
   {
     path: "/server/foods",
-    label: "Foods (View Only)",
+    label: "Foods",
     icon: Package,
   },
 
