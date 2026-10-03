@@ -92,11 +92,22 @@ async function createKitchenOrder({ tableId, userId, items }) {
     const table = tableRows[0];
 
     // Resolve server name for billing
-    const [userRows] = await connection.execute(
-      'SELECT name, username FROM users WHERE user_id = ? LIMIT 1',
+    let serverName = 'Server';
+    const [employeeNameRows] = await connection.execute(
+      'SELECT full_name FROM employees WHERE user_id = ? LIMIT 1',
       [userId]
     );
-    const serverName = userRows[0]?.name || userRows[0]?.username || 'Server';
+    if (employeeNameRows.length > 0 && employeeNameRows[0].full_name) {
+      serverName = employeeNameRows[0].full_name;
+    } else {
+      const [userRows] = await connection.execute(
+        'SELECT username FROM users WHERE user_id = ? LIMIT 1',
+        [userId]
+      );
+      if (userRows.length > 0 && userRows[0].username) {
+        serverName = userRows[0].username;
+      }
+    }
 
     // Find or create active table bill (consolidates multiple rounds for this table session)
     const activeBill = await findOrCreateActiveBill(connection, {
