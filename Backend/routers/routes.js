@@ -10,6 +10,7 @@ const {
   getEmployee,
   listEmployees,
   updateEmployee,
+  updateEmployeeStatus,
 } = require('../controllers/employeeController');
 const { findUserByToken } = require('../modules/auth');
 const serverTableRouter = require('./serverTableRouter');
@@ -188,6 +189,8 @@ router.get('/employees/documents/:filename', optionalAuth, requireEmployeeAdmin,
   return downloadFromDirectory(employeeUploadDirectory);
 });
 router.get('/employees/:employeeId', optionalAuth, requireEmployeeAdmin, getEmployee);
+router.patch('/employees/:employeeId/status', optionalAuth, requireEmployeeAdmin, updateEmployeeStatus);
+router.put('/employees/:employeeId/status', optionalAuth, requireEmployeeAdmin, updateEmployeeStatus);
 router.put('/employees/:employeeId', optionalAuth, requireEmployeeAdmin, employeeUpload.any(), updateEmployee);
 router.delete('/employees/:employeeId', optionalAuth, requireEmployeeAdmin, deleteEmployee);
 router.post('/employees', optionalAuth, requireEmployeeAdmin, employeeUpload.any(), createEmployee);

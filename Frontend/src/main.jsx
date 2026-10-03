@@ -16,6 +16,8 @@ import AdminSettings from './Admin/AdminSettings.jsx'
 import AdminProfile from './Admin/AdminProfile.jsx'
 import AddEmployee from './Admin/AddEmployee.jsx'
 import AllEmployees from './Admin/AllEmployees.jsx'
+import ManageServers from './Admin/ManageServers.jsx'
+import ManageDeliveryPartners from './Admin/ManageDeliveryPartners.jsx'
 import AdminCustomers from './Admin/AdminCustomers.jsx'
 import BannerManagement from './Admin/Marketting/BannerManagement.jsx'
 import Coupons from './Admin/Marketting/Coupons.jsx'
@@ -88,6 +90,22 @@ const router = createHashRouter([
           {
             path: 'employees',
             element: <AllEmployees />,
+          },
+          {
+            path: 'servers',
+            element: <ManageServers />,
+          },
+          {
+            path: 'employees/servers',
+            element: <ManageServers />,
+          },
+          {
+            path: 'delivery-partners',
+            element: <ManageDeliveryPartners />,
+          },
+          {
+            path: 'employees/delivery-partners',
+            element: <ManageDeliveryPartners />,
           },
           {
             path: 'employees/add',

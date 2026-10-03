@@ -493,6 +493,8 @@ const AddEmployee = () => {
         const response = await api.post("/employees", formData);
         if (employeeType === "Server" && response.data?.employee) {
           setNewlyCreatedServer(response.data.employee);
+        } else if (employeeType === "Delivery Partner") {
+          navigate("/admin/delivery-partners");
         } else {
           navigate("/admin/employees");
         }
@@ -565,7 +567,7 @@ const AddEmployee = () => {
               <button
                 type="button"
                 onClick={() => {
-                  navigate("/admin/employees", { state: { assignServer: newlyCreatedServer } });
+                  navigate("/admin/servers", { state: { assignServer: newlyCreatedServer } });
                 }}
                 className="inline-flex h-11 cursor-pointer items-center justify-center gap-2 rounded-xl bg-[#1a3c36] px-4 text-sm font-semibold text-white shadow-md transition hover:bg-[#234e46]"
               >
@@ -575,11 +577,11 @@ const AddEmployee = () => {
               <button
                 type="button"
                 onClick={() => {
-                  navigate("/admin/employees");
+                  navigate("/admin/servers");
                 }}
                 className="inline-flex h-11 cursor-pointer items-center justify-center rounded-xl border border-gray-200 bg-white text-sm font-semibold text-gray-700 transition hover:bg-gray-50"
               >
-                Go to All Employees
+                Go to Manage Servers
               </button>
             </div>
           </div>

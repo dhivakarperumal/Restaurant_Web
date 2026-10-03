@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { BriefcaseBusiness, Eye, LayoutGrid, Pencil, Search, Table2, Trash2, UserCheck, UserRound, UserRoundPlus, Users, UtensilsCrossed, X } from "lucide-react";
+import { Bike, BriefcaseBusiness, Eye, LayoutGrid, Pencil, Search, Table2, Trash2, UserCheck, UserRound, UserRoundPlus, Users, UtensilsCrossed, X } from "lucide-react";
 import api from "../api";
 import EmployeeDocument from "./EmployeeDocument";
 import AssignTableModal from "./AssignTableModal";
@@ -132,9 +132,44 @@ const AllEmployees = () => {
     { title: "Employee Types", value: employeeTypes.length, icon: BriefcaseBusiness, iconBg: "bg-[#a855f7]", description: "Roles represented", waveColor: "#a855f7" },
   ];
 
+  const serverCount = employees.filter((e) => e.employee_type === "Server").length;
+  const deliveryCount = employees.filter((e) => e.employee_type === "Delivery Partner").length;
+
   return (
   <main className="min-h-screen bg-[#f2f3f0] p-4 md:p-6">
     <div className="mx-auto max-w-[1500px]">
+      {/* Navigation Tabs Header */}
+      <div className="mb-4 flex flex-wrap items-center gap-2 border-b border-[#e1ded8] pb-3 text-sm">
+        <div className="flex items-center gap-1.5 rounded-lg bg-[#1a3c36] px-3 py-1.5 font-semibold text-white shadow-sm">
+          <Users className="h-4 w-4" /> All Employees
+          <span className="ml-1 rounded-full bg-[#d4a843] px-2 py-0.2 text-[11px] font-bold text-[#1a3c36]">
+            {employees.length}
+          </span>
+        </div>
+        <Link
+          to="/admin/servers"
+          className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 font-medium text-[#68706a] hover:bg-[#e7e5e0] hover:text-[#1f2d24]"
+        >
+          <UtensilsCrossed className="h-4 w-4 text-[#1a3c36]" /> Manage Servers
+          {serverCount > 0 && (
+            <span className="ml-1 rounded-full bg-gray-200 px-2 py-0.2 text-[11px] font-bold text-gray-700">
+              {serverCount}
+            </span>
+          )}
+        </Link>
+        <Link
+          to="/admin/delivery-partners"
+          className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 font-medium text-[#68706a] hover:bg-[#e7e5e0] hover:text-[#1f2d24]"
+        >
+          <Bike className="h-4 w-4 text-[#1a3c36]" /> Manage Delivery Partners
+          {deliveryCount > 0 && (
+            <span className="ml-1 rounded-full bg-gray-200 px-2 py-0.2 text-[11px] font-bold text-gray-700">
+              {deliveryCount}
+            </span>
+          )}
+        </Link>
+      </div>
+
       <div className="mb-5 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
           <h1 className="text-[2.1rem] font-bold tracking-[-0.05em] text-[#1f1d1b]">Employees</h1>

@@ -173,12 +173,61 @@ async function createEmployeeWithUser({ employeeData, createdBy, password }) {
   }
 }
 
-async function findEmployees() {
+async function findEmployees(employeeType) {
+  if (employeeType) {
+    const [rows] = await db.execute(
+      `SELECT * FROM employees WHERE employee_type = ? ORDER BY created_at DESC`,
+      [employeeType]
+    );
+    return rows;
+  }
   const [rows] = await db.execute(
-    `SELECT id, employee_id, employee_type, full_name, phone_number, email, status, created_at
-     FROM employees ORDER BY created_at DESC`
+    `SELECT * FROM employees ORDER BY created_at DESC`
   );
   return rows;
+}
+
+async function updateEmployeeQuickStatus(employeeId, { status, available_for_delivery, current_status }) {
+  const updates = [];
+  const params = [];
+  if (status !== undefined && ['Active', 'Inactive'].includes(status)) {
+    updates.push('`status` = ?');
+    params.push(status);
+  }
+  if (available_for_delivery !== undefined) {
+    updates.push('`available_for_delivery` = ?');
+    params.push(available_for_delivery);
+  }
+  if (current_status !== undefined) {
+    updates.push('`current_status` = ?');
+    params.push(current_status);
+  }
+  if (updates.length === 0) return null;
+
+  const connection = await db.getConnection();
+  try {
+    await connection.beginTransaction();
+    const [rows] = await connection.execute('SELECT user_id FROM employees WHERE employee_id = ? LIMIT 1', [employeeId]);
+    if (rows.length === 0) {
+      await connection.rollback();
+      return null;
+    }
+    const userId = rows[0].user_id;
+
+    params.push(employeeId);
+    await connection.execute(`UPDATE employees SET ${updates.join(', ')}, updated_at = CURRENT_TIMESTAMP WHERE employee_id = ?`, params);
+
+    if (status) {
+      await connection.execute('UPDATE users SET status = ? WHERE user_id = ?', [status, userId]);
+    }
+    await connection.commit();
+    return true;
+  } catch (err) {
+    await connection.rollback();
+    throw err;
+  } finally {
+    connection.release();
+  }
 }
 
 async function findEmployeeById(employeeId) {
@@ -276,5 +325,6 @@ module.exports = {
   findEmployeeById,
   findEmployees,
   initializeEmployeeSchema,
+  updateEmployeeQuickStatus,
   updateEmployeeWithUser,
 };

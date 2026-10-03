@@ -6,6 +6,7 @@ const {
   employeeTypeConfig,
   findEmployeeById,
   findEmployees,
+  updateEmployeeQuickStatus,
   updateEmployeeWithUser,
 } = require('../modules/employees');
 
@@ -340,7 +341,8 @@ async function deleteEmployee(req, res) {
 
 async function listEmployees(req, res) {
   try {
-    const employees = await findEmployees();
+    const { type } = req.query;
+    const employees = await findEmployees(type);
     return res.json({ success: true, employees });
   } catch (error) {
     console.error('Employee list failed:', error.message);
@@ -348,4 +350,19 @@ async function listEmployees(req, res) {
   }
 }
 
-module.exports = { createEmployee, deleteEmployee, getEmployee, listEmployees, updateEmployee };
+async function updateEmployeeStatus(req, res) {
+  try {
+    const { employeeId } = req.params;
+    const { status, available_for_delivery, current_status } = req.body || {};
+    const success = await updateEmployeeQuickStatus(employeeId, { status, available_for_delivery, current_status });
+    if (!success) {
+      return res.status(404).json({ success: false, message: 'Employee not found or no valid fields to update' });
+    }
+    return res.json({ success: true, message: 'Status updated successfully' });
+  } catch (error) {
+    console.error('Update employee status failed:', error.message);
+    return res.status(500).json({ success: false, message: 'Failed to update employee status' });
+  }
+}
+
+module.exports = { createEmployee, deleteEmployee, getEmployee, listEmployees, updateEmployee, updateEmployeeStatus };
