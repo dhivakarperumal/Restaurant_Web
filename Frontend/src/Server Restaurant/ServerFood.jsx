@@ -289,80 +289,6 @@ export default function ServerFood() {
         </div>
       </div>
 
-      {selectedTable && (
-        <div className="flex flex-col gap-3 rounded-2xl border border-[#d8e5da] bg-white p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#1a3c36] text-white">
-              <Table2 className="h-5 w-5" />
-            </div>
-            <div>
-              <p className="text-xs font-medium text-gray-500">Selected table</p>
-              <p className="text-sm font-bold text-gray-900">
-                {selectedTable.table_number}
-                {selectedTable.no_of_seats ? ` · ${selectedTable.no_of_seats} seats` : ""}
-              </p>
-            </div>
-          </div>
-          <button
-            type="button"
-            onClick={() => navigate("/server/tables")}
-            className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-[#dfe2e5] bg-[#faf9f8] px-4 py-2.5 text-sm font-semibold text-[#2d2d2d] transition hover:bg-white"
-          >
-            Change Table
-          </button>
-        </div>
-      )}
-
-      {selectedTable && (
-        <section className="rounded-2xl border border-[#e7e0d8] bg-white p-5 shadow-sm">
-          <div className="mb-4 flex flex-col gap-3 border-b border-gray-100 pb-4 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#1a3c36] text-white">
-                <ShoppingCart className="h-5 w-5" />
-              </div>
-              <div>
-                <h2 className="text-base font-bold text-gray-900">Order for {selectedTable.table_number}</h2>
-                <p className="text-xs text-gray-500">{cartQuantity} item{cartQuantity === 1 ? "" : "s"} selected</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-3">
-              <p className="text-sm font-bold text-gray-900">Total: ₹{cartTotal.toFixed(2)}</p>
-              <button
-                type="button"
-                onClick={submitOrder}
-                disabled={cartItems.length === 0 || submittingOrder}
-                className="inline-flex h-10 cursor-pointer items-center justify-center gap-2 rounded-xl bg-[#1a3c36] px-4 text-sm font-semibold text-white transition hover:bg-[#214a42] disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                {submittingOrder ? <Loader2 className="h-4 w-4 animate-spin" /> : <ShoppingCart className="h-4 w-4" />}
-                {submittingOrder ? "Sending..." : "Send Order to Kitchen"}
-              </button>
-            </div>
-          </div>
-          {cartItems.length ? (
-            <div className="space-y-3">
-              {cartItems.map(([foodId, item]) => (
-                <div key={foodId} className="flex flex-wrap items-center justify-between gap-3">
-                  <div className="min-w-0">
-                    <p className="truncate text-sm font-semibold text-gray-800">{item.food.food_name}</p>
-                    <p className="text-xs text-gray-500">₹{Number(item.food.final_price || 0).toFixed(2)} each</p>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <button type="button" onClick={() => updateCartQuantity(item.food, item.quantity - 1)} aria-label={`Decrease ${item.food.food_name} quantity`} className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg border border-gray-200 text-gray-700 hover:bg-gray-50">
-                      <Minus className="h-4 w-4" />
-                    </button>
-                    <span className="w-6 text-center text-sm font-bold text-gray-800">{item.quantity}</span>
-                    <button type="button" onClick={() => updateCartQuantity(item.food, item.quantity + 1)} aria-label={`Increase ${item.food.food_name} quantity`} disabled={item.quantity >= 99} className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg border border-gray-200 text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50">
-                      <Plus className="h-4 w-4" />
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <p className="text-sm text-gray-500">Add available dishes below to start this order.</p>
-          )}
-        </section>
-      )}
 
       {/* Stats Summary Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -893,6 +819,82 @@ export default function ServerFood() {
             </table>
           </div>
         </div>
+      )}
+
+      
+      {selectedTable && (
+        <div className="flex flex-col gap-3 rounded-2xl border border-[#d8e5da] bg-white p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#1a3c36] text-white">
+              <Table2 className="h-5 w-5" />
+            </div>
+            <div>
+              <p className="text-xs font-medium text-gray-500">Selected table</p>
+              <p className="text-sm font-bold text-gray-900">
+                {selectedTable.table_number}
+                {selectedTable.no_of_seats ? ` · ${selectedTable.no_of_seats} seats` : ""}
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => navigate("/server/tables")}
+            className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-[#dfe2e5] bg-[#faf9f8] px-4 py-2.5 text-sm font-semibold text-[#2d2d2d] transition hover:bg-white"
+          >
+            Change Table
+          </button>
+        </div>
+      )}
+
+      {selectedTable && (
+        <section className="rounded-2xl border border-[#e7e0d8] bg-white p-5 shadow-sm">
+          <div className="mb-4 flex flex-col gap-3 border-b border-gray-100 pb-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#1a3c36] text-white">
+                <ShoppingCart className="h-5 w-5" />
+              </div>
+              <div>
+                <h2 className="text-base font-bold text-gray-900">Order for {selectedTable.table_number}</h2>
+                <p className="text-xs text-gray-500">{cartQuantity} item{cartQuantity === 1 ? "" : "s"} selected</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-3">
+              <p className="text-sm font-bold text-gray-900">Total: ₹{cartTotal.toFixed(2)}</p>
+              <button
+                type="button"
+                onClick={submitOrder}
+                disabled={cartItems.length === 0 || submittingOrder}
+                className="inline-flex h-10 cursor-pointer items-center justify-center gap-2 rounded-xl bg-[#1a3c36] px-4 text-sm font-semibold text-white transition hover:bg-[#214a42] disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {submittingOrder ? <Loader2 className="h-4 w-4 animate-spin" /> : <ShoppingCart className="h-4 w-4" />}
+                {submittingOrder ? "Sending..." : "Send Order to Kitchen"}
+              </button>
+            </div>
+          </div>
+          {cartItems.length ? (
+            <div className="space-y-3">
+              {cartItems.map(([foodId, item]) => (
+                <div key={foodId} className="flex flex-wrap items-center justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-semibold text-gray-800">{item.food.food_name}</p>
+                    <p className="text-xs text-gray-500">₹{Number(item.food.final_price || 0).toFixed(2)} each</p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button type="button" onClick={() => updateCartQuantity(item.food, item.quantity - 1)} aria-label={`Decrease ${item.food.food_name} quantity`} className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg border border-gray-200 text-gray-700 hover:bg-gray-50">
+                      <Minus className="h-4 w-4" />
+                    </button>
+                    <span className="w-6 text-center text-sm font-bold text-gray-800">{item.quantity}</span>
+                    <button type="button" onClick={() => updateCartQuantity(item.food, item.quantity + 1)} aria-label={`Increase ${item.food.food_name} quantity`} disabled={item.quantity >= 99} className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg border border-gray-200 text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50">
+                      <Plus className="h-4 w-4" />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-sm text-gray-500">Add available dishes below to start this order.</p>
+          )}
+        </section>
       )}
 
       {/* VIEW-ONLY FOOD DETAILS MODAL */}
