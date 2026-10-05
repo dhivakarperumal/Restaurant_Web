@@ -26,7 +26,7 @@ const add = async (req, res) => {
     if (!food || String(food.status || '').toLowerCase() !== 'active' || !food.is_available) {
       return res.status(404).json({ success: false, message: 'This food is not currently available.' });
     }
-    await addFoodToWishlist(req.auth.user_id, foodId);
+    await addFoodToWishlist(req.auth.user_id, food);
     const data = await getWishlistByUserId(req.auth.user_id);
     const savedFood = data.find((item) => item.food_id === foodId);
     return res.status(201).json({ success: true, data: savedFood });

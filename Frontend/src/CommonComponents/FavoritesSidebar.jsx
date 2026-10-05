@@ -1,5 +1,5 @@
 import { useContext } from 'react';
-import { Heart, ShoppingBag, X } from 'lucide-react';
+import { Clock, Flame, Heart, ShoppingBag, Star, X } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { BACKEND_BASE_URL } from '../api';
 import { StoreContext } from '../PrivateRouter/StoreContext';
@@ -65,6 +65,7 @@ function FavoritesSidebar() {
           const image = resolveImage(item.image || item.product_image);
           const name = item.food_name || item.item_name || item.product_name || item.name || 'Favorite food';
           const price = Number(item.final_price || item.price || item.mrp || 0);
+          const isVeg = String(item.food_type || '').toLowerCase() === 'veg';
 
           return (
             <article key={item.id || foodId} className="flex gap-3 rounded-xl border border-[#eadfd2] bg-white p-3 shadow-sm">
@@ -81,18 +82,30 @@ function FavoritesSidebar() {
                 )}
               </Link>
               <div className="min-w-0 flex-1 py-0.5">
-                <Link
-                  to={`/shop?food=${encodeURIComponent(foodId)}`}
-                  onClick={closeFavorites}
-                  className="line-clamp-2 text-sm font-semibold text-[#263830] hover:text-[#a34f32]"
-                >
-                  {name}
-                </Link>
-                {(item.category_name || item.cuisine_name) && (
-                  <p className="mt-1 truncate text-xs text-[#68766e]">
-                    {[item.category_name, item.cuisine_name].filter(Boolean).join(' · ')}
-                  </p>
-                )}
+                <div className="flex items-start justify-between gap-2">
+                  <Link
+                    to={`/shop?food=${encodeURIComponent(foodId)}`}
+                    onClick={closeFavorites}
+                    className="line-clamp-2 text-sm font-semibold text-[#263830] hover:text-[#a34f32]"
+                  >
+                    {name}
+                  </Link>
+                  <span
+                    title={isVeg ? 'Vegetarian' : 'Non-vegetarian'}
+                    className={`mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-sm border ${isVeg ? 'border-emerald-600' : 'border-rose-600'}`}
+                  >
+                    <span className={`h-2 w-2 rounded-full ${isVeg ? 'bg-emerald-600' : 'bg-rose-600'}`} />
+                  </span>
+                </div>
+                <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-[#68766e]">
+                  {item.category_name && <span>{item.category_name}</span>}
+                  {item.cuisine_name && <span>{item.cuisine_name}</span>}
+                  {item.portion_size && <span>{item.portion_size}</span>}
+                  {Number(item.preparation_time) > 0 && <span className="inline-flex items-center gap-1"><Clock size={12} /> {item.preparation_time} min</span>}
+                  {item.is_spicy && <span className="inline-flex items-center gap-1 text-amber-700"><Flame size={12} /> Spicy</span>}
+                  {Number(item.rating) > 0 && <span className="inline-flex items-center gap-1 text-amber-700"><Star size={12} className="fill-amber-400" /> {Number(item.rating).toFixed(1)}</span>}
+                </div>
+                {item.description && <p className="mt-1 line-clamp-2 text-xs text-[#68766e]">{item.description}</p>}
                 <div className="mt-2 flex items-center justify-between gap-2">
                   <span className="text-sm font-bold text-[#1a3c36]">₹{price.toFixed(2)}</span>
                   <button
