@@ -178,10 +178,12 @@ export default function Shop() {
     const payload = {
       ...selectedFood,
       id: selectedFood.food_id || selectedFood.id,
+      food_id: selectedFood.food_id || selectedFood.id,
       product_id: selectedFood.food_id || selectedFood.id,
       product_name: selectedFood.food_name,
       name: selectedFood.food_name,
       price: itemFinalPrice,
+      portion_size: selectedFood.portion_size || "Standard",
       product_image: selectedFood.food_images?.[0] || "",
       image: selectedFood.food_images?.[0] || "",
       quantity: modalQuantity,
@@ -191,7 +193,14 @@ export default function Shop() {
     };
 
     if (addToCart) {
-      await addToCart(payload, null, selectedFood.portion_size || "Standard", modalQuantity);
+      await addToCart(payload, {
+        size: selectedFood.portion_size || "Standard",
+        price: itemFinalPrice,
+        quantity: modalQuantity,
+        selectedAddons: modalSelectedAddons,
+        selectedCustomizations: modalCustomizations,
+        cookingNotes: modalCookingNotes,
+      });
     } else {
       toast.success(`Added ${selectedFood.food_name} to cart!`);
     }
@@ -211,17 +220,26 @@ export default function Shop() {
     const payload = {
       ...food,
       id: food.food_id || food.id,
+      food_id: food.food_id || food.id,
       product_id: food.food_id || food.id,
       product_name: food.food_name,
       name: food.food_name,
       price: basePrice,
+      portion_size: food.portion_size || "Standard",
       product_image: food.food_images?.[0] || "",
       image: food.food_images?.[0] || "",
       quantity: 1,
     };
 
     if (addToCart) {
-      await addToCart(payload, null, food.portion_size || "Standard", 1);
+      await addToCart(payload, {
+        size: food.portion_size || "Standard",
+        price: basePrice,
+        quantity: 1,
+        selectedAddons: [],
+        selectedCustomizations: {},
+        cookingNotes: "",
+      });
     } else {
       toast.success(`Added ${food.food_name} to cart!`);
     }

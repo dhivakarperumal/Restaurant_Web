@@ -23,6 +23,7 @@ const couponsRouter = require('./coupons');
 const reviewsRouter = require('./reviews');
 const videosRouter = require('./videos');
 const settingsRouter = require('./settings');
+const cartRouter = require('./cartRouter');
 const { changeKitchenOrderStatus, getKitchenOrders, submitKitchenOrder } = require('../controllers/kitchenOrderController');
 const { getActiveBill, getAllBills, getBill, settleBill } = require('../controllers/tableBillController');
 
@@ -168,6 +169,7 @@ router.use('/coupons', couponsRouter);
 router.use('/reviews', reviewsRouter);
 router.use('/videos', videosRouter);
 router.use('/settings', requireAdmin, settingsRouter);
+router.use('/cart', optionalAuth, cartRouter);
 router.get('/employees', optionalAuth, requireEmployeeAdmin, listEmployees);
 router.get('/employees/documents/:filename', optionalAuth, requireEmployeeAdmin, (req, res) => {
   const filename = req.params.filename;

@@ -74,13 +74,15 @@ export const StoreProvider = ({ children }) => {
         return guestId;
     }, [user?.user_id]);
 
-    // ─── Fetch cart from backend ─────────────────────────────────
+    // ─── Fetch cart from backend database ────────────────────────
     const fetchCart = useCallback(async () => {
-        const activeId = user?.user_id || localStorage.getItem("frame_shop_guest_id");
-        if (!activeId) { setCart([]); return; }
+        if (!user?.user_id) {
+            setCart([]);
+            return;
+        }
         try {
             setLoadingCart(true);
-            const res = await api.get(`/cart/${activeId}`);
+            const res = await api.get(`/cart/${user.user_id}`);
             const cartData = Array.isArray(res.data?.data)
                 ? res.data.data
                 : Array.isArray(res.data?.cart)
@@ -89,18 +91,9 @@ export const StoreProvider = ({ children }) => {
                 ? res.data
                 : [];
             setCart(cartData);
-            localStorage.setItem("local_restaurant_cart", JSON.stringify(cartData));
         } catch (err) {
-            const localSaved = localStorage.getItem("local_restaurant_cart");
-            if (localSaved) {
-                try {
-                    setCart(JSON.parse(localSaved));
-                } catch {
-                    setCart([]);
-                }
-            } else {
-                setCart([]);
-            }
+            console.error("Fetch cart error:", err);
+            setCart([]);
         } finally {
             setLoadingCart(false);
         }
@@ -167,103 +160,80 @@ export const StoreProvider = ({ children }) => {
     // ─── CART ACTIONS ────────────────────────────────────────────
 
     const addToCart = async (product, variantOrOptions = null, sizeParam = null, qtyParam = 1) => {
-        const activeUserId = getActiveUserId();
+        if (!user?.user_id) {
+            requireLogin("Please login to add items to your cart");
+            return false;
+        }
 
-        // Support both old signature (product, variant, size, qty) and new options object
+        // Support both options object and legacy signature
         let selectedSize = "Standard";
         let price = 0;
         let qty = 1;
-        let customizationId = null;
-        let slotPhotos = null;
-        let previewImage = null;
+        let selectedAddons = [];
+        let selectedCustomizations = {};
+        let cookingNotes = "";
 
-        if (variantOrOptions && typeof variantOrOptions === "object" && !variantOrOptions.mrp && !variantOrOptions.sellingPrice && (variantOrOptions.size || variantOrOptions.slot_photos || variantOrOptions.customization_id || variantOrOptions.preview_image)) {
-            selectedSize = variantOrOptions.size || (product.size_variants?.[0]?.size) || product.portion_size || "Standard";
-            price = Number(variantOrOptions.price ?? product.final_price ?? product.size_variants?.[0]?.offer_price ?? product.offer_price ?? product.mrp ?? 0);
+        if (variantOrOptions && typeof variantOrOptions === "object" && !variantOrOptions.mrp && !variantOrOptions.sellingPrice && (variantOrOptions.size || variantOrOptions.quantity || variantOrOptions.selectedAddons || variantOrOptions.selected_addons || variantOrOptions.cookingNotes)) {
+            selectedSize = variantOrOptions.size || product.portion_size || (product.size_variants?.[0]?.size) || "Standard";
+            price = Number(variantOrOptions.price ?? product.final_price ?? product.price ?? product.mrp ?? 0);
             qty = Number(variantOrOptions.quantity || variantOrOptions.qty || 1);
-            customizationId = variantOrOptions.customization_id || null;
-            slotPhotos = variantOrOptions.slot_photos || null;
-            previewImage = variantOrOptions.preview_image || null;
+            selectedAddons = variantOrOptions.selectedAddons || variantOrOptions.selected_addons || [];
+            selectedCustomizations = variantOrOptions.selectedCustomizations || variantOrOptions.selected_customizations || {};
+            cookingNotes = variantOrOptions.cookingNotes || variantOrOptions.cooking_notes || "";
         } else {
             const selectedVariant = variantOrOptions || product.size_variants?.[0] || product.variants?.[0] || null;
-            selectedSize = sizeParam || selectedVariant?.size || selectedVariant?.selectedSizes?.[0] || product.portion_size || "Standard";
-            price = parseFloat(product.price || selectedVariant?.offer_price || selectedVariant?.sellingPrice || product.final_price || product.offer_price || product.mrp || 0);
+            selectedSize = sizeParam || product.portion_size || selectedVariant?.size || selectedVariant?.selectedSizes?.[0] || "Standard";
+            price = parseFloat(product.final_price || product.price || selectedVariant?.offer_price || selectedVariant?.sellingPrice || product.mrp || 0);
             qty = Number(qtyParam) || 1;
+            selectedAddons = product.selectedAddons || product.selected_addons || [];
+            selectedCustomizations = product.selectedCustomizations || product.selected_customizations || {};
+            cookingNotes = product.cookingNotes || product.cooking_notes || "";
         }
 
-        const itemType =
-            product.item_type ||
-            variantOrOptions?.item_type ||
-            (product.food_id || product.cuisine_id ? "food" : "product");
-
-        const localCartItem = {
-            id: `cart_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
-            product_id: product.id || product.product_id || product.food_id,
-            product_name: product.product_name || product.name || product.food_name || "Food Item",
-            name: product.product_name || product.name || product.food_name || "Food Item",
-            product_image: product.product_image || product.image || (Array.isArray(product.food_images) ? product.food_images[0] : "") || "",
-            image: product.product_image || product.image || (Array.isArray(product.food_images) ? product.food_images[0] : "") || "",
-            price: price,
-            quantity: qty,
-            total_price: price * qty,
-            size: selectedSize,
-            item_type: itemType,
-        };
+        const foodImages = Array.isArray(product.food_images) ? product.food_images : [];
+        const productImage = product.product_image || product.image || foodImages[0] || "";
 
         try {
             await api.post("/cart", {
-                user_id: activeUserId,
-                product_id: product.id || product.product_id || product.food_id || product.gift_box_id,
-                item_type: itemType,
-                customization_id: customizationId,
-                size: selectedSize,
+                user_id: user.user_id,
+                customer_name: user?.username || user?.name || user?.displayName || "",
+                customer_email: user?.email || "",
+                customer_phone: user?.mobile_number || user?.phone_number || user?.phone || "",
+                food_id: String(product.food_id || product.id || product.product_id),
+                product_name: product.food_name || product.product_name || product.name || "Food Item",
+                category_name: product.category_name || "",
+                cuisine_name: product.cuisine_name || "",
+                product_image: productImage,
+                food_type: product.food_type || "Veg",
+                portion_size: selectedSize,
+                mrp: Number(product.mrp || price),
+                discount: Number(product.discount || 0),
                 price: price,
                 quantity: qty,
-                slot_photos: slotPhotos,
-                preview_image: previewImage,
+                selected_addons: selectedAddons,
+                selected_customizations: selectedCustomizations,
+                cooking_notes: cookingNotes,
             });
             await fetchCart();
+            toast.success("Added to cart!");
+            openCart();
+            return true;
         } catch (err) {
-            // Local storage fallback for seamless cart experience
-            setCart((prev) => {
-                const existingIdx = prev.findIndex(
-                    (i) =>
-                        String(i.product_id || i.id) === String(localCartItem.product_id) &&
-                        i.size === localCartItem.size
-                );
-                let updated;
-                if (existingIdx >= 0) {
-                    updated = [...prev];
-                    const newQty = (Number(updated[existingIdx].quantity) || 1) + qty;
-                    updated[existingIdx] = {
-                        ...updated[existingIdx],
-                        quantity: newQty,
-                        total_price: Number(updated[existingIdx].price || 0) * newQty,
-                    };
-                } else {
-                    updated = [localCartItem, ...prev];
-                }
-                localStorage.setItem("local_restaurant_cart", JSON.stringify(updated));
-                return updated;
-            });
+            console.error("Add to cart error:", err);
+            toast.error(err?.response?.data?.message || "Failed to add to cart");
+            return false;
         }
-        toast.success("Added to cart!");
-        openCart();
-        return true;
     };
 
     const removeFromCart = async (cartItemId) => {
         try {
             await api.delete(`/cart/${cartItemId}`);
             await fetchCart();
+            toast.success("Item removed from cart");
         } catch (err) {
-            setCart((prev) => {
-                const updated = prev.filter((item) => String(item.id) !== String(cartItemId));
-                localStorage.setItem("local_restaurant_cart", JSON.stringify(updated));
-                return updated;
-            });
+            console.error("Remove cart error:", err);
+            toast.error(err?.response?.data?.message || "Failed to remove item");
         }
-        toast.error("Removed from cart");
     };
 
     const removeFromWishlist = async (wishlistItemId) => {
@@ -286,15 +256,18 @@ export const StoreProvider = ({ children }) => {
     };
 
     const updateCartQuantity = async (cartItemId, qty) => {
-        if (qty < 1) return;
-        const targetItem = cart.find(i => i.id === cartItemId);
+        if (qty < 1) {
+            await removeFromCart(cartItemId);
+            return;
+        }
+        const targetItem = cart.find(i => (i.id === cartItemId || i.cart_id === cartItemId));
         if (!targetItem) return;
 
         // Resolve available stock safely from size_variants or stock_quantity
         let availableStock = 99; // default fallback
         if (targetItem.size_variants && Array.isArray(targetItem.size_variants) && targetItem.size_variants.length > 0) {
             const matched = targetItem.size_variants.find(
-                (v) => String(v.size || "").trim().toLowerCase() === String(targetItem.size || "").trim().toLowerCase()
+                (v) => String(v.size || "").trim().toLowerCase() === String(targetItem.size || targetItem.portion_size || "").trim().toLowerCase()
             );
             if (matched && matched.stock !== undefined && matched.stock !== null && matched.stock !== "") {
                 availableStock = Number(matched.stock);
@@ -320,40 +293,40 @@ export const StoreProvider = ({ children }) => {
             }
         }
 
-        // Update state and local storage
-        setCart((prev) => {
-            const updated = prev.map((item) =>
-                item.id === cartItemId
+        // Optimistic UI update in state
+        setCart((prev) =>
+            prev.map((item) =>
+                (item.id === cartItemId || item.cart_id === cartItemId)
                     ? {
                           ...item,
                           quantity: qty,
                           total_price: Number(item.price || 0) * qty,
                       }
                     : item
-            );
-            localStorage.setItem("local_restaurant_cart", JSON.stringify(updated));
-            return updated;
-        });
+            )
+        );
 
         try {
             await api.put(`/cart/${cartItemId}`, {
                 quantity: qty,
                 price: targetItem.price
             });
+            await fetchCart();
         } catch (err) {
-            // Local fallback already applied
+            console.error("Update cart quantity error:", err);
+            toast.error("Failed to update quantity");
+            await fetchCart();
         }
     };
 
     const clearCart = async () => {
-        const activeUserId = getActiveUserId();
-        localStorage.removeItem("local_restaurant_cart");
+        if (!user?.user_id) return;
         setCart([]);
-        if (!activeUserId) return;
         try {
-            await api.delete(`/cart/clear/${activeUserId}`);
+            await api.delete(`/cart/clear/${user.user_id}`);
+            await fetchCart();
         } catch (err) {
-            // silent catch
+            console.error("Clear cart error:", err);
         }
     };
 
