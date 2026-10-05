@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { ArrowUpRight, CalendarDays, Check, ChevronLeft, ChevronRight, Clock3, MapPin, Phone, RefreshCw, Search, ShoppingBag, X } from "lucide-react";
+import { ArrowUpRight, Bike, CalendarDays, Check, CheckCircle2, ChevronLeft, ChevronRight, Clock3, MapPin, Phone, RefreshCw, Search, ShoppingBag, X, XCircle } from "lucide-react";
 import api from "../api";
 import toast from "react-hot-toast";
 
@@ -110,6 +110,13 @@ const DeliveryOrdersPage = ({ view = "all" }) => {
 
   const pageCount = Math.max(1, Math.ceil(matchingOrders.length / pageSize));
   const visibleOrders = matchingOrders.slice((page - 1) * pageSize, page * pageSize);
+  const countStatuses = (statuses) => orders.filter((order) => statuses.includes(normalizeStatus(order.order_status))).length;
+  const summaryCards = [
+    { label: "New Orders", value: countStatuses(["NEW", "NEW_ORDER", "PENDING", "ORDER_PLACED"]), icon: Clock3, style: "bg-gradient-to-br from-[#ed40ac] via-[#d832a0] to-[#c72188] text-white", caption: "Awaiting action" },
+    { label: "Active Deliveries", value: countStatuses(["ASSIGNED", "ACCEPTED", "REACHED_PICKUP", "PICKED_UP", "OUT_FOR_DELIVERY", "REACHED_CUSTOMER", "SHIPPED"]), icon: Bike, style: "bg-gradient-to-br from-[#4a6ce9] via-[#665ce5] to-[#8250df] text-white", caption: "Assigned to you" },
+    { label: "Delivered", value: countStatuses(["DELIVERED", "COMPLETED"]), icon: CheckCircle2, style: "bg-gradient-to-br from-[#10ae89] via-[#1fc995] to-[#21d68f] text-white", caption: "Completed" },
+    { label: "Cancelled", value: countStatuses(["CANCELLED"]), icon: XCircle, style: "bg-gradient-to-br from-[#ff9a12] via-[#ffad0b] to-[#ffc20c] text-[#3c2d00]", caption: "Closed" },
+  ];
 
   const updateOrderStatus = async () => {
     if (!selectedOrder || !pendingStatus) return;
@@ -158,6 +165,18 @@ const DeliveryOrdersPage = ({ view = "all" }) => {
           Refresh
         </button>
       </header>
+
+      <div className="mb-5 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        {summaryCards.map(({ label, value, icon: Icon, style, caption }) => (
+          <div key={label} className={`relative isolate flex min-h-[155px] flex-col overflow-hidden rounded-[22px] p-4 shadow-[0_10px_22px_rgba(20,45,30,0.15)] sm:p-5 ${style}`}>
+            <div aria-hidden="true" className="pointer-events-none absolute -right-8 -top-10 h-32 w-32 rounded-full bg-white/10" />
+            <div className="relative flex items-start justify-between gap-3"><span className="pt-1 text-[11px] font-extrabold uppercase tracking-[0.08em] text-current/90">{label}</span><span className="grid h-12 w-12 shrink-0 place-items-center rounded-[18px] border border-white/35 bg-white/15 text-current shadow-inner"><Icon size={21} strokeWidth={2.2} /></span></div>
+            {loading ? <div className="relative mt-2 h-9 w-16 animate-pulse rounded-lg bg-white/25" /> : <p className="relative mt-2 text-[30px] font-extrabold leading-none tabular-nums">{error ? "—" : value}</p>}
+            <div aria-hidden="true" className="relative mt-auto flex h-7 items-end gap-1 pt-2 opacity-25">{[13, 19, 15, 25, 17, 22, 29].map((height, index) => <span key={index} style={{ height }} className="flex-1 rounded-t-[4px] bg-white" />)}</div>
+            <span className="relative mt-2 inline-flex w-fit items-center rounded-full border border-white/25 bg-white/15 px-3 py-1 text-[10px] font-bold text-current">{caption}</span>
+          </div>
+        ))}
+      </div>
 
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <label className="relative block w-full max-w-sm">

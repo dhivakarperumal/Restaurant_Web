@@ -64,6 +64,26 @@ const SummaryCard = ({ label, value, icon: Icon, highlight = false }) => (
   <div className={`rounded-xl border p-4 ${highlight ? "border-[#cfe4d3] bg-[#eaf5ec]" : "border-[#e2e9e3] bg-white"}`}><div className="flex items-center justify-between gap-2"><span className="text-xs font-medium text-gray-500">{label}</span><Icon size={17} className={highlight ? "text-[#24713e]" : "text-gray-400"} /></div><p className={`mt-3 text-xl font-bold tabular-nums ${highlight ? "text-[#215c35]" : "text-gray-900"}`}>{value ?? "—"}</p></div>
 );
 
+const earningsCardStyles = {
+  mint: "bg-gradient-to-br from-[#10ae89] via-[#1fc995] to-[#21d68f] text-white",
+  violet: "bg-gradient-to-br from-[#4a6ce9] via-[#665ce5] to-[#8250df] text-white",
+  pink: "bg-gradient-to-br from-[#ed40ac] via-[#d832a0] to-[#c72188] text-white",
+  amber: "bg-gradient-to-br from-[#ff9a12] via-[#ffad0b] to-[#ffc20c] text-[#3c2d00]",
+  blue: "bg-gradient-to-br from-[#168bc0] via-[#157da9] to-[#206bb2] text-white",
+  green: "bg-gradient-to-br from-[#24975a] via-[#1b8b4d] to-[#14733e] text-white",
+  rose: "bg-gradient-to-br from-[#df5365] via-[#d7435c] to-[#c82c55] text-white",
+  forest: "bg-gradient-to-br from-[#256448] via-[#1c7048] to-[#16593e] text-white",
+};
+
+const EarningsCard = ({ label, value, icon: Icon, tone, loading }) => (
+  <div className={`relative isolate flex min-h-[155px] flex-col overflow-hidden rounded-[22px] p-4 shadow-[0_10px_22px_rgba(20,45,30,0.15)] sm:p-5 ${earningsCardStyles[tone]}`}>
+    <div aria-hidden="true" className="pointer-events-none absolute -right-8 -top-10 h-32 w-32 rounded-full bg-white/10" />
+    <div className="relative flex items-start justify-between gap-3"><span className="pt-1 text-[11px] font-extrabold uppercase tracking-[0.08em] text-current/90">{label}</span><span className="grid h-12 w-12 shrink-0 place-items-center rounded-[18px] border border-white/35 bg-white/15 text-current shadow-inner"><Icon size={21} strokeWidth={2.2} /></span></div>
+    {loading ? <div className="relative mt-2 h-9 w-20 animate-pulse rounded-lg bg-white/25" /> : <p className="relative mt-2 text-[30px] font-extrabold leading-none tabular-nums">{value ?? "—"}</p>}
+    <div aria-hidden="true" className="relative mt-auto flex h-7 items-end gap-1 pt-2 opacity-25">{[13, 19, 15, 25, 17, 22, 29].map((height, index) => <span key={index} style={{ height }} className="flex-1 rounded-t-[4px] bg-white" />)}</div>
+  </div>
+);
+
 const dateRanges = ["today", "yesterday", "this-week", "last-week", "this-month", "last-month", "this-year", "last-year", "custom"];
 const rangeLabel = (value) => ({ today: "Today", yesterday: "Yesterday", "this-week": "This Week", "last-week": "Last Week", "this-month": "This Month", "last-month": "Last Month", "this-year": "This Year", "last-year": "Last Year", custom: "Custom Date" }[value] || value);
 
@@ -79,9 +99,9 @@ const EarningsPage = () => {
   return <section className="space-y-5"><PageHeading eyebrow="Payouts" title="Earnings" description="Delivery pay and payout history for your account." onRefresh={refresh} loading={loading} />
     <ServiceNotice error={error} loading={loading} refresh={refresh} noun="Earnings" />
     <div className="flex flex-wrap items-center gap-2"><label className="flex items-center gap-2 rounded-lg border border-[#dce6de] bg-white px-3 py-2 text-sm"><CalendarDays size={15} className="text-[#448052]" /><span className="sr-only">Date range</span><select value={range} onChange={(event) => setRange(event.target.value)} className="bg-transparent font-medium text-gray-700 outline-none">{dateRanges.map((option) => <option key={option} value={option}>{rangeLabel(option)}</option>)}</select></label>{range === "custom" && <><input aria-label="From date" type="date" value={from} onChange={(event) => setFrom(event.target.value)} className="rounded-lg border border-[#dce6de] bg-white px-3 py-2 text-sm" /><input aria-label="To date" type="date" value={to} onChange={(event) => setTo(event.target.value)} className="rounded-lg border border-[#dce6de] bg-white px-3 py-2 text-sm" /></>}</div>
-    <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-5">{[
-      ["Today's earnings", summary.today_earnings ?? summary.todayEarnings, IndianRupee, true], ["This week", summary.week_earnings ?? summary.weekEarnings, IndianRupee], ["This month", summary.month_earnings ?? summary.monthEarnings, IndianRupee], ["Total earnings", summary.total_earnings ?? summary.totalEarnings, WalletCards], ["Completed deliveries", summary.completed_deliveries ?? summary.completedDeliveries, CheckCheck], ["Base charges", summary.base_charge ?? summary.baseCharge, IndianRupee], ["Extra distance", summary.extra_km_charge ?? summary.extraKmCharge, IndianRupee], ["Incentives & bonuses", Number(summary.incentives || 0) + Number(summary.bonuses || 0), IndianRupee], ["Cash collected", summary.cash_collected ?? summary.cashCollected, WalletCards],
-    ].map(([label, value, Icon, highlight]) => <SummaryCard key={label} label={label} value={currency(value)} icon={Icon} highlight={highlight} />)}</div>
+    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">{[
+      ["Today's earnings", summary.today_earnings ?? summary.todayEarnings, IndianRupee, "mint"], ["This week", summary.week_earnings ?? summary.weekEarnings, IndianRupee, "violet"], ["This month", summary.month_earnings ?? summary.monthEarnings, IndianRupee, "pink"], ["Total earnings", summary.total_earnings ?? summary.totalEarnings, WalletCards, "amber"], ["Completed deliveries", summary.completed_deliveries ?? summary.completedDeliveries, CheckCheck, "green"], ["Base charges", summary.base_charge ?? summary.baseCharge, IndianRupee, "blue"], ["Extra distance", summary.extra_km_charge ?? summary.extraKmCharge, IndianRupee, "rose"], ["Incentives & bonuses", Number(summary.incentives || 0) + Number(summary.bonuses || 0), IndianRupee, "violet"], ["Cash collected", summary.cash_collected ?? summary.cashCollected, WalletCards, "forest"],
+    ].map(([label, value, Icon, tone]) => <EarningsCard key={label} label={label} value={currency(value)} icon={Icon} tone={tone} loading={loading} />)}</div>
     <div className="overflow-hidden rounded-xl border border-[#e2e9e3] bg-white"><div className="border-b border-gray-100 px-4 py-4"><h2 className="font-bold">Earnings history</h2><p className="mt-1 text-xs text-gray-500">Per-delivery amounts and payment status</p></div><div className="overflow-x-auto"><table className="w-full min-w-[760px] text-left text-sm"><thead className="bg-gray-50 text-xs uppercase text-gray-500"><tr>{["Order", "Date", "Distance", "Base", "Extra", "Incentive", "Total", "Payment"].map((heading) => <th key={heading} className="px-4 py-3 font-semibold">{heading}</th>)}</tr></thead><tbody className="divide-y divide-gray-100">{entries.map((entry, index) => <tr key={entry.order_id || entry.id || index}><td className="px-4 py-3 font-semibold">{entry.order_id || entry.id || "—"}</td><td className="whitespace-nowrap px-4 py-3 text-gray-500">{entry.date ? new Date(entry.date).toLocaleDateString("en-IN") : "—"}</td><td className="px-4 py-3">{entry.distance_km ?? entry.distance ?? "—"} km</td><td className="px-4 py-3">{currency(entry.base_charge)}</td><td className="px-4 py-3">{currency(entry.extra_charge)}</td><td className="px-4 py-3">{currency(entry.incentive)}</td><td className="px-4 py-3 font-bold">{currency(entry.total_earnings ?? entry.total)}</td><td className="px-4 py-3"><span className="rounded-full bg-emerald-50 px-2 py-1 text-xs font-semibold text-emerald-700">{entry.payment_status || "—"}</span></td></tr>)}{!loading && !error && entries.length === 0 && <tr><td colSpan={8} className="px-4 py-12 text-center text-sm text-gray-500">Earnings history will appear after completed deliveries.</td></tr>}</tbody></table></div></div>
   </section>;
 };
