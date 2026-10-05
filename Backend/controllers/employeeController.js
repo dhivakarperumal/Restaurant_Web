@@ -559,6 +559,7 @@ module.exports = {
   checkEmployeeFieldUniqueness,
   createEmployee,
   deleteEmployee,
+  getDeliveryPartnerProfile,
   getEmployee,
   listEmployees,
   updateEmployee,
