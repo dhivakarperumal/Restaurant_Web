@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useContext } from "react";
+import React, { useState, useEffect, useMemo, useContext, useCallback } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import {
   AlertCircle,
@@ -9,7 +9,6 @@ import {
   Eye,
   Filter,
   Flame,
-  Heart,
   Info,
   Layers,
   LayoutGrid,
@@ -33,6 +32,7 @@ import toast from "react-hot-toast";
 import api, { BACKEND_BASE_URL } from "../../api";
 import { StoreContext } from "../../PrivateRouter/StoreContext";
 import PageContainer from "../../CommonComponents/PageContainer";
+import FoodProductCard from "../../CommonComponents/FoodProductCard";
 
 const resolveImageUrl = (img) => {
   if (!img || typeof img !== "string") return "";
@@ -118,7 +118,7 @@ export default function Shop() {
   }, [searchParams]);
 
   // Open customization modal
-  const openCustomizer = (food) => {
+  const openCustomizer = useCallback((food) => {
     setSelectedFood(food);
     setActiveImageIndex(0);
     setModalQuantity(1);
@@ -139,11 +139,23 @@ export default function Shop() {
       });
     }
     setModalCustomizations(initialCust);
-  };
+  }, []);
 
   const closeModal = () => {
     setSelectedFood(null);
+    if (searchParams.has("food")) {
+      const nextParams = new URLSearchParams(searchParams);
+      nextParams.delete("food");
+      setSearchParams(nextParams, { replace: true });
+    }
   };
+
+  useEffect(() => {
+    const foodId = searchParams.get("food");
+    if (!foodId || !foods.length || selectedFood) return;
+    const food = foods.find((item) => String(item.food_id || item.id) === foodId);
+    if (food) openCustomizer(food);
+  }, [foods, openCustomizer, searchParams, selectedFood]);
 
   // Add item from modal
   const handleAddFromModal = async () => {
@@ -723,206 +735,17 @@ export default function Shop() {
           ) : viewMode === "grid" ? (
             /* Grid View */
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-              {filteredFoods.map((food) => {
-                const isVeg = food.food_type?.toLowerCase() === "veg";
-                const discount = Number(food.discount || 0);
-                const finalPrice = Number(food.final_price || food.mrp || 0);
-                const mrp = Number(food.mrp || 0);
-                const hasDiscount = discount > 0 && mrp > finalPrice;
-                const inWishlist = isItemInWishlist(food.food_id || food.id);
-                const cartQty = getItemCartQty(food.food_id || food.id);
-                const isAvailable = food.is_available !== false;
-                const hasCustomizations =
-                  (food.addons && food.addons.length > 0) ||
-                  (food.customizations && food.customizations.length > 0);
-
-                const primaryImage =
-                  Array.isArray(food.food_images) && food.food_images.length > 0
-                    ? resolveImageUrl(food.food_images[0])
-                    : "";
-
-                return (
-                  <article
-                    key={food.food_id || food.id}
-                    onClick={() => openCustomizer(food)}
-                    className="group relative flex flex-col justify-between overflow-hidden rounded-3xl border border-slate-200/80 bg-white shadow-xs transition-all duration-300 hover:-translate-y-1 hover:border-emerald-200 hover:shadow-xl cursor-pointer"
-                  >
-                    {/* Top Image Box */}
-                    <div className="relative aspect-[4/3] w-full overflow-hidden bg-slate-100">
-                      {primaryImage ? (
-                        <img
-                          src={primaryImage}
-                          alt={food.food_name}
-                          className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-                          loading="lazy"
-                          onError={(e) => {
-                            e.target.onerror = null;
-                            e.target.src =
-                              "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=500&auto=format&fit=crop&q=60";
-                          }}
-                        />
-                      ) : (
-                        <div className="flex h-full w-full items-center justify-center bg-emerald-50/50 text-[#1a3c36]/40">
-                          <UtensilsCrossed className="h-10 w-10" />
-                        </div>
-                      )}
-
-                      {/* Veg / Non-Veg Indicator in Top Left */}
-                      <div className="absolute left-3 top-3 z-10 flex items-center gap-1.5">
-                        <div
-                          className={`flex h-5 w-5 items-center justify-center rounded-md border-2 bg-white shadow-sm ${
-                            isVeg ? "border-emerald-600" : "border-rose-600"
-                          }`}
-                          title={isVeg ? "Vegetarian" : "Non-Vegetarian"}
-                        >
-                          <div
-                            className={`h-2.5 w-2.5 rounded-full ${
-                              isVeg ? "bg-emerald-600" : "bg-rose-600"
-                            }`}
-                          />
-                        </div>
-
-                        {food.is_spicy && (
-                          <span
-                            className="flex h-5 items-center gap-0.5 rounded-md bg-amber-500/90 px-1.5 text-[10px] font-bold text-white shadow-sm backdrop-blur-xs"
-                            title="Spicy dish"
-                          >
-                            <Flame className="h-3 w-3" />
-                            <span>Spicy</span>
-                          </span>
-                        )}
-                      </div>
-
-                      {/* Wishlist Button in Top Right */}
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          if (toggleWishlist) toggleWishlist(food);
-                        }}
-                        aria-label="Add to favorites"
-                        className={`absolute right-3 top-3 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-white/90 shadow-md backdrop-blur-xs transition hover:scale-110 active:scale-95 ${
-                          inWishlist ? "text-rose-600" : "text-slate-400 hover:text-rose-600"
-                        }`}
-                      >
-                        <Heart
-                          className={`h-4 w-4 ${inWishlist ? "fill-rose-600" : ""}`}
-                        />
-                      </button>
-
-                      {/* Discount Tag */}
-                      {hasDiscount && (
-                        <div className="absolute bottom-2.5 left-3 z-10">
-                          <span className="rounded-lg bg-[#d4a843] px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-slate-950 shadow-md">
-                            {discount}% OFF
-                          </span>
-                        </div>
-                      )}
-
-                      {/* Preparation Time chip in Bottom Right */}
-                      {food.preparation_time > 0 && (
-                        <div className="absolute bottom-2.5 right-3 z-10">
-                          <span className="flex items-center gap-1 rounded-lg bg-black/60 px-2 py-0.5 text-[10px] font-semibold text-white backdrop-blur-xs shadow-sm">
-                            <Clock className="h-2.5 w-2.5 text-[#d4a843]" />
-                            <span>{food.preparation_time}m</span>
-                          </span>
-                        </div>
-                      )}
-
-                      {/* Sold out overlay */}
-                      {!isAvailable && (
-                        <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/60 backdrop-blur-xs">
-                          <span className="rounded-xl border border-white/20 bg-rose-600/90 px-3 py-1 text-xs font-bold uppercase tracking-wider text-white shadow-lg">
-                            Sold Out
-                          </span>
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Card Body */}
-                    <div className="flex flex-1 flex-col justify-between p-4">
-                      <div>
-                        {/* Cuisine & Category line */}
-                        <div className="flex items-center justify-between text-[11px] text-slate-400 font-semibold mb-1">
-                          <span className="truncate">{food.category_name || "Specialty"}</span>
-                          {food.rating > 0 && (
-                            <span className="inline-flex items-center gap-1 font-bold text-amber-600">
-                              <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
-                              <span>{Number(food.rating).toFixed(1)}</span>
-                            </span>
-                          )}
-                        </div>
-
-                        {/* Title */}
-                        <h3 className="font-serif text-base font-bold text-slate-900 line-clamp-1 group-hover:text-[#1a3c36] transition-colors">
-                          {food.food_name}
-                        </h3>
-
-                        {/* Description excerpt */}
-                        <p className="mt-1 text-xs text-slate-500 line-clamp-2 leading-relaxed">
-                          {food.description ||
-                            `${food.portion_size || "Full"} portion of delicious ${food.food_name} prepared fresh.`}
-                        </p>
-                      </div>
-
-                      {/* Price & Action row */}
-                      <div className="mt-4 flex items-center justify-between pt-3 border-t border-slate-100">
-                        <div>
-                          <div className="flex items-baseline gap-1.5">
-                            <span className="font-serif text-lg font-black text-[#1a3c36]">
-                              ₹{finalPrice.toFixed(2)}
-                            </span>
-                            {hasDiscount && (
-                              <span className="text-xs text-slate-400 line-through">
-                                ₹{mrp.toFixed(2)}
-                              </span>
-                            )}
-                          </div>
-                          {food.portion_size && (
-                            <p className="text-[10px] text-slate-400 font-medium">
-                              {food.portion_size}
-                            </p>
-                          )}
-                        </div>
-
-                        {/* Add / Customizer Button */}
-                        <div>
-                          {!isAvailable ? (
-                            <button
-                              type="button"
-                              disabled
-                              className="rounded-xl bg-slate-100 px-3.5 py-1.5 text-xs font-bold text-slate-400 cursor-not-allowed"
-                            >
-                              Unavailable
-                            </button>
-                          ) : hasCustomizations ? (
-                            <button
-                              type="button"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                openCustomizer(food);
-                              }}
-                              className="inline-flex items-center gap-1 rounded-xl bg-emerald-50 px-3 py-1.5 text-xs font-bold text-[#1a3c36] border border-emerald-200/80 shadow-2xs hover:bg-[#1a3c36] hover:text-white transition active:scale-95"
-                            >
-                              <span>Customize</span>
-                              <Plus className="h-3 w-3" />
-                            </button>
-                          ) : (
-                            <button
-                              type="button"
-                              onClick={(e) => handleQuickAdd(e, food)}
-                              className="inline-flex items-center gap-1.5 rounded-xl bg-[#1a3c36] px-3.5 py-1.5 text-xs font-bold text-white shadow-2xs hover:bg-[#245048] transition active:scale-95"
-                            >
-                              <Plus className="h-3.5 w-3.5 text-emerald-300" />
-                              <span>{cartQty > 0 ? `Add (${cartQty})` : "Add"}</span>
-                            </button>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  </article>
-                );
-              })}
+              {filteredFoods.map((food) => (
+                <FoodProductCard
+                  key={food.food_id || food.id}
+                  food={food}
+                  onSelect={() => openCustomizer(food)}
+                  onAdd={() => openCustomizer(food)}
+                  cartQuantity={getItemCartQty(food.food_id || food.id)}
+                  isInWishlist={isItemInWishlist(food.food_id || food.id)}
+                  onToggleWishlist={toggleWishlist}
+                />
+              ))}
             </div>
           ) : (
             /* List View */
