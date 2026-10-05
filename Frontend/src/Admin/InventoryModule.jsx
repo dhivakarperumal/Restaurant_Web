@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import { Route, Routes, NavLink, useNavigate } from 'react-router-dom';
-import { AlertTriangle, ArrowRightLeft, BarChart3, Boxes, CalendarClock, CircleDollarSign, ClipboardList, Filter, Gauge, MapPinned, NotebookPen, Package, PackagePlus, Pencil, Plus, PlusCircle, Search, ShoppingCart, Tag, Tags, Trash2, TrendingDown, TrendingUp, Truck, UtensilsCrossed, Warehouse, Wrench } from 'lucide-react';
+import { AlertTriangle, ArrowRightLeft, BarChart3, Boxes, CalendarClock, CircleDollarSign, ClipboardList, Eye, Filter, Gauge, MapPinned, NotebookPen, Package, PackagePlus, Pencil, Plus, PlusCircle, Search, ShoppingCart, Tag, Tags, Trash2, TrendingDown, TrendingUp, Truck, UtensilsCrossed, Warehouse, Wrench } from 'lucide-react';
 import api from '../api';
 import toast, { Toaster } from 'react-hot-toast';
 
@@ -23,8 +23,6 @@ const EMPTY_DASHBOARD = {
 const INVENTORY_NAV = [
   { path: '/admin/inventory', label: 'Dashboard', icon: Gauge },
   { path: '/admin/inventory/products', label: 'Products', icon: Package },
-  { path: '/admin/inventory/categories', label: 'Categories', icon: Tags },
-  { path: '/admin/inventory/units', label: 'Units', icon: ClipboardList },
   { path: '/admin/inventory/suppliers', label: 'Suppliers', icon: Truck },
   { path: '/admin/inventory/purchases', label: 'Purchases', icon: ShoppingCart },
   { path: '/admin/inventory/stock-in', label: 'Stock In', icon: PackagePlus },
