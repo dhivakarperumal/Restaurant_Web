@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import {
+  AlertCircle,
   ArrowLeft,
   Banknote,
   Bike,
@@ -83,15 +84,38 @@ const parseStringList = (value) => {
   return [String(value)];
 };
 
-const Field = ({ label, required = false, type = "text", options, placeholder, wide = false, name = fieldNameFromLabel(label), existingDocument }) => {
+const Field = ({
+  label,
+  required = false,
+  type = "text",
+  options,
+  placeholder,
+  wide = false,
+  name = fieldNameFromLabel(label),
+  existingDocument,
+  value,
+  defaultValue,
+  onChange,
+  onBlur,
+  error,
+  helperText,
+  uppercase = false,
+  readOnly = false,
+}) => {
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
+  const inputId = `employee-${name}`;
 
   if (type === "file") {
     return (
       <div className={`block min-w-0 space-y-2 ${wide ? "md:col-span-2" : ""}`}>
-        <label className="block space-y-2 text-xs font-semibold text-[#34443b]">
+        <label htmlFor={inputId} className="block space-y-2 text-xs font-semibold text-[#34443b]">
           <span>{label}{required && <span className="ml-1 text-[#c16b3a]">*</span>}</span>
-          <input name={name} type="file" className={`${fieldStyles} cursor-pointer py-2 text-xs file:mr-3 file:rounded-md file:border-0 file:bg-[#edf2ed] file:px-2.5 file:py-1 file:text-xs file:font-semibold file:text-[#355443]`} />
+          <input
+            id={inputId}
+            name={name}
+            type="file"
+            className={`${fieldStyles} cursor-pointer py-2 text-xs file:mr-3 file:rounded-md file:border-0 file:bg-[#edf2ed] file:px-2.5 file:py-1 file:text-xs file:font-semibold file:text-[#355443]`}
+          />
         </label>
         {existingDocument && (
           <div>
@@ -104,15 +128,22 @@ const Field = ({ label, required = false, type = "text", options, placeholder, w
   }
 
   if (type === "password") {
-    const inputId = `employee-${name}`;
-
     return (
       <div className={`block min-w-0 space-y-2 ${wide ? "md:col-span-2" : ""}`}>
         <label htmlFor={inputId} className="block text-xs font-semibold text-[#34443b]">
           {label}{required && <span className="ml-1 text-[#c16b3a]">*</span>}
         </label>
         <div className="relative">
-          <input id={inputId} name={name} type={isPasswordVisible ? "text" : "password"} required={required} placeholder={placeholder || `Enter ${label.toLowerCase()}`} className={`${fieldStyles} pr-11`} />
+          <input
+            id={inputId}
+            name={name}
+            type={isPasswordVisible ? "text" : "password"}
+            required={required}
+            placeholder={placeholder || `Enter ${label.toLowerCase()}`}
+            className={`${fieldStyles} pr-11 ${error ? "border-[#e05244] bg-[#fffbfb] focus:border-[#e05244] focus:ring-[#e05244]/20" : ""}`}
+            onChange={onChange}
+            onBlur={onBlur}
+          />
           <button
             type="button"
             aria-label={isPasswordVisible ? `Hide ${label.toLowerCase()}` : `Show ${label.toLowerCase()}`}
@@ -123,29 +154,79 @@ const Field = ({ label, required = false, type = "text", options, placeholder, w
             {isPasswordVisible ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
           </button>
         </div>
+        {error ? (
+          <p className="flex items-center gap-1.5 text-xs font-medium text-[#c0392b]">
+            <AlertCircle className="h-3.5 w-3.5 shrink-0" />
+            {error}
+          </p>
+        ) : helperText ? (
+          <p className="text-[11px] text-[#718276]">{helperText}</p>
+        ) : null}
       </div>
     );
   }
 
   return (
-    <label className={`block min-w-0 space-y-2 ${wide ? "md:col-span-2" : ""}`}>
-      <span className="block text-xs font-semibold text-[#34443b]">
+    <div className={`block min-w-0 space-y-2 ${wide ? "md:col-span-2" : ""}`}>
+      <label htmlFor={inputId} className="block text-xs font-semibold text-[#34443b]">
         {label}{required && <span className="ml-1 text-[#c16b3a]">*</span>}
-      </span>
+      </label>
       {options ? (
         <div className="relative">
-          <select name={name} required={required} className={`${fieldStyles} appearance-none pr-9`} defaultValue="">
+          <select
+            id={inputId}
+            name={name}
+            required={required}
+            defaultValue=""
+            className={`${fieldStyles} appearance-none pr-9 ${error ? "border-[#e05244] bg-[#fffbfb] focus:border-[#e05244] focus:ring-[#e05244]/20" : ""}`}
+            onChange={onChange}
+            onBlur={onBlur}
+          >
             <option value="" disabled>Select {label.toLowerCase()}</option>
             {options.map((option) => <option key={option} value={option}>{option}</option>)}
           </select>
           <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#75847a]" />
         </div>
       ) : type === "textarea" ? (
-        <textarea name={name} required={required} rows={3} placeholder={placeholder || `Enter ${label.toLowerCase()}`} className={`${fieldStyles} h-auto min-h-24 resize-y py-3`} />
+        <textarea
+          id={inputId}
+          name={name}
+          required={required}
+          rows={3}
+          placeholder={placeholder || `Enter ${label.toLowerCase()}`}
+          className={`${fieldStyles} h-auto min-h-24 resize-y py-3 ${error ? "border-[#e05244] bg-[#fffbfb] focus:border-[#e05244] focus:ring-[#e05244]/20" : ""}`}
+          onChange={onChange}
+          onBlur={onBlur}
+        />
       ) : (
-        <input name={name} type={type} required={required} placeholder={placeholder || `Enter ${label.toLowerCase()}`} className={fieldStyles} />
+        <input
+          id={inputId}
+          name={name}
+          type={type}
+          required={required}
+          readOnly={readOnly}
+          value={value}
+          defaultValue={defaultValue}
+          placeholder={placeholder || `Enter ${label.toLowerCase()}`}
+          className={`${fieldStyles} ${uppercase ? "uppercase" : ""} ${readOnly ? "bg-[#f2f5f1] text-[#66746a]" : ""} ${error ? "border-[#e05244] bg-[#fffbfb] focus:border-[#e05244] focus:ring-[#e05244]/20" : ""}`}
+          onChange={(e) => {
+            if (uppercase) {
+              e.target.value = e.target.value.toUpperCase();
+            }
+            if (onChange) onChange(e);
+          }}
+          onBlur={onBlur}
+        />
       )}
-    </label>
+      {error ? (
+        <p className="flex items-center gap-1.5 text-xs font-medium text-[#c0392b]">
+          <AlertCircle className="h-3.5 w-3.5 shrink-0" />
+          {error}
+        </p>
+      ) : helperText ? (
+        <p className="text-[11px] text-[#718276]">{helperText}</p>
+      ) : null}
+    </div>
   );
 };
 
@@ -173,14 +254,58 @@ const UploadField = ({ label, initialData }) => {
   return <Field label={label} type="file" existingDocument={initialData?.[column]} />;
 };
 
-const LocationFields = ({ showCoordinates, delivery }) => (
+const LocationFields = ({ showCoordinates, delivery, fieldErrors = {}, handleFieldChange, handleFieldBlur }) => (
   <Section icon={MapPin} title="Location details" description="Primary address and service location">
-    <Field label="Address" required wide />
-    <Field label="Area / Locality" required />
-    <Field label="City" required />
-    <Field label="District" required />
-    <Field label="State" required options={indiaStatesAndTerritories} />
-    <Field label="Pincode" required />
+    <Field
+      label="Address"
+      required
+      wide
+      placeholder="e.g. 123 Main Street"
+      error={fieldErrors.address}
+      onChange={handleFieldChange}
+      onBlur={(e) => handleFieldBlur('address', e.target.value)}
+    />
+    <Field
+      label="Area / Locality"
+      required
+      placeholder="e.g. Anna Nagar"
+      error={fieldErrors.area_locality}
+      onChange={handleFieldChange}
+      onBlur={(e) => handleFieldBlur('area_locality', e.target.value)}
+    />
+    <Field
+      label="City"
+      required
+      placeholder="e.g. Chennai"
+      error={fieldErrors.city}
+      onChange={handleFieldChange}
+      onBlur={(e) => handleFieldBlur('city', e.target.value)}
+    />
+    <Field
+      label="District"
+      required
+      placeholder="e.g. Chennai"
+      error={fieldErrors.district}
+      onChange={handleFieldChange}
+      onBlur={(e) => handleFieldBlur('district', e.target.value)}
+    />
+    <Field
+      label="State"
+      required
+      options={indiaStatesAndTerritories}
+      error={fieldErrors.state}
+      onChange={handleFieldChange}
+      onBlur={(e) => handleFieldBlur('state', e.target.value)}
+    />
+    <Field
+      label="Pincode"
+      required
+      placeholder="e.g. 600001 (6 digits)"
+      helperText="6-digit postal pincode"
+      error={fieldErrors.pincode}
+      onChange={handleFieldChange}
+      onBlur={(e) => handleFieldBlur('pincode', e.target.value)}
+    />
     {showCoordinates && <Field label="Latitude" placeholder="Optional" />}
     {showCoordinates && <Field label="Longitude" placeholder="Optional" />}
     {showCoordinates && (
@@ -235,7 +360,131 @@ const StringListField = ({ name, label, initialValue, placeholder }) => {
   );
 };
 
-const EmployeeFields = ({ employeeType, employeeId, isEditing, initialData }) => {
+const uniqueFieldNames = [
+  'phone_number',
+  'email',
+  'account_number',
+  'ifsc_code',
+  'upi_id',
+  'aadhaar_number',
+  'pan_number',
+  'pan_card_number',
+  'vehicle_number',
+  'driving_license_number',
+];
+
+const validateFormat = (name, value, employeeType) => {
+  const trimmed = String(value || '').trim();
+
+  // If empty and not required:
+  if (!trimmed) {
+    if (['full_name', 'phone_number', 'email', 'address', 'area_locality', 'city', 'district', 'state', 'pincode'].includes(name)) {
+      return `${name.replace(/_/g, ' ')} is required`;
+    }
+    if (employeeType === 'Chef' && name === 'cuisine_type') {
+      return 'Cuisine type is required for Chef';
+    }
+    if (employeeType === 'Delivery Partner' && ['vehicle_type', 'vehicle_number', 'driving_license_number'].includes(name)) {
+      return `${name.replace(/_/g, ' ')} is required for Delivery Partner`;
+    }
+    return '';
+  }
+
+  switch (name) {
+    case 'phone_number': {
+      const cleanPhone = trimmed.replace(/^\+91/, '').replace(/[\s\-()]/g, '');
+      if (!/^[6-9]\d{9}$/.test(cleanPhone)) {
+        return 'Phone number must be a 10-digit number starting with 6, 7, 8, or 9';
+      }
+      return '';
+    }
+    case 'whatsapp_number': {
+      const cleanPhone = trimmed.replace(/^\+91/, '').replace(/[\s\-()]/g, '');
+      if (!/^[6-9]\d{9}$/.test(cleanPhone)) {
+        return 'WhatsApp number must be a 10-digit number starting with 6, 7, 8, or 9';
+      }
+      return '';
+    }
+    case 'email': {
+      const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+      if (!emailRegex.test(trimmed)) {
+        return 'Please enter a valid email address (e.g. employee@restaurant.com)';
+      }
+      return '';
+    }
+    case 'account_number': {
+      const cleanAcc = trimmed.replace(/[\s\-]/g, '');
+      if (!/^\d{9,18}$/.test(cleanAcc)) {
+        return 'Account number must be 9 to 18 digits (e.g. 123456789012)';
+      }
+      return '';
+    }
+    case 'ifsc_code': {
+      const cleanIfsc = trimmed.toUpperCase().replace(/\s/g, '');
+      if (!/^[A-Z]{4}0[A-Z0-9]{6}$/.test(cleanIfsc)) {
+        return 'IFSC code must be 11 characters (e.g. SBIN0001234: 4 letters, 0, then 6 alphanumeric characters)';
+      }
+      return '';
+    }
+    case 'upi_id': {
+      const upiRegex = /^[a-zA-Z0-9.\-_]{2,256}@[a-zA-Z]{2,64}$/;
+      if (!upiRegex.test(trimmed)) {
+        return 'UPI ID must be a valid format (e.g. employee@okaxis or 9876543210@upi)';
+      }
+      return '';
+    }
+    case 'aadhaar_number': {
+      const cleanAadhaar = trimmed.replace(/[\s\-]/g, '');
+      if (!/^\d{12}$/.test(cleanAadhaar)) {
+        return 'Aadhaar number must be a 12-digit number (e.g. 1234 5678 9012)';
+      }
+      return '';
+    }
+    case 'pan_number':
+    case 'pan_card_number': {
+      const cleanPan = trimmed.replace(/[\s\-]/g, '').toUpperCase();
+      if (!/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/.test(cleanPan)) {
+        return 'PAN number must be 10 characters: 5 letters, 4 numbers, 1 letter (e.g. ABCDE1234F)';
+      }
+      return '';
+    }
+    case 'vehicle_number': {
+      const cleanVeh = trimmed.replace(/[\s\-]/g, '').toUpperCase();
+      if (!/^[A-Z]{2}[0-9]{1,2}[A-Z]{0,3}[0-9]{4}$/.test(cleanVeh)) {
+        return 'Vehicle number must match registration format (e.g. TN01AB1234 or TN 01 AB 1234)';
+      }
+      return '';
+    }
+    case 'driving_license_number': {
+      const cleanDl = trimmed.replace(/[\s\-]/g, '').toUpperCase();
+      if (!/^[A-Z]{2}[0-9]{2}[0-9A-Z]{7,12}$/.test(cleanDl)) {
+        return 'Driving license must match standard format (e.g. TN0120200001234: 11-16 characters)';
+      }
+      return '';
+    }
+    case 'pincode': {
+      const cleanPin = trimmed.replace(/[\s\-]/g, '');
+      if (!/^\d{6}$/.test(cleanPin)) {
+        return 'Pincode must be 6 digits (e.g. 600001)';
+      }
+      return '';
+    }
+    default:
+      return '';
+  }
+};
+
+const EmployeeFields = ({
+  employeeType,
+  employeeId,
+  isEditing,
+  initialData,
+  fieldErrors = {},
+  handleFieldChange,
+  handleFieldBlur,
+  panValue = "",
+  handlePanChange,
+}) => {
   const isChef = employeeType === "Chef";
   const isDelivery = employeeType === "Delivery Partner";
   const isBasic = !isChef && !isDelivery;
@@ -244,42 +493,101 @@ const EmployeeFields = ({ employeeType, employeeId, isEditing, initialData }) =>
   return (
     <>
       <Section icon={UserRound} title="Personal details" description="Identity, contact and account access">
-        <Field label={isChef ? "Chef Name" : "Full Name"} name="full_name" required />
+        <Field
+          label={isChef ? "Chef Name" : "Full Name"}
+          name="full_name"
+          required
+          placeholder="e.g. John Doe"
+          error={fieldErrors.full_name}
+          onChange={handleFieldChange}
+          onBlur={(e) => handleFieldBlur('full_name', e.target.value)}
+        />
         <UploadField label="Profile Photo" initialData={initialData} />
         <Field label="Gender" options={["Female", "Male", "Non-binary", "Prefer not to say"]} />
         <Field label="Date of Birth" type="date" />
-        <Field label="Phone Number" type="tel" required />
-        {isDelivery && <Field label="WhatsApp Number" type="tel" />}
-        <Field label="Email" type="email" required />
+        <Field
+          label="Phone Number"
+          type="tel"
+          required
+          placeholder="e.g. 9876543210 (10 digits starting with 6, 7, 8, 9)"
+          helperText="10-digit number starting with 6, 7, 8, or 9"
+          error={fieldErrors.phone_number}
+          onChange={handleFieldChange}
+          onBlur={(e) => handleFieldBlur('phone_number', e.target.value)}
+        />
+        {isDelivery && (
+          <Field
+            label="WhatsApp Number"
+            type="tel"
+            placeholder="e.g. 9876543210 (10 digits starting with 6, 7, 8, 9)"
+            helperText="10-digit number starting with 6, 7, 8, or 9"
+            error={fieldErrors.whatsapp_number}
+            onChange={handleFieldChange}
+            onBlur={(e) => handleFieldBlur('whatsapp_number', e.target.value)}
+          />
+        )}
+        <Field
+          label="Email"
+          type="email"
+          required
+          placeholder="e.g. employee@restaurant.com"
+          error={fieldErrors.email}
+          onChange={handleFieldChange}
+          onBlur={(e) => handleFieldBlur('email', e.target.value)}
+        />
         <label className="block min-w-0 space-y-2">
           <span className="block text-xs font-semibold text-[#34443b]">{isChef ? "Chef ID / Employee ID" : isDelivery ? "Delivery Boy ID / Employee ID" : "Employee ID"}</span>
           <input readOnly value={employeeId} placeholder="Generated automatically on save" className={`${fieldStyles} bg-[#f2f5f1] text-[#66746a]`} />
         </label>
         <Field label="Status" options={["Active", "Inactive"]} />
-        <Field label="Password" type="password" name="password" required={!isEditing} />
-        <Field label="Confirm Password" type="password" name="confirm_password" required={!isEditing} />
+        <Field label="Password" type="password" name="password" required={!isEditing} error={fieldErrors.password} onChange={handleFieldChange} />
+        <Field label="Confirm Password" type="password" name="confirm_password" required={!isEditing} error={fieldErrors.confirm_password} onChange={handleFieldChange} />
       </Section>
 
       {isChef && (
         <Section icon={Utensils} title="Restaurant details" description="Cuisine, experience and food specialties">
-          <Field label="Cuisine Type" required options={["South Indian", "North Indian", "Chinese", "Bakery", "Italian", "Continental", "Other"]} />
-          <Field label="Experience (Years)" type="number" />
+          <Field label="Cuisine Type" required options={["South Indian", "North Indian", "Chinese", "Bakery", "Italian", "Continental", "Other"]} error={fieldErrors.cuisine_type} onChange={handleFieldChange} />
+          <Field label="Experience (Years)" type="number" placeholder="e.g. 5" />
           <Field label="Food Preference" options={["Veg", "Non-Veg", "Both"]} />
           <StringListField name="special_dishes" label="Special Dishes" initialValue={initialData?.special_dishes} placeholder="e.g. signature biryani" />
-          <Field label="Description / About Chef" type="textarea" wide />
+          <Field label="Description / About Chef" type="textarea" wide placeholder="Brief background or achievements" />
         </Section>
       )}
 
-      <LocationFields showCoordinates={isChef || isDelivery} delivery={isDelivery} />
+      <LocationFields
+        showCoordinates={isChef || isDelivery}
+        delivery={isDelivery}
+        fieldErrors={fieldErrors}
+        handleFieldChange={handleFieldChange}
+        handleFieldBlur={handleFieldBlur}
+      />
 
       {isDelivery && (
         <Section icon={Bike} title="Vehicle details" description="Vehicle and driving licence information">
-          <Field label="Vehicle Type" required options={["Bike", "Scooter", "Bicycle", "Electric Vehicle"]} />
-          <Field label="Vehicle Number" required />
-          <Field label="Vehicle Model" />
-          <Field label="Driving License Number" required />
+          <Field label="Vehicle Type" required options={["Bike", "Scooter", "Bicycle", "Electric Vehicle"]} error={fieldErrors.vehicle_type} onChange={handleFieldChange} />
+          <Field
+            label="Vehicle Number"
+            required
+            uppercase
+            placeholder="e.g. TN01AB1234 (e.g. TN 01 AB 1234)"
+            helperText="State, District, Series, 4-digit number"
+            error={fieldErrors.vehicle_number}
+            onChange={handleFieldChange}
+            onBlur={(e) => handleFieldBlur('vehicle_number', e.target.value)}
+          />
+          <Field label="Vehicle Model" placeholder="e.g. Honda Activa 6G" />
+          <Field
+            label="Driving License Number"
+            required
+            uppercase
+            placeholder="e.g. TN0120200001234 (15 or 16 characters)"
+            helperText="Standard DL format (e.g. TN0120200001234)"
+            error={fieldErrors.driving_license_number}
+            onChange={handleFieldChange}
+            onBlur={(e) => handleFieldBlur('driving_license_number', e.target.value)}
+          />
           <Field label="Driving License Expiry Date" type="date" />
-          <Field label="RC Number" />
+          <Field label="RC Number" uppercase placeholder="e.g. TN01AB1234" />
           <UploadField label="RC Document Upload" initialData={initialData} />
           <UploadField label="Driving License Upload" initialData={initialData} />
           <UploadField label="Vehicle Photo" initialData={initialData} />
@@ -305,23 +613,78 @@ const EmployeeFields = ({ employeeType, employeeId, isEditing, initialData }) =>
 
       {(isChef || isBasic) && (
         <Section icon={CreditCard} title="Bank & payment details" description="Payment destination and identity details">
-          <Field label="Account Holder Name" />
-          <Field label="Bank Name" />
-          <Field label="Account Number" />
-          <Field label="IFSC Code" />
-          <Field label="UPI ID" />
-          {(isChef || isBasic) && <Field label="PAN Number" />}
+          <Field label="Account Holder Name" placeholder="e.g. John Doe" />
+          <Field label="Bank Name" placeholder="e.g. State Bank of India" />
+          <Field
+            label="Account Number"
+            placeholder="e.g. 123456789012 (9 to 18 digits)"
+            helperText="9 to 18 digits bank account number"
+            error={fieldErrors.account_number}
+            onChange={handleFieldChange}
+            onBlur={(e) => handleFieldBlur('account_number', e.target.value)}
+          />
+          <Field
+            label="IFSC Code"
+            uppercase
+            placeholder="e.g. SBIN0001234 (11 characters)"
+            helperText="11 characters: 4 letters, 0, 6 letters/digits"
+            error={fieldErrors.ifsc_code}
+            onChange={handleFieldChange}
+            onBlur={(e) => handleFieldBlur('ifsc_code', e.target.value)}
+          />
+          <Field
+            label="UPI ID"
+            placeholder="e.g. employee@okaxis or 9876543210@upi"
+            helperText="Virtual payment address"
+            error={fieldErrors.upi_id}
+            onChange={handleFieldChange}
+            onBlur={(e) => handleFieldBlur('upi_id', e.target.value)}
+          />
+          {(isChef || isBasic) && (
+            <Field
+              label="PAN Number"
+              uppercase
+              value={panValue}
+              placeholder="e.g. ABCDE1234F (10 characters: 5 letters, 4 numbers, 1 letter)"
+              helperText="10 characters: 5 letters, 4 numbers, 1 letter"
+              error={fieldErrors.pan_number || fieldErrors.pan_card_number}
+              onChange={(e) => handlePanChange(e.target.value)}
+              onBlur={(e) => handleFieldBlur('pan_number', e.target.value)}
+            />
+          )}
           <UploadField label="Bank Passbook" initialData={initialData} />
         </Section>
       )}
 
       {isDelivery && (
         <Section icon={CreditCard} title="Bank & payment details" description="Payment destination">
-          <Field label="Account Holder Name" />
-          <Field label="Bank Name" />
-          <Field label="Account Number" />
-          <Field label="IFSC Code" />
-          <Field label="UPI ID" />
+          <Field label="Account Holder Name" placeholder="e.g. John Doe" />
+          <Field label="Bank Name" placeholder="e.g. State Bank of India" />
+          <Field
+            label="Account Number"
+            placeholder="e.g. 123456789012 (9 to 18 digits)"
+            helperText="9 to 18 digits bank account number"
+            error={fieldErrors.account_number}
+            onChange={handleFieldChange}
+            onBlur={(e) => handleFieldBlur('account_number', e.target.value)}
+          />
+          <Field
+            label="IFSC Code"
+            uppercase
+            placeholder="e.g. SBIN0001234 (11 characters)"
+            helperText="11 characters: 4 letters, 0, 6 letters/digits"
+            error={fieldErrors.ifsc_code}
+            onChange={handleFieldChange}
+            onBlur={(e) => handleFieldBlur('ifsc_code', e.target.value)}
+          />
+          <Field
+            label="UPI ID"
+            placeholder="e.g. employee@okaxis or 9876543210@upi"
+            helperText="Virtual payment address"
+            error={fieldErrors.upi_id}
+            onChange={handleFieldChange}
+            onBlur={(e) => handleFieldBlur('upi_id', e.target.value)}
+          />
           <UploadField label="Cancelled Cheque / Bank Proof" initialData={initialData} />
         </Section>
       )}
@@ -347,7 +710,7 @@ const EmployeeFields = ({ employeeType, employeeId, isEditing, initialData }) =>
         )}
         {(!isDelivery || deliverySalaryType === "Monthly Basis") && (
           <>
-            <Field label="Basic Salary" type="number" placeholder="Enter basic salary" required />
+            <Field label="Basic Salary" type="number" placeholder="Enter basic salary" required error={fieldErrors.basic_salary} onChange={handleFieldChange} />
             <Field label="Allowances" type="number" placeholder="Enter allowances" />
             <Field label="Deductions" type="number" placeholder="Enter deductions" />
             <Field label="Net Salary" type="number" placeholder="Enter net salary" />
@@ -357,9 +720,25 @@ const EmployeeFields = ({ employeeType, employeeId, isEditing, initialData }) =>
       </Section>
 
       <Section icon={FileCheck2} title="Documents" description="Identity and supporting documents">
-        <Field label="Aadhaar Number" placeholder="Enter Aadhaar number" />
+        <Field
+          label="Aadhaar Number"
+          placeholder="e.g. 1234 5678 9012 (12 digits)"
+          helperText="12-digit Aadhaar number"
+          error={fieldErrors.aadhaar_number}
+          onChange={handleFieldChange}
+          onBlur={(e) => handleFieldBlur('aadhaar_number', e.target.value)}
+        />
         <UploadField label="Aadhaar / ID Proof" initialData={initialData} />
-        <Field label="PAN Card Number" placeholder="Enter PAN card number" />
+        <Field
+          label="PAN Card Number"
+          uppercase
+          value={panValue}
+          placeholder="e.g. ABCDE1234F (10 characters: 5 letters, 4 numbers, 1 letter)"
+          helperText="10 characters: 5 letters, 4 numbers, 1 letter"
+          error={fieldErrors.pan_card_number || fieldErrors.pan_number}
+          onChange={(e) => handlePanChange(e.target.value)}
+          onBlur={(e) => handleFieldBlur('pan_card_number', e.target.value)}
+        />
         <UploadField label="PAN Card" initialData={initialData} />
         {isChef && <UploadField label="FSSAI Certificate" initialData={initialData} />}
         {isDelivery && <UploadField label="Driving License" initialData={initialData} />}
@@ -410,6 +789,9 @@ const AddEmployee = () => {
   const [submitError, setSubmitError] = useState("");
   const [createdEmployeeId, setCreatedEmployeeId] = useState("");
   const [newlyCreatedServer, setNewlyCreatedServer] = useState(null);
+  const [fieldErrors, setFieldErrors] = useState({});
+  const [panValue, setPanValue] = useState("");
+
   const employeeType = isEditing
     ? employeeData?.employee_type || initialEmployeeType || "Chef"
     : typeChoice.routeEmployeeType === routeEmployeeType
@@ -430,6 +812,9 @@ const AddEmployee = () => {
         }
         setEmployeeData(employee);
         setCreatedEmployeeId(employee.employee_id);
+        if (employee.pan_number || employee.pan_card_number) {
+          setPanValue(employee.pan_number || employee.pan_card_number);
+        }
       })
       .catch((requestError) => {
         if (isMounted) setLoadError(requestError.response?.data?.message || "Employee details could not be loaded.");
@@ -471,16 +856,118 @@ const AddEmployee = () => {
     });
   }, [employeeData]);
 
+  const handleFieldChange = (event) => {
+    const { name } = event.target;
+    if (fieldErrors[name]) {
+      setFieldErrors((prev) => {
+        const next = { ...prev };
+        delete next[name];
+        return next;
+      });
+    }
+  };
+
+  const handlePanChange = (value) => {
+    const upper = value.toUpperCase();
+    setPanValue(upper);
+    setFieldErrors((prev) => {
+      const next = { ...prev };
+      delete next.pan_number;
+      delete next.pan_card_number;
+      return next;
+    });
+  };
+
+  const handleFieldBlur = async (name, value) => {
+    const trimmed = String(value || "").trim();
+    if (!trimmed) {
+      if (["full_name", "phone_number", "email", "address", "area_locality", "city", "district", "state", "pincode"].includes(name)) {
+        setFieldErrors((prev) => ({ ...prev, [name]: "This field is required" }));
+      } else {
+        setFieldErrors((prev) => {
+          const next = { ...prev };
+          delete next[name];
+          return next;
+        });
+      }
+      return;
+    }
+
+    const err = validateFormat(name, trimmed, employeeType);
+    if (err) {
+      setFieldErrors((prev) => ({ ...prev, [name]: err }));
+      return;
+    }
+
+    if (uniqueFieldNames.includes(name)) {
+      try {
+        const response = await api.get("/employees/check-unique", {
+          params: {
+            field: name,
+            value: trimmed,
+            excludeEmployeeId: routeEmployeeId || undefined,
+          },
+        });
+        if (response.data && response.data.isUnique === false) {
+          setFieldErrors((prev) => ({ ...prev, [name]: response.data.message }));
+        } else {
+          setFieldErrors((prev) => {
+            const next = { ...prev };
+            delete next[name];
+            return next;
+          });
+        }
+      } catch (checkErr) {
+        console.error("Field uniqueness check error:", checkErr);
+      }
+    } else {
+      setFieldErrors((prev) => {
+        const next = { ...prev };
+        delete next[name];
+        return next;
+      });
+    }
+  };
+
   const handleSubmit = async (event) => {
     event.preventDefault();
     setSubmitError("");
 
     const formData = new FormData(event.currentTarget);
     formData.set("employee_type", employeeType);
+
+    if (panValue) {
+      formData.set("pan_number", panValue);
+      formData.set("pan_card_number", panValue);
+    }
+
     const password = formData.get("password");
     const confirmPassword = formData.get("confirm_password");
     if ((!isEditing || password || confirmPassword) && password !== confirmPassword) {
       setSubmitError("Password and confirm password do not match.");
+      setFieldErrors((prev) => ({ ...prev, confirm_password: "Passwords do not match" }));
+      return;
+    }
+
+    const newErrors = {};
+    for (const [key, val] of formData.entries()) {
+      if (typeof val === 'string' && key !== 'employee_type') {
+        const err = validateFormat(key, val, employeeType);
+        if (err) {
+          newErrors[key] = err;
+        }
+      }
+    }
+
+    if (Object.keys(newErrors).length > 0) {
+      setFieldErrors(newErrors);
+      setSubmitError("Please fix the validation errors marked in red before submitting.");
+      const firstErrorField = Object.keys(newErrors)[0];
+      const el = formRef.current?.querySelector(`[name="${firstErrorField}"]`);
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        el.focus?.();
+      }
       return;
     }
 
@@ -500,7 +987,17 @@ const AddEmployee = () => {
         }
       }
     } catch (requestError) {
-      setSubmitError(requestError.response?.data?.message || `Employee could not be ${isEditing ? "updated" : "created"}. Please try again.`);
+      const respData = requestError.response?.data;
+      const errorMsg = respData?.message || `Employee could not be ${isEditing ? "updated" : "created"}. Please try again.`;
+      setSubmitError(errorMsg);
+      if (respData?.field) {
+        setFieldErrors((prev) => ({ ...prev, [respData.field]: errorMsg }));
+        const el = formRef.current?.querySelector(`[name="${respData.field}"]`);
+        if (el) {
+          el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          el.focus?.();
+        }
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -520,7 +1017,18 @@ const AddEmployee = () => {
         <div className="w-full sm:w-64">
           <label htmlFor="employee-type" className="mb-2 block text-xs font-semibold text-[#34443b]">Employee type <span className="text-[#c16b3a">*</span></label>
           <div className="relative">
-            <select id="employee-type" value={employeeType} disabled={isEditing} onChange={(event) => { setTypeChoice({ routeEmployeeType, value: event.target.value }); setCreatedEmployeeId(""); }} className={`${fieldStyles} appearance-none pr-9 font-semibold disabled:cursor-not-allowed disabled:opacity-70`}>
+            <select
+              id="employee-type"
+              value={employeeType}
+              disabled={isEditing}
+              onChange={(event) => {
+                setTypeChoice({ routeEmployeeType, value: event.target.value });
+                setCreatedEmployeeId("");
+                setFieldErrors({});
+                setSubmitError("");
+              }}
+              className={`${fieldStyles} appearance-none pr-9 font-semibold disabled:cursor-not-allowed disabled:opacity-70`}
+            >
               {employeeTypes.map((type) => <option key={type} value={type}>{type}</option>)}
             </select>
             <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#75847a]" />
@@ -543,7 +1051,17 @@ const AddEmployee = () => {
         <p className="rounded-xl border border-[#e1e7e1] bg-white px-5 py-12 text-center text-sm text-[#849087]">Loading employee details...</p>
       ) : !isEditing || employeeData ? (
         <div className="space-y-4">
-          <EmployeeFields employeeType={employeeType} employeeId={createdEmployeeId} isEditing={isEditing} initialData={employeeData} />
+          <EmployeeFields
+            employeeType={employeeType}
+            employeeId={createdEmployeeId}
+            isEditing={isEditing}
+            initialData={employeeData}
+            fieldErrors={fieldErrors}
+            handleFieldChange={handleFieldChange}
+            handleFieldBlur={handleFieldBlur}
+            panValue={panValue}
+            handlePanChange={handlePanChange}
+          />
         </div>
       ) : null}
 

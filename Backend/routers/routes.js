@@ -5,6 +5,7 @@ const multer = require('multer');
 const path = require('path');
 const { getProfile, googleLogin, listUsers, login, register, removeUser, updateProfile, updateUser } = require('../controllers/authController');
 const {
+  checkEmployeeFieldUniqueness,
   createEmployee,
   deleteEmployee,
   getEmployee,
@@ -189,6 +190,7 @@ router.get('/employees/documents/:filename', optionalAuth, requireEmployeeAdmin,
   );
   return downloadFromDirectory(employeeUploadDirectory);
 });
+router.get('/employees/check-unique', optionalAuth, requireEmployeeAdmin, checkEmployeeFieldUniqueness);
 router.get('/employees/:employeeId', optionalAuth, requireEmployeeAdmin, getEmployee);
 router.patch('/employees/:employeeId/status', optionalAuth, requireEmployeeAdmin, updateEmployeeStatus);
 router.put('/employees/:employeeId/status', optionalAuth, requireEmployeeAdmin, updateEmployeeStatus);

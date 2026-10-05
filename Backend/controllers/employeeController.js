@@ -1,6 +1,8 @@
 const fs = require('fs/promises');
 const path = require('path');
 const {
+  checkEmployeeUniqueness,
+  checkSingleFieldUniqueness,
   createEmployeeWithUser,
   deleteEmployeeWithUser,
   employeeTypeConfig,
@@ -91,102 +93,196 @@ const removeEmployeeDocuments = async (employee) => {
   })));
 };
 
-const buildEmployeeData = (body, employeeType) => ({
-  employee_type: employeeType,
-  full_name: getValue(body.full_name || body.chef_name),
-  gender: nullableValue(body.gender),
-  date_of_birth: nullableValue(body.date_of_birth),
-  phone_number: getValue(body.phone_number),
-  whatsapp_number: nullableValue(body.whatsapp_number),
-  email: getValue(body.email).toLowerCase(),
-  status: ['Active', 'Inactive'].includes(getValue(body.status)) ? getValue(body.status) : 'Active',
-  cuisine_type: nullableValue(body.cuisine_type),
-  experience_years: nullableNumber(body.experience_years),
-  description: nullableValue(body.description || body.description_about_chef),
-  special_dishes: parseStringList(body.special_dishes),
-  food_preference: nullableValue(body.food_preference),
-  address: getValue(body.address),
-  area_locality: getValue(body.area_locality),
-  city: getValue(body.city),
-  district: getValue(body.district),
-  state: getValue(body.state),
-  pincode: getValue(body.pincode),
-  latitude: nullableNumber(body.latitude),
-  longitude: nullableNumber(body.longitude),
-  vehicle_type: nullableValue(body.vehicle_type),
-  vehicle_number: nullableValue(body.vehicle_number),
-  vehicle_model: nullableValue(body.vehicle_model),
-  vehicle_color: nullableValue(body.vehicle_color),
-  driving_license_number: nullableValue(body.driving_license_number),
-  driving_license_expiry_date: nullableValue(body.driving_license_expiry_date),
-  rc_number: nullableValue(body.rc_number),
-  working_days: parseWorkingDays(body.working_days),
-  start_time: nullableValue(body.start_time),
-  end_time: nullableValue(body.end_time),
-  available_for_delivery: nullableValue(body.available_for_delivery),
-  current_status: nullableValue(body.current_status),
-  account_holder_name: nullableValue(body.account_holder_name),
-  bank_name: nullableValue(body.bank_name),
-  account_number: nullableValue(body.account_number),
-  ifsc_code: nullableValue(body.ifsc_code),
-  upi_id: nullableValue(body.upi_id),
-  pan_number: nullableValue(body.pan_number),
-  aadhaar_number: nullableValue(body.aadhaar_number),
-  pan_card_number: nullableValue(body.pan_card_number),
-  salary_type: employeeType === 'Delivery Partner' ? getValue(body.salary_type) : 'Monthly Basis',
-  basic_salary: nullableNumber(body.basic_salary),
-  allowances: nullableNumber(body.allowances),
-  deductions: nullableNumber(body.deductions),
-  net_salary: nullableNumber(body.net_salary),
-  payroll_notes: nullableValue(body.payroll_notes),
-  verification_status: nullableValue(body.verification_status),
-  background_verification: nullableValue(body.background_verification),
-  joining_date: nullableValue(body.joining_date),
-  commission_percent: nullableNumber(body.commission_percent),
-  admin_notes: nullableValue(body.admin_notes),
-  app_access: nullableValue(body.app_access),
-  login_status: nullableValue(body.login_status),
-});
+const cleanPhone = (val) => {
+  const raw = getValue(val);
+  return raw ? raw.replace(/^\+91/, '').replace(/[\s\-()]/g, '') : '';
+};
+const cleanPan = (val) => {
+  const raw = getValue(val);
+  return raw ? raw.replace(/[\s\-]/g, '').toUpperCase() : null;
+};
+const cleanAadhaar = (val) => {
+  const raw = getValue(val);
+  return raw ? raw.replace(/[\s\-]/g, '') : null;
+};
+const cleanAlphaNum = (val) => {
+  const raw = getValue(val);
+  return raw ? raw.replace(/[\s\-]/g, '').toUpperCase() : null;
+};
+
+const buildEmployeeData = (body, employeeType) => {
+  const panValue = cleanPan(body.pan_number || body.pan_card_number);
+
+  return {
+    employee_type: employeeType,
+    full_name: getValue(body.full_name || body.chef_name),
+    gender: nullableValue(body.gender),
+    date_of_birth: nullableValue(body.date_of_birth),
+    phone_number: cleanPhone(body.phone_number),
+    whatsapp_number: cleanPhone(body.whatsapp_number) || null,
+    email: getValue(body.email).toLowerCase(),
+    status: ['Active', 'Inactive'].includes(getValue(body.status)) ? getValue(body.status) : 'Active',
+    cuisine_type: nullableValue(body.cuisine_type),
+    experience_years: nullableNumber(body.experience_years),
+    description: nullableValue(body.description || body.description_about_chef),
+    special_dishes: parseStringList(body.special_dishes),
+    food_preference: nullableValue(body.food_preference),
+    address: getValue(body.address),
+    area_locality: getValue(body.area_locality),
+    city: getValue(body.city),
+    district: getValue(body.district),
+    state: getValue(body.state),
+    pincode: getValue(body.pincode).replace(/[\s\-]/g, ''),
+    latitude: nullableNumber(body.latitude),
+    longitude: nullableNumber(body.longitude),
+    vehicle_type: nullableValue(body.vehicle_type),
+    vehicle_number: cleanAlphaNum(body.vehicle_number),
+    vehicle_model: nullableValue(body.vehicle_model),
+    vehicle_color: nullableValue(body.vehicle_color),
+    driving_license_number: cleanAlphaNum(body.driving_license_number),
+    driving_license_expiry_date: nullableValue(body.driving_license_expiry_date),
+    rc_number: cleanAlphaNum(body.rc_number),
+    working_days: parseWorkingDays(body.working_days),
+    start_time: nullableValue(body.start_time),
+    end_time: nullableValue(body.end_time),
+    available_for_delivery: nullableValue(body.available_for_delivery),
+    current_status: nullableValue(body.current_status),
+    account_holder_name: nullableValue(body.account_holder_name),
+    bank_name: nullableValue(body.bank_name),
+    account_number: getValue(body.account_number).replace(/[\s\-]/g, '') || null,
+    ifsc_code: getValue(body.ifsc_code).replace(/\s/g, '').toUpperCase() || null,
+    upi_id: getValue(body.upi_id).trim().toLowerCase() || null,
+    pan_number: panValue,
+    aadhaar_number: cleanAadhaar(body.aadhaar_number),
+    pan_card_number: panValue,
+    salary_type: employeeType === 'Delivery Partner' ? getValue(body.salary_type) : 'Monthly Basis',
+    basic_salary: nullableNumber(body.basic_salary),
+    allowances: nullableNumber(body.allowances),
+    deductions: nullableNumber(body.deductions),
+    net_salary: nullableNumber(body.net_salary),
+    payroll_notes: nullableValue(body.payroll_notes),
+    verification_status: nullableValue(body.verification_status),
+    background_verification: nullableValue(body.background_verification),
+    joining_date: nullableValue(body.joining_date),
+    commission_percent: nullableNumber(body.commission_percent),
+    admin_notes: nullableValue(body.admin_notes),
+    app_access: nullableValue(body.app_access),
+    login_status: nullableValue(body.login_status),
+  };
+};
 
 const validateEmployeeData = (employeeData, password, confirmPassword, isUpdate = false) => {
   const typeConfig = employeeTypeConfig.get(employeeData.employee_type);
-  if (!typeConfig) return 'Select a valid employee type';
+  if (!typeConfig) return { field: 'employee_type', message: 'Select a valid employee type' };
   if (!employeeData.full_name || employeeData.full_name.length > 150) {
-    return 'Employee name is required and must be 150 characters or fewer';
+    return { field: 'full_name', message: 'Employee name is required and must be 150 characters or fewer' };
   }
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(employeeData.email)) return 'A valid employee email address is required';
-  if (!employeeData.phone_number || employeeData.phone_number.length > 32) return 'A valid phone number is required';
-  if ((!isUpdate || password) && password.length < 6) return 'Password must be at least 6 characters';
-  if (password !== confirmPassword) return 'Password and confirm password do not match';
+
+  // Phone number: exactly 10 digits starting with 6, 7, 8, 9
+  if (!employeeData.phone_number || !/^[6-9]\d{9}$/.test(employeeData.phone_number)) {
+    return { field: 'phone_number', message: 'Phone number must be a 10-digit number starting with 6, 7, 8, or 9' };
+  }
+
+  // WhatsApp number (optional): 10 digits starting with 6, 7, 8, 9
+  if (employeeData.whatsapp_number && !/^[6-9]\d{9}$/.test(employeeData.whatsapp_number)) {
+    return { field: 'whatsapp_number', message: 'WhatsApp number must be a 10-digit number starting with 6, 7, 8, or 9' };
+  }
+
+  // Email validation
+  if (!employeeData.email || !/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(employeeData.email)) {
+    return { field: 'email', message: 'A valid employee email address is required (e.g. employee@restaurant.com)' };
+  }
+
+  // Password validation
+  if ((!isUpdate || password) && password.length < 6) {
+    return { field: 'password', message: 'Password must be at least 6 characters' };
+  }
+  if (password !== confirmPassword) {
+    return { field: 'confirm_password', message: 'Password and confirm password do not match' };
+  }
+
+  // Address fields
   if (!employeeData.address || !employeeData.area_locality || !employeeData.city
     || !employeeData.district || !employeeData.state || !employeeData.pincode) {
-    return 'Address, area, city, district, state and pincode are required';
+    return { field: 'address', message: 'Address, area, city, district, state and pincode are required' };
   }
+
+  // Pincode validation: 6 digits
+  if (!/^\d{6}$/.test(employeeData.pincode)) {
+    return { field: 'pincode', message: 'Pincode must be a 6-digit number (e.g. 600001)' };
+  }
+
   if (employeeData.employee_type === 'Chef' && !employeeData.cuisine_type) {
-    return 'Cuisine type is required for a Chef';
+    return { field: 'cuisine_type', message: 'Cuisine type is required for a Chef' };
   }
-  if (employeeData.employee_type === 'Delivery Partner'
-    && (!employeeData.vehicle_type || !employeeData.vehicle_number || !employeeData.driving_license_number)) {
-    return 'Vehicle type, vehicle number and driving license number are required for a Delivery Partner';
+
+  if (employeeData.employee_type === 'Delivery Partner') {
+    if (!employeeData.vehicle_type) {
+      return { field: 'vehicle_type', message: 'Vehicle type is required for a Delivery Partner' };
+    }
+    if (!employeeData.vehicle_number) {
+      return { field: 'vehicle_number', message: 'Vehicle number is required for a Delivery Partner' };
+    }
+    if (!employeeData.driving_license_number) {
+      return { field: 'driving_license_number', message: 'Driving license number is required for a Delivery Partner' };
+    }
+    if (!['Monthly Basis', 'Order Basis'].includes(employeeData.salary_type)) {
+      return { field: 'salary_type', message: 'Select a valid Delivery Partner salary type' };
+    }
   }
-  if (employeeData.employee_type === 'Delivery Partner'
-    && !['Monthly Basis', 'Order Basis'].includes(employeeData.salary_type)) {
-    return 'Select a valid Delivery Partner salary type';
+
+  // Vehicle number format (if provided)
+  if (employeeData.vehicle_number && !/^[A-Z]{2}[0-9]{1,2}[A-Z]{0,3}[0-9]{4}$/.test(employeeData.vehicle_number)) {
+    return { field: 'vehicle_number', message: 'Vehicle number must be a valid format (e.g. TN01AB1234 or TN 01 AB 1234)' };
   }
+
+  // Driving license format (if provided)
+  if (employeeData.driving_license_number && !/^[A-Z]{2}[0-9]{2}[0-9A-Z]{7,12}$/.test(employeeData.driving_license_number)) {
+    return { field: 'driving_license_number', message: 'Driving license number must be a valid format (e.g. TN0120200001234)' };
+  }
+
+  // Account number format (if provided, 9-18 digits)
+  if (employeeData.account_number && !/^\d{9,18}$/.test(employeeData.account_number)) {
+    return { field: 'account_number', message: 'Account number must be 9 to 18 digits (e.g. 123456789012)' };
+  }
+
+  // IFSC code format (if provided, 11 chars: 4 letters, 0, 6 alphanumeric)
+  if (employeeData.ifsc_code && !/^[A-Z]{4}0[A-Z0-9]{6}$/.test(employeeData.ifsc_code)) {
+    return { field: 'ifsc_code', message: 'IFSC code must be 11 characters: 4 letters, 0, then 6 alphanumeric characters (e.g. SBIN0001234)' };
+  }
+
+  // UPI ID format (if provided)
+  if (employeeData.upi_id && !/^[a-zA-Z0-9.\-_]{2,256}@[a-zA-Z]{2,64}$/.test(employeeData.upi_id)) {
+    return { field: 'upi_id', message: 'UPI ID must be a valid format (e.g. employee@okaxis or 9876543210@upi)' };
+  }
+
+  // Aadhaar number format (if provided, 12 digits)
+  if (employeeData.aadhaar_number && !/^\d{12}$/.test(employeeData.aadhaar_number)) {
+    return { field: 'aadhaar_number', message: 'Aadhaar number must be a 12-digit number (e.g. 1234 5678 9012)' };
+  }
+
+  // PAN number format (if provided, 10 chars: 5 letters, 4 numbers, 1 letter)
+  const pan = employeeData.pan_number || employeeData.pan_card_number;
+  if (pan && !/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/.test(pan)) {
+    return { field: 'pan_number', message: 'PAN number must be 10 characters: 5 letters, 4 numbers, 1 letter (e.g. ABCDE1234F)' };
+  }
+
   if ((employeeData.employee_type !== 'Delivery Partner' || employeeData.salary_type === 'Monthly Basis')
     && employeeData.basic_salary === null) {
-    return 'Basic salary is required for monthly pay';
+    return { field: 'basic_salary', message: 'Basic salary is required for monthly pay' };
   }
+
   const numericColumns = [
     'experience_years', 'latitude', 'longitude', 'basic_salary', 'allowances', 'deductions',
     'net_salary', 'commission_percent',
   ];
   for (const column of numericColumns) {
     if (Number.isNaN(employeeData[column])) {
-      return `${column.replaceAll('_', ' ')} must be a valid number`;
+      return { field: column, message: `${column.replaceAll('_', ' ')} must be a valid number` };
     }
   }
-  return '';
+
+  return null;
 };
 
 const applyUploadedFiles = (employeeData, files, existingEmployee = {}) => {
@@ -215,15 +311,29 @@ async function createEmployee(req, res) {
   const password = String(body.password || '');
   const confirmPassword = String(body.confirm_password || '');
   const employeeData = buildEmployeeData(body, employeeType);
-  const validationMessage = validateEmployeeData(employeeData, password, confirmPassword);
+  const validationError = validateEmployeeData(employeeData, password, confirmPassword);
 
   if (hasUnsupportedUpload(files)) {
     await removeUploadedFiles(files);
     return res.status(400).json({ success: false, message: 'One or more uploaded document fields are not supported' });
   }
-  if (validationMessage) {
+  if (validationError) {
     await removeUploadedFiles(files);
-    return res.status(400).json({ success: false, message: validationMessage });
+    return res.status(400).json({
+      success: false,
+      field: validationError.field,
+      message: validationError.message,
+    });
+  }
+
+  const uniquenessError = await checkEmployeeUniqueness(employeeData);
+  if (uniquenessError) {
+    await removeUploadedFiles(files);
+    return res.status(409).json({
+      success: false,
+      field: uniquenessError.field,
+      message: uniquenessError.message,
+    });
   }
 
   applyUploadedFiles(employeeData, files);
@@ -287,15 +397,34 @@ async function updateEmployee(req, res) {
   const employeeData = buildEmployeeData(body, getValue(body.employee_type));
   const password = String(body.password || '');
   const confirmPassword = String(body.confirm_password || '');
-  const validationMessage = validateEmployeeData(employeeData, password, confirmPassword, true);
+  const validationError = validateEmployeeData(employeeData, password, confirmPassword, true);
   if (hasUnsupportedUpload(files)) {
     await removeUploadedFiles(files);
     return res.status(400).json({ success: false, message: 'One or more uploaded document fields are not supported' });
   }
-  if (validationMessage) {
+  if (validationError) {
     await removeUploadedFiles(files);
-    return res.status(400).json({ success: false, message: validationMessage });
+    return res.status(400).json({
+      success: false,
+      field: validationError.field,
+      message: validationError.message,
+    });
   }
+
+  const uniquenessError = await checkEmployeeUniqueness(
+    employeeData,
+    req.params.employeeId,
+    existingEmployee.user_id
+  );
+  if (uniquenessError) {
+    await removeUploadedFiles(files);
+    return res.status(409).json({
+      success: false,
+      field: uniquenessError.field,
+      message: uniquenessError.message,
+    });
+  }
+
   applyUploadedFiles(employeeData, files, existingEmployee);
 
   try {
@@ -365,4 +494,28 @@ async function updateEmployeeStatus(req, res) {
   }
 }
 
-module.exports = { createEmployee, deleteEmployee, getEmployee, listEmployees, updateEmployee, updateEmployeeStatus };
+async function checkEmployeeFieldUniqueness(req, res) {
+  try {
+    const { field, value, excludeEmployeeId } = req.query;
+    if (!field || !value) {
+      return res.json({ success: true, isUnique: true });
+    }
+    const result = await checkSingleFieldUniqueness(field, value, excludeEmployeeId);
+    return res.json({ success: true, ...result });
+  } catch (error) {
+    console.error('Check field uniqueness failed:', error.message);
+    return res.status(500).json({ success: false, message: 'Uniqueness check failed' });
+  }
+}
+
+module.exports = {
+  buildEmployeeData,
+  checkEmployeeFieldUniqueness,
+  createEmployee,
+  deleteEmployee,
+  getEmployee,
+  listEmployees,
+  updateEmployee,
+  updateEmployeeStatus,
+  validateEmployeeData,
+};

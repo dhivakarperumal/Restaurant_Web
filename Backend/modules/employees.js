@@ -318,7 +318,195 @@ async function deleteEmployeeWithUser(employeeId) {
   }
 }
 
+async function checkEmployeeUniqueness(employeeData, excludeEmployeeId = null, excludeUserId = null) {
+  let userIdToExclude = excludeUserId;
+  if (excludeEmployeeId && !userIdToExclude) {
+    const [empRows] = await db.execute('SELECT user_id FROM employees WHERE employee_id = ? LIMIT 1', [excludeEmployeeId]);
+    if (empRows.length > 0) {
+      userIdToExclude = empRows[0].user_id;
+    }
+  }
+
+  // 1. Phone number
+  if (employeeData.phone_number) {
+    const cleanPhone = String(employeeData.phone_number).replace(/^\+91/, '').replace(/[\s\-()]/g, '');
+    let empQuery = 'SELECT employee_id FROM employees WHERE phone_number = ?';
+    const empParams = [cleanPhone];
+    if (excludeEmployeeId) {
+      empQuery += ' AND employee_id != ?';
+      empParams.push(excludeEmployeeId);
+    }
+    const [empRows] = await db.execute(empQuery, empParams);
+    if (empRows.length > 0) {
+      return { field: 'phone_number', message: 'This phone number is already registered to another employee' };
+    }
+
+    let userQuery = 'SELECT user_id FROM users WHERE mobile_number = ?';
+    const userParams = [cleanPhone];
+    if (userIdToExclude) {
+      userQuery += ' AND user_id != ?';
+      userParams.push(userIdToExclude);
+    }
+    const [userRows] = await db.execute(userQuery, userParams);
+    if (userRows.length > 0) {
+      return { field: 'phone_number', message: 'This phone number is already registered to another user account' };
+    }
+  }
+
+  // 2. Email ID
+  if (employeeData.email) {
+    const cleanEmail = String(employeeData.email).trim().toLowerCase();
+    let empQuery = 'SELECT employee_id FROM employees WHERE LOWER(email) = ?';
+    const empParams = [cleanEmail];
+    if (excludeEmployeeId) {
+      empQuery += ' AND employee_id != ?';
+      empParams.push(excludeEmployeeId);
+    }
+    const [empRows] = await db.execute(empQuery, empParams);
+    if (empRows.length > 0) {
+      return { field: 'email', message: 'This email is already registered to another employee' };
+    }
+
+    let userQuery = 'SELECT user_id FROM users WHERE LOWER(email) = ?';
+    const userParams = [cleanEmail];
+    if (userIdToExclude) {
+      userQuery += ' AND user_id != ?';
+      userParams.push(userIdToExclude);
+    }
+    const [userRows] = await db.execute(userQuery, userParams);
+    if (userRows.length > 0) {
+      return { field: 'email', message: 'This email is already registered to another user account' };
+    }
+  }
+
+  // 3. Account Number
+  if (employeeData.account_number) {
+    const cleanAcc = String(employeeData.account_number).replace(/[\s\-]/g, '');
+    let query = "SELECT employee_id FROM employees WHERE REPLACE(REPLACE(account_number, ' ', ''), '-', '') = ?";
+    const params = [cleanAcc];
+    if (excludeEmployeeId) {
+      query += ' AND employee_id != ?';
+      params.push(excludeEmployeeId);
+    }
+    const [rows] = await db.execute(query, params);
+    if (rows.length > 0) {
+      return { field: 'account_number', message: 'This account number is already registered to another employee' };
+    }
+  }
+
+  // 4. IFSC Code
+  if (employeeData.ifsc_code) {
+    const cleanIfsc = String(employeeData.ifsc_code).replace(/\s/g, '').toUpperCase();
+    let query = "SELECT employee_id FROM employees WHERE UPPER(REPLACE(ifsc_code, ' ', '')) = ?";
+    const params = [cleanIfsc];
+    if (excludeEmployeeId) {
+      query += ' AND employee_id != ?';
+      params.push(excludeEmployeeId);
+    }
+    const [rows] = await db.execute(query, params);
+    if (rows.length > 0) {
+      return { field: 'ifsc_code', message: 'This IFSC code is already registered to another employee' };
+    }
+  }
+
+  // 5. UPI ID
+  if (employeeData.upi_id) {
+    const cleanUpi = String(employeeData.upi_id).trim().toLowerCase();
+    let query = 'SELECT employee_id FROM employees WHERE LOWER(upi_id) = ?';
+    const params = [cleanUpi];
+    if (excludeEmployeeId) {
+      query += ' AND employee_id != ?';
+      params.push(excludeEmployeeId);
+    }
+    const [rows] = await db.execute(query, params);
+    if (rows.length > 0) {
+      return { field: 'upi_id', message: 'This UPI ID is already registered to another employee' };
+    }
+  }
+
+  // 6. Aadhaar Number
+  if (employeeData.aadhaar_number) {
+    const cleanAadhaar = String(employeeData.aadhaar_number).replace(/[\s\-]/g, '');
+    let query = "SELECT employee_id FROM employees WHERE REPLACE(REPLACE(aadhaar_number, ' ', ''), '-', '') = ?";
+    const params = [cleanAadhaar];
+    if (excludeEmployeeId) {
+      query += ' AND employee_id != ?';
+      params.push(excludeEmployeeId);
+    }
+    const [rows] = await db.execute(query, params);
+    if (rows.length > 0) {
+      return { field: 'aadhaar_number', message: 'This Aadhaar number is already registered to another employee' };
+    }
+  }
+
+  // 7. PAN Number
+  const pan = employeeData.pan_number || employeeData.pan_card_number;
+  if (pan) {
+    const cleanPan = String(pan).replace(/[\s\-]/g, '').toUpperCase();
+    let query = "SELECT employee_id FROM employees WHERE (UPPER(REPLACE(REPLACE(pan_number, ' ', ''), '-', '')) = ? OR UPPER(REPLACE(REPLACE(pan_card_number, ' ', ''), '-', '')) = ?)";
+    const params = [cleanPan, cleanPan];
+    if (excludeEmployeeId) {
+      query += ' AND employee_id != ?';
+      params.push(excludeEmployeeId);
+    }
+    const [rows] = await db.execute(query, params);
+    if (rows.length > 0) {
+      return { field: 'pan_number', message: 'This PAN number is already registered to another employee' };
+    }
+  }
+
+  // 8. Vehicle Number
+  if (employeeData.vehicle_number) {
+    const cleanVeh = String(employeeData.vehicle_number).replace(/[\s\-]/g, '').toUpperCase();
+    let query = "SELECT employee_id FROM employees WHERE UPPER(REPLACE(REPLACE(vehicle_number, ' ', ''), '-', '')) = ?";
+    const params = [cleanVeh];
+    if (excludeEmployeeId) {
+      query += ' AND employee_id != ?';
+      params.push(excludeEmployeeId);
+    }
+    const [rows] = await db.execute(query, params);
+    if (rows.length > 0) {
+      return { field: 'vehicle_number', message: 'This vehicle number is already registered to another employee' };
+    }
+  }
+
+  // 9. Driving License Number
+  if (employeeData.driving_license_number) {
+    const cleanDl = String(employeeData.driving_license_number).replace(/[\s\-]/g, '').toUpperCase();
+    let query = "SELECT employee_id FROM employees WHERE UPPER(REPLACE(REPLACE(driving_license_number, ' ', ''), '-', '')) = ?";
+    const params = [cleanDl];
+    if (excludeEmployeeId) {
+      query += ' AND employee_id != ?';
+      params.push(excludeEmployeeId);
+    }
+    const [rows] = await db.execute(query, params);
+    if (rows.length > 0) {
+      return { field: 'driving_license_number', message: 'This driving license number is already registered to another employee' };
+    }
+  }
+
+  return null;
+}
+
+async function checkSingleFieldUniqueness(field, value, excludeEmployeeId = null) {
+  if (!field || !value) return { isUnique: true };
+  const mock = {};
+  if (field === 'pan_card_number') {
+    mock.pan_number = value;
+    mock.pan_card_number = value;
+  } else {
+    mock[field] = value;
+  }
+  const conflict = await checkEmployeeUniqueness(mock, excludeEmployeeId);
+  if (conflict) {
+    return { isUnique: false, message: conflict.message };
+  }
+  return { isUnique: true };
+}
+
 module.exports = {
+  checkEmployeeUniqueness,
+  checkSingleFieldUniqueness,
   createEmployeeWithUser,
   deleteEmployeeWithUser,
   employeeTypeConfig,
