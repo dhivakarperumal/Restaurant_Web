@@ -53,6 +53,7 @@ import { AuthProvider } from './PrivateRouter/AuthContext.jsx'
 import { StoreProvider } from './PrivateRouter/StoreContext.jsx'
 import { AdminProvider } from './PrivateRouter/AdminContext';
 import RouteError from './CommonComponents/RouteError.jsx'
+import CustomerOrdersPage from './CommonComponents/CustomerOrdersPage.jsx'
 
 
 
@@ -140,6 +141,22 @@ const router = createHashRouter([
           {
             path: 'customers',
             element: <AdminCustomers />,
+          },
+          {
+            path: 'orders',
+            element: <CustomerOrdersPage audience="admin" view="all" />,
+          },
+          {
+            path: 'orders/new',
+            element: <CustomerOrdersPage audience="admin" view="new" />,
+          },
+          {
+            path: 'orders/delivery',
+            element: <CustomerOrdersPage audience="admin" view="delivery" />,
+          },
+          {
+            path: 'orders/cancelled',
+            element: <CustomerOrdersPage audience="admin" view="cancelled" />,
           },
           {
             path: 'settings',
@@ -236,6 +253,22 @@ const router = createHashRouter([
           {
             path: 'orders',
             element: <ChefKitchenOrders />,
+          },
+          {
+            path: 'customer-orders',
+            element: <CustomerOrdersPage audience="chef" view="all" />,
+          },
+          {
+            path: 'customer-orders/new',
+            element: <CustomerOrdersPage audience="chef" view="new" />,
+          },
+          {
+            path: 'customer-orders/delivery',
+            element: <CustomerOrdersPage audience="chef" view="delivery" />,
+          },
+          {
+            path: 'customer-orders/cancelled',
+            element: <CustomerOrdersPage audience="chef" view="cancelled" />,
           },
         ],
       },

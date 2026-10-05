@@ -91,10 +91,10 @@ const navItems = [
     label: "Orders",
     icon: ShoppingCart,
     children: [
-      { path: "/admin/orders/new", label: "New Order", icon: PlusSquare },
-      { path: "/admin/orders", label: "All Orders", icon: List },
-      { path: "/admin/orders/delivery", label: "Delivery Orders", icon: Package },
-      { path: "/admin/orders/cancelled", label: "Cancelled Orders", icon: XCircle },
+      { path: "/chef/customer-orders/new", label: "New Customer Orders", icon: PlusSquare },
+      { path: "/chef/customer-orders", label: "All Customer Orders", icon: List },
+      { path: "/chef/customer-orders/delivery", label: "Delivery Orders", icon: Package },
+      { path: "/chef/customer-orders/cancelled", label: "Cancelled Orders", icon: XCircle },
     ],
   },
 

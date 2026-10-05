@@ -247,7 +247,7 @@ const createOrderFromCart = async ({ userId, customer, fulfillmentType, address,
         (order_number, user_id, customer_name, customer_email, customer_phone,
          fulfillment_type, address_id, subtotal, total_amount, payment_method,
          payment_status, order_status)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', 'placed')`,
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?)`,
       [
         orderNumber,
         userId,
@@ -259,6 +259,7 @@ const createOrderFromCart = async ({ userId, customer, fulfillmentType, address,
         subtotal,
         subtotal,
         paymentMethod,
+        paymentMethod === 'online' ? 'awaiting_payment' : 'placed',
       ]
     );
     for (const item of items) {
