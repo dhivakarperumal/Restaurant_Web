@@ -10,6 +10,8 @@ const {
   getUserAddresses,
 } = require('../modules/orders');
 
+// Paste the Razorpay Key ID (public key) here if it is not set in the environment or payment settings.
+const RAZORPAY_KEY_ID = 'rzp_test_SGj8n5SyKSE10b';
 const getUserId = (req) => req.auth?.user_id;
 
 const validateCheckout = (body) => {
@@ -49,7 +51,7 @@ const paymentConfig = async () => {
     || [0, '0', false].includes(settings.razorpay_enabled);
   return {
     disabled,
-    keyId: process.env.RAZORPAY_KEY_ID || settings.razorpay_key || '',
+    keyId: process.env.RAZORPAY_KEY_ID || settings.razorpay_key || RAZORPAY_KEY_ID,
     keySecret: process.env.RAZORPAY_KEY_SECRET || '',
   };
 };

@@ -33,6 +33,44 @@ const resolveImageUrl = (image) => {
 
 const getItemName = (item) => item.product_name || item.name || item.food_name || 'Restaurant item';
 const getItemImage = (item) => item.product_image || item.image || item.thumbnail_image || '';
+const indianStatesAndTerritories = [
+  'Andaman and Nicobar Islands',
+  'Andhra Pradesh',
+  'Arunachal Pradesh',
+  'Assam',
+  'Bihar',
+  'Chandigarh',
+  'Chhattisgarh',
+  'Dadra and Nagar Haveli and Daman and Diu',
+  'Delhi',
+  'Goa',
+  'Gujarat',
+  'Haryana',
+  'Himachal Pradesh',
+  'Jammu and Kashmir',
+  'Jharkhand',
+  'Karnataka',
+  'Kerala',
+  'Ladakh',
+  'Lakshadweep',
+  'Madhya Pradesh',
+  'Maharashtra',
+  'Manipur',
+  'Meghalaya',
+  'Mizoram',
+  'Nagaland',
+  'Odisha',
+  'Puducherry',
+  'Punjab',
+  'Rajasthan',
+  'Sikkim',
+  'Tamil Nadu',
+  'Telangana',
+  'Tripura',
+  'Uttar Pradesh',
+  'Uttarakhand',
+  'West Bengal',
+];
 const addressFields = [
   { name: 'address_line', label: 'Door / street address', placeholder: 'House no., street, building' },
   { name: 'area_locality', label: 'Area / locality', placeholder: 'Area or neighbourhood' },
@@ -328,18 +366,34 @@ function Checkout() {
                     {addressFields.map((field) => (
                       <label key={field.name} className={`text-sm font-semibold text-[#263830] ${field.name === 'address_line' || field.name === 'area_locality' || field.name === 'landmark' ? 'sm:col-span-2' : ''}`}>
                         {field.label}{field.name !== 'landmark' && <span className="text-[#a34f32]"> *</span>}
-                        <input
-                          name={field.name}
-                          value={address[field.name] || ''}
-                          onChange={updateAddress}
-                          required={field.name !== 'landmark'}
-                          maxLength={field.name === 'address_line' ? 255 : ['area_locality', 'landmark'].includes(field.name) ? 180 : field.name === 'pincode' ? 6 : 120}
-                          inputMode={field.name === 'pincode' ? 'numeric' : undefined}
-                          pattern={field.name === 'pincode' ? '[0-9]{6}' : undefined}
-                          autoComplete={field.name === 'address_line' ? 'street-address' : 'off'}
-                          className="mt-2 w-full rounded-xl border border-[#ded5c9] px-4 py-3 font-normal outline-none focus:border-[#a34f32] focus:ring-2 focus:ring-[#a34f32]/10"
-                          placeholder={field.placeholder}
-                        />
+                        {field.name === 'state' ? (
+                          <select
+                            name={field.name}
+                            value={address[field.name] || ''}
+                            onChange={updateAddress}
+                            required
+                            autoComplete="address-level1"
+                            className="mt-2 w-full rounded-xl border border-[#ded5c9] bg-white px-4 py-3 font-normal outline-none focus:border-[#a34f32] focus:ring-2 focus:ring-[#a34f32]/10"
+                          >
+                            <option value="" disabled>Select a state or union territory</option>
+                            {indianStatesAndTerritories.map((state) => (
+                              <option key={state} value={state}>{state}</option>
+                            ))}
+                          </select>
+                        ) : (
+                          <input
+                            name={field.name}
+                            value={address[field.name] || ''}
+                            onChange={updateAddress}
+                            required={field.name !== 'landmark'}
+                            maxLength={field.name === 'address_line' ? 255 : ['area_locality', 'landmark'].includes(field.name) ? 180 : field.name === 'pincode' ? 6 : 120}
+                            inputMode={field.name === 'pincode' ? 'numeric' : undefined}
+                            pattern={field.name === 'pincode' ? '[0-9]{6}' : undefined}
+                            autoComplete={field.name === 'address_line' ? 'street-address' : 'off'}
+                            className="mt-2 w-full rounded-xl border border-[#ded5c9] px-4 py-3 font-normal outline-none focus:border-[#a34f32] focus:ring-2 focus:ring-[#a34f32]/10"
+                            placeholder={field.placeholder}
+                          />
+                        )}
                       </label>
                     ))}
                   </div>
