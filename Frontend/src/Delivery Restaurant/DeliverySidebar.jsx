@@ -1,152 +1,65 @@
 import { useState, useEffect, useRef } from "react";
-import { NavLink, useLocation } from "react-router-dom";
+import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import {
+  History,
+  IndianRupee,
   LayoutDashboard,
-  Users,
-  FolderKanban,
-  CheckSquare,
-  GraduationCap,
-  BookOpen,
-  Receipt,
-  DollarSign,
-  CalendarOff,
-  ClipboardCheck,
-  BarChart3,
-  CalendarDays,
-  CalendarClock,
+  LifeBuoy,
+  List,
+  LogOut,
+  PackageCheck,
+  PlusSquare,
+  ShoppingCart,
   X,
+  XCircle,
   ChevronDown,
   ChevronLeft,
-  Home,
-  Briefcase,
-  UserCog,
-  FileText,
-  TrendingUp,
-  Clock,
-  Handshake,
-  UserRoundPlus,
-  List,
-  FolderPlus,
-  ClipboardList,
-  Image,
-  Server,
-  Globe,
-  PlusSquare,
-  Edit3,
-  UserCheck,
-  Layers,
-  AlertCircle,
-  XCircle,
-  Package,
-  Printer,
-  Gift,
-  Album,
-  ShoppingCart,
-  Star,
-  Zap,
-  Tag,
-  Lock,
-  Settings,
-  MessageSquare,
+  UserRound,
 } from "lucide-react";
 
 import { useAuth } from "../PrivateRouter/AuthContext";
-const Logo = "/favicon.svg";
+import LogoutConfirmModal from "../CommonComponents/LogoutConfirmModal";
+const Logo = "/images/logo.png";
 
 /* ================= NAV ITEMS ================= */
 const navItems = [
-  {
-    path: "/admin",
-    label: "Dashboard",
-    icon: LayoutDashboard,
-    exact: true,
-  },
-
-
-
-  /* ---- PRODUCTS ---- */
-  {
-    label: "Foods",
-    icon: Package,
-    children: [
-     
-      { path: "/admin/products", label: "All Products", icon: Package },
-      { path: "/admin/products/categories", label: "Category", icon: Layers },
-      { path: "/admin/products/stock-details", label: "Stock Details", icon: ClipboardList },
-    ],
-  },
-
-
-
-
-
-
+  { path: "/delivery", label: "Dashboard", icon: LayoutDashboard, exact: true },
   {
     label: "Orders",
     icon: ShoppingCart,
     children: [
-      { path: "/admin/orders/new", label: "New Order", icon: PlusSquare },
-      { path: "/admin/orders", label: "All Orders", icon: List },
-      { path: "/admin/orders/delivery", label: "Delivery Orders", icon: Package },
-      { path: "/admin/orders/cancelled", label: "Cancelled Orders", icon: XCircle },
+      { path: "/delivery/orders/new", label: "New Orders", icon: PlusSquare },
+      { path: "/delivery/orders", label: "All Orders", icon: List },
+      { path: "/delivery/orders/delivery", label: "Delivery Orders", icon: PackageCheck },
+      { path: "/delivery/orders/cancelled", label: "Cancelled Orders", icon: XCircle },
     ],
   },
-
- 
-
-  {
-    path: "/admin/customers",
-    label: "Customers",
-    icon: Users,
-  },
-
- 
-
-  {
-    path: "/admin/billing",
-    label: "Billing",
-    icon: Receipt,
-  },
-
-  {
-    path: "/admin/reviews",
-    label: "Reviews",
-    icon: Star,
-  },
-
-  /* ---- MARKETING ---- */
-  {
-    label: "Marketing",
-    icon: TrendingUp,
-    children: [
-      { path: "/admin/banners", label: "Banners", icon: Image },
-      { path: "/admin/videos", label: "Videos Management", icon: Image },
-      { path: "/admin/gallery", label: "Gallery", icon: Image },
-      { path: "/admin/coupons", label: "Coupons & Offers", icon: Tag },
-    ],
-  },
-
-
+  { path: "/delivery/earnings", label: "Earnings", icon: IndianRupee },
+  { path: "/delivery/history", label: "Delivery History", icon: History },
+  { path: "/delivery/profile", label: "Profile", icon: UserRound },
+  { path: "/delivery/support", label: "Support", icon: LifeBuoy },
 ];
 
 /* ================= SIDEBAR ================= */
 const DeliverySidebar = ({ isOpen, onClose, collapsed, onToggleCollapse }) => {
-  const { userProfile } = useAuth();
+  const { userProfile, logout } = useAuth();
+  const navigate = useNavigate();
   const location = useLocation();
   const [openMenu, setOpenMenu] = useState(null);
-  const [pendingCount, setPendingCount] = useState(0);
+  const pendingCount = 0;
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const navRef = useRef(null);
 
   /* ===== PRESERVE SIDEBAR SCROLL POSITION ===== */
   useEffect(() => {
-    const savedScroll = sessionStorage.getItem("admin_sidebar_scroll");
+    const savedScroll = sessionStorage.getItem("delivery_sidebar_scroll");
     if (savedScroll !== null && navRef.current) {
       navRef.current.scrollTop = Number(savedScroll);
     }
   }, [location.pathname]);
 
   const handleNavScroll = (e) => {
-    sessionStorage.setItem("admin_sidebar_scroll", e.currentTarget.scrollTop);
+    sessionStorage.setItem("delivery_sidebar_scroll", e.currentTarget.scrollTop);
   };
 
   /* ===== AUTO OPEN DROPDOWN WHEN CHILD ACTIVE ===== */
@@ -180,7 +93,7 @@ const DeliverySidebar = ({ isOpen, onClose, collapsed, onToggleCollapse }) => {
 
       {/* ========== SIDEBAR ========== */}
       <aside
-        data-sidebar="admin-sidebar"
+        data-sidebar="delivery-sidebar"
         className={`
           fixed top-0 left-0 z-50 h-full flex flex-col
           bg-brand-bg
@@ -195,14 +108,14 @@ const DeliverySidebar = ({ isOpen, onClose, collapsed, onToggleCollapse }) => {
         {/* ========== LOGO ========== */}
         <div className={`flex items-center gap-3 border-b border-[#1f3228] shrink-0 ${collapsed ? "px-3 py-5 justify-center" : "px-5 py-5"}`}>
           <div className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0 p-1 border border-[#d4a843]/30 bg-white">
-            <img src={Logo} alt="Logo" className="w-full h-full object-cover drop-shadow-lg" />
+            <img src={Logo} alt="Foodie Restaurant" className="w-full h-full object-contain drop-shadow-lg" />
           </div>
 
           {!collapsed && (
             <div className="overflow-hidden flex-1">
-              <h1 className="text-base font-bold text-white tracking-wide font-serif">Foodie Restaurant</h1>
+              <h1 className="text-base font-bold text-white tracking-wide font-serif">Delivery Partner</h1>
               <p className="text-[10px] text-white tracking-[0.2em] uppercase">
-                Fresh Food, Warm Welcome
+                Partner workspace
               </p>
             </div>
           )}
@@ -220,7 +133,7 @@ const DeliverySidebar = ({ isOpen, onClose, collapsed, onToggleCollapse }) => {
         <nav
           ref={navRef}
           onScroll={handleNavScroll}
-          data-sidebar="admin-nav"
+          data-sidebar="delivery-nav"
           className="flex-1 px-3 py-4 space-y-1 overflow-y-auto scrollbar-hide"
         >
           {navItems.map((item) => {
@@ -278,6 +191,7 @@ const DeliverySidebar = ({ isOpen, onClose, collapsed, onToggleCollapse }) => {
                           <NavLink
                             key={sub.path}
                             to={sub.path}
+                            end
                             onClick={() => isOpen && onClose()}
                             className={`
                               flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-xs
@@ -306,7 +220,7 @@ const DeliverySidebar = ({ isOpen, onClose, collapsed, onToggleCollapse }) => {
             }
 
             /* ===== NORMAL ITEM ===== */
-            const isActive = isRouteActive(item.path);
+            const isActive = isRouteActive(item.path, item.exact);
             return (
               <NavLink
                 key={item.path}
@@ -331,24 +245,10 @@ const DeliverySidebar = ({ isOpen, onClose, collapsed, onToggleCollapse }) => {
           })}
         </nav>
 
-        {/* ========== BACK HOME ========== */}
-        <NavLink
-          to="/"
-          title={collapsed ? "Back Home" : ""}
-          onClick={() => isOpen && onClose()}
-          className={`
-            mx-3 mb-3 flex items-center gap-3 px-3 py-3 rounded-xl text-sm
-            transition-all duration-200
-            ${isRouteActive("/")
-              ? "bg-[#d4a843] text-[#162420] font-semibold shadow-md"
-              : "text-white hover:text-white hover:bg-[#1f3228]/70"
-            }
-            ${collapsed ? "justify-center" : ""}
-          `}
-        >
-          <Home className={`w-[17px] h-[17px] shrink-0 ${isRouteActive("/") ? "text-[#162420]" : "text-white"}`} />
-          {!collapsed && <span className={`font-medium truncate ${isRouteActive("/") ? "text-[#162420]" : "text-white"}`}>Back Home</span>}
-        </NavLink>
+        <button type="button" onClick={() => setShowLogoutConfirm(true)} title={collapsed ? "Sign out" : ""} className={`mx-3 mb-3 flex items-center gap-3 rounded-xl px-3 py-3 text-sm text-white transition hover:bg-rose-500/15 hover:text-rose-200 ${collapsed ? "justify-center" : ""}`}>
+          <LogOut className="h-[17px] w-[17px] shrink-0" />
+          {!collapsed && <span className="font-medium">Sign out</span>}
+        </button>
 
         {/* ========== COLLAPSE BUTTON ========== */}
         <button
@@ -387,6 +287,15 @@ const DeliverySidebar = ({ isOpen, onClose, collapsed, onToggleCollapse }) => {
           </div>
         )}
       </aside>
+      {showLogoutConfirm && (
+        <LogoutConfirmModal
+          onCancel={() => setShowLogoutConfirm(false)}
+          onConfirm={() => {
+            logout();
+            navigate("/", { replace: true });
+          }}
+        />
+      )}
     </>
   );
 };

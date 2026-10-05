@@ -99,18 +99,6 @@ const navItems = [
  
 
   {
-    path: "/admin/customers",
-    label: "Customers",
-    icon: Users,
-  },
-
-  {
-    path: "/admin/tables",
-    label: "Server Tables",
-    icon: UtensilsCrossed,
-  },
-
-  {
     label: "Employee",
     icon: Users,
     children: [

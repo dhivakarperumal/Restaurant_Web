@@ -406,39 +406,36 @@ const AdminDashboard = () => {
       </div>
 
       {/* Top Stats Cards */}
-      <div className="grid grid-cols-1 gap-4 mb-6 md:grid-cols-2 lg:grid-cols-4">
+      <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {[
-          { title: 'Total Orders', value: filteredOrderCounts.orders.toLocaleString(), inc: '18.6%', icon: <ShoppingBag size={24} className="text-white" />, iconBg: 'bg-[#22c55e]' }, // Bright Green
-          { title: 'Total Revenue', value: `₹${filteredOrderCounts.revenue.toLocaleString('en-IN')}`, inc: '22.4%', icon: <IndianRupee size={24} className="text-white" />, iconBg: 'bg-[#f59e0b]' }, // Bright Amber
-          { title: 'Total Customers', value: dashboardCounts.customers.toLocaleString(), inc: '15.3%', icon: <Users size={24} className="text-white" />, iconBg: 'bg-[#06b6d4]' }, // Bright Cyan
-          { title: 'Total Products', value: dashboardCounts.products.toLocaleString(), inc: '10.7%', icon: <Package size={24} className="text-white" />, iconBg: 'bg-[#a855f7]' }, // Bright Purple
-          { title: 'Low Stock', value: dashboardCounts.lowStock.toLocaleString(), inc: 'Needs attention', icon: <Package size={24} className="text-white" />, iconBg: 'bg-[#f97316]' },
-          { title: 'Delivered', value: filteredOrderCounts.delivered.toLocaleString(), inc: 'Completed orders', icon: <ShoppingBag size={24} className="text-white" />, iconBg: 'bg-[#166534]' },
-          { title: "Today's Orders", value: filteredOrderCounts.todayOrders.toLocaleString(), inc: 'Since midnight', icon: <Calendar size={24} className="text-white" />, iconBg: 'bg-[#3b82f6]' },
-          { title: 'Cancelled Orders', value: filteredOrderCounts.cancelled.toLocaleString(), inc: 'Cancelled orders', icon: <ShoppingCart size={24} className="text-white" />, iconBg: 'bg-[#dc2626]' },
+          { title: 'Total Sales', value: `₹${filteredOrderCounts.revenue.toLocaleString('en-IN')}`, inc: '22.4%', icon: <ShoppingBag size={22} />, background: 'linear-gradient(120deg, #13a98e, #31dc82)', text: 'text-white', pill: 'bg-white/20 text-white border-white/30' },
+          { title: 'Total Orders', value: filteredOrderCounts.orders.toLocaleString(), inc: '18.6%', icon: <ShoppingBag size={22} />, background: 'linear-gradient(120deg, #4778e8, #8850df)', text: 'text-white', pill: 'bg-white/20 text-white border-white/30' },
+          { title: 'Total Customers', value: dashboardCounts.customers.toLocaleString(), inc: '15.3%', icon: <Users size={22} />, background: 'linear-gradient(120deg, #ed45b7, #c3227c)', text: 'text-white', pill: 'bg-white/20 text-white border-white/30' },
+          { title: 'Total Products', value: dashboardCounts.products.toLocaleString(), inc: '10.7%', icon: <Package size={22} />, background: 'linear-gradient(120deg, #ff9915, #ffc400)', text: 'text-[#493500]', pill: 'bg-black/10 text-[#493500] border-black/10' },
         ].map((stat, i) => (
-          <div key={i} className="bg-white rounded-xl p-5 border border-gray-100 shadow-sm relative overflow-hidden flex flex-col h-full">
-            <div className="flex items-start space-x-4 flex-1">
-              <div className={`w-14 h-14 rounded-full flex items-center justify-center shrink-0 ${stat.iconBg}`}>
-                 {stat.icon}
+          <div
+            key={i}
+            className={`relative isolate flex min-h-[220px] flex-col overflow-hidden rounded-[22px] p-6 shadow-[0_10px_22px_rgba(16,24,40,0.16)] ${stat.text}`}
+            style={{ background: stat.background }}
+          >
+            <div className="pointer-events-none absolute -right-8 -top-10 h-36 w-36 rounded-full bg-white/15" />
+            <div className="relative z-10 flex items-start justify-between gap-3">
+              <div>
+                <p className="text-[13px] font-bold uppercase">{stat.title}</p>
+                <h3 className="mt-4 text-[34px] font-extrabold leading-none">{stat.value}</h3>
               </div>
-              <div className="flex flex-col">
-                <p className="text-gray-600 text-xs font-medium mb-1">{stat.title}</p>
-                <h3 className="text-2xl font-bold text-gray-900 mb-3">{stat.value}</h3>
-                <div className="flex flex-col">
-                  <div className="flex items-center text-emerald-600 text-xs font-medium mb-1">
-                    <TrendingUp size={12} className="mr-1" />
-                    <span>{stat.inc}</span>
-                  </div>
-                  <p className="text-gray-400 text-[10px]">from last month</p>
-                </div>
+              <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-[18px] border border-white/30 bg-white/15">
+                {stat.icon}
               </div>
             </div>
-            {/* Decorative wave at bottom */}
-            <div className="absolute bottom-0 left-0 w-full h-8 overflow-hidden pointer-events-none">
-                <svg viewBox="0 0 100 20" preserveAspectRatio="none" className={`w-full h-full opacity-40`} fill="currentColor" style={{ color: stat.iconBg.replace('bg-[', '').replace(']', '') }}>
-                  <path d="M0,10 C30,25 70,0 100,10 L100,20 L0,20 Z" />
-                </svg>
+            <div className="pointer-events-none absolute bottom-[62px] left-6 right-6 flex h-9 items-end gap-1 opacity-30" aria-hidden="true">
+              {[34, 58, 42, 72, 51, 65, 88].map((height, index) => (
+                <span key={index} className="flex-1 rounded-t-[3px] bg-white" style={{ height: `${height}%` }} />
+              ))}
+            </div>
+            <div className={`relative z-10 mt-auto inline-flex w-fit items-center gap-1.5 rounded-full border px-3 py-1.5 text-[11px] font-bold ${stat.pill}`}>
+              <TrendingUp size={12} />
+              <span>+{stat.inc} vs previous</span>
             </div>
           </div>
         ))}

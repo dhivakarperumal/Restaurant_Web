@@ -2,7 +2,7 @@ import React, { useContext, useEffect, useRef, useState } from "react";
 import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../PrivateRouter/AuthContext";
 import { StoreContext } from "../PrivateRouter/StoreContext";
-import { isAdminRole } from "../PrivateRouter/roleUtils";
+import { getRoleHome } from "../PrivateRouter/roleUtils";
 import {
   FiChevronDown,
   FiMenu,
@@ -80,6 +80,15 @@ const Navbar = () => {
     user?.username ||
     "User";
   const userInitial = userDisplayName.charAt(0).toUpperCase();
+  const roleDashboardPath = getRoleHome(role);
+  const roleDashboardLabel = {
+    "/admin": "Admin Panel",
+    "/chef": "Chef Panel",
+    "/server": "Server Panel",
+    "/delivery": "Delivery Panel",
+    "/employee": "Employee Panel",
+    "/trainee": "Trainee Panel",
+  }[roleDashboardPath];
 
   const handleConfirmLogout = () => {
     logout();
@@ -446,23 +455,19 @@ const Navbar = () => {
                         </div>
 
                         <div className="p-2">
-                          {isAdminRole(role) && (
+                          {roleDashboardLabel && (
                             <button
                               type="button"
                               className="flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-left text-sm font-medium text-[#1d1d1d] transition hover:bg-[#f7f3ee]"
                               onClick={() => {
                                 setProfileDropdown(false);
-                                navigate("/admin");
+                                navigate(roleDashboardPath);
                               }}
                             >
-                              <span>Admin Panel</span>
+                              <span>{roleDashboardLabel}</span>
                               <FiUser className="text-base text-[#7a7a7a]" />
                             </button>
                           )}
-
-                          
-
-                          
 
                           <button
                             type="button"

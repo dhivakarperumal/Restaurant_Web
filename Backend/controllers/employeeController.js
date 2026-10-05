@@ -378,6 +378,52 @@ async function getEmployee(req, res) {
   }
 }
 
+async function getDeliveryPartnerProfile(req, res) {
+  try {
+    if (!req.auth.employee_id) {
+      return res.status(404).json({ success: false, message: 'Delivery partner profile was not found.' });
+    }
+
+    const employee = await findEmployeeById(req.auth.employee_id);
+    if (
+      !employee ||
+      employee.employee_type !== 'Delivery Partner' ||
+      String(employee.user_id) !== String(req.auth.user_id)
+    ) {
+      return res.status(404).json({ success: false, message: 'Delivery partner profile was not found.' });
+    }
+
+    const address = [
+      employee.address,
+      employee.area_locality,
+      employee.city,
+      employee.district,
+      employee.state,
+      employee.pincode,
+    ].filter(Boolean).join(', ');
+
+    return res.json({
+      success: true,
+      data: {
+        employee_id: employee.employee_id,
+        employee_type: employee.employee_type,
+        full_name: employee.full_name,
+        phone_number: employee.phone_number,
+        email: employee.email,
+        address,
+        vehicle_type: employee.vehicle_type,
+        vehicle_number: employee.vehicle_number,
+        account_status: employee.status,
+        verification_status: employee.verification_status,
+        bank_account_last4: employee.account_number ? employee.account_number.slice(-4) : null,
+      },
+    });
+  } catch (error) {
+    console.error('Delivery partner profile failed:', error.message);
+    return res.status(500).json({ success: false, message: 'Delivery partner profile could not be loaded.' });
+  }
+}
+
 async function updateEmployee(req, res) {
   const files = req.files || [];
   let existingEmployee;
@@ -518,4 +564,4 @@ module.exports = {
   updateEmployee,
   updateEmployeeStatus,
   validateEmployeeData,
-};
+};

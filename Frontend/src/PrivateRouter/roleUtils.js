@@ -11,6 +11,7 @@ export const getRoleHome = (role) => {
   if (isAdminRole(normalizedRole)) return '/admin';
   if (normalizedRole === 'chef') return '/chef';
   if (normalizedRole === 'server') return '/server';
+  if (normalizedRole === 'delivery' || normalizedRole === 'delivery partner' || normalizedRole === 'deliverypartner') return '/delivery';
   if (normalizedRole === 'employee') return '/employee';
   if (normalizedRole === 'trainee') return '/trainee';
   return '/';
