@@ -71,7 +71,8 @@ export default function Shop() {
   const [modalQuantity, setModalQuantity] = useState(1);
   const [modalSelectedAddons, setModalSelectedAddons] = useState([]);
   const [modalCustomizations, setModalCustomizations] = useState({});
-  const [modalCookingNotes, setModalCookingNotes] = useState("");
+  const [modalCustomAddonRequests, setModalCustomAddonRequests] = useState("");
+  const [modalCustomizationRequest, setModalCustomizationRequest] = useState("");
 
   // Fetch foods, categories, cuisines
   const fetchMenuData = async () => {
@@ -122,7 +123,8 @@ export default function Shop() {
     setActiveImageIndex(0);
     setModalQuantity(1);
     setModalSelectedAddons([]);
-    setModalCookingNotes("");
+    setModalCustomAddonRequests("");
+    setModalCustomizationRequest("");
 
     // Initialize required customizations
     const initialCust = {};
@@ -146,6 +148,15 @@ export default function Shop() {
   // Add item from modal
   const handleAddFromModal = async () => {
     if (!selectedFood) return;
+    const requestedAddons = modalCustomAddonRequests.split(/\r?\n/).map((name) => name.trim()).filter(Boolean);
+    if (requestedAddons.length > 50 || requestedAddons.some((name) => name.length > 150)) {
+      toast.error("Enter up to 50 add-on requests, with no more than 150 characters each.");
+      return;
+    }
+    if (modalCustomizationRequest.trim().length > 500) {
+      toast.error("Customization requests must be 500 characters or fewer.");
+      return;
+    }
 
     // Calculate addon price
     let extraPrice = 0;
@@ -174,6 +185,14 @@ export default function Shop() {
 
     const basePrice = Number(selectedFood.final_price || selectedFood.mrp || 0);
     const itemFinalPrice = basePrice + extraPrice;
+    const selectedAddons = [...new Set([
+      ...modalSelectedAddons,
+      ...requestedAddons.map((name) => `Custom request: ${name}`),
+    ])];
+    const selectedCustomizations = { ...modalCustomizations };
+    if (modalCustomizationRequest.trim()) {
+      selectedCustomizations.__custom_request__ = modalCustomizationRequest.trim();
+    }
 
     const payload = {
       ...selectedFood,
@@ -187,9 +206,8 @@ export default function Shop() {
       product_image: selectedFood.food_images?.[0] || "",
       image: selectedFood.food_images?.[0] || "",
       quantity: modalQuantity,
-      selectedAddons: modalSelectedAddons,
-      selectedCustomizations: modalCustomizations,
-      cookingNotes: modalCookingNotes,
+      selectedAddons,
+      selectedCustomizations,
     };
 
     if (addToCart) {
@@ -197,9 +215,8 @@ export default function Shop() {
         size: selectedFood.portion_size || "Standard",
         price: itemFinalPrice,
         quantity: modalQuantity,
-        selectedAddons: modalSelectedAddons,
-        selectedCustomizations: modalCustomizations,
-        cookingNotes: modalCookingNotes,
+        selectedAddons,
+        selectedCustomizations,
       });
     } else {
       toast.success(`Added ${selectedFood.food_name} to cart!`);
@@ -210,39 +227,7 @@ export default function Shop() {
   // Direct quick add
   const handleQuickAdd = async (e, food) => {
     e.stopPropagation();
-    // If food has addons or customizations, open modal instead
-    if ((food.addons && food.addons.length > 0) || (food.customizations && food.customizations.length > 0)) {
-      openCustomizer(food);
-      return;
-    }
-
-    const basePrice = Number(food.final_price || food.mrp || 0);
-    const payload = {
-      ...food,
-      id: food.food_id || food.id,
-      food_id: food.food_id || food.id,
-      product_id: food.food_id || food.id,
-      product_name: food.food_name,
-      name: food.food_name,
-      price: basePrice,
-      portion_size: food.portion_size || "Standard",
-      product_image: food.food_images?.[0] || "",
-      image: food.food_images?.[0] || "",
-      quantity: 1,
-    };
-
-    if (addToCart) {
-      await addToCart(payload, {
-        size: food.portion_size || "Standard",
-        price: basePrice,
-        quantity: 1,
-        selectedAddons: [],
-        selectedCustomizations: {},
-        cookingNotes: "",
-      });
-    } else {
-      toast.success(`Added ${food.food_name} to cart!`);
-    }
+    openCustomizer(food);
   };
 
   // Filtered & Sorted Foods
@@ -1287,18 +1272,32 @@ export default function Shop() {
                 </div>
               )}
 
-              {/* Cooking Instructions Notes */}
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1.5">
-                  Special Cooking Instructions (Optional)
+              <div className="space-y-3">
+                <label className="block text-xs font-semibold text-slate-700">
+                  Additional add-ons (optional)
+                  <textarea
+                    value={modalCustomAddonRequests}
+                    onChange={(event) => setModalCustomAddonRequests(event.target.value.slice(0, 500))}
+                    maxLength={500}
+                    rows={2}
+                    placeholder="Enter extra add-ons, one per line (e.g. Extra sauce)"
+                    className="mt-1.5 w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-xs font-normal text-slate-800 outline-none transition focus:border-emerald-600 focus:ring-2 focus:ring-emerald-500/10 placeholder:text-slate-400"
+                  />
+                  <span className="mt-1 block text-right text-[10px] font-normal text-slate-400">
+                    Typed requests do not change the price.
+                  </span>
                 </label>
-                <input
-                  type="text"
-                  value={modalCookingNotes}
-                  onChange={(e) => setModalCookingNotes(e.target.value)}
-                  placeholder="e.g. Less oil, extra spicy, no onions, pack gravy separately"
-                  className="w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-xs text-slate-800 outline-none transition focus:border-emerald-600 focus:ring-2 focus:ring-emerald-500/10 placeholder:text-slate-400"
-                />
+                <label className="block text-xs font-semibold text-slate-700">
+                  Additional customization (optional)
+                  <textarea
+                    value={modalCustomizationRequest}
+                    onChange={(event) => setModalCustomizationRequest(event.target.value.slice(0, 500))}
+                    maxLength={500}
+                    rows={2}
+                    placeholder="e.g. Less oil, extra spicy, no onions"
+                    className="mt-1.5 w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-xs font-normal text-slate-800 outline-none transition focus:border-emerald-600 focus:ring-2 focus:ring-emerald-500/10 placeholder:text-slate-400"
+                  />
+                </label>
               </div>
             </div>
 

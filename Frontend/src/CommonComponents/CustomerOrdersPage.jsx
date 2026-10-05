@@ -196,6 +196,14 @@ function CustomerOrdersPage({ audience = 'admin', view = 'all' }) {
                             ? ` · ${item.selected_addons.join(', ')}`
                             : ''}
                         </p>
+                        {Object.entries(item.selected_customizations || {}).flatMap(([group, selection]) => {
+                          const options = Array.isArray(selection) ? selection : selection ? [selection] : [];
+                          return options.map((option) => (
+                            <p key={`${group}-${option}`} className="mt-0.5 text-xs text-[#7a857d]">
+                              {group === '__custom_request__' ? 'Custom request' : group}: {option}
+                            </p>
+                          ));
+                        })}
                         {item.cooking_notes && <p className="mt-0.5 text-xs italic text-[#7a857d]">Note: {item.cooking_notes}</p>}
                       </div>
                       <p className="shrink-0 text-sm font-semibold text-[#263830]">₹{Number(item.total_price).toFixed(2)}</p>

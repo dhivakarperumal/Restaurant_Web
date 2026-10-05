@@ -165,21 +165,36 @@ const createOrderFromCart = async ({ userId, customer, fulfillmentType, address,
       let addonsPrice = 0;
       const uniqueAddonNames = new Set();
       for (const selectedName of selectedAddons) {
+        if (typeof selectedName !== 'string' || !selectedName.trim() || selectedName.length > 180) {
+          throw invalidCartError(`An add-on for ${food.food_name} is invalid.`);
+        }
         if (uniqueAddonNames.has(selectedName)) {
           throw invalidCartError(`An add-on for ${food.food_name} was selected more than once.`);
         }
         uniqueAddonNames.add(selectedName);
+        if (selectedName.startsWith('Custom request: ')) {
+          if (!selectedName.slice('Custom request: '.length).trim()) {
+            throw invalidCartError(`An add-on for ${food.food_name} is invalid.`);
+          }
+          continue;
+        }
         const addon = addons.find((item) => item.addon_name === selectedName);
-        if (!addon) throw invalidCartError(`An add-on for ${food.food_name} is no longer available.`);
+        if (!addon || String(addon.status || 'Active').toLowerCase() !== 'active') {
+          throw invalidCartError(`An add-on for ${food.food_name} is no longer available.`);
+        }
         addonsPrice += Number(addon.price || 0);
       }
 
       let customizationsPrice = 0;
       const groupNames = new Set(customizations.map((group) => group.name));
-      if (Object.keys(selectedCustomizations).some((name) => !groupNames.has(name))) {
+      const customizationRequest = selectedCustomizations.__custom_request__;
+      if ((customizationRequest !== undefined
+          && (typeof customizationRequest !== 'string' || !customizationRequest.trim() || customizationRequest.length > 500))
+        || Object.keys(selectedCustomizations).some((name) => !groupNames.has(name) && name !== '__custom_request__')) {
         throw invalidCartError(`An option for ${food.food_name} is no longer available.`);
       }
       for (const group of customizations) {
+        if (group.name === '__custom_request__' && customizationRequest !== undefined) continue;
         const selected = selectedCustomizations[group.name];
         if ((group.required === true || group.required === 1) && (
           selected === undefined || selected === null || selected === '' || (Array.isArray(selected) && !selected.length)

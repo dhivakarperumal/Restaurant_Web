@@ -449,6 +449,14 @@ function Checkout() {
                     {Array.isArray(item.selected_addons) && item.selected_addons.length > 0 && (
                       <p className="mt-1 truncate text-xs text-[#8c7a6b]">+ {item.selected_addons.join(', ')}</p>
                     )}
+                    {Object.entries(item.selected_customizations || {}).flatMap(([group, selection]) => {
+                      const options = Array.isArray(selection) ? selection : selection ? [selection] : [];
+                      return options.map((option) => (
+                        <p key={`${group}-${option}`} className="mt-1 truncate text-xs text-[#8c7a6b]">
+                          {group === '__custom_request__' ? 'Custom request' : group}: {option}
+                        </p>
+                      ));
+                    })}
                   </div>
                   <p className="shrink-0 text-sm font-bold text-[#263830]">
                     ₹{(Number(item.price || 0) * Number(item.quantity || 1)).toFixed(2)}
