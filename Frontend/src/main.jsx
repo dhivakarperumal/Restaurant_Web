@@ -265,8 +265,11 @@ const router = createHashRouter([
           },
           {
             path: 'orders',
-            element: <DeliveryOrdersPage />,
+            element: <DeliveryOrdersPage view="all" />,
           },
+          { path: 'orders/new', element: <DeliveryOrdersPage view="new" /> },
+          { path: 'orders/delivery', element: <DeliveryOrdersPage view="delivery" /> },
+          { path: 'orders/cancelled', element: <DeliveryOrdersPage view="cancelled" /> },
           { path: 'earnings', element: <DeliveryPartnerPages section="earnings" /> },
           { path: 'history', element: <DeliveryPartnerPages section="history" /> },
           { path: 'notifications', element: <DeliveryPartnerPages section="notifications" /> },

@@ -6,9 +6,13 @@ import {
   IndianRupee,
   LayoutDashboard,
   LifeBuoy,
+  List,
   LogOut,
+  PackageCheck,
+  PlusSquare,
   ShoppingCart,
   X,
+  XCircle,
   ChevronDown,
   ChevronLeft,
   UserRound,
@@ -21,7 +25,16 @@ const Logo = "/favicon.svg";
 /* ================= NAV ITEMS ================= */
 const navItems = [
   { path: "/delivery", label: "Dashboard", icon: LayoutDashboard, exact: true },
-  { path: "/delivery/orders", label: "Orders", icon: ShoppingCart },
+  {
+    label: "Orders",
+    icon: ShoppingCart,
+    children: [
+      { path: "/delivery/orders/new", label: "New Orders", icon: PlusSquare },
+      { path: "/delivery/orders", label: "All Orders", icon: List },
+      { path: "/delivery/orders/delivery", label: "Delivery Orders", icon: PackageCheck },
+      { path: "/delivery/orders/cancelled", label: "Cancelled Orders", icon: XCircle },
+    ],
+  },
   { path: "/delivery/earnings", label: "Earnings", icon: IndianRupee },
   { path: "/delivery/history", label: "Delivery History", icon: History },
   { path: "/delivery/notifications", label: "Notifications", icon: Bell },
@@ -180,6 +193,7 @@ const DeliverySidebar = ({ isOpen, onClose, collapsed, onToggleCollapse }) => {
                           <NavLink
                             key={sub.path}
                             to={sub.path}
+                            end
                             onClick={() => isOpen && onClose()}
                             className={`
                               flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-xs

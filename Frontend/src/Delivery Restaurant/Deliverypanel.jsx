@@ -15,6 +15,9 @@ const mobileLinks = [
 const pageTitles = {
   "/delivery": "Dashboard",
   "/delivery/orders": "Orders",
+  "/delivery/orders/new": "New Orders",
+  "/delivery/orders/delivery": "Delivery Orders",
+  "/delivery/orders/cancelled": "Cancelled Orders",
   "/delivery/earnings": "Earnings",
   "/delivery/history": "Delivery History",
   "/delivery/notifications": "Notifications",

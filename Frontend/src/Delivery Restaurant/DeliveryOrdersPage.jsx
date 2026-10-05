@@ -6,17 +6,12 @@ import toast from "react-hot-toast";
 const normalizeStatus = (status) =>
   String(status || "").trim().toUpperCase().replace(/[\s-]+/g, "_");
 
-const statusTabs = [
-  { id: "all", label: "All" },
-  { id: "new", label: "New", statuses: ["NEW", "NEW_ORDER", "PENDING", "ORDER_PLACED"] },
-  { id: "assigned", label: "Assigned", statuses: ["ASSIGNED"] },
-  { id: "accepted", label: "Accepted", statuses: ["ACCEPTED"] },
-  { id: "pickup", label: "Pickup Pending", statuses: ["REACHED_PICKUP"] },
-  { id: "picked-up", label: "Picked Up", statuses: ["PICKED_UP"] },
-  { id: "out", label: "Out for Delivery", statuses: ["OUT_FOR_DELIVERY"] },
-  { id: "delivered", label: "Delivered", statuses: ["DELIVERED", "COMPLETED"] },
-  { id: "cancelled", label: "Cancelled", statuses: ["CANCELLED"] },
-];
+const orderViews = {
+  new: { title: "New Orders", statuses: ["NEW", "NEW_ORDER", "PENDING", "ORDER_PLACED"] },
+  all: { title: "All Orders", statuses: null },
+  delivery: { title: "Delivery Orders", statuses: ["ASSIGNED", "ACCEPTED", "REACHED_PICKUP", "PICKED_UP", "OUT_FOR_DELIVERY", "REACHED_CUSTOMER", "SHIPPED"] },
+  cancelled: { title: "Cancelled Orders", statuses: ["CANCELLED"] },
+};
 
 const statusFlow = ["ASSIGNED", "ACCEPTED", "REACHED_PICKUP", "PICKED_UP", "OUT_FOR_DELIVERY", "REACHED_CUSTOMER", "DELIVERED"];
 const statusLabels = {
@@ -58,10 +53,9 @@ const getItems = (order) => {
 
 const orderId = (order) => order.order_id || order.id || "Order";
 
-const DeliveryOrdersPage = () => {
+const DeliveryOrdersPage = ({ view = "all" }) => {
   const [orders, setOrders] = useState([]);
   const [search, setSearch] = useState("");
-  const [tab, setTab] = useState("all");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
   const [page, setPage] = useState(1);
@@ -72,6 +66,7 @@ const DeliveryOrdersPage = () => {
   const [pendingStatus, setPendingStatus] = useState("");
   const [updating, setUpdating] = useState(false);
   const pageSize = 8;
+  const config = orderViews[view] || orderViews.all;
 
   useEffect(() => {
     let active = true;
@@ -101,18 +96,17 @@ const DeliveryOrdersPage = () => {
 
   const matchingOrders = useMemo(() => {
     const query = search.trim().toLowerCase();
-    const currentTab = statusTabs.find((item) => item.id === tab);
     return orders.filter((order) => {
       const normalizedStatus = normalizeStatus(order.order_status);
-      const matchesTab = !currentTab?.statuses || currentTab.statuses.includes(normalizedStatus);
+      const matchesView = !config.statuses || config.statuses.includes(normalizedStatus);
       const date = new Date(order.order_date || order.created_at || "");
       const dateKey = Number.isNaN(date.getTime()) ? "" : `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
       const matchesDate = (!dateFrom || dateKey >= dateFrom) && (!dateTo || dateKey <= dateTo);
       const matchesSearch = !query || [orderId(order), order.customer_name, order.customer?.name]
         .some((value) => String(value || "").toLowerCase().includes(query));
-      return matchesTab && matchesDate && matchesSearch;
+      return matchesView && matchesDate && matchesSearch;
     });
-  }, [dateFrom, dateTo, orders, search, tab]);
+  }, [config.statuses, dateFrom, dateTo, orders, search]);
 
   const pageCount = Math.max(1, Math.ceil(matchingOrders.length / pageSize));
   const visibleOrders = matchingOrders.slice((page - 1) * pageSize, page * pageSize);
@@ -151,7 +145,7 @@ const DeliveryOrdersPage = () => {
       <header className="mb-5 flex flex-wrap items-end justify-between gap-3">
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[#39754a]">Deliveries</p>
-          <h1 className="mt-1 text-2xl font-bold">Orders</h1>
+          <h1 className="mt-1 text-2xl font-bold">{config.title}</h1>
           <p className="mt-1 text-sm text-gray-500">Only orders assigned to your account appear here.</p>
         </div>
         <button
@@ -164,10 +158,6 @@ const DeliveryOrdersPage = () => {
           Refresh
         </button>
       </header>
-
-      <div className="mb-4 flex gap-2 overflow-x-auto pb-1" role="tablist" aria-label="Filter orders by status">
-        {statusTabs.map((item) => <button key={item.id} type="button" role="tab" aria-selected={tab === item.id} onClick={() => { setTab(item.id); setPage(1); }} className={`shrink-0 rounded-full px-3.5 py-2 text-xs font-semibold transition ${tab === item.id ? "bg-[#1f6a3b] text-white" : "border border-gray-200 bg-white text-gray-600 hover:bg-gray-50"}`}>{item.label}</button>)}
-      </div>
 
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <label className="relative block w-full max-w-sm">
