@@ -380,6 +380,10 @@ export default function ServerTables() {
   const currentUserName = userProfile?.name || userProfile?.displayName || userProfile?.full_name || userProfile?.username;
 
   const selectTableForOrder = (table) => {
+    if (String(table.status || "").trim().toLowerCase() !== "occupied") {
+      toast.error("Mark the table as Occupied before starting an order.");
+      return;
+    }
     navigate("/server/foods", {
       state: {
         selectedTable: {
@@ -712,6 +716,7 @@ export default function ServerTables() {
             const activeOrder = getTableActiveOrder(table);
             const activeBill = getTableActiveBill(table);
             const isReady = activeOrder?.status === "Ready to Serve";
+            const canOrder = String(table.status || "").trim().toLowerCase() === "occupied";
             return (
               <div
                 key={table.table_id || table.id}
@@ -934,8 +939,10 @@ export default function ServerTables() {
                       )}
                       <button
                         type="button"
+                        disabled={!canOrder}
                         onClick={() => selectTableForOrder(table)}
-                        className="inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-[#1a3c36] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#214a42]"
+                        title={canOrder ? "Select table and create an order" : "Mark the table as Occupied before ordering"}
+                        className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#1a3c36] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#214a42] enabled:cursor-pointer disabled:cursor-not-allowed disabled:opacity-45 disabled:hover:bg-[#1a3c36]"
                       >
                         {activeBill ? "+ Add Round / Items" : "Select Table & Order"} <ArrowRight className="h-4 w-4" />
                       </button>
@@ -1115,6 +1122,7 @@ export default function ServerTables() {
                             <div className="flex items-center justify-end gap-2">
                               {(() => {
                                 const activeBill = getTableActiveBill(table);
+                                const canOrder = String(table.status || "").trim().toLowerCase() === "occupied";
                                 return (
                                   <>
                                     {activeBill && (
@@ -1128,8 +1136,10 @@ export default function ServerTables() {
                                     )}
                                     <button
                                       type="button"
+                                      disabled={!canOrder}
                                       onClick={() => selectTableForOrder(table)}
-                                      className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg bg-[#1a3c36] px-3 py-2 text-xs font-semibold text-white transition hover:bg-[#214a42]"
+                                      title={canOrder ? "Select table and create an order" : "Mark the table as Occupied before ordering"}
+                                      className="inline-flex items-center gap-1.5 rounded-lg bg-[#1a3c36] px-3 py-2 text-xs font-semibold text-white transition hover:bg-[#214a42] enabled:cursor-pointer disabled:cursor-not-allowed disabled:opacity-45 disabled:hover:bg-[#1a3c36]"
                                     >
                                       {activeBill ? "+ Add Round" : "Select Table"} <ArrowRight className="h-3.5 w-3.5" />
                                     </button>
