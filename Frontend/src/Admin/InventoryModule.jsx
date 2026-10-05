@@ -125,6 +125,18 @@ function InventoryCrudPage({ title, subtitle, children, actions }) {
   );
 }
 
+function FormField({ label, children, required = false }) {
+  return (
+    <label className="block space-y-1.5">
+      <span className="text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-500">
+        {label}
+        {required && <span className="ml-1 text-rose-500">*</span>}
+      </span>
+      {children}
+    </label>
+  );
+}
+
 function GenericListPage({ title, subtitle, items, onAdd, columns, emptyText, actionsFormat }) {
   return (
     <InventoryCrudPage title={title} subtitle={subtitle} actions={onAdd ? <button className="rounded-xl bg-[#1a3c36] px-4 py-2 text-sm font-semibold text-white" onClick={onAdd}><PlusCircle size={15} className="mr-2 inline" />Add</button> : null}>
@@ -284,6 +296,7 @@ function ProductsPage() {
   const navigate = useNavigate();
   const { products, categories, subcategories, units, suppliers, locations, loadData } = useInventoryContext();
   const [search, setSearch] = useState('');
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [form, setForm] = useState({
     product_name: '', sku: '', barcode: '', category_id: '', subcategory_id: '', unit_id: '', supplier_id: '', purchase_price: '', selling_price: '', current_stock: '0', minimum_stock: '0', reorder_level: '0', status: 'Active',
   });
@@ -321,8 +334,13 @@ function ProductsPage() {
   ];
 
   return (
-    <InventoryCrudPage title="Products" subtitle="Manage all inventory items, stock levels and supplier linkage." actions={<button className="rounded-xl bg-[#1a3c36] px-4 py-2 text-sm font-semibold text-white" onClick={() => navigate('/admin/inventory/stock-in')}>Stock In</button>}>
-      <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
+    <>
+      <InventoryCrudPage title="Products" subtitle="Manage all inventory items, stock levels and supplier linkage." actions={
+        <div className="flex gap-2">
+          <button className="rounded-xl bg-[#1a3c36] px-4 py-2 text-sm font-semibold text-white" onClick={() => setIsAddModalOpen(true)}>Add Product</button>
+          <button className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700" onClick={() => navigate('/admin/inventory/stock-in')}>Stock In</button>
+        </div>
+      }>
         <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
           <div className="mb-4 flex items-center justify-between gap-3">
             <div className="relative w-full max-w-md">
@@ -332,43 +350,78 @@ function ProductsPage() {
           </div>
           <InventoryTable columns={columns} rows={filtered} emptyText="No products found." />
         </div>
+      </InventoryCrudPage>
 
-        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-          <h2 className="text-lg font-bold text-slate-900">Add Product</h2>
-          <form className="mt-4 space-y-3" onSubmit={handleSubmit}>
-            <input value={form.product_name} onChange={(e) => setForm({ ...form, product_name: e.target.value })} placeholder="Product name" className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" required />
-            <div className="grid grid-cols-2 gap-3">
-              <input value={form.sku} onChange={(e) => setForm({ ...form, sku: e.target.value })} placeholder="SKU" className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" />
-              <input value={form.barcode} onChange={(e) => setForm({ ...form, barcode: e.target.value })} placeholder="Barcode" className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" />
+      {isAddModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/45 p-4">
+          <div className="w-full max-w-2xl rounded-2xl border border-slate-200 bg-white p-5 shadow-2xl">
+            <div className="mb-4 flex items-center justify-between">
+              <h2 className="text-xl font-bold text-slate-900">Add Product</h2>
+              <button type="button" onClick={() => setIsAddModalOpen(false)} className="rounded-full bg-slate-100 px-2.5 py-1 text-sm font-semibold text-slate-600">×</button>
             </div>
-            <div className="grid grid-cols-2 gap-3">
-              <select value={form.category_id} onChange={(e) => setForm({ ...form, category_id: e.target.value })} className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm">
-                <option value="">Category</option>
-                {categories.map((cat) => <option key={cat.id} value={cat.id}>{cat.category_name}</option>)}
-              </select>
-              <select value={form.unit_id} onChange={(e) => setForm({ ...form, unit_id: e.target.value })} className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm">
-                <option value="">Unit</option>
-                {units.map((unit) => <option key={unit.id} value={unit.id}>{unit.unit_name}</option>)}
-              </select>
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <input value={form.purchase_price} onChange={(e) => setForm({ ...form, purchase_price: e.target.value })} placeholder="Purchase price" type="number" className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" />
-              <input value={form.selling_price} onChange={(e) => setForm({ ...form, selling_price: e.target.value })} placeholder="Selling price" type="number" className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" />
-            </div>
-            <div className="grid grid-cols-3 gap-3">
-              <input value={form.current_stock} onChange={(e) => setForm({ ...form, current_stock: e.target.value })} placeholder="Opening stock" type="number" className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" min="0" />
-              <input value={form.minimum_stock} onChange={(e) => setForm({ ...form, minimum_stock: e.target.value })} placeholder="Min stock" type="number" className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" min="0" />
-              <input value={form.reorder_level} onChange={(e) => setForm({ ...form, reorder_level: e.target.value })} placeholder="Reorder" type="number" className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" min="0" />
-            </div>
-            <select value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value })} className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm">
-              <option value="Active">Active</option>
-              <option value="Inactive">Inactive</option>
-            </select>
-            <button type="submit" className="w-full rounded-xl bg-[#1a3c36] px-4 py-2.5 text-sm font-semibold text-white">Save Product</button>
-          </form>
+            <form className="space-y-3" onSubmit={(event) => {
+              handleSubmit(event);
+              setIsAddModalOpen(false);
+            }}>
+              <FormField label="Product name" required>
+                <input value={form.product_name} onChange={(e) => setForm({ ...form, product_name: e.target.value })} placeholder="Enter product name" className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" required />
+              </FormField>
+              <div className="grid grid-cols-2 gap-3">
+                <FormField label="SKU">
+                  <input value={form.sku} onChange={(e) => setForm({ ...form, sku: e.target.value })} placeholder="Enter SKU" className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" />
+                </FormField>
+                <FormField label="Barcode">
+                  <input value={form.barcode} onChange={(e) => setForm({ ...form, barcode: e.target.value })} placeholder="Enter barcode" className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" />
+                </FormField>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <FormField label="Category">
+                  <select value={form.category_id} onChange={(e) => setForm({ ...form, category_id: e.target.value })} className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm">
+                    <option value="">Select category</option>
+                    {categories.map((cat) => <option key={cat.id} value={cat.id}>{cat.category_name}</option>)}
+                  </select>
+                </FormField>
+                <FormField label="Unit">
+                  <select value={form.unit_id} onChange={(e) => setForm({ ...form, unit_id: e.target.value })} className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm">
+                    <option value="">Select unit</option>
+                    {units.map((unit) => <option key={unit.id} value={unit.id}>{unit.unit_name}</option>)}
+                  </select>
+                </FormField>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <FormField label="Purchase price">
+                  <input value={form.purchase_price} onChange={(e) => setForm({ ...form, purchase_price: e.target.value })} placeholder="0.00" type="number" className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" />
+                </FormField>
+                <FormField label="Selling price">
+                  <input value={form.selling_price} onChange={(e) => setForm({ ...form, selling_price: e.target.value })} placeholder="0.00" type="number" className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" />
+                </FormField>
+              </div>
+              <div className="grid grid-cols-3 gap-3">
+                <FormField label="Opening stock">
+                  <input value={form.current_stock} onChange={(e) => setForm({ ...form, current_stock: e.target.value })} placeholder="0" type="number" className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" min="0" />
+                </FormField>
+                <FormField label="Min stock">
+                  <input value={form.minimum_stock} onChange={(e) => setForm({ ...form, minimum_stock: e.target.value })} placeholder="0" type="number" className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" min="0" />
+                </FormField>
+                <FormField label="Reorder level">
+                  <input value={form.reorder_level} onChange={(e) => setForm({ ...form, reorder_level: e.target.value })} placeholder="0" type="number" className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" min="0" />
+                </FormField>
+              </div>
+              <FormField label="Status">
+                <select value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value })} className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm">
+                  <option value="Active">Active</option>
+                  <option value="Inactive">Inactive</option>
+                </select>
+              </FormField>
+              <div className="flex justify-end gap-3 pt-2">
+                <button type="button" onClick={() => setIsAddModalOpen(false)} className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700">Cancel</button>
+                <button type="submit" className="rounded-xl bg-[#1a3c36] px-4 py-2 text-sm font-semibold text-white">Save Product</button>
+              </div>
+            </form>
+          </div>
         </div>
-      </div>
-    </InventoryCrudPage>
+      )}
+    </>
   );
 }
 
@@ -401,12 +454,18 @@ function CategoriesPage() {
         <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
           <h2 className="text-lg font-bold text-slate-900">Add Category</h2>
           <form className="mt-4 space-y-3" onSubmit={handleSubmit}>
-            <input value={form.category_name} onChange={(e) => setForm({ ...form, category_name: e.target.value })} className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Category name" required />
-            <textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Description" rows={4} />
-            <select value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value })} className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm">
-              <option value="Active">Active</option>
-              <option value="Inactive">Inactive</option>
-            </select>
+            <FormField label="Category name" required>
+              <input value={form.category_name} onChange={(e) => setForm({ ...form, category_name: e.target.value })} className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Enter category name" required />
+            </FormField>
+            <FormField label="Description">
+              <textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Enter category description" rows={4} />
+            </FormField>
+            <FormField label="Status">
+              <select value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value })} className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm">
+                <option value="Active">Active</option>
+                <option value="Inactive">Inactive</option>
+              </select>
+            </FormField>
             <button className="w-full rounded-xl bg-[#1a3c36] px-4 py-2.5 text-sm font-semibold text-white" type="submit">Save Category</button>
           </form>
         </div>
@@ -444,12 +503,18 @@ function UnitsPage() {
         <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
           <h2 className="text-lg font-bold text-slate-900">Add Unit</h2>
           <form className="mt-4 space-y-3" onSubmit={handleSubmit}>
-            <input value={form.unit_name} onChange={(e) => setForm({ ...form, unit_name: e.target.value })} className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Unit Name" required />
-            <input value={form.short_name} onChange={(e) => setForm({ ...form, short_name: e.target.value })} className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Short Name" required />
-            <select value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value })} className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm">
-              <option value="Active">Active</option>
-              <option value="Inactive">Inactive</option>
-            </select>
+            <FormField label="Unit name" required>
+              <input value={form.unit_name} onChange={(e) => setForm({ ...form, unit_name: e.target.value })} className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Enter unit name" required />
+            </FormField>
+            <FormField label="Short name" required>
+              <input value={form.short_name} onChange={(e) => setForm({ ...form, short_name: e.target.value })} className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Enter short name (e.g. Kg)" required />
+            </FormField>
+            <FormField label="Status">
+              <select value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value })} className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm">
+                <option value="Active">Active</option>
+                <option value="Inactive">Inactive</option>
+              </select>
+            </FormField>
             <button className="w-full rounded-xl bg-[#1a3c36] px-4 py-2.5 text-sm font-semibold text-white" type="submit">Save Unit</button>
           </form>
         </div>
@@ -489,18 +554,40 @@ function SuppliersPage() {
         <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
           <h2 className="text-lg font-bold text-slate-900">Add Supplier</h2>
           <form className="mt-4 space-y-3" onSubmit={handleSubmit}>
-            <input value={form.supplier_name} onChange={(e) => setForm({ ...form, supplier_name: e.target.value })} className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Supplier name" required />
-            <input value={form.company_name} onChange={(e) => setForm({ ...form, company_name: e.target.value })} className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Company name" />
+            <FormField label="Supplier name" required>
+              <input value={form.supplier_name} onChange={(e) => setForm({ ...form, supplier_name: e.target.value })} className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Enter supplier name" required />
+            </FormField>
+            <FormField label="Company name">
+              <input value={form.company_name} onChange={(e) => setForm({ ...form, company_name: e.target.value })} className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Enter company name" />
+            </FormField>
             <div className="grid grid-cols-2 gap-3">
-              <input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Phone" />
-              <input value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Email" />
+              <FormField label="Phone">
+                <input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Enter phone number" />
+              </FormField>
+              <FormField label="Email">
+                <input value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Enter email address" />
+              </FormField>
             </div>
-            <textarea value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Address" rows={3} />
-            <input value={form.gst_number} onChange={(e) => setForm({ ...form, gst_number: e.target.value })} className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="GST Number" />
+            <FormField label="Address">
+              <textarea value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Enter supplier address" rows={3} />
+            </FormField>
+            <FormField label="GST number">
+              <input value={form.gst_number} onChange={(e) => setForm({ ...form, gst_number: e.target.value })} className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Enter GST number" />
+            </FormField>
             <div className="grid grid-cols-2 gap-3">
-              <input value={form.payment_terms} onChange={(e) => setForm({ ...form, payment_terms: e.target.value })} className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Payment terms" />
-              <input value={form.opening_balance} onChange={(e) => setForm({ ...form, opening_balance: e.target.value })} type="number" className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Opening balance" />
+              <FormField label="Payment terms">
+                <input value={form.payment_terms} onChange={(e) => setForm({ ...form, payment_terms: e.target.value })} className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="e.g. Net 30" />
+              </FormField>
+              <FormField label="Opening balance">
+                <input value={form.opening_balance} onChange={(e) => setForm({ ...form, opening_balance: e.target.value })} type="number" className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="0.00" />
+              </FormField>
             </div>
+            <FormField label="Status">
+              <select value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value })} className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm">
+                <option value="Active">Active</option>
+                <option value="Inactive">Inactive</option>
+              </select>
+            </FormField>
             <button className="w-full rounded-xl bg-[#1a3c36] px-4 py-2.5 text-sm font-semibold text-white" type="submit">Save Supplier</button>
           </form>
         </div>
@@ -541,12 +628,18 @@ function PurchasesPage() {
       <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
         <form className="space-y-4" onSubmit={handleSubmit}>
           <div className="grid gap-3 md:grid-cols-3">
-            <input value={form.purchase_number} onChange={(e) => setForm({ ...form, purchase_number: e.target.value })} className="rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Purchase number" />
-            <select value={form.supplier_id} onChange={(e) => setForm({ ...form, supplier_id: e.target.value })} className="rounded-xl border border-slate-200 px-3 py-2 text-sm">
-              <option value="">Supplier</option>
-              {suppliers.map((supplier) => <option key={supplier.id} value={supplier.id}>{supplier.supplier_name}</option>)}
-            </select>
-            <input value={form.invoice_number} onChange={(e) => setForm({ ...form, invoice_number: e.target.value })} className="rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Invoice number" />
+            <FormField label="Purchase number">
+              <input value={form.purchase_number} onChange={(e) => setForm({ ...form, purchase_number: e.target.value })} className="rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Enter purchase number" />
+            </FormField>
+            <FormField label="Supplier">
+              <select value={form.supplier_id} onChange={(e) => setForm({ ...form, supplier_id: e.target.value })} className="rounded-xl border border-slate-200 px-3 py-2 text-sm">
+                <option value="">Select supplier</option>
+                {suppliers.map((supplier) => <option key={supplier.id} value={supplier.id}>{supplier.supplier_name}</option>)}
+              </select>
+            </FormField>
+            <FormField label="Invoice number">
+              <input value={form.invoice_number} onChange={(e) => setForm({ ...form, invoice_number: e.target.value })} className="rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Enter invoice number" />
+            </FormField>
           </div>
 
           <div className="rounded-2xl border border-slate-200 bg-slate-50 p-3">
@@ -554,13 +647,21 @@ function PurchasesPage() {
             <div className="space-y-3">
               {form.items.map((item, index) => (
                 <div key={index} className="grid gap-3 md:grid-cols-5">
-                  <select value={item.product_id} onChange={(e) => updateItem(index, 'product_id', e.target.value)} className="rounded-xl border border-slate-200 px-3 py-2 text-sm">
-                    <option value="">Product</option>
-                    {products.map((product) => <option key={product.id} value={product.id}>{product.product_name}</option>)}
-                  </select>
-                  <input value={item.quantity} onChange={(e) => updateItem(index, 'quantity', e.target.value)} type="number" className="rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Qty" />
-                  <input value={item.unit} onChange={(e) => updateItem(index, 'unit', e.target.value)} className="rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Unit" />
-                  <input value={item.purchase_price} onChange={(e) => updateItem(index, 'purchase_price', e.target.value)} type="number" className="rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Price" />
+                  <FormField label="Product">
+                    <select value={item.product_id} onChange={(e) => updateItem(index, 'product_id', e.target.value)} className="rounded-xl border border-slate-200 px-3 py-2 text-sm">
+                      <option value="">Select product</option>
+                      {products.map((product) => <option key={product.id} value={product.id}>{product.product_name}</option>)}
+                    </select>
+                  </FormField>
+                  <FormField label="Qty">
+                    <input value={item.quantity} onChange={(e) => updateItem(index, 'quantity', e.target.value)} type="number" className="rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Qty" />
+                  </FormField>
+                  <FormField label="Unit">
+                    <input value={item.unit} onChange={(e) => updateItem(index, 'unit', e.target.value)} className="rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Kg" />
+                  </FormField>
+                  <FormField label="Price">
+                    <input value={item.purchase_price} onChange={(e) => updateItem(index, 'purchase_price', e.target.value)} type="number" className="rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="0.00" />
+                  </FormField>
                   <button type="button" className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-700" onClick={() => setForm((prev) => ({ ...prev, items: prev.items.filter((_, idx) => idx !== index) }))}>Remove</button>
                 </div>
               ))}
@@ -569,8 +670,12 @@ function PurchasesPage() {
           </div>
 
           <div className="grid gap-3 md:grid-cols-2">
-            <input value={form.purchase_date} onChange={(e) => setForm({ ...form, purchase_date: e.target.value })} type="date" className="rounded-xl border border-slate-200 px-3 py-2 text-sm" />
-            <input value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} className="rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Notes" />
+            <FormField label="Purchase date">
+              <input value={form.purchase_date} onChange={(e) => setForm({ ...form, purchase_date: e.target.value })} type="date" className="rounded-xl border border-slate-200 px-3 py-2 text-sm" />
+            </FormField>
+            <FormField label="Notes">
+              <input value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} className="rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Enter purchase notes" />
+            </FormField>
           </div>
 
           <button type="submit" className="rounded-xl bg-[#1a3c36] px-5 py-2.5 text-sm font-semibold text-white">Save Purchase</button>
@@ -601,24 +706,40 @@ function StockInPage() {
       <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
         <form className="space-y-4" onSubmit={handleSubmit}>
           <div className="grid gap-3 md:grid-cols-2">
-            <select value={form.product_id} onChange={(e) => setForm({ ...form, product_id: e.target.value })} className="rounded-xl border border-slate-200 px-3 py-2 text-sm" required>
-              <option value="">Product</option>
-              {products.map((product) => <option key={product.id} value={product.id}>{product.product_name}</option>)}
-            </select>
-            <select value={form.supplier_id} onChange={(e) => setForm({ ...form, supplier_id: e.target.value })} className="rounded-xl border border-slate-200 px-3 py-2 text-sm">
-              <option value="">Supplier</option>
-              {suppliers.map((supplier) => <option key={supplier.id} value={supplier.id}>{supplier.supplier_name}</option>)}
-            </select>
+            <FormField label="Product" required>
+              <select value={form.product_id} onChange={(e) => setForm({ ...form, product_id: e.target.value })} className="rounded-xl border border-slate-200 px-3 py-2 text-sm" required>
+                <option value="">Select product</option>
+                {products.map((product) => <option key={product.id} value={product.id}>{product.product_name}</option>)}
+              </select>
+            </FormField>
+            <FormField label="Supplier">
+              <select value={form.supplier_id} onChange={(e) => setForm({ ...form, supplier_id: e.target.value })} className="rounded-xl border border-slate-200 px-3 py-2 text-sm">
+                <option value="">Select supplier</option>
+                {suppliers.map((supplier) => <option key={supplier.id} value={supplier.id}>{supplier.supplier_name}</option>)}
+              </select>
+            </FormField>
           </div>
           <div className="grid gap-3 md:grid-cols-4">
-            <input value={form.quantity} onChange={(e) => setForm({ ...form, quantity: e.target.value })} type="number" min="0" className="rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Quantity" required />
-            <input value={form.unit} onChange={(e) => setForm({ ...form, unit: e.target.value })} className="rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Unit" />
-            <input value={form.purchase_price} onChange={(e) => setForm({ ...form, purchase_price: e.target.value })} type="number" min="0" className="rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Purchase price" />
-            <input value={form.reference_number} onChange={(e) => setForm({ ...form, reference_number: e.target.value })} className="rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Reference number" />
+            <FormField label="Quantity" required>
+              <input value={form.quantity} onChange={(e) => setForm({ ...form, quantity: e.target.value })} type="number" min="0" className="rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Enter quantity" required />
+            </FormField>
+            <FormField label="Unit">
+              <input value={form.unit} onChange={(e) => setForm({ ...form, unit: e.target.value })} className="rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="e.g. Kg" />
+            </FormField>
+            <FormField label="Purchase price">
+              <input value={form.purchase_price} onChange={(e) => setForm({ ...form, purchase_price: e.target.value })} type="number" min="0" className="rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="0.00" />
+            </FormField>
+            <FormField label="Reference number">
+              <input value={form.reference_number} onChange={(e) => setForm({ ...form, reference_number: e.target.value })} className="rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Enter ref no" />
+            </FormField>
           </div>
           <div className="grid gap-3 md:grid-cols-2">
-            <input value={form.date} onChange={(e) => setForm({ ...form, date: e.target.value })} type="date" className="rounded-xl border border-slate-200 px-3 py-2 text-sm" />
-            <input value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} className="rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Notes" />
+            <FormField label="Stock in date">
+              <input value={form.date} onChange={(e) => setForm({ ...form, date: e.target.value })} type="date" className="rounded-xl border border-slate-200 px-3 py-2 text-sm" />
+            </FormField>
+            <FormField label="Notes">
+              <input value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} className="rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Enter notes" />
+            </FormField>
           </div>
           <button type="submit" className="rounded-xl bg-[#1a3c36] px-5 py-2.5 text-sm font-semibold text-white">Save Stock In</button>
         </form>
@@ -648,32 +769,46 @@ function StockOutPage() {
       <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
         <form className="space-y-4" onSubmit={handleSubmit}>
           <div className="grid gap-3 md:grid-cols-2">
-            <select value={form.product_id} onChange={(e) => setForm({ ...form, product_id: e.target.value })} className="rounded-xl border border-slate-200 px-3 py-2 text-sm" required>
-              <option value="">Product</option>
-              {products.map((product) => <option key={product.id} value={product.id}>{product.product_name}</option>)}
-            </select>
-            <select value={form.department} onChange={(e) => setForm({ ...form, department: e.target.value })} className="rounded-xl border border-slate-200 px-3 py-2 text-sm">
-              <option value="Kitchen">Kitchen</option>
-              <option value="Restaurant">Restaurant</option>
-              <option value="Staff">Staff Food</option>
-              <option value="Event">Event</option>
-            </select>
+            <FormField label="Product" required>
+              <select value={form.product_id} onChange={(e) => setForm({ ...form, product_id: e.target.value })} className="rounded-xl border border-slate-200 px-3 py-2 text-sm" required>
+                <option value="">Select product</option>
+                {products.map((product) => <option key={product.id} value={product.id}>{product.product_name}</option>)}
+              </select>
+            </FormField>
+            <FormField label="Department">
+              <select value={form.department} onChange={(e) => setForm({ ...form, department: e.target.value })} className="rounded-xl border border-slate-200 px-3 py-2 text-sm">
+                <option value="Kitchen">Kitchen</option>
+                <option value="Restaurant">Restaurant</option>
+                <option value="Staff">Staff Food</option>
+                <option value="Event">Event</option>
+              </select>
+            </FormField>
           </div>
           <div className="grid gap-3 md:grid-cols-4">
-            <input value={form.quantity} onChange={(e) => setForm({ ...form, quantity: e.target.value })} type="number" min="0" className="rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Quantity" required />
-            <input value={form.unit} onChange={(e) => setForm({ ...form, unit: e.target.value })} className="rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Unit" />
-            <select value={form.reason} onChange={(e) => setForm({ ...form, reason: e.target.value })} className="rounded-xl border border-slate-200 px-3 py-2 text-sm">
-              <option>Kitchen Usage</option>
-              <option>Restaurant Order</option>
-              <option>Staff Food</option>
-              <option>Event</option>
-              <option>Complimentary</option>
-              <option>Damaged</option>
-              <option>Other</option>
-            </select>
-            <input value={form.date} onChange={(e) => setForm({ ...form, date: e.target.value })} type="date" className="rounded-xl border border-slate-200 px-3 py-2 text-sm" />
+            <FormField label="Quantity" required>
+              <input value={form.quantity} onChange={(e) => setForm({ ...form, quantity: e.target.value })} type="number" min="0" className="rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Enter quantity" required />
+            </FormField>
+            <FormField label="Unit">
+              <input value={form.unit} onChange={(e) => setForm({ ...form, unit: e.target.value })} className="rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="e.g. Kg" />
+            </FormField>
+            <FormField label="Reason">
+              <select value={form.reason} onChange={(e) => setForm({ ...form, reason: e.target.value })} className="rounded-xl border border-slate-200 px-3 py-2 text-sm">
+                <option>Kitchen Usage</option>
+                <option>Restaurant Order</option>
+                <option>Staff Food</option>
+                <option>Event</option>
+                <option>Complimentary</option>
+                <option>Damaged</option>
+                <option>Other</option>
+              </select>
+            </FormField>
+            <FormField label="Stock out date">
+              <input value={form.date} onChange={(e) => setForm({ ...form, date: e.target.value })} type="date" className="rounded-xl border border-slate-200 px-3 py-2 text-sm" />
+            </FormField>
           </div>
-          <input value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Notes" />
+          <FormField label="Notes">
+            <input value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Enter stock-out notes" />
+          </FormField>
           <button type="submit" className="rounded-xl bg-[#1a3c36] px-5 py-2.5 text-sm font-semibold text-white">Save Stock Out</button>
         </form>
       </div>
