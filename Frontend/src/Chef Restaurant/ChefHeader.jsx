@@ -40,8 +40,8 @@ const pageInfo = {
   "/admin/albums":                  { title: "Albums",                 icon: BookOpen },
   "/admin/gallery":                 { title: "Gallery",                icon: Boxes },
   "/admin/coupons":                 { title: "Coupons & Offers",        icon: Tag },
-  "/admin/settings":                { title: "Settings",              icon: Settings },
-  "/admin/settings/profile":        { title: "Profile",               icon: User },
+  "/chef/settings":                 { title: "Chef Settings",         icon: Settings },
+  "/chef/settings/profile":         { title: "Chef Profile",          icon: User },
   "/admin/send-message":            { title: "Bulk Messaging",        icon: Send },
 };
 
@@ -366,11 +366,11 @@ const ChefHeader = ({ onMenuClick }) => {
                     </div>
                   </div>
                   <div className="p-1.5 space-y-0.5">
-                    <Link to="/admin/settings/profile" onClick={() => setActiveDropdown(null)}
+                    <Link to="/chef/settings/profile" onClick={() => setActiveDropdown(null)}
                       className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-gray-100 text-sm text-gray-700 transition">
                       <User size={15} className="text-gray-500" /> Profile
                     </Link>
-                    <Link to="/admin/settings" onClick={() => setActiveDropdown(null)}
+                    <Link to="/chef/settings" onClick={() => setActiveDropdown(null)}
                       className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-gray-100 text-sm text-gray-700 transition">
                       <Settings size={15} className="text-gray-500" /> Settings
                     </Link>

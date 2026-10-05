@@ -427,6 +427,7 @@ function ProductsPage() {
 
 function CategoriesPage() {
   const { categories, loadData } = useInventoryContext();
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [form, setForm] = useState({ category_name: '', description: '', status: 'Active' });
 
   const handleSubmit = async (event) => {
@@ -435,6 +436,7 @@ function CategoriesPage() {
       await api.post('/inventory/categories', form);
       toast.success('Category added successfully.');
       setForm({ category_name: '', description: '', status: 'Active' });
+      setIsAddModalOpen(false);
       loadData();
     } catch (error) {
       toast.error(error?.response?.data?.message || 'Unable to add category.');
@@ -442,8 +444,8 @@ function CategoriesPage() {
   };
 
   return (
-    <InventoryCrudPage title="Categories" subtitle="Organize product categories and inventory grouping." actions={<button className="rounded-xl bg-[#1a3c36] px-4 py-2 text-sm font-semibold text-white" onClick={() => {}}>Add Category</button>}>
-      <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
+    <>
+      <InventoryCrudPage title="Categories" subtitle="Organize product categories and inventory grouping." actions={<button className="rounded-xl bg-[#1a3c36] px-4 py-2 text-sm font-semibold text-white" onClick={() => setIsAddModalOpen(true)}>Add Category</button>}>
         <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
           <InventoryTable columns={[
             { key: 'category_name', label: 'Category' },
@@ -451,31 +453,43 @@ function CategoriesPage() {
             { key: 'status', label: 'Status', render: (row) => <StatusBadge value={row.status || 'Active'} /> },
           ]} rows={categories} emptyText="No categories found." />
         </div>
-        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-          <h2 className="text-lg font-bold text-slate-900">Add Category</h2>
-          <form className="mt-4 space-y-3" onSubmit={handleSubmit}>
-            <FormField label="Category name" required>
-              <input value={form.category_name} onChange={(e) => setForm({ ...form, category_name: e.target.value })} className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Enter category name" required />
-            </FormField>
-            <FormField label="Description">
-              <textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Enter category description" rows={4} />
-            </FormField>
-            <FormField label="Status">
-              <select value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value })} className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm">
-                <option value="Active">Active</option>
-                <option value="Inactive">Inactive</option>
-              </select>
-            </FormField>
-            <button className="w-full rounded-xl bg-[#1a3c36] px-4 py-2.5 text-sm font-semibold text-white" type="submit">Save Category</button>
-          </form>
+      </InventoryCrudPage>
+
+      {isAddModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/45 p-4">
+          <div className="w-full max-w-lg rounded-2xl border border-slate-200 bg-white p-5 shadow-2xl">
+            <div className="mb-4 flex items-center justify-between">
+              <h2 className="text-xl font-bold text-slate-900">Add Category</h2>
+              <button type="button" onClick={() => setIsAddModalOpen(false)} className="rounded-full bg-slate-100 px-2.5 py-1 text-sm font-semibold text-slate-600">×</button>
+            </div>
+            <form className="space-y-3" onSubmit={handleSubmit}>
+              <FormField label="Category name" required>
+                <input value={form.category_name} onChange={(e) => setForm({ ...form, category_name: e.target.value })} className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Enter category name" required />
+              </FormField>
+              <FormField label="Description">
+                <textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Enter category description" rows={4} />
+              </FormField>
+              <FormField label="Status">
+                <select value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value })} className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm">
+                  <option value="Active">Active</option>
+                  <option value="Inactive">Inactive</option>
+                </select>
+              </FormField>
+              <div className="flex justify-end gap-3 pt-2">
+                <button type="button" onClick={() => setIsAddModalOpen(false)} className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700">Cancel</button>
+                <button className="rounded-xl bg-[#1a3c36] px-4 py-2 text-sm font-semibold text-white" type="submit">Save Category</button>
+              </div>
+            </form>
+          </div>
         </div>
-      </div>
-    </InventoryCrudPage>
+      )}
+    </>
   );
 }
 
 function UnitsPage() {
   const { units, loadData } = useInventoryContext();
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [form, setForm] = useState({ unit_name: '', short_name: '', status: 'Active' });
 
   const handleSubmit = async (event) => {
@@ -484,6 +498,7 @@ function UnitsPage() {
       await api.post('/inventory/units', form);
       toast.success('Unit added successfully.');
       setForm({ unit_name: '', short_name: '', status: 'Active' });
+      setIsAddModalOpen(false);
       loadData();
     } catch (error) {
       toast.error(error?.response?.data?.message || 'Unable to add unit.');
@@ -491,8 +506,8 @@ function UnitsPage() {
   };
 
   return (
-    <InventoryCrudPage title="Units" subtitle="Default inventory measurement units.">
-      <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
+    <>
+      <InventoryCrudPage title="Units" subtitle="Default inventory measurement units." actions={<button className="rounded-xl bg-[#1a3c36] px-4 py-2 text-sm font-semibold text-white" onClick={() => setIsAddModalOpen(true)}>Add Unit</button>}>
         <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
           <InventoryTable columns={[
             { key: 'unit_name', label: 'Unit Name' },
@@ -500,31 +515,43 @@ function UnitsPage() {
             { key: 'status', label: 'Status', render: (row) => <StatusBadge value={row.status || 'Active'} /> },
           ]} rows={units} emptyText="No units found." />
         </div>
-        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-          <h2 className="text-lg font-bold text-slate-900">Add Unit</h2>
-          <form className="mt-4 space-y-3" onSubmit={handleSubmit}>
-            <FormField label="Unit name" required>
-              <input value={form.unit_name} onChange={(e) => setForm({ ...form, unit_name: e.target.value })} className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Enter unit name" required />
-            </FormField>
-            <FormField label="Short name" required>
-              <input value={form.short_name} onChange={(e) => setForm({ ...form, short_name: e.target.value })} className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Enter short name (e.g. Kg)" required />
-            </FormField>
-            <FormField label="Status">
-              <select value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value })} className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm">
-                <option value="Active">Active</option>
-                <option value="Inactive">Inactive</option>
-              </select>
-            </FormField>
-            <button className="w-full rounded-xl bg-[#1a3c36] px-4 py-2.5 text-sm font-semibold text-white" type="submit">Save Unit</button>
-          </form>
+      </InventoryCrudPage>
+
+      {isAddModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/45 p-4">
+          <div className="w-full max-w-lg rounded-2xl border border-slate-200 bg-white p-5 shadow-2xl">
+            <div className="mb-4 flex items-center justify-between">
+              <h2 className="text-xl font-bold text-slate-900">Add Unit</h2>
+              <button type="button" onClick={() => setIsAddModalOpen(false)} className="rounded-full bg-slate-100 px-2.5 py-1 text-sm font-semibold text-slate-600">×</button>
+            </div>
+            <form className="space-y-3" onSubmit={handleSubmit}>
+              <FormField label="Unit name" required>
+                <input value={form.unit_name} onChange={(e) => setForm({ ...form, unit_name: e.target.value })} className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Enter unit name" required />
+              </FormField>
+              <FormField label="Short name" required>
+                <input value={form.short_name} onChange={(e) => setForm({ ...form, short_name: e.target.value })} className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Enter short name (e.g. Kg)" required />
+              </FormField>
+              <FormField label="Status">
+                <select value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value })} className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm">
+                  <option value="Active">Active</option>
+                  <option value="Inactive">Inactive</option>
+                </select>
+              </FormField>
+              <div className="flex justify-end gap-3 pt-2">
+                <button type="button" onClick={() => setIsAddModalOpen(false)} className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700">Cancel</button>
+                <button className="rounded-xl bg-[#1a3c36] px-4 py-2 text-sm font-semibold text-white" type="submit">Save Unit</button>
+              </div>
+            </form>
+          </div>
         </div>
-      </div>
-    </InventoryCrudPage>
+      )}
+    </>
   );
 }
 
 function SuppliersPage() {
   const { suppliers, loadData } = useInventoryContext();
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [form, setForm] = useState({ supplier_name: '', company_name: '', phone: '', email: '', address: '', gst_number: '', payment_terms: '', opening_balance: '0', status: 'Active' });
 
   const handleSubmit = async (event) => {
@@ -533,6 +560,7 @@ function SuppliersPage() {
       await api.post('/inventory/suppliers', { ...form, opening_balance: Number(form.opening_balance || 0) });
       toast.success('Supplier added successfully.');
       setForm({ supplier_name: '', company_name: '', phone: '', email: '', address: '', gst_number: '', payment_terms: '', opening_balance: '0', status: 'Active' });
+      setIsAddModalOpen(false);
       loadData();
     } catch (error) {
       toast.error(error?.response?.data?.message || 'Unable to add supplier.');
@@ -540,8 +568,8 @@ function SuppliersPage() {
   };
 
   return (
-    <InventoryCrudPage title="Suppliers" subtitle="Track supplier contacts, balances and purchase history.">
-      <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
+    <>
+      <InventoryCrudPage title="Suppliers" subtitle="Track supplier contacts, balances and purchase history." actions={<button className="rounded-xl bg-[#1a3c36] px-4 py-2 text-sm font-semibold text-white" onClick={() => setIsAddModalOpen(true)}>Add Supplier</button>}>
         <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
           <InventoryTable columns={[
             { key: 'supplier_name', label: 'Supplier' },
@@ -551,48 +579,59 @@ function SuppliersPage() {
             { key: 'status', label: 'Status', render: (row) => <StatusBadge value={row.status || 'Active'} /> },
           ]} rows={suppliers} emptyText="No suppliers added." />
         </div>
-        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-          <h2 className="text-lg font-bold text-slate-900">Add Supplier</h2>
-          <form className="mt-4 space-y-3" onSubmit={handleSubmit}>
-            <FormField label="Supplier name" required>
-              <input value={form.supplier_name} onChange={(e) => setForm({ ...form, supplier_name: e.target.value })} className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Enter supplier name" required />
-            </FormField>
-            <FormField label="Company name">
-              <input value={form.company_name} onChange={(e) => setForm({ ...form, company_name: e.target.value })} className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Enter company name" />
-            </FormField>
-            <div className="grid grid-cols-2 gap-3">
-              <FormField label="Phone">
-                <input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Enter phone number" />
-              </FormField>
-              <FormField label="Email">
-                <input value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Enter email address" />
-              </FormField>
+      </InventoryCrudPage>
+
+      {isAddModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/45 p-4">
+          <div className="w-full max-w-2xl rounded-2xl border border-slate-200 bg-white p-5 shadow-2xl">
+            <div className="mb-4 flex items-center justify-between">
+              <h2 className="text-xl font-bold text-slate-900">Add Supplier</h2>
+              <button type="button" onClick={() => setIsAddModalOpen(false)} className="rounded-full bg-slate-100 px-2.5 py-1 text-sm font-semibold text-slate-600">×</button>
             </div>
-            <FormField label="Address">
-              <textarea value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Enter supplier address" rows={3} />
-            </FormField>
-            <FormField label="GST number">
-              <input value={form.gst_number} onChange={(e) => setForm({ ...form, gst_number: e.target.value })} className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Enter GST number" />
-            </FormField>
-            <div className="grid grid-cols-2 gap-3">
-              <FormField label="Payment terms">
-                <input value={form.payment_terms} onChange={(e) => setForm({ ...form, payment_terms: e.target.value })} className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="e.g. Net 30" />
+            <form className="space-y-3" onSubmit={handleSubmit}>
+              <FormField label="Supplier name" required>
+                <input value={form.supplier_name} onChange={(e) => setForm({ ...form, supplier_name: e.target.value })} className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Enter supplier name" required />
               </FormField>
-              <FormField label="Opening balance">
-                <input value={form.opening_balance} onChange={(e) => setForm({ ...form, opening_balance: e.target.value })} type="number" className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="0.00" />
+              <FormField label="Company name">
+                <input value={form.company_name} onChange={(e) => setForm({ ...form, company_name: e.target.value })} className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Enter company name" />
               </FormField>
-            </div>
-            <FormField label="Status">
-              <select value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value })} className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm">
-                <option value="Active">Active</option>
-                <option value="Inactive">Inactive</option>
-              </select>
-            </FormField>
-            <button className="w-full rounded-xl bg-[#1a3c36] px-4 py-2.5 text-sm font-semibold text-white" type="submit">Save Supplier</button>
-          </form>
+              <div className="grid grid-cols-2 gap-3">
+                <FormField label="Phone">
+                  <input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Enter phone number" />
+                </FormField>
+                <FormField label="Email">
+                  <input value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Enter email address" />
+                </FormField>
+              </div>
+              <FormField label="Address">
+                <textarea value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Enter supplier address" rows={3} />
+              </FormField>
+              <FormField label="GST number">
+                <input value={form.gst_number} onChange={(e) => setForm({ ...form, gst_number: e.target.value })} className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Enter GST number" />
+              </FormField>
+              <div className="grid grid-cols-2 gap-3">
+                <FormField label="Payment terms">
+                  <input value={form.payment_terms} onChange={(e) => setForm({ ...form, payment_terms: e.target.value })} className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="e.g. Net 30" />
+                </FormField>
+                <FormField label="Opening balance">
+                  <input value={form.opening_balance} onChange={(e) => setForm({ ...form, opening_balance: e.target.value })} type="number" className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="0.00" />
+                </FormField>
+              </div>
+              <FormField label="Status">
+                <select value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value })} className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm">
+                  <option value="Active">Active</option>
+                  <option value="Inactive">Inactive</option>
+                </select>
+              </FormField>
+              <div className="flex justify-end gap-3 pt-2">
+                <button type="button" onClick={() => setIsAddModalOpen(false)} className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700">Cancel</button>
+                <button className="rounded-xl bg-[#1a3c36] px-4 py-2 text-sm font-semibold text-white" type="submit">Save Supplier</button>
+              </div>
+            </form>
+          </div>
         </div>
-      </div>
-    </InventoryCrudPage>
+      )}
+    </>
   );
 }
 
@@ -879,6 +918,242 @@ function ReportsPage() {
   );
 }
 
+function KitchenRequestsPage() {
+  const { products, loadData } = useInventoryContext();
+  const [requests, setRequests] = useState([]);
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [form, setForm] = useState({
+    request_number: `KR-${Date.now()}`,
+    requested_by: 'Admin',
+    department: 'Kitchen',
+    request_date: new Date().toISOString().slice(0, 10),
+    priority: 'Normal',
+    notes: '',
+    items: [{ product_id: '', quantity: '1', unit: 'pcs' }],
+  });
+
+  const fetchRequests = async () => {
+    try {
+      const response = await api.get('/inventory/kitchen-requests');
+      setRequests(response.data?.data || []);
+    } catch (error) {
+      toast.error(error?.response?.data?.message || 'Unable to load kitchen requests.');
+    }
+  };
+
+  useEffect(() => {
+    fetchRequests();
+  }, []);
+
+  const updateItem = (index, field, value) => {
+    setForm((prev) => ({
+      ...prev,
+      items: prev.items.map((item, itemIndex) => (itemIndex === index ? { ...item, [field]: value } : item)),
+    }));
+  };
+
+  const addItemRow = () => {
+    setForm((prev) => ({
+      ...prev,
+      items: [...prev.items, { product_id: '', quantity: '1', unit: 'pcs' }],
+    }));
+  };
+
+  const removeItemRow = (index) => {
+    setForm((prev) => ({
+      ...prev,
+      items: prev.items.length > 1 ? prev.items.filter((_, itemIndex) => itemIndex !== index) : prev.items,
+    }));
+  };
+
+  const resetForm = () => {
+    setForm({
+      request_number: `KR-${Date.now()}`,
+      requested_by: 'Admin',
+      department: 'Kitchen',
+      request_date: new Date().toISOString().slice(0, 10),
+      priority: 'Normal',
+      notes: '',
+      items: [{ product_id: '', quantity: '1', unit: 'pcs' }],
+    });
+  };
+
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+
+    const validItems = form.items.filter((item) => item.product_id && Number(item.quantity || 0) > 0);
+    if (!validItems.length) {
+      toast.error('Select at least one product and quantity for the kitchen request.');
+      return;
+    }
+
+    try {
+      await api.post('/inventory/kitchen-requests', {
+        ...form,
+        request_date: form.request_date || new Date().toISOString().slice(0, 10),
+        requested_by: form.requested_by || 'Admin',
+        items: validItems.map((item) => ({
+          ...item,
+          product_id: Number(item.product_id),
+          quantity: Number(item.quantity || 0),
+        })),
+      });
+
+      toast.success('Kitchen request sent successfully.');
+      setIsAddModalOpen(false);
+      resetForm();
+      fetchRequests();
+      loadData();
+    } catch (error) {
+      toast.error(error?.response?.data?.message || 'Unable to create kitchen request.');
+    }
+  };
+
+  const handleRequestAction = async (requestId, action) => {
+    try {
+      if (action === 'approve') {
+        await api.put(`/inventory/kitchen-requests/${requestId}/approve`);
+        toast.success('Kitchen request approved.');
+      }
+
+      if (action === 'reject') {
+        await api.put(`/inventory/kitchen-requests/${requestId}/reject`);
+        toast.success('Kitchen request rejected.');
+      }
+
+      if (action === 'issue') {
+        await api.put(`/inventory/kitchen-requests/${requestId}/issue`);
+        toast.success('Stock issued to kitchen.');
+      }
+
+      if (action === 'complete') {
+        await api.put(`/inventory/kitchen-requests/${requestId}/complete`);
+        toast.success('Kitchen request completed.');
+      }
+
+      fetchRequests();
+      loadData();
+    } catch (error) {
+      toast.error(error?.response?.data?.message || 'Unable to update kitchen request.');
+    }
+  };
+
+  const getRequestActions = (request) => {
+    const status = request.status || 'Pending';
+
+    if (status === 'Pending') {
+      return (
+        <div className="flex flex-wrap gap-2">
+          <button type="button" onClick={() => handleRequestAction(request.id, 'approve')} className="rounded-lg bg-sky-600 px-2.5 py-1.5 text-xs font-semibold text-white">Approve</button>
+          <button type="button" onClick={() => handleRequestAction(request.id, 'reject')} className="rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-slate-700">Reject</button>
+        </div>
+      );
+    }
+
+    if (status === 'Approved') {
+      return <button type="button" onClick={() => handleRequestAction(request.id, 'issue')} className="rounded-lg bg-emerald-600 px-2.5 py-1.5 text-xs font-semibold text-white">Issue Stock</button>;
+    }
+
+    if (status === 'Issued') {
+      return <button type="button" onClick={() => handleRequestAction(request.id, 'complete')} className="rounded-lg bg-[#1a3c36] px-2.5 py-1.5 text-xs font-semibold text-white">Complete</button>;
+    }
+
+    return <span className="text-xs text-slate-500">No action</span>;
+  };
+
+  return (
+    <>
+      <InventoryCrudPage title="Kitchen Requests" subtitle="Send ingredient and production requests to the kitchen team and track stock usage." actions={<button className="rounded-xl bg-[#1a3c36] px-4 py-2 text-sm font-semibold text-white" onClick={() => setIsAddModalOpen(true)}>Add Kitchen Request</button>}>
+        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+          <InventoryTable columns={[
+            { key: 'request_number', label: 'Request No.' },
+            { key: 'requested_by', label: 'Requested By' },
+            { key: 'request_date', label: 'Date' },
+            { key: 'priority', label: 'Priority' },
+            { key: 'status', label: 'Status', render: (row) => <StatusBadge value={row.status || 'Pending'} /> },
+            { key: 'notes', label: 'Notes', render: (row) => <span className="max-w-xs text-slate-600">{row.notes || '—'}</span> },
+            { key: 'actions', label: 'Action', render: (row) => getRequestActions(row) },
+          ]} rows={requests} emptyText="No kitchen requests created yet." />
+        </div>
+      </InventoryCrudPage>
+
+      {isAddModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/45 p-4">
+          <div className="max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-2xl border border-slate-200 bg-white p-5 shadow-2xl">
+            <div className="mb-4 flex items-center justify-between">
+              <h2 className="text-xl font-bold text-slate-900">Add Kitchen Request</h2>
+              <button type="button" onClick={() => setIsAddModalOpen(false)} className="rounded-full bg-slate-100 px-2.5 py-1 text-sm font-semibold text-slate-600">×</button>
+            </div>
+
+            <form className="space-y-4" onSubmit={handleSubmit}>
+              <div className="grid gap-3 md:grid-cols-2">
+                <FormField label="Request number" required>
+                  <input value={form.request_number} onChange={(e) => setForm({ ...form, request_number: e.target.value })} className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="KR-1001" required />
+                </FormField>
+                <FormField label="Requested by" required>
+                  <input value={form.requested_by} onChange={(e) => setForm({ ...form, requested_by: e.target.value })} className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Chef / Admin" required />
+                </FormField>
+                <FormField label="Department">
+                  <input value={form.department} onChange={(e) => setForm({ ...form, department: e.target.value })} className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Kitchen" />
+                </FormField>
+                <FormField label="Request date">
+                  <input type="date" value={form.request_date} onChange={(e) => setForm({ ...form, request_date: e.target.value })} className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" />
+                </FormField>
+                <FormField label="Priority">
+                  <select value={form.priority} onChange={(e) => setForm({ ...form, priority: e.target.value })} className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm">
+                    <option value="Low">Low</option>
+                    <option value="Normal">Normal</option>
+                    <option value="High">High</option>
+                    <option value="Urgent">Urgent</option>
+                  </select>
+                </FormField>
+              </div>
+
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-500">Items</h3>
+                  <button type="button" onClick={addItemRow} className="rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700">+ Add Item</button>
+                </div>
+
+                {form.items.map((item, index) => (
+                  <div key={`kitchen-item-${index}`} className="grid gap-3 rounded-xl border border-slate-200 p-3 md:grid-cols-[1.5fr_0.8fr_0.7fr_auto]">
+                    <FormField label="Product">
+                      <select value={item.product_id} onChange={(e) => updateItem(index, 'product_id', e.target.value)} className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" required>
+                        <option value="">Select product</option>
+                        {products.map((product) => (
+                          <option key={product.id} value={product.id}>{product.product_name}</option>
+                        ))}
+                      </select>
+                    </FormField>
+                    <FormField label="Quantity">
+                      <input type="number" min="1" value={item.quantity} onChange={(e) => updateItem(index, 'quantity', e.target.value)} className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="1" required />
+                    </FormField>
+                    <FormField label="Unit">
+                      <input value={item.unit} onChange={(e) => updateItem(index, 'unit', e.target.value)} className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="pcs" />
+                    </FormField>
+                    <div className="flex items-end pb-0.5">
+                      <button type="button" onClick={() => removeItemRow(index)} className="rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-semibold text-rose-600">Remove</button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <FormField label="Notes">
+                <textarea value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" rows={3} placeholder="Add chef requirement or notes" />
+              </FormField>
+
+              <div className="flex justify-end gap-3 pt-2">
+                <button type="button" onClick={() => setIsAddModalOpen(false)} className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700">Cancel</button>
+                <button type="submit" className="rounded-xl bg-[#1a3c36] px-4 py-2 text-sm font-semibold text-white">Send Request</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
+
 function InventoryFallbackPage() {
   return (
     <InventoryCrudPage title="Inventory Management" subtitle="System is ready. Navigate using the left sidebar to access each inventory module.">
@@ -967,7 +1242,7 @@ function InventoryRoutes() {
       <Route path="stock-out" element={<StockOutPage />} />
       <Route path="transfers" element={<InventoryFallbackPage />} />
       <Route path="adjustments" element={<InventoryFallbackPage />} />
-      <Route path="kitchen-requests" element={<InventoryFallbackPage />} />
+      <Route path="kitchen-requests" element={<KitchenRequestsPage />} />
       <Route path="recipes" element={<InventoryFallbackPage />} />
       <Route path="wastage" element={<InventoryFallbackPage />} />
       <Route path="expiry" element={<ExpiryPage />} />

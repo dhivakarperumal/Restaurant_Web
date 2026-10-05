@@ -69,7 +69,6 @@ const navItems = [
   },
 
 
-
   /* ---- PRODUCTS ---- */
   {
     label: "Foods",
@@ -100,37 +99,13 @@ const navItems = [
 
  
 
-  {
-    path: "/admin/customers",
-    label: "Customers",
-    icon: Users,
-  },
 
  
 
-  {
-    path: "/admin/billing",
-    label: "Billing",
-    icon: Receipt,
-  },
 
-  {
-    path: "/admin/reviews",
-    label: "Reviews",
-    icon: Star,
-  },
 
-  /* ---- MARKETING ---- */
-  {
-    label: "Marketing",
-    icon: TrendingUp,
-    children: [
-      { path: "/admin/banners", label: "Banners", icon: Image },
-      { path: "/admin/videos", label: "Videos Management", icon: Image },
-      { path: "/admin/gallery", label: "Gallery", icon: Image },
-      { path: "/admin/coupons", label: "Coupons & Offers", icon: Tag },
-    ],
-  },
+
+
 
 
 ];

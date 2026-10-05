@@ -98,12 +98,7 @@ const navItems = [
       { path: "/admin/inventory/units", label: "Units", icon: ClipboardList },
       { path: "/admin/inventory/suppliers", label: "Suppliers", icon: Users },
       { path: "/admin/inventory/purchases", label: "Purchases", icon: ShoppingCart },
-     
       { path: "/admin/inventory/kitchen-requests", label: "Kitchen Requests", icon: UtensilsCrossed },
-      { path: "/admin/inventory/recipes", label: "Recipes", icon: BookOpen },
-    
-      { path: "/admin/inventory/expiry", label: "Expiry", icon: CalendarClock },
-    
       { path: "/admin/inventory/reports", label: "Reports", icon: BarChart3 },
     ],
   },

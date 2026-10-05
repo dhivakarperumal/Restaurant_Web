@@ -15,6 +15,7 @@ import PrivateRoute from './PrivateRouter/PrivateRouter.jsx'
 import AdminDashboard from './Admin/AdminDashboard.jsx'
 import AdminSettings from './Admin/AdminSettings.jsx'
 import AdminProfile from './Admin/AdminProfile.jsx'
+import ChefSettings from './Chef Restaurant/ChefSettings.jsx'
 import AddEmployee from './Admin/AddEmployee.jsx'
 import AllEmployees from './Admin/AllEmployees.jsx'
 import ManageServers from './Admin/ManageServers.jsx'
@@ -236,6 +237,14 @@ const router = createHashRouter([
           {
             path: 'orders',
             element: <ChefKitchenOrders />,
+          },
+          {
+            path: 'settings',
+            element: <ChefSettings />,
+          },
+          {
+            path: 'settings/profile',
+            element: <ChefSettings />,
           },
         ],
       },
