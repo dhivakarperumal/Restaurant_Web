@@ -93,10 +93,10 @@ const navItems = [
     label: "Inventory Management",
     icon: Boxes,
     children: [
-      { path: "/admin/inventory", label: "Dashboard", icon: LayoutDashboard },
+      // { path: "/admin/inventory", label: "Dashboard", icon: LayoutDashboard },
       { path: "/admin/inventory/products", label: "Products", icon: Package },
-      { path: "/admin/inventory/categories", label: "Categories", icon: Layers },
-      { path: "/admin/inventory/units", label: "Units", icon: ClipboardList },
+      // { path: "/admin/inventory/categories", label: "Categories", icon: Layers },
+      // { path: "/admin/inventory/units", label: "Units", icon: ClipboardList },
       { path: "/admin/inventory/suppliers", label: "Suppliers", icon: Users },
       { path: "/admin/inventory/purchases", label: "Purchases", icon: ShoppingCart },
       { path: "/admin/inventory/kitchen-requests", label: "Kitchen Requests", icon: UtensilsCrossed },
