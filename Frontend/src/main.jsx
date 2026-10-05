@@ -5,6 +5,7 @@ import './index.css'
 import App from './App.jsx'
 import Home from './Componets/Home/Home.jsx'
 import Shop from './Componets/Shop/Shop.jsx'
+import Checkout from './Componets/Checkout/Checkout.jsx'
 
 import Login from './Componets/Auth/Login.jsx'
 import Register from './Componets/Auth/Register.jsx'
@@ -54,6 +55,7 @@ import { AuthProvider } from './PrivateRouter/AuthContext.jsx'
 import { StoreProvider } from './PrivateRouter/StoreContext.jsx'
 import { AdminProvider } from './PrivateRouter/AdminContext';
 import RouteError from './CommonComponents/RouteError.jsx'
+import CustomerOrdersPage from './CommonComponents/CustomerOrdersPage.jsx'
 
 
 
@@ -75,6 +77,18 @@ const router = createHashRouter([
       {
         path: 'menu',
         element: <Shop />,
+      },
+      {
+        path: 'checkout',
+        element: <Checkout />,
+      },
+      {
+        path: 'my-orders',
+        element: (
+          <PrivateRoute allowedRoles={["user", "customer"]}>
+            <CustomerOrdersPage audience="customer" />
+          </PrivateRoute>
+        ),
       },
       {
         path: 'login',
@@ -137,6 +151,22 @@ const router = createHashRouter([
           {
             path: 'customers',
             element: <AdminCustomers />,
+          },
+          {
+            path: 'orders',
+            element: <CustomerOrdersPage audience="admin" view="all" />,
+          },
+          {
+            path: 'orders/new',
+            element: <CustomerOrdersPage audience="admin" view="new" />,
+          },
+          {
+            path: 'orders/delivery',
+            element: <CustomerOrdersPage audience="admin" view="delivery" />,
+          },
+          {
+            path: 'orders/cancelled',
+            element: <CustomerOrdersPage audience="admin" view="cancelled" />,
           },
           {
             path: 'settings',
@@ -245,6 +275,22 @@ const router = createHashRouter([
           {
             path: 'settings/profile',
             element: <ChefSettings />,
+          },
+          {
+            path: 'customer-orders',
+            element: <CustomerOrdersPage audience="chef" view="all" />,
+          },
+          {
+            path: 'customer-orders/new',
+            element: <CustomerOrdersPage audience="chef" view="new" />,
+          },
+          {
+            path: 'customer-orders/delivery',
+            element: <CustomerOrdersPage audience="chef" view="delivery" />,
+          },
+          {
+            path: 'customer-orders/cancelled',
+            element: <CustomerOrdersPage audience="chef" view="cancelled" />,
           },
         ],
       },

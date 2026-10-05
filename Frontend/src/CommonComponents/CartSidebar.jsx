@@ -1,5 +1,6 @@
 import { useContext } from 'react';
 import { Minus, Plus, ShoppingCart, Trash2, UtensilsCrossed, X } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { StoreContext } from '../PrivateRouter/StoreContext';
 import { BACKEND_BASE_URL } from '../api';
 
@@ -16,6 +17,7 @@ const itemName = (item) => item.product_name || item.name || item.food_name || '
 const itemImage = (item) => item.product_image || item.image || item.thumbnail_image || item.product_images?.[0] || '';
 
 function CartSidebar() {
+  const navigate = useNavigate();
   const store = useContext(StoreContext) || {};
   const { cart = [], isCartOpen, closeCart, removeFromCart, updateCartQuantity, clearCart } = store;
   const total = cart.reduce((sum, item) => sum + Number(item.total_price || Number(item.price || 0) * Number(item.quantity || 1)), 0);
@@ -155,6 +157,7 @@ function CartSidebar() {
             type="button"
             onClick={() => {
               closeCart();
+              navigate('/checkout');
             }}
             className="mt-4 w-full rounded-xl bg-[#263830] py-3 text-center text-sm font-bold text-white shadow-md hover:bg-[#1a2822] active:scale-[0.99] transition-all"
           >
