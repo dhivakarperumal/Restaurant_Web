@@ -34,6 +34,7 @@ async function initializeKitchenOrderSchema() {
       unit_price DECIMAL(10,2) NOT NULL,
       selected_addons LONGTEXT NULL,
       selected_customizations LONGTEXT NULL,
+      cooking_notes TEXT NULL,
       created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
       INDEX kitchen_order_items_order_idx (order_id),
       CONSTRAINT kitchen_order_items_order_fk FOREIGN KEY (order_id)
@@ -55,6 +56,11 @@ async function initializeKitchenOrderSchema() {
   const [selectedCustomizationsColumn] = await db.query("SHOW COLUMNS FROM kitchen_order_items LIKE 'selected_customizations'");
   if (!selectedCustomizationsColumn.length) {
     await db.query('ALTER TABLE kitchen_order_items ADD COLUMN selected_customizations LONGTEXT NULL AFTER selected_addons');
+  }
+
+  const [cookingNotesColumn] = await db.query("SHOW COLUMNS FROM kitchen_order_items LIKE 'cooking_notes'");
+  if (!cookingNotesColumn.length) {
+    await db.query('ALTER TABLE kitchen_order_items ADD COLUMN cooking_notes TEXT NULL AFTER selected_customizations');
   }
 
   await initializeTableBillsSchema();
@@ -232,8 +238,8 @@ async function createKitchenOrder({ tableId, userId, items }) {
       const food = foodsById.get(item.food_id);
       await connection.execute(
         `INSERT INTO kitchen_order_items
-           (order_id, food_id, food_name, quantity, unit_price, selected_addons, selected_customizations)
-         VALUES (?, ?, ?, ?, ?, ?, ?)`,
+           (order_id, food_id, food_name, quantity, unit_price, selected_addons, selected_customizations, cooking_notes)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           orderId,
           food.food_id,
@@ -242,6 +248,7 @@ async function createKitchenOrder({ tableId, userId, items }) {
           item.unit_price,
           JSON.stringify(item.selected_addons),
           JSON.stringify(item.selected_customizations),
+          item.cooking_notes,
         ]
       );
     }
@@ -265,6 +272,7 @@ async function createKitchenOrder({ tableId, userId, items }) {
         unit_price: item.unit_price,
         selected_addons: item.selected_addons,
         selected_customizations: item.selected_customizations,
+        cooking_notes: item.cooking_notes,
       };
     });
     return {
@@ -337,7 +345,7 @@ async function listKitchenOrders(filters = {}) {
   const orderIds = orders.map((order) => order.order_id);
   const placeholders = orderIds.map(() => '?').join(', ');
   const [items] = await db.execute(
-    `SELECT order_id, food_id, food_name, quantity, unit_price, selected_addons, selected_customizations
+    `SELECT order_id, food_id, food_name, quantity, unit_price, selected_addons, selected_customizations, cooking_notes
      FROM kitchen_order_items WHERE order_id IN (${placeholders}) ORDER BY id`,
     orderIds
   );
@@ -351,6 +359,7 @@ async function listKitchenOrders(filters = {}) {
       unit_price: Number(item.unit_price),
       selected_addons: parseStoredJson(item.selected_addons, []),
       selected_customizations: parseStoredJson(item.selected_customizations, {}),
+      cooking_notes: item.cooking_notes || '',
     });
     itemsByOrder.set(item.order_id, orderItems);
   }

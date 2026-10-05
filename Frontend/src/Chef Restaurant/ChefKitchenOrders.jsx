@@ -348,6 +348,11 @@ const ChefKitchenOrders = () => {
                                   </p>
                                 ));
                               })}
+                              {item.cooking_notes && (
+                                <p className="mt-1 whitespace-pre-wrap text-[11px] font-medium text-amber-800">
+                                  Chef note: {item.cooking_notes}
+                                </p>
+                              )}
                             </div>
                             <span className="font-mono text-gray-500">
                               ₹{(Number(item.unit_price) * item.quantity).toFixed(2)}

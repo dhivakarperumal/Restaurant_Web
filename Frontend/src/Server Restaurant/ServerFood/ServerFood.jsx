@@ -70,6 +70,7 @@ export default function ServerFood() {
   const [activeImageIndex, setActiveImageIndex] = useState(0);
   const [selectedAddons, setSelectedAddons] = useState([]);
   const [selectedCustomizations, setSelectedCustomizations] = useState({});
+  const [cookingNotes, setCookingNotes] = useState("");
   const [customizeQuantity, setCustomizeQuantity] = useState(1);
 
   const fetchActiveBill = async () => {
@@ -230,6 +231,7 @@ export default function ServerFood() {
     setActiveImageIndex(0);
     setSelectedAddons([]);
     setSelectedCustomizations({});
+    setCookingNotes("");
     setCustomizeQuantity(1);
   };
 
@@ -256,6 +258,7 @@ export default function ServerFood() {
           quantity: Math.min(quantity, 99),
           selected_addons: existingItem?.selected_addons || [],
           selected_customizations: existingItem?.selected_customizations || {},
+          cooking_notes: existingItem?.cooking_notes || "",
           unitPrice: existingItem?.unitPrice ?? Number(food.final_price || 0),
         };
       }
@@ -267,15 +270,7 @@ export default function ServerFood() {
     const defaultKey = getDefaultCartKey(food);
     const defaultQuantity = cart[defaultKey]?.quantity || 0;
     if (change > 0) {
-      const hasActiveAddons = (food.addons || []).some(
-        (addon) => String(addon.status || "Active").toLowerCase() === "active",
-      );
-      const hasCustomizations = (food.customizations || []).length > 0;
-      if (hasActiveAddons || hasCustomizations) {
-        handleOpenDetails(food);
-        return;
-      }
-      updateCartQuantity(food, defaultQuantity + 1, defaultKey);
+      handleOpenDetails(food);
       return;
     }
     if (defaultQuantity > 0) {
@@ -323,7 +318,7 @@ export default function ServerFood() {
         .map(([name, selection]) => [name, Array.isArray(selection) ? [...selection].sort() : selection])
         .sort(([first], [second]) => first.localeCompare(second)),
     );
-    const cartKey = `${foodId}:${JSON.stringify([selectedAddonsCopy, selectedCustomizationsCopy])}`;
+    const cartKey = `${foodId}:${JSON.stringify([selectedAddonsCopy, selectedCustomizationsCopy, cookingNotes.trim()])}`;
     setCart((currentCart) => {
       const currentQuantity = currentCart[cartKey]?.quantity || 0;
       return {
@@ -334,6 +329,7 @@ export default function ServerFood() {
           quantity: Math.min(currentQuantity + customizeQuantity, 99),
           selected_addons: selectedAddonsCopy,
           selected_customizations: selectedCustomizationsCopy,
+          cooking_notes: cookingNotes.trim(),
           unitPrice: getConfiguredUnitPrice(),
         },
       };
@@ -360,6 +356,7 @@ export default function ServerFood() {
           quantity: item.quantity,
           selected_addons: item.selected_addons,
           selected_customizations: item.selected_customizations,
+          cooking_notes: item.cooking_notes,
         })),
       });
       setCart({});
@@ -1088,6 +1085,9 @@ export default function ServerFood() {
                         ].join(" · ")}
                       </p>
                     )}
+                    {item.cooking_notes && (
+                      <p className="mt-0.5 text-xs text-gray-600">Chef note: {item.cooking_notes}</p>
+                    )}
                     <p className="text-xs text-gray-500">₹{item.unitPrice.toFixed(2)} each</p>
                   </div>
                   <div className="flex items-center gap-2">
@@ -1317,6 +1317,10 @@ export default function ServerFood() {
 
             {selectedTable && (
               <div className="mb-5 space-y-5">
+                {!viewingFood.addons?.some((addon) => String(addon.status || "Active").toLowerCase() === "active")
+                  && !viewingFood.customizations?.length && (
+                    <p className="text-xs text-gray-500">No preset add-ons or customizations for this food. You can add a note for the chef below.</p>
+                  )}
                 {Array.isArray(viewingFood.addons) && viewingFood.addons.some((addon) => String(addon.status || "Active").toLowerCase() === "active") && (
                   <fieldset className="space-y-2">
                     <legend className="text-xs font-semibold uppercase tracking-wider text-gray-700">Add-ons</legend>
@@ -1404,6 +1408,19 @@ export default function ServerFood() {
                     </fieldset>
                   );
                 })}
+
+                <label className="block space-y-1.5">
+                  <span className="text-xs font-semibold uppercase tracking-wider text-gray-700">Special instructions for chef</span>
+                  <textarea
+                    value={cookingNotes}
+                    onChange={(event) => setCookingNotes(event.target.value.slice(0, 500))}
+                    maxLength={500}
+                    rows={3}
+                    placeholder="Type any extra add-on or preparation request..."
+                    className="w-full resize-y rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-800 outline-none focus:border-[#1f3228]"
+                  />
+                  <span className="block text-right text-[11px] text-gray-400">{cookingNotes.length}/500</span>
+                </label>
 
                 <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl bg-gray-50 p-3">
                   <div>

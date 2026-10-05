@@ -18,10 +18,11 @@ async function submitKitchenOrder(req, res) {
     const quantity = Number(rawItem?.quantity);
     const selectedAddons = rawItem?.selected_addons ?? [];
     const selectedCustomizations = rawItem?.selected_customizations ?? {};
+    const cookingNotes = String(rawItem?.cooking_notes || '').trim();
     if (!foodId || !Number.isInteger(quantity) || quantity < 1 || quantity > 99
       || !Array.isArray(selectedAddons) || selectedAddons.length > 50
       || !selectedCustomizations || typeof selectedCustomizations !== 'object'
-      || Array.isArray(selectedCustomizations)) {
+      || Array.isArray(selectedCustomizations) || cookingNotes.length > 500) {
       return res.status(400).json({ success: false, message: 'Each menu item must have a valid food ID, quantity, and option selection.' });
     }
     items.push({
@@ -29,6 +30,7 @@ async function submitKitchenOrder(req, res) {
       quantity,
       selected_addons: selectedAddons,
       selected_customizations: selectedCustomizations,
+      cooking_notes: cookingNotes,
     });
   }
 
