@@ -25,6 +25,7 @@ import {
   Truck,
   Ticket,
   Users,
+  UtensilsCrossed,
   MapPin,
   Navigation,
   Loader
@@ -69,7 +70,8 @@ const SETTINGS_CATEGORIES = [
 
   { id: 'delivery', title: 'Delivery & Service Charges', desc: 'Set delivery fees, minimums, and service areas.', icon: <Truck size={24} /> },
   { id: 'coupon', title: 'Offers & Coupons', desc: 'Manage dining and delivery promotions.', icon: <Ticket size={24} /> },
-  { id: 'customers', title: 'Customers', desc: 'View and manage restaurant customers.', icon: <Users size={24} /> }
+  { id: 'customers', title: 'Customers', desc: 'View and manage restaurant customers.', icon: <Users size={24} /> },
+  { id: 'tables', title: 'Server Tables', desc: 'Manage dining tables and server assignments.', icon: <UtensilsCrossed size={24} /> }
 ];
 
 const Settings = ({ initialTab = null }) => {
@@ -1224,6 +1226,7 @@ const Settings = ({ initialTab = null }) => {
                 if (cat.id === 'delivery') { navigate('/admin/delivery-charges'); return; }
                 if (cat.id === 'coupon') { navigate('/admin/coupons'); return; }
                 if (cat.id === 'customers') { navigate('/admin/customers'); return; }
+                if (cat.id === 'tables') { navigate('/admin/tables'); return; }
                 setActiveTab(cat.id);
               }}
             >
