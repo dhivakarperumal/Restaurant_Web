@@ -20,10 +20,28 @@ const requireAdmin = async (req, res, next) => {
   }
 };
 
+const requireFoodVisibilityAccess = async (req, res, next) => {
+  const token = req.get('authorization')?.replace(/^Bearer\s+/i, '');
+  if (!token) return res.status(401).json({ success: false, message: 'Login is required.' });
+  try {
+    const user = await findUserByToken(token);
+    if (!user) return res.status(401).json({ success: false, message: 'Your session is invalid or expired.' });
+    if (!isAdminRole(user.role) && String(user.role || '').trim().toLowerCase() !== 'chef') {
+      return res.status(403).json({ success: false, message: 'Chef or administrator access is required.' });
+    }
+    req.auth = user;
+    return next();
+  } catch (error) {
+    console.error('Failed to authorize food visibility request:', error.message);
+    return res.status(500).json({ success: false, message: 'Unable to verify food visibility access.' });
+  }
+};
+
 router.get('/', controller.list);
 router.get('/next-id', controller.getNextId);
 router.get('/:foodId', controller.getById);
 router.post('/', requireAdmin, controller.create);
+router.patch('/:foodId/visibility', requireFoodVisibilityAccess, controller.updateMenuVisibility);
 router.put('/:foodId', requireAdmin, controller.update);
 router.delete('/:foodId', requireAdmin, controller.remove);
 

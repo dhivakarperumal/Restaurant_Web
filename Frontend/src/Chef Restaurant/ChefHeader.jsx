@@ -17,6 +17,7 @@ import dayjs from "dayjs";
 /* ── page title map ── */
 const pageInfo = {
   "/chef/orders":                 { title: "Kitchen Orders",          icon: UtensilsCrossed },
+  "/chef/products":               { title: "All Foods",               icon: Package },
   "/admin":                         { title: "Dashboard",             icon: LayoutDashboard },
   "/admin/billing":                 { title: "Billing",               icon: Receipt },
   "/admin/billing/new":             { title: "New Billing",            icon: Plus },

@@ -4,6 +4,7 @@ const {
   findFoodById,
   getNextFoodId,
   listFoods,
+  setFoodMenuVisibility,
   updateFood,
 } = require('../modules/foods');
 
@@ -144,6 +145,25 @@ const update = async (req, res) => {
   }
 };
 
+const updateMenuVisibility = async (req, res) => {
+  if (typeof req.body?.is_menu_visible !== 'boolean') {
+    return res.status(400).json({ success: false, message: 'Menu visibility must be true or false.' });
+  }
+
+  try {
+    const food = await setFoodMenuVisibility(
+      req.params.foodId,
+      req.body.is_menu_visible,
+      req.auth?.username || req.auth?.name || 'Chef'
+    );
+    if (!food) return res.status(404).json({ success: false, message: 'Food not found.' });
+    return res.json({ success: true, data: food });
+  } catch (error) {
+    console.error('Failed to update food menu visibility:', error.message);
+    return res.status(500).json({ success: false, message: 'Unable to update food visibility.' });
+  }
+};
+
 const remove = async (req, res) => {
   try {
     if (!await deleteFood(req.params.foodId)) return res.status(404).json({ success: false, message: 'Food not found.' });
@@ -154,4 +174,4 @@ const remove = async (req, res) => {
   }
 };
 
-module.exports = { create, getById, getNextId, list, remove, update };
+module.exports = { create, getById, getNextId, list, remove, update, updateMenuVisibility };

@@ -24,6 +24,7 @@ const initializeFoodSchema = async () => {
       food_type VARCHAR(20) NOT NULL,
       is_spicy TINYINT(1) NOT NULL DEFAULT 0,
       is_available TINYINT(1) NOT NULL DEFAULT 1,
+      is_menu_visible TINYINT(1) NOT NULL DEFAULT 1,
       dining_available TINYINT(1) NOT NULL DEFAULT 1,
       takeaway_available TINYINT(1) NOT NULL DEFAULT 1,
       delivery_available TINYINT(1) NOT NULL DEFAULT 1,
@@ -50,6 +51,11 @@ const initializeFoodSchema = async () => {
   if (!stockColumns.length) {
     await db.query('ALTER TABLE foods ADD COLUMN stock_quantity INT UNSIGNED NOT NULL DEFAULT 0 AFTER rating');
   }
+
+  const [menuVisibilityColumns] = await db.query("SHOW COLUMNS FROM foods LIKE 'is_menu_visible'");
+  if (!menuVisibilityColumns.length) {
+    await db.query('ALTER TABLE foods ADD COLUMN is_menu_visible TINYINT(1) NOT NULL DEFAULT 1 AFTER is_available');
+  }
 };
 
 const parseJson = (value, fallback) => {
@@ -71,6 +77,7 @@ const parseFood = (food) => {
     customizations: parseJson(food.customizations, []),
     is_spicy: Boolean(food.is_spicy),
     is_available: Boolean(food.is_available),
+    is_menu_visible: Boolean(food.is_menu_visible),
     dining_available: Boolean(food.dining_available),
     takeaway_available: Boolean(food.takeaway_available),
     delivery_available: Boolean(food.delivery_available),
@@ -156,6 +163,15 @@ const updateFood = async (foodId, food) => {
   return findFoodById(foodId);
 };
 
+const setFoodMenuVisibility = async (foodId, visible, updatedBy = 'system') => {
+  const [result] = await db.execute(
+    'UPDATE foods SET is_menu_visible = ?, updated_by = ? WHERE food_id = ?',
+    [Number(visible), updatedBy, foodId]
+  );
+  if (!result.affectedRows) return null;
+  return findFoodById(foodId);
+};
+
 const deleteFood = async (foodId) => {
   const [result] = await db.execute('DELETE FROM foods WHERE food_id = ?', [foodId]);
   return result.affectedRows > 0;
@@ -168,5 +184,6 @@ module.exports = {
   getNextFoodId,
   initializeFoodSchema,
   listFoods,
+  setFoodMenuVisibility,
   updateFood,
 };

@@ -18,6 +18,7 @@ import AdminSettings from './Admin/AdminSettings.jsx'
 import AdminProfile from './Admin/AdminProfile.jsx'
 import ChefSettings from './Chef Restaurant/ChefSettings.jsx'
 import ChefInventoryRequests from './Chef Restaurant/ChefInventoryRequests.jsx'
+import ChefProducts from './Chef Restaurant/ChefProducts.jsx'
 import AddEmployee from './Admin/AddEmployee.jsx'
 import AllEmployees from './Admin/AllEmployees.jsx'
 import ManageServers from './Admin/ManageServers.jsx'
@@ -272,6 +273,10 @@ const router = createHashRouter([
           {
             path: 'requests',
             element: <ChefInventoryRequests />,
+          },
+          {
+            path: 'products',
+            element: <ChefProducts />,
           },
           {
             path: 'settings',
