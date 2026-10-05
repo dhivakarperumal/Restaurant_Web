@@ -7,6 +7,7 @@ const { getProfile, googleLogin, listUsers, login, register, removeUser, updateP
 const {
   createEmployee,
   deleteEmployee,
+  getDeliveryPartnerProfile,
   getEmployee,
   listEmployees,
   updateEmployee,
@@ -115,6 +116,25 @@ const requireAuthenticatedUser = async (req, res, next) => {
   }
 };
 
+const requireDeliveryPartner = async (req, res, next) => {
+  const token = req.get('authorization')?.replace(/^Bearer\s+/i, '');
+  if (!token) return res.status(401).json({ success: false, message: 'Delivery partner login is required.' });
+
+  try {
+    const user = await findUserByToken(token);
+    if (!user) return res.status(401).json({ success: false, message: 'Your session is invalid or expired.' });
+    const role = String(user.role || '').trim().toLowerCase();
+    if (!['delivery', 'delivery partner'].includes(role) || !user.employee_id) {
+      return res.status(403).json({ success: false, message: 'Delivery partner access is required.' });
+    }
+    req.auth = user;
+    return next();
+  } catch (error) {
+    console.error('Failed to authorize delivery partner request:', error.message);
+    return res.status(500).json({ success: false, message: 'Unable to verify your session.' });
+  }
+};
+
 const requireKitchenRole = (allowedRoles) => async (req, res, next) => {
   const token = req.get('authorization')?.replace(/^Bearer\s+/i, '');
   if (!token) return res.status(401).json({ success: false, message: 'Login is required.' });
@@ -159,6 +179,7 @@ router.put('/users/profile/:profileId', requireAuthenticatedUser, updateProfile)
 router.get('/users', requireAdmin, listUsers);
 router.put('/users/:userId', requireAdmin, updateUser);
 router.delete('/users/:userId', requireAdmin, removeUser);
+router.get('/delivery-partner/profile', requireDeliveryPartner, getDeliveryPartnerProfile);
 router.use('/categories', categoriesRouter);
 router.use('/cuisines', cuisinesRouter);
 router.use('/foods', foodsRouter);

@@ -1,6 +1,6 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
-import { createHashRouter, RouterProvider } from 'react-router-dom'
+import { createHashRouter, Navigate, RouterProvider } from 'react-router-dom'
 import './index.css'
 import App from './App.jsx'
 import Home from './Componets/Home/Home.jsx'
@@ -272,7 +272,7 @@ const router = createHashRouter([
           { path: 'orders/cancelled', element: <DeliveryOrdersPage view="cancelled" /> },
           { path: 'earnings', element: <DeliveryPartnerPages section="earnings" /> },
           { path: 'history', element: <DeliveryPartnerPages section="history" /> },
-          { path: 'notifications', element: <DeliveryPartnerPages section="notifications" /> },
+          { path: 'notifications', element: <Navigate to="/delivery" replace /> },
           { path: 'profile', element: <DeliveryPartnerPages section="profile" /> },
           { path: 'support', element: <DeliveryPartnerPages section="support" /> },
         ],

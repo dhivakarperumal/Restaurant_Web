@@ -136,20 +136,6 @@ const DeliveryHistoryPage = () => {
   </section>;
 };
 
-const NotificationsPage = () => {
-  const { resource, loading, error, refresh } = usePartnerResource("/delivery-partner/notifications");
-  const notifications = rowsFrom(resource?.notifications || resource);
-  const unread = notifications.filter((notice) => !notice.read_at && !notice.is_read).length;
-  const [busy, setBusy] = useState(false);
-  const markAllRead = async () => {
-    setBusy(true);
-    try { await api.patch("/delivery-partner/notifications/read"); toast.success("Notifications marked as read"); refresh(); }
-    catch (requestError) { toast.error(requestError?.response?.data?.message || "Could not update notifications."); }
-    finally { setBusy(false); }
-  };
-  return <section className="space-y-5"><PageHeading eyebrow="Updates" title="Notifications" description="Delivery assignments, pickup updates, payments, and messages." onRefresh={refresh} loading={loading} /><ServiceNotice error={error} loading={loading} refresh={refresh} noun="Notifications" /><div className="rounded-xl border border-[#e2e9e3] bg-white"><div className="flex items-center justify-between gap-3 border-b border-gray-100 p-4"><div><h2 className="font-bold">All updates</h2><p className="mt-1 text-xs text-gray-500">{unread} unread</p></div><button type="button" onClick={markAllRead} disabled={busy || unread === 0} className="inline-flex items-center gap-2 rounded-lg border border-[#dce6de] px-3 py-2 text-xs font-semibold text-[#21643a] disabled:opacity-40"><CheckCheck size={15} />Mark all read</button></div><div className="divide-y divide-gray-100">{notifications.map((notice, index) => { const isUnread = !notice.read_at && !notice.is_read; return <article key={notice.id || notice.notification_id || index} className={`flex gap-3 p-4 ${isUnread ? "bg-[#f6fbf6]" : ""}`}><span className={`mt-1 h-2.5 w-2.5 shrink-0 rounded-full ${isUnread ? "bg-[#2e8149]" : "bg-gray-200"}`} /><div className="min-w-0 flex-1"><p className="text-sm font-semibold text-gray-800">{notice.title || notice.type || "Delivery update"}</p><p className="mt-1 text-sm text-gray-600">{notice.message || notice.body || "A new update is available."}</p><p className="mt-2 text-xs text-gray-400">{notice.created_at ? new Date(notice.created_at).toLocaleString("en-IN") : ""}</p></div>{isUnread && <span className="text-[10px] font-bold uppercase text-[#2e8149]">New</span>}</article>; })}{!loading && !error && notifications.length === 0 && <div className="px-4 py-14 text-center text-sm text-gray-500">You’re all caught up. New delivery updates will appear here.</div>}</div></div></section>;
-};
-
 const ProfilePage = () => {
   const { userProfile, logout } = useAuth();
   const { resource, loading, error, refresh } = usePartnerResource("/delivery-partner/profile");
@@ -225,7 +211,6 @@ const SupportPage = () => {
 const DeliveryPartnerPages = ({ section }) => {
   if (section === "earnings") return <EarningsPage />;
   if (section === "history") return <DeliveryHistoryPage />;
-  if (section === "notifications") return <NotificationsPage />;
   if (section === "profile") return <ProfilePage />;
   if (section === "support") return <SupportPage />;
   return <div className="rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-800">Page not found.</div>;
