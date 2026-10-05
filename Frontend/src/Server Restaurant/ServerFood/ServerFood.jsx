@@ -267,10 +267,11 @@ export default function ServerFood() {
     const defaultKey = getDefaultCartKey(food);
     const defaultQuantity = cart[defaultKey]?.quantity || 0;
     if (change > 0) {
-      const requiredGroup = (food.customizations || []).find((group) => (
-        group.required === true || Number(group.required) === 1 || group.required === "true"
-      ));
-      if (requiredGroup) {
+      const hasActiveAddons = (food.addons || []).some(
+        (addon) => String(addon.status || "Active").toLowerCase() === "active",
+      );
+      const hasCustomizations = (food.customizations || []).length > 0;
+      if (hasActiveAddons || hasCustomizations) {
         handleOpenDetails(food);
         return;
       }
