@@ -69,6 +69,34 @@ export default function ServerTables() {
   const [settlingBill, setSettlingBill] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState("Cash");
   const [settleDiscount, setSettleDiscount] = useState(0);
+  const billItems = useMemo(() => {
+    if (!viewingBill) return [];
+    const roundItems = Array.isArray(viewingBill.rounds)
+      ? viewingBill.rounds.flatMap((round) => round.items || [])
+      : [];
+    const sourceItems = roundItems.length
+      ? roundItems
+      : viewingBill.consolidated_items || viewingBill.items || [];
+    const itemsByFood = new Map();
+    sourceItems.forEach((item) => {
+      const key = String(item.food_id || item.food_name);
+      const existing = itemsByFood.get(key);
+      const quantity = Number(item.quantity || 0);
+      const totalPrice = Number(item.total_price ?? Number(item.unit_price || 0) * quantity);
+      if (existing) {
+        existing.quantity += quantity;
+        existing.total_price += totalPrice;
+      } else {
+        itemsByFood.set(key, {
+          food_id: key,
+          food_name: item.food_name,
+          quantity,
+          total_price: totalPrice,
+        });
+      }
+    });
+    return Array.from(itemsByFood.values());
+  }, [viewingBill]);
 
   // Modal states
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -1337,30 +1365,16 @@ export default function ServerTables() {
               </div>
             </div>
 
-            {/* Rounds & Items Breakdown */}
-            <div className="max-h-64 overflow-y-auto space-y-3 mb-4 pr-1">
-              {viewingBill.rounds && viewingBill.rounds.length > 0 ? (
-                viewingBill.rounds.map((round) => (
-                  <div key={round.order_id} className="border border-gray-100 rounded-xl p-3 bg-gray-50/50">
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-xs font-bold text-purple-900 bg-purple-100 px-2 py-0.5 rounded">
-                        Round {round.round_number} {round.round_number > 1 ? "(Add-on)" : "(Initial Order)"}
-                      </span>
-                      <span className="text-[11px] text-gray-500 font-medium">
-                        {round.status}
-                      </span>
+            {/* Consolidated bill items */}
+            <div className="max-h-64 overflow-y-auto divide-y divide-gray-100 mb-4 pr-1">
+              {billItems.length > 0 ? (
+                billItems.map((item) => (
+                  <div key={item.food_id} className="py-2.5 flex justify-between items-center text-xs">
+                    <div>
+                      <span className="font-semibold text-gray-800">{item.food_name}</span>
+                      <span className="text-gray-500 ml-2">× {item.quantity}</span>
                     </div>
-                    <div className="divide-y divide-gray-100">
-                      {round.items.map((item) => (
-                        <div key={item.id} className="py-1.5 flex justify-between items-center text-xs">
-                          <div>
-                            <span className="font-semibold text-gray-800">{item.food_name}</span>
-                            <span className="text-gray-500 ml-2">× {item.quantity}</span>
-                          </div>
-                          <span className="font-mono text-gray-700">₹{item.total_price.toFixed(2)}</span>
-                        </div>
-                      ))}
-                    </div>
+                    <span className="font-mono text-gray-700">₹{item.total_price.toFixed(2)}</span>
                   </div>
                 ))
               ) : (
