@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import api, { BACKEND_BASE_URL } from '../api';
+import PageContainer from './PageContainer';
 
 const resolveAssetUrl = (asset) => {
   if (!asset || typeof asset !== 'string') return '';
@@ -110,9 +111,10 @@ function HomeBanner() {
   return (
     <section className="relative isolate overflow-hidden bg-[#fff8ed] text-[#102c22]">
       <div className="relative mx-auto grid min-h-[620px] max-w-[1920px] md:min-h-[570px] lg:min-h-[620px] md:grid-cols-[46%_54%]">
-        <div className="relative z-10 flex min-w-0 flex-col justify-center bg-[#fff8ed] px-6 pb-10 pt-12 sm:px-10 md:py-12 lg:px-16 xl:px-24">
+        <div className="relative z-10 flex min-w-0 flex-col justify-center bg-[#fff8ed]">
           <div className="pointer-events-none absolute -left-12 -top-12 h-36 w-36 rounded-full bg-[#315d2d]/[0.06]" />
-          <div className="relative max-w-[590px]">
+          <PageContainer className="relative flex h-full w-full flex-col justify-center py-12 sm:py-14">
+          <div className="max-w-[590px]">
             <p className="flex flex-wrap items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] text-[#e86d16] sm:text-xs">
               <Sparkles className="h-3.5 w-3.5" />
               Good food <span>·</span> Good company <span>·</span> Great memories
@@ -164,6 +166,7 @@ function HomeBanner() {
               ))}
             </div>
           </div>
+          </PageContainer>
         </div>
 
         <div className="relative z-10 min-h-[330px] overflow-hidden rounded-tl-[4rem] bg-[#243b2b] sm:min-h-[390px] md:min-h-0 md:rounded-tl-[6rem]">
