@@ -10,6 +10,7 @@ const { initializeVideoSchema } = require('./videos');
 const { initializeEmployeeSchema } = require('./employees');
 const { initializeSettingsSchema } = require('./settings');
 const { initializeKitchenOrderSchema } = require('./kitchenOrders');
+const { initializeInventorySchema } = require('./inventory');
 const {
   initializeServerTableSchema,
   createServerTable,
@@ -33,6 +34,7 @@ module.exports = {
   initializeVideoSchema,
   initializeSettingsSchema,
   initializeEmployeeSchema,
+  initializeInventorySchema,
   initializeServerTableSchema,
   createServerTable,
   findServerTables,

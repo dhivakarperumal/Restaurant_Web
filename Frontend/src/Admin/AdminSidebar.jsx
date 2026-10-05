@@ -51,6 +51,9 @@ import {
   Settings,
   MessageSquare,
   UtensilsCrossed,
+  Boxes,
+  ArrowRightLeft,
+  Wrench,
 } from "lucide-react";
 
 import { useAuth } from "../PrivateRouter/AuthContext";
@@ -84,6 +87,30 @@ const navItems = [
 
 
 
+
+  {
+    label: "Inventory Management",
+    icon: Boxes,
+    children: [
+      { path: "/admin/inventory", label: "Dashboard", icon: LayoutDashboard },
+      { path: "/admin/inventory/products", label: "Products", icon: Package },
+      { path: "/admin/inventory/categories", label: "Categories", icon: Layers },
+      { path: "/admin/inventory/units", label: "Units", icon: ClipboardList },
+      { path: "/admin/inventory/suppliers", label: "Suppliers", icon: Users },
+      { path: "/admin/inventory/purchases", label: "Purchases", icon: ShoppingCart },
+      { path: "/admin/inventory/stock-in", label: "Stock In", icon: PlusSquare },
+      { path: "/admin/inventory/stock-out", label: "Stock Out", icon: TrendingUp },
+      { path: "/admin/inventory/transfers", label: "Stock Transfers", icon: ArrowRightLeft },
+      { path: "/admin/inventory/adjustments", label: "Adjustments", icon: Wrench },
+      { path: "/admin/inventory/kitchen-requests", label: "Kitchen Requests", icon: UtensilsCrossed },
+      { path: "/admin/inventory/recipes", label: "Recipes", icon: BookOpen },
+      { path: "/admin/inventory/wastage", label: "Wastage", icon: XCircle },
+      { path: "/admin/inventory/expiry", label: "Expiry", icon: CalendarClock },
+      { path: "/admin/inventory/low-stock", label: "Low Stock", icon: AlertCircle },
+      { path: "/admin/inventory/locations", label: "Locations", icon: Globe },
+      { path: "/admin/inventory/reports", label: "Reports", icon: BarChart3 },
+    ],
+  },
 
   {
     label: "Orders",

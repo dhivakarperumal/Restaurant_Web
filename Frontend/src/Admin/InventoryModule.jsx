@@ -1,0 +1,865 @@
+import { createContext, useContext, useEffect, useState } from 'react';
+import { Route, Routes, NavLink, useNavigate } from 'react-router-dom';
+import { AlertTriangle, ArrowRightLeft, BarChart3, Boxes, CalendarClock, CircleDollarSign, ClipboardList, Filter, Gauge, MapPinned, NotebookPen, Package, PackagePlus, Pencil, Plus, PlusCircle, Search, ShoppingCart, Tag, Tags, Trash2, TrendingDown, TrendingUp, Truck, UtensilsCrossed, Warehouse, Wrench } from 'lucide-react';
+import api from '../api';
+import toast, { Toaster } from 'react-hot-toast';
+
+const formatCurrency = (value) => new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 2 }).format(Number(value || 0));
+const formatNumber = (value) => new Intl.NumberFormat('en-IN').format(Number(value || 0));
+
+const EMPTY_DASHBOARD = {
+  totalProducts: 0,
+  totalStockQuantity: 0,
+  totalStockValue: 0,
+  lowStock: 0,
+  outOfStock: 0,
+  expiringSoon: 0,
+  todaysPurchase: 0,
+  todaysStockUsage: 0,
+  todaysWastage: 0,
+  pendingKitchenRequests: 0,
+};
+
+const INVENTORY_NAV = [
+  { path: '/admin/inventory', label: 'Dashboard', icon: Gauge },
+  { path: '/admin/inventory/products', label: 'Products', icon: Package },
+  { path: '/admin/inventory/categories', label: 'Categories', icon: Tags },
+  { path: '/admin/inventory/units', label: 'Units', icon: ClipboardList },
+  { path: '/admin/inventory/suppliers', label: 'Suppliers', icon: Truck },
+  { path: '/admin/inventory/purchases', label: 'Purchases', icon: ShoppingCart },
+  { path: '/admin/inventory/stock-in', label: 'Stock In', icon: PackagePlus },
+  { path: '/admin/inventory/stock-out', label: 'Stock Out', icon: TrendingDown },
+  { path: '/admin/inventory/transfers', label: 'Stock Transfer', icon: ArrowRightLeft },
+  { path: '/admin/inventory/adjustments', label: 'Stock Adjustment', icon: Wrench },
+  { path: '/admin/inventory/kitchen-requests', label: 'Kitchen Requests', icon: UtensilsCrossed },
+  { path: '/admin/inventory/recipes', label: 'Recipes', icon: NotebookPen },
+  { path: '/admin/inventory/wastage', label: 'Wastage', icon: Trash2 },
+  { path: '/admin/inventory/expiry', label: 'Expiry', icon: CalendarClock },
+  { path: '/admin/inventory/low-stock', label: 'Low Stock', icon: AlertTriangle },
+  { path: '/admin/inventory/locations', label: 'Locations', icon: MapPinned },
+  { path: '/admin/inventory/reports', label: 'Reports', icon: BarChart3 },
+];
+
+function PageCard({ title, value, icon: Icon, accent, hint }) {
+  return (
+    <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">{title}</p>
+          <p className="mt-4 text-2xl font-bold text-slate-900">{value}</p>
+          {hint && <p className="mt-2 text-xs text-slate-500">{hint}</p>}
+        </div>
+        <div className={`flex h-12 w-12 items-center justify-center rounded-xl ${accent}`}>
+          <Icon size={20} />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function InventoryHeader({ title, subtitle, actions }) {
+  return (
+    <div className="mb-6 flex flex-col gap-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm md:flex-row md:items-center md:justify-between">
+      <div>
+        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Inventory Management</p>
+        <h1 className="mt-1 text-2xl font-bold text-slate-900">{title}</h1>
+        {subtitle && <p className="mt-1 text-sm text-slate-500">{subtitle}</p>}
+      </div>
+      {actions && <div className="flex items-center gap-2">{actions}</div>}
+    </div>
+  );
+}
+
+function InventoryTable({ columns, rows, emptyText = 'No records found.' }) {
+  if (!rows || !rows.length) {
+    return <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-8 text-center text-sm text-slate-500">{emptyText}</div>;
+  }
+
+  return (
+    <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-sm">
+      <table className="min-w-full text-left text-sm">
+        <thead className="bg-slate-100 text-slate-700">
+          <tr>
+            {columns.map((column) => (
+              <th key={column.key} className="whitespace-nowrap px-3 py-3 font-semibold">{column.label}</th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((row, index) => (
+            <tr key={row.id || `${row.name || 'row'}-${index}`} className="border-t border-slate-200 align-top">
+              {columns.map((column) => (
+                <td key={`${row.id || index}-${column.key}`} className="px-3 py-3 text-slate-700">
+                  {typeof column.render === 'function' ? column.render(row) : (row[column.key] ?? '-')}
+                </td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+function StatusBadge({ value = 'Active' }) {
+  const colors = {
+    Active: 'bg-emerald-100 text-emerald-700',
+    Inactive: 'bg-slate-200 text-slate-700',
+    Pending: 'bg-amber-100 text-amber-700',
+    Approved: 'bg-sky-100 text-sky-700',
+    Rejected: 'bg-rose-100 text-rose-700',
+    Issued: 'bg-violet-100 text-violet-700',
+    Completed: 'bg-emerald-100 text-emerald-700',
+    Expired: 'bg-rose-100 text-rose-700',
+    'Expiring Soon': 'bg-amber-100 text-amber-700',
+    'Low Stock': 'bg-orange-100 text-orange-700',
+    'Out of Stock': 'bg-red-100 text-red-700',
+  };
+  return <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${colors[value] || 'bg-slate-100 text-slate-700'}`}>{value}</span>;
+}
+
+function InventoryCrudPage({ title, subtitle, children, actions }) {
+  return (
+    <div>
+      <InventoryHeader title={title} subtitle={subtitle} actions={actions} />
+      {children}
+    </div>
+  );
+}
+
+function GenericListPage({ title, subtitle, items, onAdd, columns, emptyText, actionsFormat }) {
+  return (
+    <InventoryCrudPage title={title} subtitle={subtitle} actions={onAdd ? <button className="rounded-xl bg-[#1a3c36] px-4 py-2 text-sm font-semibold text-white" onClick={onAdd}><PlusCircle size={15} className="mr-2 inline" />Add</button> : null}>
+      <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+        <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+          <div className="relative w-full max-w-md">
+            <Search size={16} className="absolute left-3 top-3 text-slate-400" />
+            <input className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2.5 pl-9 text-sm text-slate-700 outline-none focus:border-[#1a3c36]" placeholder="Search records" />
+          </div>
+          <div className="flex items-center gap-2 text-xs text-slate-500">
+            <Filter size={14} />
+            <span>All Records</span>
+          </div>
+        </div>
+        <InventoryTable columns={columns} rows={items} emptyText={emptyText || 'No entries found.'} />
+      </div>
+    </InventoryCrudPage>
+  );
+}
+
+function InventoryDashboard() {
+  const navigate = useNavigate();
+  const { dashboard, lowStockList, expiryList, stockHistory, recentPurchases } = useInventoryContext();
+
+  const cards = [
+    { title: 'Total Products', value: formatNumber(dashboard.totalProducts), icon: Package, accent: 'bg-sky-100 text-sky-700', hint: 'All active inventory items' },
+    { title: 'Total Stock Quantity', value: formatNumber(dashboard.totalStockQuantity), icon: Warehouse, accent: 'bg-violet-100 text-violet-700', hint: 'Currently available units' },
+    { title: 'Total Stock Value', value: formatCurrency(dashboard.totalStockValue), icon: CircleDollarSign, accent: 'bg-emerald-100 text-emerald-700', hint: 'Based on purchase price' },
+    { title: 'Low Stock', value: formatNumber(dashboard.lowStock), icon: AlertTriangle, accent: 'bg-amber-100 text-amber-700', hint: 'Below reorder threshold' },
+    { title: 'Out of Stock', value: formatNumber(dashboard.outOfStock), icon: TrendingDown, accent: 'bg-red-100 text-red-700', hint: 'No units left' },
+    { title: 'Expiring Soon', value: formatNumber(dashboard.expiringSoon), icon: CalendarClock, accent: 'bg-pink-100 text-pink-700', hint: 'Within 7 days' },
+    { title: "Today's Purchase", value: formatCurrency(dashboard.todaysPurchase), icon: ShoppingCart, accent: 'bg-indigo-100 text-indigo-700', hint: 'Purchase value' },
+    { title: "Today's Stock Usage", value: formatNumber(dashboard.todaysStockUsage), icon: TrendingUp, accent: 'bg-orange-100 text-orange-700', hint: 'Usage recorded today' },
+    { title: "Today's Wastage", value: formatCurrency(dashboard.todaysWastage), icon: Trash2, accent: 'bg-rose-100 text-rose-700', hint: 'Estimated loss' },
+    { title: 'Pending Kitchen Requests', value: formatNumber(dashboard.pendingKitchenRequests), icon: UtensilsCrossed, accent: 'bg-cyan-100 text-cyan-700', hint: 'Awaiting review' },
+  ];
+
+  const chartBars = [45, 60, 78, 52, 90, 72, 88];
+
+  return (
+    <div>
+      <InventoryHeader title="Inventory Dashboard" subtitle="Real-time stock performance, movement events and operational alerts." actions={
+        <div className="flex flex-wrap gap-2">
+          <button className="rounded-xl bg-[#1a3c36] px-4 py-2 text-sm font-semibold text-white" onClick={() => navigate('/admin/inventory/products')}><Plus size={15} className="mr-2 inline" />Add Product</button>
+          <button className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700" onClick={() => navigate('/admin/inventory/stock-in')}>Stock In</button>
+          <button className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700" onClick={() => navigate('/admin/inventory/stock-out')}>Stock Out</button>
+          <button className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700" onClick={() => navigate('/admin/inventory/purchases')}>New Purchase</button>
+        </div>
+      } />
+
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
+        {cards.map((card) => (
+          <PageCard key={card.title} {...card} />
+        ))}
+      </div>
+
+      <div className="mt-6 grid gap-6 xl:grid-cols-2">
+        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+          <div className="mb-4 flex items-center justify-between">
+            <h2 className="text-lg font-bold text-slate-900">Purchase vs Usage</h2>
+            <span className="rounded-full bg-slate-100 px-2 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500">Monthly</span>
+          </div>
+          <div className="flex h-48 items-end gap-2">
+            {chartBars.map((value, idx) => (
+              <div key={idx} className="flex flex-1 flex-col items-center gap-2">
+                <div className="w-full rounded-t-xl bg-gradient-to-t from-[#1a3c36] to-[#70c1a6]" style={{ height: `${value}%` }} />
+                <span className="text-[10px] text-slate-500">M{idx + 1}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+          <h2 className="text-lg font-bold text-slate-900">Stock Value</h2>
+          <div className="mt-5 space-y-4">
+            {[
+              { label: 'Current Stock Value', value: formatCurrency(dashboard.totalStockValue) },
+              { label: 'Low Stock Items', value: formatNumber(dashboard.lowStock) },
+              { label: 'Pending Kitchen Requests', value: formatNumber(dashboard.pendingKitchenRequests) },
+            ].map((item) => (
+              <div key={item.label} className="flex items-center justify-between rounded-xl bg-slate-50 px-3 py-3">
+                <span className="text-sm text-slate-600">{item.label}</span>
+                <span className="text-sm font-bold text-slate-900">{item.value}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      <div className="mt-6 grid gap-6 xl:grid-cols-2">
+        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+          <h2 className="text-lg font-bold text-slate-900">Low Stock Products</h2>
+          <div className="mt-4 overflow-x-auto">
+            <table className="min-w-full text-left text-sm">
+              <thead className="bg-slate-100 text-slate-700">
+                <tr><th className="px-3 py-2">Product</th><th className="px-3 py-2">Stock</th><th className="px-3 py-2">Status</th></tr>
+              </thead>
+              <tbody>
+                {(lowStockList || []).slice(0, 5).map((item) => (
+                  <tr key={item.id} className="border-t border-slate-200">
+                    <td className="px-3 py-2">{item.product_name}</td>
+                    <td className="px-3 py-2">{item.current_stock}</td>
+                    <td className="px-3 py-2"><StatusBadge value={item.current_stock === 0 ? 'Out of Stock' : 'Low Stock'} /></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+          <h2 className="text-lg font-bold text-slate-900">Expiring Products</h2>
+          <div className="mt-4 overflow-x-auto">
+            <table className="min-w-full text-left text-sm">
+              <thead className="bg-slate-100 text-slate-700">
+                <tr><th className="px-3 py-2">Product</th><th className="px-3 py-2">Expiry</th><th className="px-3 py-2">Status</th></tr>
+              </thead>
+              <tbody>
+                {(expiryList || []).slice(0, 5).map((item) => (
+                  <tr key={item.id} className="border-t border-slate-200">
+                    <td className="px-3 py-2">{item.product_name}</td>
+                    <td className="px-3 py-2">{item.expiry_date || '-'}</td>
+                    <td className="px-3 py-2"><StatusBadge value={item.days_remaining <= 0 ? 'Expired' : item.days_remaining <= 7 ? 'Expiring Soon' : 'Good'} /></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div className="mt-6 grid gap-6 xl:grid-cols-2">
+        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+          <h2 className="text-lg font-bold text-slate-900">Recent Stock Transactions</h2>
+          <InventoryTable columns={[
+            { key: 'product_id', label: 'Product' },
+            { key: 'transaction_type', label: 'Type' },
+            { key: 'quantity', label: 'Qty' },
+            { key: 'created_at', label: 'Date' },
+          ]} rows={(stockHistory || []).slice(0, 5)} emptyText="No stock transactions." />
+        </div>
+
+        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+          <h2 className="text-lg font-bold text-slate-900">Recent Purchases</h2>
+          <InventoryTable columns={[
+            { key: 'purchase_number', label: 'Purchase No' },
+            { key: 'grand_total', label: 'Total', render: (row) => formatCurrency(row.grand_total) },
+            { key: 'status', label: 'Status', render: (row) => <StatusBadge value={row.status || 'Completed'} /> },
+          ]} rows={(recentPurchases || []).slice(0, 5)} emptyText="No purchases yet." />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ProductsPage() {
+  const navigate = useNavigate();
+  const { products, categories, subcategories, units, suppliers, locations, loadData } = useInventoryContext();
+  const [search, setSearch] = useState('');
+  const [form, setForm] = useState({
+    product_name: '', sku: '', barcode: '', category_id: '', subcategory_id: '', unit_id: '', supplier_id: '', purchase_price: '', selling_price: '', current_stock: '0', minimum_stock: '0', reorder_level: '0', status: 'Active',
+  });
+
+  const filtered = products.filter((product) => {
+    const value = search.toLowerCase();
+    if (!value) return true;
+    return [product.product_name, product.sku, product.barcode, product.category_name].join(' ').toLowerCase().includes(value);
+  });
+
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+    try {
+      await api.post('/inventory/products', { ...form, current_stock: Number(form.current_stock || 0), purchase_price: Number(form.purchase_price || 0), selling_price: Number(form.selling_price || 0), minimum_stock: Number(form.minimum_stock || 0), reorder_level: Number(form.reorder_level || 0) });
+      toast.success('Product added successfully.');
+      setForm({ product_name: '', sku: '', barcode: '', category_id: '', subcategory_id: '', unit_id: '', supplier_id: '', purchase_price: '', selling_price: '', current_stock: '0', minimum_stock: '0', reorder_level: '0', status: 'Active' });
+      loadData();
+    } catch (error) {
+      toast.error(error?.response?.data?.message || 'Unable to add product.');
+    }
+  };
+
+  const columns = [
+    { key: 'image_url', label: 'Product Image', render: () => <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-slate-100 text-slate-500"> <Package size={18} /> </div> },
+    { key: 'product_name', label: 'Product Name' },
+    { key: 'sku', label: 'SKU' },
+    { key: 'barcode', label: 'Barcode' },
+    { key: 'category_name', label: 'Category' },
+    { key: 'current_stock', label: 'Current Stock' },
+    { key: 'reorder_level', label: 'Reorder Level' },
+    { key: 'purchase_price', label: 'Purchase Price', render: (row) => formatCurrency(row.purchase_price) },
+    { key: 'stock_value', label: 'Stock Value', render: (row) => formatCurrency(row.stock_value || row.current_stock * row.purchase_price) },
+    { key: 'status', label: 'Status', render: (row) => <StatusBadge value={row.status || 'Active'} /> },
+    { key: 'actions', label: 'Actions', render: () => <div className="flex gap-2"><button className="text-sky-600" title="View"><Eye size={15} /></button><button className="text-amber-600" title="Edit"><Pencil size={15} /></button><button className="text-rose-600" title="Delete"><Trash2 size={15} /></button></div> },
+  ];
+
+  return (
+    <InventoryCrudPage title="Products" subtitle="Manage all inventory items, stock levels and supplier linkage." actions={<button className="rounded-xl bg-[#1a3c36] px-4 py-2 text-sm font-semibold text-white" onClick={() => navigate('/admin/inventory/stock-in')}>Stock In</button>}>
+      <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
+        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+          <div className="mb-4 flex items-center justify-between gap-3">
+            <div className="relative w-full max-w-md">
+              <Search size={16} className="absolute left-3 top-3 text-slate-400" />
+              <input value={search} onChange={(e) => setSearch(e.target.value)} className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2.5 pl-9 text-sm text-slate-700 outline-none focus:border-[#1a3c36]" placeholder="Search products" />
+            </div>
+          </div>
+          <InventoryTable columns={columns} rows={filtered} emptyText="No products found." />
+        </div>
+
+        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+          <h2 className="text-lg font-bold text-slate-900">Add Product</h2>
+          <form className="mt-4 space-y-3" onSubmit={handleSubmit}>
+            <input value={form.product_name} onChange={(e) => setForm({ ...form, product_name: e.target.value })} placeholder="Product name" className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" required />
+            <div className="grid grid-cols-2 gap-3">
+              <input value={form.sku} onChange={(e) => setForm({ ...form, sku: e.target.value })} placeholder="SKU" className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" />
+              <input value={form.barcode} onChange={(e) => setForm({ ...form, barcode: e.target.value })} placeholder="Barcode" className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <select value={form.category_id} onChange={(e) => setForm({ ...form, category_id: e.target.value })} className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm">
+                <option value="">Category</option>
+                {categories.map((cat) => <option key={cat.id} value={cat.id}>{cat.category_name}</option>)}
+              </select>
+              <select value={form.unit_id} onChange={(e) => setForm({ ...form, unit_id: e.target.value })} className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm">
+                <option value="">Unit</option>
+                {units.map((unit) => <option key={unit.id} value={unit.id}>{unit.unit_name}</option>)}
+              </select>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <input value={form.purchase_price} onChange={(e) => setForm({ ...form, purchase_price: e.target.value })} placeholder="Purchase price" type="number" className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" />
+              <input value={form.selling_price} onChange={(e) => setForm({ ...form, selling_price: e.target.value })} placeholder="Selling price" type="number" className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" />
+            </div>
+            <div className="grid grid-cols-3 gap-3">
+              <input value={form.current_stock} onChange={(e) => setForm({ ...form, current_stock: e.target.value })} placeholder="Opening stock" type="number" className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" min="0" />
+              <input value={form.minimum_stock} onChange={(e) => setForm({ ...form, minimum_stock: e.target.value })} placeholder="Min stock" type="number" className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" min="0" />
+              <input value={form.reorder_level} onChange={(e) => setForm({ ...form, reorder_level: e.target.value })} placeholder="Reorder" type="number" className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" min="0" />
+            </div>
+            <select value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value })} className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm">
+              <option value="Active">Active</option>
+              <option value="Inactive">Inactive</option>
+            </select>
+            <button type="submit" className="w-full rounded-xl bg-[#1a3c36] px-4 py-2.5 text-sm font-semibold text-white">Save Product</button>
+          </form>
+        </div>
+      </div>
+    </InventoryCrudPage>
+  );
+}
+
+function CategoriesPage() {
+  const { categories, loadData } = useInventoryContext();
+  const [form, setForm] = useState({ category_name: '', description: '', status: 'Active' });
+
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+    try {
+      await api.post('/inventory/categories', form);
+      toast.success('Category added successfully.');
+      setForm({ category_name: '', description: '', status: 'Active' });
+      loadData();
+    } catch (error) {
+      toast.error(error?.response?.data?.message || 'Unable to add category.');
+    }
+  };
+
+  return (
+    <InventoryCrudPage title="Categories" subtitle="Organize product categories and inventory grouping." actions={<button className="rounded-xl bg-[#1a3c36] px-4 py-2 text-sm font-semibold text-white" onClick={() => {}}>Add Category</button>}>
+      <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
+        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+          <InventoryTable columns={[
+            { key: 'category_name', label: 'Category' },
+            { key: 'description', label: 'Description' },
+            { key: 'status', label: 'Status', render: (row) => <StatusBadge value={row.status || 'Active'} /> },
+          ]} rows={categories} emptyText="No categories found." />
+        </div>
+        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+          <h2 className="text-lg font-bold text-slate-900">Add Category</h2>
+          <form className="mt-4 space-y-3" onSubmit={handleSubmit}>
+            <input value={form.category_name} onChange={(e) => setForm({ ...form, category_name: e.target.value })} className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Category name" required />
+            <textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Description" rows={4} />
+            <select value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value })} className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm">
+              <option value="Active">Active</option>
+              <option value="Inactive">Inactive</option>
+            </select>
+            <button className="w-full rounded-xl bg-[#1a3c36] px-4 py-2.5 text-sm font-semibold text-white" type="submit">Save Category</button>
+          </form>
+        </div>
+      </div>
+    </InventoryCrudPage>
+  );
+}
+
+function UnitsPage() {
+  const { units, loadData } = useInventoryContext();
+  const [form, setForm] = useState({ unit_name: '', short_name: '', status: 'Active' });
+
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+    try {
+      await api.post('/inventory/units', form);
+      toast.success('Unit added successfully.');
+      setForm({ unit_name: '', short_name: '', status: 'Active' });
+      loadData();
+    } catch (error) {
+      toast.error(error?.response?.data?.message || 'Unable to add unit.');
+    }
+  };
+
+  return (
+    <InventoryCrudPage title="Units" subtitle="Default inventory measurement units.">
+      <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
+        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+          <InventoryTable columns={[
+            { key: 'unit_name', label: 'Unit Name' },
+            { key: 'short_name', label: 'Short Name' },
+            { key: 'status', label: 'Status', render: (row) => <StatusBadge value={row.status || 'Active'} /> },
+          ]} rows={units} emptyText="No units found." />
+        </div>
+        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+          <h2 className="text-lg font-bold text-slate-900">Add Unit</h2>
+          <form className="mt-4 space-y-3" onSubmit={handleSubmit}>
+            <input value={form.unit_name} onChange={(e) => setForm({ ...form, unit_name: e.target.value })} className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Unit Name" required />
+            <input value={form.short_name} onChange={(e) => setForm({ ...form, short_name: e.target.value })} className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Short Name" required />
+            <select value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value })} className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm">
+              <option value="Active">Active</option>
+              <option value="Inactive">Inactive</option>
+            </select>
+            <button className="w-full rounded-xl bg-[#1a3c36] px-4 py-2.5 text-sm font-semibold text-white" type="submit">Save Unit</button>
+          </form>
+        </div>
+      </div>
+    </InventoryCrudPage>
+  );
+}
+
+function SuppliersPage() {
+  const { suppliers, loadData } = useInventoryContext();
+  const [form, setForm] = useState({ supplier_name: '', company_name: '', phone: '', email: '', address: '', gst_number: '', payment_terms: '', opening_balance: '0', status: 'Active' });
+
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+    try {
+      await api.post('/inventory/suppliers', { ...form, opening_balance: Number(form.opening_balance || 0) });
+      toast.success('Supplier added successfully.');
+      setForm({ supplier_name: '', company_name: '', phone: '', email: '', address: '', gst_number: '', payment_terms: '', opening_balance: '0', status: 'Active' });
+      loadData();
+    } catch (error) {
+      toast.error(error?.response?.data?.message || 'Unable to add supplier.');
+    }
+  };
+
+  return (
+    <InventoryCrudPage title="Suppliers" subtitle="Track supplier contacts, balances and purchase history.">
+      <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
+        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+          <InventoryTable columns={[
+            { key: 'supplier_name', label: 'Supplier' },
+            { key: 'company_name', label: 'Company' },
+            { key: 'phone', label: 'Phone' },
+            { key: 'email', label: 'Email' },
+            { key: 'status', label: 'Status', render: (row) => <StatusBadge value={row.status || 'Active'} /> },
+          ]} rows={suppliers} emptyText="No suppliers added." />
+        </div>
+        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+          <h2 className="text-lg font-bold text-slate-900">Add Supplier</h2>
+          <form className="mt-4 space-y-3" onSubmit={handleSubmit}>
+            <input value={form.supplier_name} onChange={(e) => setForm({ ...form, supplier_name: e.target.value })} className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Supplier name" required />
+            <input value={form.company_name} onChange={(e) => setForm({ ...form, company_name: e.target.value })} className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Company name" />
+            <div className="grid grid-cols-2 gap-3">
+              <input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Phone" />
+              <input value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Email" />
+            </div>
+            <textarea value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Address" rows={3} />
+            <input value={form.gst_number} onChange={(e) => setForm({ ...form, gst_number: e.target.value })} className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="GST Number" />
+            <div className="grid grid-cols-2 gap-3">
+              <input value={form.payment_terms} onChange={(e) => setForm({ ...form, payment_terms: e.target.value })} className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Payment terms" />
+              <input value={form.opening_balance} onChange={(e) => setForm({ ...form, opening_balance: e.target.value })} type="number" className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Opening balance" />
+            </div>
+            <button className="w-full rounded-xl bg-[#1a3c36] px-4 py-2.5 text-sm font-semibold text-white" type="submit">Save Supplier</button>
+          </form>
+        </div>
+      </div>
+    </InventoryCrudPage>
+  );
+}
+
+function PurchasesPage() {
+  const { suppliers, products, loadData } = useInventoryContext();
+  const [form, setForm] = useState({ purchase_number: 'PUR-1001', supplier_id: '', invoice_number: '', purchase_date: '', notes: '', items: [{ product_id: '', quantity: '1', unit: 'Kg', purchase_price: '0', discount: '0', tax: '0' }] });
+
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+    try {
+      const payload = {
+        ...form,
+        subtotal: form.items.reduce((sum, item) => sum + ((Number(item.quantity || 0) * Number(item.purchase_price || 0)) - Number(item.discount || 0)), 0),
+        grand_total: form.items.reduce((sum, item) => sum + ((Number(item.quantity || 0) * Number(item.purchase_price || 0)) - Number(item.discount || 0) + Number(item.tax || 0)), 0),
+        payment_status: 'Paid',
+        status: 'Completed',
+        items: form.items.map((item) => ({ ...item, quantity: Number(item.quantity || 0), purchase_price: Number(item.purchase_price || 0), discount: Number(item.discount || 0), tax: Number(item.tax || 0) })),
+      };
+      await api.post('/inventory/purchases', payload);
+      toast.success('Purchase completed successfully.');
+      loadData();
+    } catch (error) {
+      toast.error(error?.response?.data?.message || 'Unable to save purchase.');
+    }
+  };
+
+  const updateItem = (index, field, value) => {
+    setForm((prev) => ({ ...prev, items: prev.items.map((item, i) => (i === index ? { ...item, [field]: value } : item)) }));
+  };
+
+  return (
+    <InventoryCrudPage title="Purchases" subtitle="Record new purchases and update stock automatically.">
+      <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+        <form className="space-y-4" onSubmit={handleSubmit}>
+          <div className="grid gap-3 md:grid-cols-3">
+            <input value={form.purchase_number} onChange={(e) => setForm({ ...form, purchase_number: e.target.value })} className="rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Purchase number" />
+            <select value={form.supplier_id} onChange={(e) => setForm({ ...form, supplier_id: e.target.value })} className="rounded-xl border border-slate-200 px-3 py-2 text-sm">
+              <option value="">Supplier</option>
+              {suppliers.map((supplier) => <option key={supplier.id} value={supplier.id}>{supplier.supplier_name}</option>)}
+            </select>
+            <input value={form.invoice_number} onChange={(e) => setForm({ ...form, invoice_number: e.target.value })} className="rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Invoice number" />
+          </div>
+
+          <div className="rounded-2xl border border-slate-200 bg-slate-50 p-3">
+            <h3 className="mb-3 text-sm font-bold uppercase tracking-[0.18em] text-slate-500">Products</h3>
+            <div className="space-y-3">
+              {form.items.map((item, index) => (
+                <div key={index} className="grid gap-3 md:grid-cols-5">
+                  <select value={item.product_id} onChange={(e) => updateItem(index, 'product_id', e.target.value)} className="rounded-xl border border-slate-200 px-3 py-2 text-sm">
+                    <option value="">Product</option>
+                    {products.map((product) => <option key={product.id} value={product.id}>{product.product_name}</option>)}
+                  </select>
+                  <input value={item.quantity} onChange={(e) => updateItem(index, 'quantity', e.target.value)} type="number" className="rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Qty" />
+                  <input value={item.unit} onChange={(e) => updateItem(index, 'unit', e.target.value)} className="rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Unit" />
+                  <input value={item.purchase_price} onChange={(e) => updateItem(index, 'purchase_price', e.target.value)} type="number" className="rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Price" />
+                  <button type="button" className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-700" onClick={() => setForm((prev) => ({ ...prev, items: prev.items.filter((_, idx) => idx !== index) }))}>Remove</button>
+                </div>
+              ))}
+            </div>
+            <button type="button" className="mt-3 rounded-xl bg-slate-100 px-3 py-2 text-xs font-semibold uppercase tracking-[0.12em] text-slate-700" onClick={() => setForm((prev) => ({ ...prev, items: [...prev.items, { product_id: '', quantity: '1', unit: 'Kg', purchase_price: '0', discount: '0', tax: '0' }] }))}>Add Product</button>
+          </div>
+
+          <div className="grid gap-3 md:grid-cols-2">
+            <input value={form.purchase_date} onChange={(e) => setForm({ ...form, purchase_date: e.target.value })} type="date" className="rounded-xl border border-slate-200 px-3 py-2 text-sm" />
+            <input value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} className="rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Notes" />
+          </div>
+
+          <button type="submit" className="rounded-xl bg-[#1a3c36] px-5 py-2.5 text-sm font-semibold text-white">Save Purchase</button>
+        </form>
+      </div>
+    </InventoryCrudPage>
+  );
+}
+
+function StockInPage() {
+  const { products, suppliers, loadData } = useInventoryContext();
+  const [form, setForm] = useState({ product_id: '', quantity: '0', unit: 'Kg', purchase_price: '0', supplier_id: '', date: new Date().toISOString().slice(0, 10), reference_number: '', notes: '' });
+
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+    try {
+      await api.post('/inventory/stock-in', { ...form, quantity: Number(form.quantity), purchase_price: Number(form.purchase_price) });
+      toast.success('Stock updated successfully.');
+      setForm({ product_id: '', quantity: '0', unit: 'Kg', purchase_price: '0', supplier_id: '', date: new Date().toISOString().slice(0, 10), reference_number: '', notes: '' });
+      loadData();
+    } catch (error) {
+      toast.error(error?.response?.data?.message || 'Stock in failed.');
+    }
+  };
+
+  return (
+    <InventoryCrudPage title="Stock In" subtitle="Add inventory stock and record the movement history.">
+      <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+        <form className="space-y-4" onSubmit={handleSubmit}>
+          <div className="grid gap-3 md:grid-cols-2">
+            <select value={form.product_id} onChange={(e) => setForm({ ...form, product_id: e.target.value })} className="rounded-xl border border-slate-200 px-3 py-2 text-sm" required>
+              <option value="">Product</option>
+              {products.map((product) => <option key={product.id} value={product.id}>{product.product_name}</option>)}
+            </select>
+            <select value={form.supplier_id} onChange={(e) => setForm({ ...form, supplier_id: e.target.value })} className="rounded-xl border border-slate-200 px-3 py-2 text-sm">
+              <option value="">Supplier</option>
+              {suppliers.map((supplier) => <option key={supplier.id} value={supplier.id}>{supplier.supplier_name}</option>)}
+            </select>
+          </div>
+          <div className="grid gap-3 md:grid-cols-4">
+            <input value={form.quantity} onChange={(e) => setForm({ ...form, quantity: e.target.value })} type="number" min="0" className="rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Quantity" required />
+            <input value={form.unit} onChange={(e) => setForm({ ...form, unit: e.target.value })} className="rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Unit" />
+            <input value={form.purchase_price} onChange={(e) => setForm({ ...form, purchase_price: e.target.value })} type="number" min="0" className="rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Purchase price" />
+            <input value={form.reference_number} onChange={(e) => setForm({ ...form, reference_number: e.target.value })} className="rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Reference number" />
+          </div>
+          <div className="grid gap-3 md:grid-cols-2">
+            <input value={form.date} onChange={(e) => setForm({ ...form, date: e.target.value })} type="date" className="rounded-xl border border-slate-200 px-3 py-2 text-sm" />
+            <input value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} className="rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Notes" />
+          </div>
+          <button type="submit" className="rounded-xl bg-[#1a3c36] px-5 py-2.5 text-sm font-semibold text-white">Save Stock In</button>
+        </form>
+      </div>
+    </InventoryCrudPage>
+  );
+}
+
+function StockOutPage() {
+  const { products, loadData } = useInventoryContext();
+  const [form, setForm] = useState({ product_id: '', quantity: '0', unit: 'Kg', department: 'Kitchen', reason: 'Kitchen Usage', date: new Date().toISOString().slice(0, 10), notes: '' });
+
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+    try {
+      await api.post('/inventory/stock-out', { ...form, quantity: Number(form.quantity) });
+      toast.success('Stock updated successfully.');
+      setForm({ product_id: '', quantity: '0', unit: 'Kg', department: 'Kitchen', reason: 'Kitchen Usage', date: new Date().toISOString().slice(0, 10), notes: '' });
+      loadData();
+    } catch (error) {
+      toast.error(error?.response?.data?.message || 'Insufficient stock.');
+    }
+  };
+
+  return (
+    <InventoryCrudPage title="Stock Out" subtitle="Issue stock to kitchen, orders, events or operational use.">
+      <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+        <form className="space-y-4" onSubmit={handleSubmit}>
+          <div className="grid gap-3 md:grid-cols-2">
+            <select value={form.product_id} onChange={(e) => setForm({ ...form, product_id: e.target.value })} className="rounded-xl border border-slate-200 px-3 py-2 text-sm" required>
+              <option value="">Product</option>
+              {products.map((product) => <option key={product.id} value={product.id}>{product.product_name}</option>)}
+            </select>
+            <select value={form.department} onChange={(e) => setForm({ ...form, department: e.target.value })} className="rounded-xl border border-slate-200 px-3 py-2 text-sm">
+              <option value="Kitchen">Kitchen</option>
+              <option value="Restaurant">Restaurant</option>
+              <option value="Staff">Staff Food</option>
+              <option value="Event">Event</option>
+            </select>
+          </div>
+          <div className="grid gap-3 md:grid-cols-4">
+            <input value={form.quantity} onChange={(e) => setForm({ ...form, quantity: e.target.value })} type="number" min="0" className="rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Quantity" required />
+            <input value={form.unit} onChange={(e) => setForm({ ...form, unit: e.target.value })} className="rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Unit" />
+            <select value={form.reason} onChange={(e) => setForm({ ...form, reason: e.target.value })} className="rounded-xl border border-slate-200 px-3 py-2 text-sm">
+              <option>Kitchen Usage</option>
+              <option>Restaurant Order</option>
+              <option>Staff Food</option>
+              <option>Event</option>
+              <option>Complimentary</option>
+              <option>Damaged</option>
+              <option>Other</option>
+            </select>
+            <input value={form.date} onChange={(e) => setForm({ ...form, date: e.target.value })} type="date" className="rounded-xl border border-slate-200 px-3 py-2 text-sm" />
+          </div>
+          <input value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Notes" />
+          <button type="submit" className="rounded-xl bg-[#1a3c36] px-5 py-2.5 text-sm font-semibold text-white">Save Stock Out</button>
+        </form>
+      </div>
+    </InventoryCrudPage>
+  );
+}
+
+function LowStockPage() {
+  const { lowStockList } = useInventoryContext();
+  return (
+    <InventoryCrudPage title="Low Stock" subtitle="Monitor inventory that needs replenishment.">
+      <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+        <InventoryTable columns={[
+          { key: 'product_name', label: 'Product' },
+          { key: 'current_stock', label: 'Current Stock' },
+          { key: 'minimum_stock', label: 'Minimum Stock' },
+          { key: 'reorder_level', label: 'Reorder Level' },
+          { key: 'status', label: 'Status', render: (row) => <StatusBadge value={row.current_stock === 0 ? 'Out of Stock' : 'Low Stock'} /> },
+        ]} rows={lowStockList} emptyText="No low-stock products." />
+      </div>
+    </InventoryCrudPage>
+  );
+}
+
+function ExpiryPage() {
+  const { expiryList } = useInventoryContext();
+  return (
+    <InventoryCrudPage title="Expiry" subtitle="Track product expiry statuses across all batches.">
+      <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+        <InventoryTable columns={[
+          { key: 'product_name', label: 'Product' },
+          { key: 'batch_number', label: 'Batch' },
+          { key: 'current_stock', label: 'Quantity' },
+          { key: 'expiry_date', label: 'Expiry Date' },
+          { key: 'days_remaining', label: 'Days Remaining' },
+          { key: 'status', label: 'Status', render: (row) => <StatusBadge value={row.days_remaining <= 0 ? 'Expired' : row.days_remaining <= 7 ? 'Expiring Soon' : 'Good'} /> },
+        ]} rows={expiryList.map((item) => ({ ...item, status: item.days_remaining <= 0 ? 'Expired' : item.days_remaining <= 7 ? 'Expiring Soon' : 'Good' }))} emptyText="No expiry data available." />
+      </div>
+    </InventoryCrudPage>
+  );
+}
+
+function ReportsPage() {
+  const { reports } = useInventoryContext();
+  return (
+    <InventoryCrudPage title="Reports" subtitle="Current stock, movement and stock valuation snapshots.">
+      <div className="grid gap-6 lg:grid-cols-2">
+        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+          <h2 className="text-lg font-bold text-slate-900">Current Stock Report</h2>
+          <InventoryTable columns={[
+            { key: 'product_name', label: 'Product' },
+            { key: 'current_stock', label: 'Qty' },
+            { key: 'purchase_price', label: 'Purchase Price', render: (row) => formatCurrency(row.purchase_price) },
+            { key: 'stock_value', label: 'Stock Value', render: (row) => formatCurrency(row.current_stock * row.purchase_price) },
+          ]} rows={reports.stock || []} emptyText="No stock report available." />
+        </div>
+        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+          <h2 className="text-lg font-bold text-slate-900">Movement Report</h2>
+          <InventoryTable columns={[
+            { key: 'transaction_type', label: 'Type' },
+            { key: 'quantity', label: 'Qty' },
+            { key: 'reason', label: 'Reason' },
+            { key: 'created_at', label: 'Date' },
+          ]} rows={reports.transactions || []} emptyText="No movement data." />
+        </div>
+      </div>
+    </InventoryCrudPage>
+  );
+}
+
+function InventoryFallbackPage() {
+  return (
+    <InventoryCrudPage title="Inventory Management" subtitle="System is ready. Navigate using the left sidebar to access each inventory module.">
+      <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-8 text-center text-slate-500">Select a module from the inventory sidebar.</div>
+    </InventoryCrudPage>
+  );
+}
+
+const InventoryContextValue = createContext(null);
+
+const InventoryContext = ({ children }) => {
+  const [dashboard, setDashboard] = useState(EMPTY_DASHBOARD);
+  const [products, setProducts] = useState([]);
+  const [categories, setCategories] = useState([]);
+  const [subcategories, setSubcategories] = useState([]);
+  const [units, setUnits] = useState([]);
+  const [suppliers, setSuppliers] = useState([]);
+  const [locations, setLocations] = useState([]);
+  const [lowStockList, setLowStockList] = useState([]);
+  const [expiryList, setExpiryList] = useState([]);
+  const [stockHistory, setStockHistory] = useState([]);
+  const [recentPurchases, setRecentPurchases] = useState([]);
+  const [reports, setReports] = useState({ stock: [], transactions: [] });
+  const [loading, setLoading] = useState(false);
+
+  const loadData = async () => {
+    setLoading(true);
+    try {
+      const [summaryRes, productsRes, categoriesRes, unitsRes, suppliersRes, locationsRes, lowStockRes, expiryRes, historyRes, purchasesRes, reportsRes] = await Promise.all([
+        api.get('/inventory/dashboard').catch(() => ({ data: { data: EMPTY_DASHBOARD } })),
+        api.get('/inventory/products').catch(() => ({ data: { data: [] } })),
+        api.get('/inventory/categories').catch(() => ({ data: { data: [] } })),
+        api.get('/inventory/units').catch(() => ({ data: { data: [] } })),
+        api.get('/inventory/suppliers').catch(() => ({ data: { data: [] } })),
+        api.get('/inventory/locations').catch(() => ({ data: { data: [] } })),
+        api.get('/inventory/low-stock').catch(() => ({ data: { data: [] } })),
+        api.get('/inventory/expiry').catch(() => ({ data: { data: [] } })),
+        api.get('/inventory/stock/history').catch(() => ({ data: { data: [] } })),
+        api.get('/inventory/purchases').catch(() => ({ data: { data: [] } })),
+        api.get('/inventory/reports').catch(() => ({ data: { data: { stock: [], transactions: [] } } })),
+      ]);
+
+      setDashboard(summaryRes.data?.data || EMPTY_DASHBOARD);
+      setProducts(productsRes.data?.data || []);
+      setCategories(categoriesRes.data?.data || []);
+      setUnits(unitsRes.data?.data || []);
+      setSuppliers(suppliersRes.data?.data || []);
+      setLocations(locationsRes.data?.data || []);
+      setLowStockList(lowStockRes.data?.data || []);
+      setExpiryList(expiryRes.data?.data || []);
+      setStockHistory(historyRes.data?.data || []);
+      setRecentPurchases(purchasesRes.data?.data || []);
+      setReports(reportsRes.data?.data || { stock: [], transactions: [] });
+    } catch {
+      setDashboard(EMPTY_DASHBOARD);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => { loadData(); }, []);
+
+  const value = { dashboard, products, categories, subcategories, units, suppliers, locations, lowStockList, expiryList, stockHistory, recentPurchases, reports, loading, loadData };
+
+  return <InventoryContextValue.Provider value={value}>{children}</InventoryContextValue.Provider>;
+};
+
+function useInventoryContext() {
+  const context = useContext(InventoryContextValue);
+  if (!context) throw new Error('Inventory context missing.');
+  return context;
+}
+
+function InventoryRoutes() {
+  return (
+    <Routes>
+      <Route path="/" element={<InventoryFallbackPage />} />
+      <Route path="dashboard" element={<InventoryDashboard />} />
+      <Route path="products" element={<ProductsPage />} />
+      <Route path="categories" element={<CategoriesPage />} />
+      <Route path="subcategories" element={<CategoriesPage />} />
+      <Route path="units" element={<UnitsPage />} />
+      <Route path="suppliers" element={<SuppliersPage />} />
+      <Route path="purchases" element={<PurchasesPage />} />
+      <Route path="stock-in" element={<StockInPage />} />
+      <Route path="stock-out" element={<StockOutPage />} />
+      <Route path="transfers" element={<InventoryFallbackPage />} />
+      <Route path="adjustments" element={<InventoryFallbackPage />} />
+      <Route path="kitchen-requests" element={<InventoryFallbackPage />} />
+      <Route path="recipes" element={<InventoryFallbackPage />} />
+      <Route path="wastage" element={<InventoryFallbackPage />} />
+      <Route path="expiry" element={<ExpiryPage />} />
+      <Route path="low-stock" element={<LowStockPage />} />
+      <Route path="locations" element={<InventoryFallbackPage />} />
+      <Route path="reports" element={<ReportsPage />} />
+    </Routes>
+  );
+}
+
+export default function InventoryModule() {
+  return (
+    <InventoryContext>
+      <div className="space-y-6">
+        <div className="flex flex-wrap gap-2 md:gap-3">
+          {INVENTORY_NAV.map((item) => (
+            <NavLink key={item.path} to={item.path} className={({ isActive }) => `inline-flex items-center gap-2 rounded-xl border px-3 py-2 text-sm font-medium ${isActive ? 'border-[#1a3c36] bg-[#1a3c36] text-white' : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300'}`}>
+              <item.icon size={15} />
+              {item.label}
+            </NavLink>
+          ))}
+        </div>
+        <Toaster position="top-right" />
+        <InventoryRoutes />
+      </div>
+    </InventoryContext>
+  );
+}
