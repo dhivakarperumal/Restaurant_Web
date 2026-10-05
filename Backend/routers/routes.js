@@ -28,6 +28,7 @@ const cartRouter = require('./cartRouter');
 const inventoryRouter = require('./inventory');
 const { changeKitchenOrderStatus, getKitchenOrders, submitKitchenOrder } = require('../controllers/kitchenOrderController');
 const { getActiveBill, getAllBills, getBill, settleBill } = require('../controllers/tableBillController');
+const ordersRouter = require('./orders');
 
 const router = express.Router();
 const uploadDirectory = path.join(__dirname, '..', 'upload');
@@ -213,6 +214,17 @@ router.get('/users', requireAdmin, listUsers);
 router.put('/users/:userId', requireAdmin, updateUser);
 router.delete('/users/:userId', requireAdmin, removeUser);
 router.get('/delivery-partner/profile', requireDeliveryPartner, getDeliveryPartnerProfile);
+router.use(
+  '/orders',
+  requireAuthenticatedUser,
+  (req, res, next) => {
+    if (req.path === '/management' || req.path.startsWith('/management/')) {
+      return requireKitchenRole(['chef', 'super admin', 'admin'])(req, res, next);
+    }
+    return next();
+  },
+  ordersRouter
+);
 router.use('/categories', categoriesRouter);
 router.use('/cuisines', cuisinesRouter);
 router.use('/foods', foodsRouter);

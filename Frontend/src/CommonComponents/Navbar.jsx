@@ -378,7 +378,7 @@ const Navbar = () => {
                 <button
                   type="button"
                   onClick={() =>
-                    navigate(isLoggedIn ? "/account?tab=orders" : "/login")
+                    navigate(isLoggedIn ? "/my-orders" : "/login")
                   }
                   className="relative flex h-9 w-9 items-center justify-center rounded-full border border-brand-border bg-brand-surface text-brand-text transition hover:border-gold hover:bg-brand-surface-strong sm:h-11 sm:w-11"
                   aria-label="My Orders"
@@ -567,7 +567,7 @@ const Navbar = () => {
                 )}
 
                 <div className="mt-3 grid grid-cols-2 gap-2 border-t border-primary/20 pt-3 sm:grid-cols-3">
-                  <button type="button" onClick={() => { setMobileMenu(false); navigate(isLoggedIn ? "/account?tab=orders" : "/login"); }} className="flex items-center justify-center gap-2 rounded-xl bg-brand-surface px-3 py-3 text-xs font-semibold text-brand-text transition hover:bg-brand-surface-strong">
+                  <button type="button" onClick={() => { setMobileMenu(false); navigate(isLoggedIn ? "/my-orders" : "/login"); }} className="flex items-center justify-center gap-2 rounded-xl bg-brand-surface px-3 py-3 text-xs font-semibold text-brand-text transition hover:bg-brand-surface-strong">
                     <FiPackage /> Orders
                   </button>
                   <button type="button" onClick={() => { setMobileMenu(false); openFavorites ? openFavorites() : navigate("/account"); }} className="flex items-center justify-center gap-2 rounded-xl bg-brand-surface px-3 py-3 text-xs font-semibold text-brand-text transition hover:bg-brand-surface-strong">
