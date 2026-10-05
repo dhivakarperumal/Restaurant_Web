@@ -89,11 +89,17 @@ export const StoreProvider = ({ children }) => {
                 ? res.data
                 : [];
             setCart(cartData);
+            localStorage.setItem("local_restaurant_cart", JSON.stringify(cartData));
         } catch (err) {
-            if (err?.response?.status === 404 || err?.response?.status === 405) {
-                setCart([]);
+            const localSaved = localStorage.getItem("local_restaurant_cart");
+            if (localSaved) {
+                try {
+                    setCart(JSON.parse(localSaved));
+                } catch {
+                    setCart([]);
+                }
             } else {
-                console.error("Fetch cart error:", err);
+                setCart([]);
             }
         } finally {
             setLoadingCart(false);
@@ -161,11 +167,6 @@ export const StoreProvider = ({ children }) => {
     // ─── CART ACTIONS ────────────────────────────────────────────
 
     const addToCart = async (product, variantOrOptions = null, sizeParam = null, qtyParam = 1) => {
-        if (!user?.user_id) {
-            requireLogin("Please login before adding items to your cart");
-            return false;
-        }
-
         const activeUserId = getActiveUserId();
 
         // Support both old signature (product, variant, size, qty) and new options object
@@ -177,32 +178,42 @@ export const StoreProvider = ({ children }) => {
         let previewImage = null;
 
         if (variantOrOptions && typeof variantOrOptions === "object" && !variantOrOptions.mrp && !variantOrOptions.sellingPrice && (variantOrOptions.size || variantOrOptions.slot_photos || variantOrOptions.customization_id || variantOrOptions.preview_image)) {
-            selectedSize = variantOrOptions.size || (product.size_variants?.[0]?.size) || "Standard";
-            price = Number(variantOrOptions.price ?? product.size_variants?.[0]?.offer_price ?? product.offer_price ?? 0);
+            selectedSize = variantOrOptions.size || (product.size_variants?.[0]?.size) || product.portion_size || "Standard";
+            price = Number(variantOrOptions.price ?? product.final_price ?? product.size_variants?.[0]?.offer_price ?? product.offer_price ?? product.mrp ?? 0);
             qty = Number(variantOrOptions.quantity || variantOrOptions.qty || 1);
             customizationId = variantOrOptions.customization_id || null;
             slotPhotos = variantOrOptions.slot_photos || null;
             previewImage = variantOrOptions.preview_image || null;
         } else {
             const selectedVariant = variantOrOptions || product.size_variants?.[0] || product.variants?.[0] || null;
-            selectedSize = sizeParam || selectedVariant?.size || selectedVariant?.selectedSizes?.[0] || "Standard";
-            price = parseFloat(selectedVariant?.offer_price || selectedVariant?.sellingPrice || product.offer_price || product.price || 0);
+            selectedSize = sizeParam || selectedVariant?.size || selectedVariant?.selectedSizes?.[0] || product.portion_size || "Standard";
+            price = parseFloat(product.price || selectedVariant?.offer_price || selectedVariant?.sellingPrice || product.final_price || product.offer_price || product.mrp || 0);
             qty = Number(qtyParam) || 1;
         }
 
         const itemType =
             product.item_type ||
             variantOrOptions?.item_type ||
-            (product.gift_box_id || String(product.category || "").toLowerCase().includes("gift")
-                ? "gift"
-                : (product.total_pages || product.sheet_count || String(product.category || "").toLowerCase().includes("album"))
-                ? "album"
-                : "product");
+            (product.food_id || product.cuisine_id ? "food" : "product");
+
+        const localCartItem = {
+            id: `cart_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+            product_id: product.id || product.product_id || product.food_id,
+            product_name: product.product_name || product.name || product.food_name || "Food Item",
+            name: product.product_name || product.name || product.food_name || "Food Item",
+            product_image: product.product_image || product.image || (Array.isArray(product.food_images) ? product.food_images[0] : "") || "",
+            image: product.product_image || product.image || (Array.isArray(product.food_images) ? product.food_images[0] : "") || "",
+            price: price,
+            quantity: qty,
+            total_price: price * qty,
+            size: selectedSize,
+            item_type: itemType,
+        };
 
         try {
             await api.post("/cart", {
                 user_id: activeUserId,
-                product_id: product.id || product.product_id || product.gift_box_id,
+                product_id: product.id || product.product_id || product.food_id || product.gift_box_id,
                 item_type: itemType,
                 customization_id: customizationId,
                 size: selectedSize,
@@ -211,26 +222,48 @@ export const StoreProvider = ({ children }) => {
                 slot_photos: slotPhotos,
                 preview_image: previewImage,
             });
-            toast.success("Added to cart!");
             await fetchCart();
-            openCart();
-            return true;
         } catch (err) {
-            console.error("Add to cart error:", err);
-            toast.error(err?.response?.data?.message || "Failed to add to cart");
-            return false;
+            // Local storage fallback for seamless cart experience
+            setCart((prev) => {
+                const existingIdx = prev.findIndex(
+                    (i) =>
+                        String(i.product_id || i.id) === String(localCartItem.product_id) &&
+                        i.size === localCartItem.size
+                );
+                let updated;
+                if (existingIdx >= 0) {
+                    updated = [...prev];
+                    const newQty = (Number(updated[existingIdx].quantity) || 1) + qty;
+                    updated[existingIdx] = {
+                        ...updated[existingIdx],
+                        quantity: newQty,
+                        total_price: Number(updated[existingIdx].price || 0) * newQty,
+                    };
+                } else {
+                    updated = [localCartItem, ...prev];
+                }
+                localStorage.setItem("local_restaurant_cart", JSON.stringify(updated));
+                return updated;
+            });
         }
+        toast.success("Added to cart!");
+        openCart();
+        return true;
     };
 
     const removeFromCart = async (cartItemId) => {
         try {
             await api.delete(`/cart/${cartItemId}`);
-            toast.error("Removed from cart");
             await fetchCart();
         } catch (err) {
-            console.error("Remove cart error:", err);
-            toast.error("Failed to remove item");
+            setCart((prev) => {
+                const updated = prev.filter((item) => String(item.id) !== String(cartItemId));
+                localStorage.setItem("local_restaurant_cart", JSON.stringify(updated));
+                return updated;
+            });
         }
+        toast.error("Removed from cart");
     };
 
     const removeFromWishlist = async (wishlistItemId) => {
@@ -287,15 +320,20 @@ export const StoreProvider = ({ children }) => {
             }
         }
 
-        // Optimistic UI update for instantaneous responsiveness
-        const prevQuantity = targetItem.quantity;
-        setCart(prev => prev.map(item =>
-            item.id === cartItemId ? {
-                ...item,
-                quantity: qty,
-                total_price: Number(item.price || 0) * qty
-            } : item
-        ));
+        // Update state and local storage
+        setCart((prev) => {
+            const updated = prev.map((item) =>
+                item.id === cartItemId
+                    ? {
+                          ...item,
+                          quantity: qty,
+                          total_price: Number(item.price || 0) * qty,
+                      }
+                    : item
+            );
+            localStorage.setItem("local_restaurant_cart", JSON.stringify(updated));
+            return updated;
+        });
 
         try {
             await api.put(`/cart/${cartItemId}`, {
@@ -303,28 +341,19 @@ export const StoreProvider = ({ children }) => {
                 price: targetItem.price
             });
         } catch (err) {
-            console.error("Update qty error:", err);
-            // Revert on error
-            setCart(prev => prev.map(item =>
-                item.id === cartItemId ? {
-                    ...item,
-                    quantity: prevQuantity,
-                    total_price: Number(item.price || 0) * prevQuantity
-                } : item
-            ));
-            const message = err?.response?.data?.message || "Failed to update quantity";
-            toast.error(message);
+            // Local fallback already applied
         }
     };
 
     const clearCart = async () => {
         const activeUserId = getActiveUserId();
-        if (!activeUserId) { setCart([]); return; }
+        localStorage.removeItem("local_restaurant_cart");
+        setCart([]);
+        if (!activeUserId) return;
         try {
             await api.delete(`/cart/clear/${activeUserId}`);
-            setCart([]);
         } catch (err) {
-            console.error("Clear cart error:", err);
+            // silent catch
         }
     };
 

@@ -519,16 +519,16 @@ const Navbar = () => {
                   Home
                 </NavLink>
                 <NavLink to="/shop" onClick={() => setMobileMenu(false)} className={() => mobileLinkClass({ isActive: isShopPage })}>
-                  Shop
+                  Menu
                 </NavLink>
-                <NavLink to="/frames" onClick={() => setMobileMenu(false)} className={mobileLinkClass}>
-                  Frames
+                <NavLink to="/about" onClick={() => setMobileMenu(false)} className={mobileLinkClass}>
+                  About
                 </NavLink>
-                <NavLink to="/gifts" onClick={() => setMobileMenu(false)} className={mobileLinkClass}>
-                  Gifts
+                <NavLink to="/gallery" onClick={() => setMobileMenu(false)} className={mobileLinkClass}>
+                  Gallery
                 </NavLink>
-                <NavLink to="/albums" onClick={() => setMobileMenu(false)} className={() => mobileLinkClass({ isActive: isAlbumPage })}>
-                  Albums
+                <NavLink to="/contact?type=reservation" onClick={() => setMobileMenu(false)} className={mobileLinkClass}>
+                  Reservation
                 </NavLink>
 
                 <button
