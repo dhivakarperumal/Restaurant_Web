@@ -86,7 +86,7 @@ function HomeBanner() {
           <div className="relative z-10 max-w-xl pb-24 md:max-w-[54%] md:pb-8">
             <span className="inline-flex items-center gap-2 text-xs font-black uppercase tracking-[0.22em] text-[#e5a326] sm:text-sm">
               <Sparkles className="h-4 w-4" />
-              {banner?.subtitle || 'Good food · Good people · Great times'}
+              Good food · Good people · Great times
             </span>
             <h1 className="mt-5 max-w-xl text-4xl font-black leading-[1.04] tracking-tight sm:text-5xl lg:text-6xl">
               {title}
@@ -142,7 +142,7 @@ function HomeBanner() {
 
           <div className="absolute right-[35%] top-[18%] hidden h-36 w-36 rotate-6 items-center justify-center rounded-full border-[3px] border-[#f28a20] bg-[#ef861c] text-center shadow-[0_0_0_7px_rgba(242,138,32,0.2)] xl:flex">
             <span className="max-w-[100px] font-serif text-xl font-bold italic leading-tight text-white">
-              Food Brings People Together
+              {banner?.subtitle || 'Food Brings People Together'}
             </span>
           </div>
 
