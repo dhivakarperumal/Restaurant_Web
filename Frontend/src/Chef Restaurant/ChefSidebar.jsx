@@ -67,6 +67,11 @@ const navItems = [
     label: "Kitchen Orders",
     icon: UtensilsCrossed,
   },
+  {
+    path: "/chef/requests",
+    label: "Inventory Requests",
+    icon: ClipboardList,
+  },
 
 
   /* ---- PRODUCTS ---- */

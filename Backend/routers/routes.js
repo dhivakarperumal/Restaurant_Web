@@ -105,6 +105,36 @@ const requireAdmin = async (req, res, next) => {
   }
 };
 
+const requireInventoryAccess = async (req, res, next) => {
+  const token = req.get('authorization')?.replace(/^Bearer\s+/i, '');
+  if (!token) return res.status(401).json({ success: false, message: 'Login is required.' });
+
+  try {
+    const user = await findUserByToken(token);
+    if (!user) return res.status(401).json({ success: false, message: 'Your session is invalid or expired.' });
+
+    const role = String(user.role || '').trim().toLowerCase();
+    const isAdmin = ['admin', 'super admin', 'superadmin'].includes(role);
+    const requestPath = req.path.replace(/\/+$/, '') || '/';
+    const originalPath = req.originalUrl.split('?')[0].replace(/\/+$/, '');
+    const matchesInventoryPath = (path) => requestPath === path || originalPath.endsWith(`/inventory${path}`);
+    const isChefRequestAccess = role === 'chef' && (
+      (req.method === 'GET' && ['/products/options', '/kitchen-requests'].some(matchesInventoryPath)) ||
+      (req.method === 'POST' && matchesInventoryPath('/kitchen-requests'))
+    );
+
+    if (!isAdmin && !isChefRequestAccess) {
+      return res.status(403).json({ success: false, message: 'Administrator access is required.' });
+    }
+
+    req.auth = user;
+    return next();
+  } catch (error) {
+    console.error('Failed to authorize inventory request:', error.message);
+    return res.status(500).json({ success: false, message: 'Unable to verify inventory access.' });
+  }
+};
+
 const requireAuthenticatedUser = async (req, res, next) => {
   const token = req.get('authorization')?.replace(/^Bearer\s+/i, '');
   if (!token) return res.status(401).json({ success: false, message: 'Login is required.' });
@@ -192,7 +222,7 @@ router.use('/reviews', reviewsRouter);
 router.use('/videos', videosRouter);
 router.use('/settings', requireAdmin, settingsRouter);
 router.use('/cart', optionalAuth, cartRouter);
-router.use('/inventory', requireAdmin, inventoryRouter);
+router.use('/inventory', requireInventoryAccess, inventoryRouter);
 router.get('/employees', optionalAuth, requireEmployeeAdmin, listEmployees);
 router.get('/employees/documents/:filename', optionalAuth, requireEmployeeAdmin, (req, res) => {
   const filename = req.params.filename;

@@ -39,6 +39,16 @@ const ensureTable = async (tableName, sql) => {
   await db.query(sql);
 };
 
+const ensureColumn = async (tableName, columnName, definition) => {
+  const [columns] = await db.query(
+    'SELECT COLUMN_NAME FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND COLUMN_NAME = ?',
+    [tableName, columnName]
+  );
+  if (!columns.length) {
+    await db.query(`ALTER TABLE \`${tableName}\` ADD COLUMN \`${columnName}\` ${definition}`);
+  }
+};
+
 const initializeInventorySchema = async () => {
   await ensureTable('inventory_categories', `
     CREATE TABLE IF NOT EXISTS inventory_categories (
@@ -297,13 +307,22 @@ const initializeInventorySchema = async () => {
     CREATE TABLE IF NOT EXISTS kitchen_request_items (
       id INT AUTO_INCREMENT PRIMARY KEY,
       request_id INT NOT NULL,
-      product_id INT NOT NULL,
+      product_id INT NULL,
+      product_name VARCHAR(200) NULL,
       quantity DECIMAL(12,2) NOT NULL DEFAULT 0,
       unit VARCHAR(50) NULL,
       created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
       INDEX idx_kitchen_request_items_request (request_id)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
   `);
+  await ensureColumn('kitchen_request_items', 'product_name', 'VARCHAR(200) NULL');
+  const [productIdColumns] = await db.query(
+    'SELECT IS_NULLABLE FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND COLUMN_NAME = ?',
+    ['kitchen_request_items', 'product_id']
+  );
+  if (productIdColumns[0]?.IS_NULLABLE === 'NO') {
+    await db.query('ALTER TABLE kitchen_request_items MODIFY COLUMN product_id INT NULL');
+  }
 
   await ensureTable('recipes', `
     CREATE TABLE IF NOT EXISTS recipes (
@@ -739,7 +758,7 @@ const createKitchenRequest = async (payload = {}) => {
   const [requestResult] = await db.query('INSERT INTO kitchen_requests (request_number, requested_by, department, request_date, priority, status, notes) VALUES (?, ?, ?, ?, ?, ?, ?)', [requestNumber, payload.requested_by || '', payload.department || 'Kitchen', payload.request_date || new Date(), payload.priority || 'Normal', payload.status || 'Pending', payload.notes || '']);
   const requestId = requestResult.insertId;
   for (const item of payload.items || []) {
-    await db.query('INSERT INTO kitchen_request_items (request_id, product_id, quantity, unit) VALUES (?, ?, ?, ?)', [requestId, item.product_id, toNumber(item.quantity || 0), item.unit || 'pcs']);
+    await db.query('INSERT INTO kitchen_request_items (request_id, product_id, product_name, quantity, unit) VALUES (?, ?, ?, ?, ?)', [requestId, item.product_id || null, item.product_name || '', toNumber(item.quantity || 0), item.unit || 'pcs']);
   }
   return { id: requestId, request_number: requestNumber };
 };
@@ -747,6 +766,7 @@ const createKitchenRequest = async (payload = {}) => {
 const issueKitchenRequest = async (requestId, payload = {}) => {
   const [items] = await db.query('SELECT * FROM kitchen_request_items WHERE request_id = ?', [requestId]);
   for (const item of items) {
+    if (!item.product_id) continue;
     const [productRows] = await db.query('SELECT current_stock FROM inventory_products WHERE id = ?', [item.product_id]);
     const available = toNumber(productRows[0]?.current_stock || 0);
     if (toNumber(item.quantity) > available) {
