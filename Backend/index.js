@@ -1,7 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
-const { initializeAuthSchema, initializeBannerSchema, initializeCategorySchema, initializeCouponSchema, initializeCuisineSchema, initializeFoodSchema, initializeKitchenOrderSchema, initializeReviewSchema, initializeVideoSchema, initializeEmployeeSchema, initializeServerTableSchema, initializeSettingsSchema, testConnection } = require('./modules/modules');
+const { initializeAuthSchema, initializeBannerSchema, initializeCategorySchema, initializeCouponSchema, initializeCuisineSchema, initializeFoodSchema, initializeKitchenOrderSchema, initializeReviewSchema, initializeVideoSchema, initializeEmployeeSchema, initializeServerTableSchema, initializeSettingsSchema, initializeOrderSchema, testConnection } = require('./modules/modules');
 const apiRouter = require('./routers/routes');
 
 require('dotenv').config({ path: path.join(__dirname, '.env') });
@@ -56,6 +56,8 @@ async function startServer() {
     console.log('Food tables ready');
     await initializeKitchenOrderSchema();
     console.log('Kitchen order tables ready');
+    await initializeOrderSchema();
+    console.log('Customer order tables ready');
     await initializeBannerSchema();
     console.log('Banner tables ready');
     await initializeCouponSchema();

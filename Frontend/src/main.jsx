@@ -5,6 +5,7 @@ import './index.css'
 import App from './App.jsx'
 import Home from './Componets/Home/Home.jsx'
 import Shop from './Componets/Shop/Shop.jsx'
+import Checkout from './Componets/Checkout/Checkout.jsx'
 
 import Login from './Componets/Auth/Login.jsx'
 import Register from './Componets/Auth/Register.jsx'
@@ -73,6 +74,10 @@ const router = createHashRouter([
       {
         path: 'menu',
         element: <Shop />,
+      },
+      {
+        path: 'checkout',
+        element: <Checkout />,
       },
       {
         path: 'login',

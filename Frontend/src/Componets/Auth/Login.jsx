@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../../PrivateRouter/AuthContext";
 import { getRoleHome } from "../../PrivateRouter/roleUtils";
 import api from "../../api";
@@ -9,7 +9,14 @@ const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || "645152369108-
 
 const Login = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { login } = useAuth();
+  const navigateAfterLogin = (user) => {
+    const returnTo = location.state?.from;
+    const isCustomer = String(user?.role || "user").trim().toLowerCase() === "user";
+    const safeReturnTo = typeof returnTo === "string" && returnTo.startsWith("/") && !returnTo.startsWith("//");
+    navigate(isCustomer && safeReturnTo ? returnTo : getRoleHome(user.role), { replace: true });
+  };
   const [formData, setFormData] = useState({
     username: "",
     password: "",
@@ -59,7 +66,7 @@ const Login = () => {
       const user = data?.user || data?.data;
       if (data?.token && user) {
         login(user, data.token);
-        navigate(getRoleHome(user.role), { replace: true });
+        navigateAfterLogin(user);
       } else {
         setServerError("Google login failed. Please try again.");
       }
@@ -135,7 +142,7 @@ const Login = () => {
         return;
       }
       login(user, data.token, formData.rememberMe);
-      navigate(getRoleHome(user.role), { replace: true });
+      navigateAfterLogin(user);
     } catch (error) {
       setServerError(error.response?.data?.message || error.message || "Login failed");
     } finally {
@@ -351,4 +358,3 @@ const Login = () => {
 };
 
 export default Login;
-

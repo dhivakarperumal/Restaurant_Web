@@ -27,6 +27,7 @@ const settingsRouter = require('./settings');
 const cartRouter = require('./cartRouter');
 const { changeKitchenOrderStatus, getKitchenOrders, submitKitchenOrder } = require('../controllers/kitchenOrderController');
 const { getActiveBill, getAllBills, getBill, settleBill } = require('../controllers/tableBillController');
+const ordersRouter = require('./orders');
 
 const router = express.Router();
 const uploadDirectory = path.join(__dirname, '..', 'upload');
@@ -182,6 +183,7 @@ router.get('/users', requireAdmin, listUsers);
 router.put('/users/:userId', requireAdmin, updateUser);
 router.delete('/users/:userId', requireAdmin, removeUser);
 router.get('/delivery-partner/profile', requireDeliveryPartner, getDeliveryPartnerProfile);
+router.use('/orders', requireAuthenticatedUser, ordersRouter);
 router.use('/categories', categoriesRouter);
 router.use('/cuisines', cuisinesRouter);
 router.use('/foods', foodsRouter);
