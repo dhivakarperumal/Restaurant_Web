@@ -34,7 +34,6 @@ async function initializeKitchenOrderSchema() {
       unit_price DECIMAL(10,2) NOT NULL,
       selected_addons LONGTEXT NULL,
       selected_customizations LONGTEXT NULL,
-      cooking_notes TEXT NULL,
       created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
       INDEX kitchen_order_items_order_idx (order_id),
       CONSTRAINT kitchen_order_items_order_fk FOREIGN KEY (order_id)
@@ -56,11 +55,6 @@ async function initializeKitchenOrderSchema() {
   const [selectedCustomizationsColumn] = await db.query("SHOW COLUMNS FROM kitchen_order_items LIKE 'selected_customizations'");
   if (!selectedCustomizationsColumn.length) {
     await db.query('ALTER TABLE kitchen_order_items ADD COLUMN selected_customizations LONGTEXT NULL AFTER selected_addons');
-  }
-
-  const [cookingNotesColumn] = await db.query("SHOW COLUMNS FROM kitchen_order_items LIKE 'cooking_notes'");
-  if (!cookingNotesColumn.length) {
-    await db.query('ALTER TABLE kitchen_order_items ADD COLUMN cooking_notes TEXT NULL AFTER selected_customizations');
   }
 
   await initializeTableBillsSchema();
@@ -133,13 +127,17 @@ async function createKitchenOrder({ tableId, userId, items }) {
       const selectedAddons = item.selected_addons || [];
       const selectedCustomizations = item.selected_customizations || {};
       if (!Array.isArray(selectedAddons) || selectedAddons.some((name) => typeof name !== 'string')
+        || selectedAddons.some((name) => !name.trim() || name.length > 180)
         || new Set(selectedAddons).size !== selectedAddons.length) {
         const error = new Error(`Choose valid add-ons for ${food.food_name}.`);
         error.statusCode = 400;
         throw error;
       }
+      const customRequest = selectedCustomizations.__custom_request__;
       if (!selectedCustomizations || typeof selectedCustomizations !== 'object'
-        || Array.isArray(selectedCustomizations)) {
+        || Array.isArray(selectedCustomizations)
+        || (customRequest !== undefined
+          && (typeof customRequest !== 'string' || !customRequest.trim() || customRequest.length > 500))) {
         const error = new Error(`Choose valid customizations for ${food.food_name}.`);
         error.statusCode = 400;
         throw error;
@@ -148,21 +146,22 @@ async function createKitchenOrder({ tableId, userId, items }) {
       let optionPrice = 0;
       for (const addonName of selectedAddons) {
         const addon = availableAddons.find((candidate) => candidate.addon_name === addonName);
-        if (!addon || String(addon.status || 'Active').toLowerCase() !== 'active') {
+        if (addon && String(addon.status || 'Active').toLowerCase() !== 'active') {
           const error = new Error(`An add-on for ${food.food_name} is no longer available.`);
           error.statusCode = 409;
           throw error;
         }
-        optionPrice += Number(addon.price || 0);
+        if (addon) optionPrice += Number(addon.price || 0);
       }
 
       const groupNames = new Set(availableCustomizations.map((group) => group.name));
-      if (Object.keys(selectedCustomizations).some((name) => !groupNames.has(name))) {
+      if (Object.keys(selectedCustomizations).some((name) => !groupNames.has(name) && name !== '__custom_request__')) {
         const error = new Error(`A customization for ${food.food_name} is no longer available.`);
         error.statusCode = 409;
         throw error;
       }
       for (const group of availableCustomizations) {
+        if (group.name === '__custom_request__' && customRequest !== undefined) continue;
         const selected = selectedCustomizations[group.name];
         const selectedNames = Array.isArray(selected) ? selected : selected ? [selected] : [];
         const required = group.required === true || Number(group.required) === 1;
@@ -238,8 +237,8 @@ async function createKitchenOrder({ tableId, userId, items }) {
       const food = foodsById.get(item.food_id);
       await connection.execute(
         `INSERT INTO kitchen_order_items
-           (order_id, food_id, food_name, quantity, unit_price, selected_addons, selected_customizations, cooking_notes)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+           (order_id, food_id, food_name, quantity, unit_price, selected_addons, selected_customizations)
+         VALUES (?, ?, ?, ?, ?, ?, ?)`,
         [
           orderId,
           food.food_id,
@@ -248,7 +247,6 @@ async function createKitchenOrder({ tableId, userId, items }) {
           item.unit_price,
           JSON.stringify(item.selected_addons),
           JSON.stringify(item.selected_customizations),
-          item.cooking_notes,
         ]
       );
     }
@@ -272,7 +270,6 @@ async function createKitchenOrder({ tableId, userId, items }) {
         unit_price: item.unit_price,
         selected_addons: item.selected_addons,
         selected_customizations: item.selected_customizations,
-        cooking_notes: item.cooking_notes,
       };
     });
     return {
@@ -345,7 +342,7 @@ async function listKitchenOrders(filters = {}) {
   const orderIds = orders.map((order) => order.order_id);
   const placeholders = orderIds.map(() => '?').join(', ');
   const [items] = await db.execute(
-    `SELECT order_id, food_id, food_name, quantity, unit_price, selected_addons, selected_customizations, cooking_notes
+    `SELECT order_id, food_id, food_name, quantity, unit_price, selected_addons, selected_customizations
      FROM kitchen_order_items WHERE order_id IN (${placeholders}) ORDER BY id`,
     orderIds
   );
@@ -359,7 +356,6 @@ async function listKitchenOrders(filters = {}) {
       unit_price: Number(item.unit_price),
       selected_addons: parseStoredJson(item.selected_addons, []),
       selected_customizations: parseStoredJson(item.selected_customizations, {}),
-      cooking_notes: item.cooking_notes || '',
     });
     itemsByOrder.set(item.order_id, orderItems);
   }
