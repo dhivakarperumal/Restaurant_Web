@@ -10,7 +10,7 @@ const parseJson = (value, fallback) => {
   }
 };
 
-const listCustomerOrders = async (req, res, customerOnly = false) => {
+const getOrders = async (req, res, customerOnly) => {
   const { status, fulfillment } = req.query || {};
   if ((status && !orderStatuses.includes(status)) || (fulfillment && !['delivery', 'pickup'].includes(fulfillment))) {
     return res.status(400).json({ success: false, message: 'Invalid order filter.' });
@@ -131,7 +131,7 @@ const updateCustomerOrderStatus = async (req, res) => {
 };
 
 module.exports = {
-  listCustomerOrders,
-  listMyOrders: (req, res) => listCustomerOrders(req, res, true),
+  listCustomerOrders: (req, res) => getOrders(req, res, false),
+  listMyOrders: (req, res) => getOrders(req, res, true),
   updateCustomerOrderStatus,
 };
