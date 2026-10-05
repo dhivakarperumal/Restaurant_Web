@@ -25,6 +25,7 @@ const reviewsRouter = require('./reviews');
 const videosRouter = require('./videos');
 const settingsRouter = require('./settings');
 const cartRouter = require('./cartRouter');
+const wishlistRouter = require('./wishlistRouter');
 const inventoryRouter = require('./inventory');
 const { changeKitchenOrderStatus, getKitchenOrders, submitKitchenOrder } = require('../controllers/kitchenOrderController');
 const { getActiveBill, getAllBills, getBill, settleBill } = require('../controllers/tableBillController');
@@ -204,6 +205,7 @@ router.use('/reviews', reviewsRouter);
 router.use('/videos', videosRouter);
 router.use('/settings', requireAdmin, settingsRouter);
 router.use('/cart', optionalAuth, cartRouter);
+router.use('/wishlist', requireAuthenticatedUser, wishlistRouter);
 router.use('/inventory', requireAdmin, inventoryRouter);
 router.get('/employees', optionalAuth, requireEmployeeAdmin, listEmployees);
 router.get('/employees/documents/:filename', optionalAuth, requireEmployeeAdmin, (req, res) => {
