@@ -1,26 +1,14 @@
 import React, { useState, useEffect, useMemo, useContext, useCallback } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
 import {
   AlertCircle,
-  ArrowUpDown,
-  Check,
-  ChevronRight,
-  Clock,
-  Eye,
-  Filter,
   Flame,
-  Info,
   Layers,
   LayoutGrid,
   List,
-  Loader2,
-  Minus,
   Plus,
   RefreshCw,
   Search,
-  ShoppingBag,
-  ShoppingCart,
-  SlidersHorizontal,
   Sparkles,
   Star,
   Tag,
@@ -33,6 +21,7 @@ import api, { BACKEND_BASE_URL } from "../../api";
 import { StoreContext } from "../../PrivateRouter/StoreContext";
 import PageContainer from "../../CommonComponents/PageContainer";
 import FoodProductCard from "../../CommonComponents/FoodProductCard";
+import FoodCustomizationModal from "../../CommonComponents/FoodCustomizationModal";
 
 const resolveImageUrl = (img) => {
   if (!img || typeof img !== "string") return "";
@@ -46,7 +35,7 @@ const resolveImageUrl = (img) => {
 export default function Shop() {
   const [searchParams, setSearchParams] = useSearchParams();
   const store = useContext(StoreContext) || {};
-  const { cart = [], addToCart, openCart, wishlist = [], toggleWishlist } = store;
+  const { cart = [], addToCart, wishlist = [], toggleWishlist } = store;
 
   // Data states
   const [foods, setFoods] = useState([]);
@@ -67,12 +56,6 @@ export default function Shop() {
 
   // Modal state for food detail & customizations
   const [selectedFood, setSelectedFood] = useState(null);
-  const [activeImageIndex, setActiveImageIndex] = useState(0);
-  const [modalQuantity, setModalQuantity] = useState(1);
-  const [modalSelectedAddons, setModalSelectedAddons] = useState([]);
-  const [modalCustomizations, setModalCustomizations] = useState({});
-  const [modalCustomAddonRequests, setModalCustomAddonRequests] = useState("");
-  const [modalCustomizationRequest, setModalCustomizationRequest] = useState("");
 
   // Fetch foods, categories, cuisines
   const fetchMenuData = async () => {
@@ -120,25 +103,6 @@ export default function Shop() {
   // Open customization modal
   const openCustomizer = useCallback((food) => {
     setSelectedFood(food);
-    setActiveImageIndex(0);
-    setModalQuantity(1);
-    setModalSelectedAddons([]);
-    setModalCustomAddonRequests("");
-    setModalCustomizationRequest("");
-
-    // Initialize required customizations
-    const initialCust = {};
-    if (Array.isArray(food.customizations)) {
-      food.customizations.forEach((group) => {
-        if (group.selection_type === "Multiple") {
-          initialCust[group.name] = [];
-        } else {
-          // Single selection default
-          initialCust[group.name] = group.options?.[0]?.name || "";
-        }
-      });
-    }
-    setModalCustomizations(initialCust);
   }, []);
 
   const closeModal = () => {
@@ -158,53 +122,13 @@ export default function Shop() {
   }, [foods, openCustomizer, searchParams, selectedFood]);
 
   // Add item from modal
-  const handleAddFromModal = async () => {
+  const handleAddFromModal = async ({
+    quantity,
+    selectedAddons,
+    selectedCustomizations,
+    unitPrice,
+  }) => {
     if (!selectedFood) return;
-    const requestedAddons = modalCustomAddonRequests.split(/\r?\n/).map((name) => name.trim()).filter(Boolean);
-    if (requestedAddons.length > 50 || requestedAddons.some((name) => name.length > 150)) {
-      toast.error("Enter up to 50 add-on requests, with no more than 150 characters each.");
-      return;
-    }
-    if (modalCustomizationRequest.trim().length > 500) {
-      toast.error("Customization requests must be 500 characters or fewer.");
-      return;
-    }
-
-    // Calculate addon price
-    let extraPrice = 0;
-    if (Array.isArray(selectedFood.addons)) {
-      selectedFood.addons.forEach((addon) => {
-        if (modalSelectedAddons.includes(addon.addon_name)) {
-          extraPrice += Number(addon.price || 0);
-        }
-      });
-    }
-
-    // Calculate customization extra price
-    if (Array.isArray(selectedFood.customizations)) {
-      selectedFood.customizations.forEach((group) => {
-        const val = modalCustomizations[group.name];
-        if (Array.isArray(val)) {
-          group.options?.forEach((opt) => {
-            if (val.includes(opt.name)) extraPrice += Number(opt.price || 0);
-          });
-        } else if (val) {
-          const match = group.options?.find((opt) => opt.name === val);
-          if (match) extraPrice += Number(match.price || 0);
-        }
-      });
-    }
-
-    const basePrice = Number(selectedFood.final_price || selectedFood.mrp || 0);
-    const itemFinalPrice = basePrice + extraPrice;
-    const selectedAddons = [...new Set([
-      ...modalSelectedAddons,
-      ...requestedAddons.map((name) => `Custom request: ${name}`),
-    ])];
-    const selectedCustomizations = { ...modalCustomizations };
-    if (modalCustomizationRequest.trim()) {
-      selectedCustomizations.__custom_request__ = modalCustomizationRequest.trim();
-    }
 
     const payload = {
       ...selectedFood,
@@ -213,27 +137,28 @@ export default function Shop() {
       product_id: selectedFood.food_id || selectedFood.id,
       product_name: selectedFood.food_name,
       name: selectedFood.food_name,
-      price: itemFinalPrice,
+      price: unitPrice,
       portion_size: selectedFood.portion_size || "Standard",
       product_image: selectedFood.food_images?.[0] || "",
       image: selectedFood.food_images?.[0] || "",
-      quantity: modalQuantity,
+      quantity,
       selectedAddons,
       selectedCustomizations,
     };
 
     if (addToCart) {
-      await addToCart(payload, {
+      const success = await addToCart(payload, {
         size: selectedFood.portion_size || "Standard",
-        price: itemFinalPrice,
-        quantity: modalQuantity,
+        price: unitPrice,
+        quantity,
         selectedAddons,
         selectedCustomizations,
       });
+      if (!success) return false;
     } else {
       toast.success(`Added ${selectedFood.food_name} to cart!`);
     }
-    closeModal();
+    return true;
   };
 
   // Direct quick add
@@ -853,346 +778,13 @@ export default function Shop() {
         </div>
       </PageContainer>
 
-      {/* 4. Food Detail & Customization Modal */}
       {selectedFood && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/65 p-3 sm:p-5 backdrop-blur-xs animate-fadeIn"
-          role="presentation"
-          onClick={(e) => {
-            if (e.target === e.currentTarget) closeModal();
-          }}
-        >
-          <div
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="dish-detail-title"
-            className="flex max-h-[92vh] w-full max-w-2xl flex-col overflow-hidden rounded-3xl bg-white shadow-2xl border border-slate-100 animate-scaleUp"
-          >
-            {/* Modal Header Media */}
-            <div className="relative aspect-[16/9] w-full bg-slate-100 overflow-hidden">
-              {Array.isArray(selectedFood.food_images) && selectedFood.food_images.length > 0 ? (
-                <img
-                  src={resolveImageUrl(selectedFood.food_images[activeImageIndex] || selectedFood.food_images[0])}
-                  alt={selectedFood.food_name}
-                  className="h-full w-full object-cover"
-                />
-              ) : (
-                <div className="flex h-full w-full items-center justify-center bg-emerald-50 text-[#1a3c36]">
-                  <UtensilsCrossed className="h-12 w-12" />
-                </div>
-              )}
-
-              {/* Close Button */}
-              <button
-                type="button"
-                onClick={closeModal}
-                aria-label="Close modal"
-                className="absolute right-3.5 top-3.5 flex h-9 w-9 items-center justify-center rounded-full bg-black/60 text-white shadow-md backdrop-blur-xs hover:bg-black/80 transition"
-              >
-                <X className="h-5 w-5" />
-              </button>
-
-              {/* Multiple thumbnails if available */}
-              {Array.isArray(selectedFood.food_images) && selectedFood.food_images.length > 1 && (
-                <div className="absolute bottom-3 left-3 z-10 flex gap-1.5 bg-black/40 p-1 rounded-xl backdrop-blur-xs">
-                  {selectedFood.food_images.map((img, idx) => (
-                    <button
-                      key={idx}
-                      type="button"
-                      onClick={() => setActiveImageIndex(idx)}
-                      className={`h-10 w-10 overflow-hidden rounded-lg border-2 transition ${
-                        activeImageIndex === idx ? "border-[#d4a843]" : "border-transparent opacity-70"
-                      }`}
-                    >
-                      <img src={resolveImageUrl(img)} alt="" className="h-full w-full object-cover" />
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* Modal Content Scrollable Area */}
-            <div className="flex-1 overflow-y-auto p-6 sm:p-7 space-y-6">
-              {/* Header Title & Badges */}
-              <div>
-                <div className="flex flex-wrap items-center gap-2 mb-2">
-                  <div
-                    className={`flex h-4 w-4 items-center justify-center rounded-sm border-2 ${
-                      selectedFood.food_type?.toLowerCase() === "veg"
-                        ? "border-emerald-600"
-                        : "border-rose-600"
-                    }`}
-                  >
-                    <div
-                      className={`h-2 w-2 rounded-full ${
-                        selectedFood.food_type?.toLowerCase() === "veg"
-                          ? "bg-emerald-600"
-                          : "bg-rose-600"
-                      }`}
-                    />
-                  </div>
-                  <span className="rounded-md bg-emerald-50 px-2 py-0.5 text-[11px] font-bold text-emerald-800">
-                    {selectedFood.category_name}
-                  </span>
-                  <span className="rounded-md bg-slate-100 px-2 py-0.5 text-[11px] font-semibold text-slate-700">
-                    {selectedFood.cuisine_name}
-                  </span>
-                  {selectedFood.is_spicy && (
-                    <span className="inline-flex items-center gap-1 rounded-md bg-amber-50 px-2 py-0.5 text-[11px] font-bold text-amber-800">
-                      <Flame className="h-3 w-3" /> Spicy
-                    </span>
-                  )}
-                  {selectedFood.rating > 0 && (
-                    <span className="inline-flex items-center gap-1 rounded-md bg-amber-50 px-2 py-0.5 text-[11px] font-bold text-amber-800">
-                      <Star className="h-3 w-3 fill-amber-400 text-amber-500" />
-                      {Number(selectedFood.rating).toFixed(1)}
-                    </span>
-                  )}
-                </div>
-
-                <h2 id="dish-detail-title" className="font-serif text-2xl font-bold text-slate-900">
-                  {selectedFood.food_name}
-                </h2>
-
-                <p className="mt-2 text-xs text-slate-600 leading-relaxed">
-                  {selectedFood.description ||
-                    `Our signature ${selectedFood.food_name} prepared fresh with traditional spices and gourmet ingredients.`}
-                </p>
-
-                {/* Specs row */}
-                <div className="mt-4 flex flex-wrap gap-4 border-y border-slate-100 py-3 text-xs text-slate-600">
-                  {selectedFood.preparation_time > 0 && (
-                    <span className="flex items-center gap-1.5 font-medium">
-                      <Clock className="h-3.5 w-3.5 text-emerald-700" />
-                      <span>Prep Time: {selectedFood.preparation_time} mins</span>
-                    </span>
-                  )}
-                  {selectedFood.portion_size && (
-                    <span className="flex items-center gap-1.5 font-medium">
-                      <Utensils className="h-3.5 w-3.5 text-emerald-700" />
-                      <span>Portion: {selectedFood.portion_size}</span>
-                    </span>
-                  )}
-                  {selectedFood.serving_size && (
-                    <span className="flex items-center gap-1.5 font-medium">
-                      <Info className="h-3.5 w-3.5 text-emerald-700" />
-                      <span>Serving: {selectedFood.serving_size}</span>
-                    </span>
-                  )}
-                </div>
-              </div>
-
-              {/* Addons Selection */}
-              {Array.isArray(selectedFood.addons) && selectedFood.addons.length > 0 && (
-                <div>
-                  <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-3">
-                    Add-ons & Extras
-                  </h4>
-                  <div className="space-y-2">
-                    {selectedFood.addons.map((addon, idx) => {
-                      const isSelected = modalSelectedAddons.includes(addon.addon_name);
-                      return (
-                        <label
-                          key={idx}
-                          className={`flex items-center justify-between rounded-xl border p-3 transition cursor-pointer ${
-                            isSelected
-                              ? "border-emerald-600 bg-emerald-50/40"
-                              : "border-slate-200 hover:bg-slate-50"
-                          }`}
-                        >
-                          <div className="flex items-center gap-2.5">
-                            <input
-                              type="checkbox"
-                              checked={isSelected}
-                              onChange={(e) => {
-                                if (e.target.checked) {
-                                  setModalSelectedAddons([...modalSelectedAddons, addon.addon_name]);
-                                } else {
-                                  setModalSelectedAddons(
-                                    modalSelectedAddons.filter((name) => name !== addon.addon_name)
-                                  );
-                                }
-                              }}
-                              className="h-4 w-4 accent-[#1a3c36] rounded"
-                            />
-                            <span className="text-xs font-semibold text-slate-800">
-                              {addon.addon_name}
-                            </span>
-                          </div>
-                          <span className="text-xs font-bold text-[#1a3c36]">
-                            +₹{Number(addon.price || 0).toFixed(2)}
-                          </span>
-                        </label>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
-
-              {/* Customizations Selection */}
-              {Array.isArray(selectedFood.customizations) && selectedFood.customizations.length > 0 && (
-                <div className="space-y-4">
-                  {selectedFood.customizations.map((group, groupIdx) => (
-                    <div key={groupIdx}>
-                      <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">
-                        {group.name} {group.required && <span className="text-rose-500">*</span>}
-                      </h4>
-                      <div className="space-y-2">
-                        {group.options?.map((opt, optIdx) => {
-                          const isSelected =
-                            group.selection_type === "Multiple"
-                              ? (modalCustomizations[group.name] || []).includes(opt.name)
-                              : modalCustomizations[group.name] === opt.name;
-
-                          return (
-                            <label
-                              key={optIdx}
-                              className={`flex items-center justify-between rounded-xl border p-3 transition cursor-pointer ${
-                                isSelected
-                                  ? "border-emerald-600 bg-emerald-50/40"
-                                  : "border-slate-200 hover:bg-slate-50"
-                              }`}
-                            >
-                              <div className="flex items-center gap-2.5">
-                                <input
-                                  type={group.selection_type === "Multiple" ? "checkbox" : "radio"}
-                                  name={`cust-${group.name}`}
-                                  checked={isSelected}
-                                  onChange={() => {
-                                    if (group.selection_type === "Multiple") {
-                                      const currentList = modalCustomizations[group.name] || [];
-                                      const next = currentList.includes(opt.name)
-                                        ? currentList.filter((n) => n !== opt.name)
-                                        : [...currentList, opt.name];
-                                      setModalCustomizations({
-                                        ...modalCustomizations,
-                                        [group.name]: next,
-                                      });
-                                    } else {
-                                      setModalCustomizations({
-                                        ...modalCustomizations,
-                                        [group.name]: opt.name,
-                                      });
-                                    }
-                                  }}
-                                  className="h-4 w-4 accent-[#1a3c36]"
-                                />
-                                <span className="text-xs font-semibold text-slate-800">
-                                  {opt.name}
-                                </span>
-                              </div>
-                              {Number(opt.price || 0) > 0 && (
-                                <span className="text-xs font-bold text-[#1a3c36]">
-                                  +₹{Number(opt.price).toFixed(2)}
-                                </span>
-                              )}
-                            </label>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              <div className="space-y-3">
-                <label className="block text-xs font-semibold text-slate-700">
-                  Additional add-ons (optional)
-                  <textarea
-                    value={modalCustomAddonRequests}
-                    onChange={(event) => setModalCustomAddonRequests(event.target.value.slice(0, 500))}
-                    maxLength={500}
-                    rows={2}
-                    placeholder="Enter extra add-ons, one per line (e.g. Extra sauce)"
-                    className="mt-1.5 w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-xs font-normal text-slate-800 outline-none transition focus:border-emerald-600 focus:ring-2 focus:ring-emerald-500/10 placeholder:text-slate-400"
-                  />
-                  <span className="mt-1 block text-right text-[10px] font-normal text-slate-400">
-                    Typed requests do not change the price.
-                  </span>
-                </label>
-                <label className="block text-xs font-semibold text-slate-700">
-                  Additional customization (optional)
-                  <textarea
-                    value={modalCustomizationRequest}
-                    onChange={(event) => setModalCustomizationRequest(event.target.value.slice(0, 500))}
-                    maxLength={500}
-                    rows={2}
-                    placeholder="e.g. Less oil, extra spicy, no onions"
-                    className="mt-1.5 w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-xs font-normal text-slate-800 outline-none transition focus:border-emerald-600 focus:ring-2 focus:ring-emerald-500/10 placeholder:text-slate-400"
-                  />
-                </label>
-              </div>
-            </div>
-
-            {/* Modal Bottom Sticky Checkout Bar */}
-            <div className="flex flex-col sm:flex-row items-center justify-between gap-4 border-t border-slate-200 bg-slate-50/80 px-6 py-4">
-              {/* Quantity Controls */}
-              <div className="flex items-center gap-3">
-                <span className="text-xs font-bold uppercase tracking-wider text-slate-400">
-                  Qty:
-                </span>
-                <div className="flex items-center rounded-xl border border-slate-200 bg-white shadow-2xs">
-                  <button
-                    type="button"
-                    onClick={() => setModalQuantity(Math.max(1, modalQuantity - 1))}
-                    aria-label="Decrease quantity"
-                    className="p-2 text-slate-600 hover:bg-slate-100 transition rounded-l-xl"
-                  >
-                    <Minus className="h-3.5 w-3.5" />
-                  </button>
-                  <span className="min-w-8 text-center text-xs font-bold text-slate-800">
-                    {modalQuantity}
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => setModalQuantity(modalQuantity + 1)}
-                    aria-label="Increase quantity"
-                    className="p-2 text-slate-600 hover:bg-slate-100 transition rounded-r-xl"
-                  >
-                    <Plus className="h-3.5 w-3.5" />
-                  </button>
-                </div>
-              </div>
-
-              {/* Add to Cart with Calculated Price */}
-              <div className="flex items-center gap-3 w-full sm:w-auto">
-                <button
-                  type="button"
-                  onClick={handleAddFromModal}
-                  className="flex flex-1 sm:flex-none items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#1a3c36] to-[#25524a] px-6 py-3 text-xs font-bold text-white shadow-md hover:from-[#142f2a] hover:to-[#1e453e] active:scale-98 transition"
-                >
-                  <ShoppingCart className="h-4 w-4 text-[#d4a843]" />
-                  <span>
-                    Add to Cart • ₹
-                    {(
-                      (Number(selectedFood.final_price || selectedFood.mrp || 0) +
-                        modalSelectedAddons.reduce((sum, name) => {
-                          const addon = selectedFood.addons?.find((a) => a.addon_name === name);
-                          return sum + Number(addon?.price || 0);
-                        }, 0) +
-                        Object.entries(modalCustomizations).reduce((sum, [grpName, val]) => {
-                          const group = selectedFood.customizations?.find((g) => g.name === grpName);
-                          if (!group) return sum;
-                          if (Array.isArray(val)) {
-                            return (
-                              sum +
-                              val.reduce((s, optName) => {
-                                const opt = group.options?.find((o) => o.name === optName);
-                                return s + Number(opt?.price || 0);
-                              }, 0)
-                            );
-                          }
-                          const opt = group.options?.find((o) => o.name === val);
-                          return sum + Number(opt?.price || 0);
-                        }, 0)) *
-                      modalQuantity
-                    ).toFixed(2)}
-                  </span>
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
+        <FoodCustomizationModal
+          key={selectedFood.food_id || selectedFood.id}
+          food={selectedFood}
+          onClose={closeModal}
+          onAdd={handleAddFromModal}
+        />
       )}
     </div>
   );

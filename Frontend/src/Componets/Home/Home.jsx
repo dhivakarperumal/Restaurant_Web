@@ -1,19 +1,20 @@
 import { useCallback, useEffect, useMemo, useRef, useState, useContext } from 'react';
 import { ArrowLeft, ArrowRight, ArrowUpRight, Sparkles, UtensilsCrossed } from 'lucide-react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import api from '../../api';
 import FoodProductCard from '../../CommonComponents/FoodProductCard';
+import FoodCustomizationModal from '../../CommonComponents/FoodCustomizationModal';
 import PageContainer from '../../CommonComponents/PageContainer';
 import { StoreContext } from '../../PrivateRouter/StoreContext';
 
 const Home = () => {
-  const navigate = useNavigate();
   const carouselRef = useRef(null);
   const [foods, setFoods] = useState([]);
+  const [selectedFood, setSelectedFood] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const store = useContext(StoreContext) || {};
-  const { wishlist = [], toggleWishlist } = store;
+  const { wishlist = [], toggleWishlist, addToCart } = store;
 
   const fetchFoods = useCallback(async () => {
     setLoading(true);
@@ -42,9 +43,27 @@ const Home = () => {
     .sort((first, second) => Number(Boolean(second.featured)) - Number(Boolean(first.featured)))
     .slice(0, 10), [foods]);
 
-  const openFoodInShop = (food) => {
-    const foodId = food.food_id || food.id;
-    navigate(`/shop?food=${encodeURIComponent(foodId)}`);
+  const addSelectedFoodToCart = async ({ quantity, selectedAddons, selectedCustomizations, unitPrice }) => {
+    if (!selectedFood || !addToCart) return false;
+    return addToCart({
+      ...selectedFood,
+      id: selectedFood.food_id || selectedFood.id,
+      food_id: selectedFood.food_id || selectedFood.id,
+      product_id: selectedFood.food_id || selectedFood.id,
+      product_name: selectedFood.food_name,
+      name: selectedFood.food_name,
+      price: unitPrice,
+      portion_size: selectedFood.portion_size || 'Standard',
+      product_image: selectedFood.food_images?.[0] || '',
+      image: selectedFood.food_images?.[0] || '',
+      quantity,
+    }, {
+      size: selectedFood.portion_size || 'Standard',
+      price: unitPrice,
+      quantity,
+      selectedAddons,
+      selectedCustomizations,
+    });
   };
 
   const scrollCarousel = (direction) => {
@@ -143,8 +162,8 @@ const Home = () => {
                   key={food.food_id || food.id}
                   food={food}
                   className="w-[270px] shrink-0 snap-start sm:w-[290px]"
-                  onSelect={() => openFoodInShop(food)}
-                  onAdd={openFoodInShop}
+                  onSelect={() => setSelectedFood(food)}
+                  onAdd={setSelectedFood}
                   isInWishlist={wishlist.some((item) => (
                     String(item.food_id || item.id || item.product_id || item._id)
                       === String(food.food_id || food.id)
@@ -167,6 +186,13 @@ const Home = () => {
           </div>
         </PageContainer>
       </section>
+      {selectedFood && (
+        <FoodCustomizationModal
+          food={selectedFood}
+          onClose={() => setSelectedFood(null)}
+          onAdd={addSelectedFoodToCart}
+        />
+      )}
     </main>
   );
 };
