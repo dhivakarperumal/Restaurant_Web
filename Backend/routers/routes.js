@@ -29,6 +29,7 @@ const inventoryRouter = require('./inventory');
 const { changeKitchenOrderStatus, getKitchenOrders, submitKitchenOrder } = require('../controllers/kitchenOrderController');
 const { getActiveBill, getAllBills, getBill, settleBill } = require('../controllers/tableBillController');
 const ordersRouter = require('./orders');
+const revenueRouter = require('./revenue');
 
 const router = express.Router();
 const uploadDirectory = path.join(__dirname, '..', 'upload');
@@ -225,6 +226,7 @@ router.use(
   },
   ordersRouter
 );
+router.use('/revenue', requireAdmin, revenueRouter);
 router.use('/categories', categoriesRouter);
 router.use('/cuisines', cuisinesRouter);
 router.use('/foods', foodsRouter);

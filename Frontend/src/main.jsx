@@ -1,4 +1,4 @@
-import { StrictMode } from 'react'
+import { StrictMode, lazy } from 'react'
 import { createRoot } from 'react-dom/client'
 import { createHashRouter, Navigate, RouterProvider } from 'react-router-dom'
 import './index.css'
@@ -40,6 +40,7 @@ import PointOfSale from './Admin/Billings/PointOfSale.jsx'
 import Billing from './Admin/Billings/Billing.jsx'
 import NewBilling from './Admin/Billings/NewBilling.jsx'
 import OrderDetails from './Admin/Billings/OrderDetails.jsx'
+const RevenuePage = lazy(() => import('./Admin/RevenuePage.jsx'))
 
 
 
@@ -233,6 +234,10 @@ const router = createHashRouter([
           {
             path: 'reviews',
             element: <AdminReviews />,
+          },
+          {
+            path: 'revenue',
+            element: <RevenuePage />,
           },
           {
             path: 'billing',

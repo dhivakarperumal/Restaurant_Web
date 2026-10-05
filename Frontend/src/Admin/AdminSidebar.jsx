@@ -9,6 +9,7 @@ import {
   BookOpen,
   Receipt,
   DollarSign,
+  CircleDollarSign,
   CalendarOff,
   ClipboardCheck,
   BarChart3,
@@ -139,6 +140,12 @@ const navItems = [
     path: "/admin/billing",
     label: "Billing",
     icon: Receipt,
+  },
+
+  {
+    path: "/admin/revenue",
+    label: "Revenue",
+    icon: CircleDollarSign,
   },
 
   {

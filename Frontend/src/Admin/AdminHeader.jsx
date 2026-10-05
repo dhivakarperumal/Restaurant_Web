@@ -17,6 +17,7 @@ import dayjs from "dayjs";
 const pageInfo = {
   "/admin":                         { title: "Dashboard",             icon: LayoutDashboard },
   "/admin/billing":                 { title: "Billing",               icon: Receipt },
+  "/admin/revenue":                 { title: "Revenue",               icon: DollarSign },
   "/admin/billing/new":             { title: "New Billing",            icon: Plus },
   "/admin/orders/new":              { title: "New Orders",              icon: ShoppingCart },
   "/admin/orders/delivery":          { title: "Delivery Orders",          icon: ShoppingCart },
