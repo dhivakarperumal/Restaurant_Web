@@ -10,7 +10,7 @@ const parseJson = (value, fallback) => {
   }
 };
 
-const listCustomerOrders = async (req, res) => {
+const listCustomerOrders = async (req, res, customerOnly = false) => {
   const { status, fulfillment } = req.query || {};
   if ((status && !orderStatuses.includes(status)) || (fulfillment && !['delivery', 'pickup'].includes(fulfillment))) {
     return res.status(400).json({ success: false, message: 'Invalid order filter.' });
@@ -18,6 +18,10 @@ const listCustomerOrders = async (req, res) => {
 
   const conditions = [];
   const params = [];
+  if (customerOnly) {
+    conditions.push('o.user_id = ?');
+    params.push(req.auth.user_id);
+  }
   if (status === 'placed') {
     conditions.push("o.order_status = 'placed'");
   } else if (status) {
@@ -126,4 +130,8 @@ const updateCustomerOrderStatus = async (req, res) => {
   }
 };
 
-module.exports = { listCustomerOrders, updateCustomerOrderStatus };
+module.exports = {
+  listCustomerOrders,
+  listMyOrders: (req, res) => listCustomerOrders(req, res, true),
+  updateCustomerOrderStatus,
+};

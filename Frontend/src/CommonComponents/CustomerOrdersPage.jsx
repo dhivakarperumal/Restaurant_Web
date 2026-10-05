@@ -38,7 +38,10 @@ function CustomerOrdersPage({ audience = 'admin', view = 'all' }) {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState('');
   const [updatingOrder, setUpdatingOrder] = useState('');
-  const title = audience === 'chef' ? 'Customer Kitchen Orders' : 'Customer Orders';
+  const isCustomer = audience === 'customer';
+  const title = isCustomer
+    ? 'My Orders'
+    : audience === 'chef' ? 'Customer Kitchen Orders' : 'Customer Orders';
   const filterStatus = FILTERS[view]?.status;
   const filterFulfillment = FILTERS[view]?.fulfillment;
 
@@ -49,7 +52,8 @@ function CustomerOrdersPage({ audience = 'admin', view = 'all' }) {
         ...(filterStatus ? { status: filterStatus } : {}),
         ...(filterFulfillment ? { fulfillment: filterFulfillment } : {}),
       };
-      const { data } = await api.get('/orders/management', { params });
+      const endpoint = isCustomer ? '/orders/mine' : '/orders/management';
+      const { data } = await api.get(endpoint, { params: isCustomer ? undefined : params });
       setOrders(Array.isArray(data?.data) ? data.data : []);
       setError('');
     } catch (requestError) {
@@ -59,7 +63,7 @@ function CustomerOrdersPage({ audience = 'admin', view = 'all' }) {
       setLoading(false);
       setRefreshing(false);
     }
-  }, [filterStatus, filterFulfillment]);
+  }, [filterStatus, filterFulfillment, isCustomer]);
 
   useEffect(() => {
     const initialFetch = window.setTimeout(() => fetchOrders(), 0);
@@ -101,7 +105,9 @@ function CustomerOrdersPage({ audience = 'admin', view = 'all' }) {
             </p>
             <h1 className="mt-1 text-3xl font-bold tracking-tight text-[#263830]">{title}</h1>
             <p className="mt-2 text-sm text-[#68766e]">
-              {audience === 'chef'
+              {isCustomer
+                ? 'Your order history and current order status.'
+                : audience === 'chef'
                 ? 'Review customer orders and update their kitchen progress.'
                 : 'Review customer orders, fulfilment details, and payment status.'}
             </p>
@@ -204,19 +210,21 @@ function CustomerOrdersPage({ audience = 'admin', view = 'all' }) {
                     </p>
                     <p className="mt-1 text-lg font-extrabold text-[#263830]">₹{Number(order.total_amount).toFixed(2)}</p>
                   </div>
-                  <label className="text-xs font-semibold text-[#68766e]">
-                    Update order
-                    <select
-                      value={order.order_status}
-                      disabled={updatingOrder === order.order_number || order.payment_status === 'failed'}
-                      onChange={(event) => changeStatus(order, event.target.value)}
-                      className="mt-1 block w-full rounded-lg border border-[#d9ded8] bg-white px-3 py-2 text-sm font-semibold capitalize text-[#263830] disabled:opacity-50 sm:min-w-44"
-                    >
-                      {STATUS_OPTIONS.map((status) => (
-                        <option key={status.value} value={status.value}>{status.label}</option>
-                      ))}
-                    </select>
-                  </label>
+                  {!isCustomer && (
+                    <label className="text-xs font-semibold text-[#68766e]">
+                      Update order
+                      <select
+                        value={order.order_status}
+                        disabled={updatingOrder === order.order_number || order.payment_status === 'failed'}
+                        onChange={(event) => changeStatus(order, event.target.value)}
+                        className="mt-1 block w-full rounded-lg border border-[#d9ded8] bg-white px-3 py-2 text-sm font-semibold capitalize text-[#263830] disabled:opacity-50 sm:min-w-44"
+                      >
+                        {STATUS_OPTIONS.map((status) => (
+                          <option key={status.value} value={status.value}>{status.label}</option>
+                        ))}
+                      </select>
+                    </label>
+                  )}
                 </footer>
               </article>
             ))}

@@ -81,6 +81,14 @@ const router = createHashRouter([
         element: <Checkout />,
       },
       {
+        path: 'my-orders',
+        element: (
+          <PrivateRoute allowedRoles={["user", "customer"]}>
+            <CustomerOrdersPage audience="customer" />
+          </PrivateRoute>
+        ),
+      },
+      {
         path: 'login',
         element: <Login />,
       },
