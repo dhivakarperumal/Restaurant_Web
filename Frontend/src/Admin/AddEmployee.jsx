@@ -5,29 +5,62 @@ import {
   Banknote,
   Bike,
   BriefcaseBusiness,
+  Calendar,
+  Check,
+  CheckCircle2,
+  ChefHat,
   ChevronDown,
+  ChevronRight,
   Clock3,
   CreditCard,
   Eye,
   EyeOff,
   FileCheck2,
+  FileText,
+  Info,
   LocateFixed,
   LoaderCircle,
+  Mail,
   MapPin,
+  Pencil,
   Plus,
-  Trash2,
   ShieldCheck,
+  Sparkles,
+  Trash2,
   Upload,
+  User,
+  UserCheck,
   UserPlus,
   UserRound,
   Utensils,
   UtensilsCrossed,
+  X,
 } from "lucide-react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import api from "../api";
 import EmployeeDocument from "./EmployeeDocument";
 
 const employeeTypes = ["Chef", "Delivery Partner", "Server", "Cashier", "Manager", "Cleaner"];
+
+const getRoleIcon = (type) => {
+  switch (type) {
+    case "Chef":
+      return ChefHat;
+    case "Delivery Partner":
+      return Bike;
+    case "Server":
+      return UtensilsCrossed;
+    case "Cashier":
+      return CreditCard;
+    case "Manager":
+      return BriefcaseBusiness;
+    case "Cleaner":
+      return Sparkles;
+    default:
+      return UserRound;
+  }
+};
+
 const indiaStatesAndTerritories = [
   "Andaman and Nicobar Islands",
   "Andhra Pradesh",
@@ -68,9 +101,10 @@ const indiaStatesAndTerritories = [
 ];
 
 const fieldStyles =
-  "h-11 w-full rounded-lg border border-[#dce3dd] bg-[#fbfcfa] px-3.5 text-sm text-[#20312a] outline-none transition placeholder:text-[#9aa59d] focus:border-[#4d765c] focus:ring-2 focus:ring-[#4d765c]/10";
+  "h-11 w-full rounded-xl border border-slate-200/90 bg-slate-50/50 px-3.5 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:bg-white focus:border-[#1a3c36] focus:ring-4 focus:ring-[#1a3c36]/10 hover:border-slate-300";
 
-const fieldNameFromLabel = (label) => label.toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_|_$/g, "");
+const fieldNameFromLabel = (label) =>
+  label.toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_|_$/g, "");
 
 const parseStringList = (value) => {
   if (!value) return [""];
@@ -107,20 +141,29 @@ const Field = ({
 
   if (type === "file") {
     return (
-      <div className={`block min-w-0 space-y-2 ${wide ? "md:col-span-2" : ""}`}>
-        <label htmlFor={inputId} className="block space-y-2 text-xs font-semibold text-[#34443b]">
-          <span>{label}{required && <span className="ml-1 text-[#c16b3a]">*</span>}</span>
+      <div className={`block min-w-0 space-y-1.5 ${wide ? "md:col-span-2" : ""}`}>
+        <label htmlFor={inputId} className="block text-xs font-semibold text-slate-700">
+          <span>
+            {label}
+            {required && <span className="ml-1 text-rose-500 font-bold">*</span>}
+          </span>
+        </label>
+        <div className="relative rounded-xl border border-slate-200/90 bg-slate-50/40 p-2.5 transition hover:border-emerald-300">
           <input
             id={inputId}
             name={name}
             type="file"
-            className={`${fieldStyles} cursor-pointer py-2 text-xs file:mr-3 file:rounded-md file:border-0 file:bg-[#edf2ed] file:px-2.5 file:py-1 file:text-xs file:font-semibold file:text-[#355443]`}
+            className="w-full cursor-pointer text-xs text-slate-600 file:mr-3 file:cursor-pointer file:rounded-lg file:border-0 file:bg-emerald-50 file:px-3 file:py-1.5 file:text-xs file:font-bold file:text-[#1a3c36] hover:file:bg-emerald-100 transition"
           />
-        </label>
+          <p className="mt-1 text-[10px] text-slate-400">Accepted formats: JPG, PNG, PDF (Max 5MB)</p>
+        </div>
         {existingDocument && (
-          <div>
-            <p className="text-[11px] font-semibold text-[#55715a]">Saved document (kept unless you choose a replacement)</p>
-            <EmployeeDocument filename={existingDocument} />
+          <div className="mt-2">
+            <div className="flex items-center gap-1.5 text-[11px] font-semibold text-emerald-800">
+              <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600 shrink-0" />
+              <span>Current saved document (will be kept if not replaced)</span>
+            </div>
+            <EmployeeDocument filename={existingDocument} label={label} />
           </div>
         )}
       </div>
@@ -129,9 +172,10 @@ const Field = ({
 
   if (type === "password") {
     return (
-      <div className={`block min-w-0 space-y-2 ${wide ? "md:col-span-2" : ""}`}>
-        <label htmlFor={inputId} className="block text-xs font-semibold text-[#34443b]">
-          {label}{required && <span className="ml-1 text-[#c16b3a]">*</span>}
+      <div className={`block min-w-0 space-y-1.5 ${wide ? "md:col-span-2" : ""}`}>
+        <label htmlFor={inputId} className="block text-xs font-semibold text-slate-700">
+          {label}
+          {required && <span className="ml-1 text-rose-500 font-bold">*</span>}
         </label>
         <div className="relative">
           <input
@@ -140,7 +184,11 @@ const Field = ({
             type={isPasswordVisible ? "text" : "password"}
             required={required}
             placeholder={placeholder || `Enter ${label.toLowerCase()}`}
-            className={`${fieldStyles} pr-11 ${error ? "border-[#e05244] bg-[#fffbfb] focus:border-[#e05244] focus:ring-[#e05244]/20" : ""}`}
+            className={`${fieldStyles} pr-11 ${
+              error
+                ? "border-rose-400 bg-rose-50/30 text-rose-900 focus:border-rose-500 focus:ring-rose-500/10"
+                : ""
+            }`}
             onChange={onChange}
             onBlur={onBlur}
           />
@@ -149,27 +197,28 @@ const Field = ({
             aria-label={isPasswordVisible ? `Hide ${label.toLowerCase()}` : `Show ${label.toLowerCase()}`}
             aria-pressed={isPasswordVisible}
             onClick={() => setIsPasswordVisible((visible) => !visible)}
-            className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer text-[#75847a] transition hover:text-[#355443] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4d765c]/40"
+            className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer text-slate-400 transition hover:text-slate-700"
           >
             {isPasswordVisible ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
           </button>
         </div>
         {error ? (
-          <p className="flex items-center gap-1.5 text-xs font-medium text-[#c0392b]">
+          <p className="flex items-center gap-1.5 text-xs font-semibold text-rose-600 animate-fadeIn">
             <AlertCircle className="h-3.5 w-3.5 shrink-0" />
             {error}
           </p>
         ) : helperText ? (
-          <p className="text-[11px] text-[#718276]">{helperText}</p>
+          <p className="text-[11px] text-slate-400">{helperText}</p>
         ) : null}
       </div>
     );
   }
 
   return (
-    <div className={`block min-w-0 space-y-2 ${wide ? "md:col-span-2" : ""}`}>
-      <label htmlFor={inputId} className="block text-xs font-semibold text-[#34443b]">
-        {label}{required && <span className="ml-1 text-[#c16b3a]">*</span>}
+    <div className={`block min-w-0 space-y-1.5 ${wide ? "md:col-span-2" : ""}`}>
+      <label htmlFor={inputId} className="block text-xs font-semibold text-slate-700">
+        {label}
+        {required && <span className="ml-1 text-rose-500 font-bold">*</span>}
       </label>
       {options ? (
         <div className="relative">
@@ -178,14 +227,24 @@ const Field = ({
             name={name}
             required={required}
             defaultValue=""
-            className={`${fieldStyles} appearance-none pr-9 ${error ? "border-[#e05244] bg-[#fffbfb] focus:border-[#e05244] focus:ring-[#e05244]/20" : ""}`}
+            className={`${fieldStyles} appearance-none pr-9 ${
+              error
+                ? "border-rose-400 bg-rose-50/30 text-rose-900 focus:border-rose-500 focus:ring-rose-500/10"
+                : ""
+            }`}
             onChange={onChange}
             onBlur={onBlur}
           >
-            <option value="" disabled>Select {label.toLowerCase()}</option>
-            {options.map((option) => <option key={option} value={option}>{option}</option>)}
+            <option value="" disabled>
+              Select {label.toLowerCase()}
+            </option>
+            {options.map((option) => (
+              <option key={option} value={option}>
+                {option}
+              </option>
+            ))}
           </select>
-          <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#75847a]" />
+          <ChevronDown className="pointer-events-none absolute right-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
         </div>
       ) : type === "textarea" ? (
         <textarea
@@ -194,7 +253,11 @@ const Field = ({
           required={required}
           rows={3}
           placeholder={placeholder || `Enter ${label.toLowerCase()}`}
-          className={`${fieldStyles} h-auto min-h-24 resize-y py-3 ${error ? "border-[#e05244] bg-[#fffbfb] focus:border-[#e05244] focus:ring-[#e05244]/20" : ""}`}
+          className={`${fieldStyles} h-auto min-h-24 resize-y py-2.5 ${
+            error
+              ? "border-rose-400 bg-rose-50/30 text-rose-900 focus:border-rose-500 focus:ring-rose-500/10"
+              : ""
+          }`}
           onChange={onChange}
           onBlur={onBlur}
         />
@@ -208,7 +271,13 @@ const Field = ({
           value={value}
           defaultValue={defaultValue}
           placeholder={placeholder || `Enter ${label.toLowerCase()}`}
-          className={`${fieldStyles} ${uppercase ? "uppercase" : ""} ${readOnly ? "bg-[#f2f5f1] text-[#66746a]" : ""} ${error ? "border-[#e05244] bg-[#fffbfb] focus:border-[#e05244] focus:ring-[#e05244]/20" : ""}`}
+          className={`${fieldStyles} ${uppercase ? "uppercase" : ""} ${
+            readOnly ? "bg-slate-100 text-slate-500 cursor-not-allowed" : ""
+          } ${
+            error
+              ? "border-rose-400 bg-rose-50/30 text-rose-900 focus:border-rose-500 focus:ring-rose-500/10"
+              : ""
+          }`}
           onChange={(e) => {
             if (uppercase) {
               e.target.value = e.target.value.toUpperCase();
@@ -219,27 +288,39 @@ const Field = ({
         />
       )}
       {error ? (
-        <p className="flex items-center gap-1.5 text-xs font-medium text-[#c0392b]">
+        <p className="flex items-center gap-1.5 text-xs font-semibold text-rose-600 animate-fadeIn">
           <AlertCircle className="h-3.5 w-3.5 shrink-0" />
           {error}
         </p>
       ) : helperText ? (
-        <p className="text-[11px] text-[#718276]">{helperText}</p>
+        <p className="text-[11px] text-slate-400">{helperText}</p>
       ) : null}
     </div>
   );
 };
 
-const Section = ({ icon: Icon, title, description, children }) => (
-  <section className="overflow-hidden rounded-xl border border-[#e1e7e1] bg-white shadow-[0_2px_10px_rgba(31,48,38,0.035)]">
-    <div className="flex items-center gap-3 border-b border-[#edf0ec] px-5 py-4 sm:px-6">
-      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#eef3ed] text-[#42694f]"><Icon className="h-[18px] w-[18px]" /></span>
-      <div className="min-w-0">
-        <h2 className="text-sm font-bold text-[#23342b]">{title}</h2>
-        {description && <p className="mt-0.5 text-xs text-[#7b8980]">{description}</p>}
+const Section = ({ id, icon: Icon, title, description, badge, children }) => (
+  <section
+    id={id}
+    className="overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-xs transition hover:shadow-md duration-200"
+  >
+    <div className="flex items-center justify-between border-b border-slate-100 bg-slate-50/60 px-5 py-4 sm:px-6">
+      <div className="flex items-center gap-3">
+        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-[#1a3c36] to-[#2a5944] text-white shadow-xs">
+          <Icon className="h-5 w-5" />
+        </span>
+        <div className="min-w-0">
+          <h2 className="text-base font-bold text-slate-800">{title}</h2>
+          {description && <p className="text-xs text-slate-500 mt-0.5">{description}</p>}
+        </div>
       </div>
+      {badge && (
+        <span className="hidden sm:inline-flex items-center rounded-lg bg-emerald-50 px-2.5 py-1 text-xs font-bold text-emerald-800 border border-emerald-100">
+          {badge}
+        </span>
+      )}
     </div>
-    <div className="grid gap-x-5 gap-y-5 p-5 sm:grid-cols-2 sm:p-6 lg:grid-cols-3">{children}</div>
+    <div className="grid gap-x-5 gap-y-4 p-5 sm:grid-cols-2 sm:p-6 lg:grid-cols-3">{children}</div>
   </section>
 );
 
@@ -255,63 +336,88 @@ const UploadField = ({ label, initialData }) => {
 };
 
 const LocationFields = ({ showCoordinates, delivery, fieldErrors = {}, handleFieldChange, handleFieldBlur }) => (
-  <Section icon={MapPin} title="Location details" description="Primary address and service location">
+  <Section
+    id="location-section"
+    icon={MapPin}
+    title="Location & Address"
+    description="Primary residence or delivery service operational location"
+  >
     <Field
-      label="Address"
+      label="Street Address"
+      name="address"
       required
       wide
-      placeholder="e.g. 123 Main Street"
+      placeholder="e.g. 123 Main Street, Door No. 4B"
       error={fieldErrors.address}
       onChange={handleFieldChange}
-      onBlur={(e) => handleFieldBlur('address', e.target.value)}
+      onBlur={(e) => handleFieldBlur("address", e.target.value)}
     />
     <Field
       label="Area / Locality"
+      name="area_locality"
       required
       placeholder="e.g. Anna Nagar"
       error={fieldErrors.area_locality}
       onChange={handleFieldChange}
-      onBlur={(e) => handleFieldBlur('area_locality', e.target.value)}
+      onBlur={(e) => handleFieldBlur("area_locality", e.target.value)}
     />
     <Field
       label="City"
+      name="city"
       required
       placeholder="e.g. Chennai"
       error={fieldErrors.city}
       onChange={handleFieldChange}
-      onBlur={(e) => handleFieldBlur('city', e.target.value)}
+      onBlur={(e) => handleFieldBlur("city", e.target.value)}
     />
     <Field
       label="District"
+      name="district"
       required
       placeholder="e.g. Chennai"
       error={fieldErrors.district}
       onChange={handleFieldChange}
-      onBlur={(e) => handleFieldBlur('district', e.target.value)}
+      onBlur={(e) => handleFieldBlur("district", e.target.value)}
     />
     <Field
       label="State"
+      name="state"
       required
       options={indiaStatesAndTerritories}
       error={fieldErrors.state}
       onChange={handleFieldChange}
-      onBlur={(e) => handleFieldBlur('state', e.target.value)}
+      onBlur={(e) => handleFieldBlur("state", e.target.value)}
     />
     <Field
       label="Pincode"
+      name="pincode"
       required
       placeholder="e.g. 600001 (6 digits)"
       helperText="6-digit postal pincode"
       error={fieldErrors.pincode}
       onChange={handleFieldChange}
-      onBlur={(e) => handleFieldBlur('pincode', e.target.value)}
+      onBlur={(e) => handleFieldBlur("pincode", e.target.value)}
     />
-    {showCoordinates && <Field label="Latitude" placeholder="Optional" />}
-    {showCoordinates && <Field label="Longitude" placeholder="Optional" />}
+    {showCoordinates && <Field label="Latitude" name="latitude" placeholder="Optional GPS Latitude" />}
+    {showCoordinates && <Field label="Longitude" name="longitude" placeholder="Optional GPS Longitude" />}
     {showCoordinates && (
       <div className="flex items-end">
-        <button type="button" className="inline-flex h-11 cursor-pointer items-center gap-2 rounded-lg border border-[#cfdacf] bg-[#f5f8f4] px-4 text-sm font-semibold text-[#355443] transition hover:bg-[#edf3eb]">
-          <LocateFixed className="h-4 w-4" /> {delivery ? "Get Current Location" : "Get Location"}
+        <button
+          type="button"
+          onClick={() => {
+            if ("geolocation" in navigator) {
+              navigator.geolocation.getCurrentPosition((pos) => {
+                const latInput = document.querySelector('input[name="latitude"]');
+                const lngInput = document.querySelector('input[name="longitude"]');
+                if (latInput) latInput.value = pos.coords.latitude.toFixed(6);
+                if (lngInput) lngInput.value = pos.coords.longitude.toFixed(6);
+              });
+            }
+          }}
+          className="inline-flex h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50/60 px-4 text-xs font-bold text-[#1a3c36] transition hover:bg-emerald-100/70"
+        >
+          <LocateFixed className="h-4 w-4" />
+          <span>{delivery ? "Get Current Live Location" : "Detect Location"}</span>
         </button>
       </div>
     )}
@@ -333,144 +439,167 @@ const StringListField = ({ name, label, initialValue, placeholder }) => {
   };
 
   return (
-    <div className="min-w-0 space-y-2">
-      <span className="block text-xs font-semibold text-[#34443b]">{label}</span>
+    <div className="min-w-0 space-y-2 md:col-span-2">
+      <div className="flex items-center justify-between">
+        <label className="block text-xs font-semibold text-slate-700">{label}</label>
+        <span className="text-[10px] text-slate-400">Add dishes chef specializes in</span>
+      </div>
       <div className="space-y-2">
         {items.map((item, index) => (
           <div key={index} className="flex items-center gap-2">
+            <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-emerald-50 text-[11px] font-bold text-emerald-800">
+              {index + 1}
+            </span>
             <input
               name={name}
               value={item}
               onChange={(event) => updateItem(index, event.target.value)}
-              placeholder={placeholder}
+              placeholder={placeholder || "e.g. Signature Hyderabadi Dum Biryani"}
               className={fieldStyles}
             />
             {items.length > 1 && (
-              <button type="button" onClick={() => removeItem(index)} aria-label={`Remove ${label.toLowerCase()} ${index + 1}`} className="flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-lg border border-[#ead8d3] text-[#a13e30] hover:bg-[#fff4f1]">
+              <button
+                type="button"
+                onClick={() => removeItem(index)}
+                aria-label={`Remove dish ${index + 1}`}
+                className="flex h-11 w-11 shrink-0 cursor-pointer items-center justify-center rounded-xl border border-rose-200 bg-rose-50/50 text-rose-600 transition hover:bg-rose-100"
+              >
                 <Trash2 className="h-4 w-4" />
               </button>
             )}
           </div>
         ))}
       </div>
-      <button type="button" onClick={() => setItems((current) => [...current, ""])} className="inline-flex h-9 cursor-pointer items-center gap-1.5 rounded-lg border border-[#cfdacf] bg-[#f5f8f4] px-3 text-xs font-semibold text-[#355443] transition hover:bg-[#edf3eb]">
-        <Plus className="h-4 w-4" /> Add {label.toLowerCase().replace(/s$/, "")}
+      <button
+        type="button"
+        onClick={() => setItems((current) => [...current, ""])}
+        className="inline-flex h-9 cursor-pointer items-center gap-1.5 rounded-xl border border-emerald-200 bg-emerald-50/50 px-3.5 text-xs font-bold text-[#1a3c36] transition hover:bg-emerald-100"
+      >
+        <Plus className="h-3.5 w-3.5" />
+        <span>Add Another Specialty Dish</span>
       </button>
     </div>
   );
 };
 
 const uniqueFieldNames = [
-  'phone_number',
-  'email',
-  'account_number',
-  'ifsc_code',
-  'upi_id',
-  'aadhaar_number',
-  'pan_number',
-  'pan_card_number',
-  'vehicle_number',
-  'driving_license_number',
+  "phone_number",
+  "email",
+  "account_number",
+  "ifsc_code",
+  "upi_id",
+  "aadhaar_number",
+  "pan_number",
+  "pan_card_number",
+  "vehicle_number",
+  "driving_license_number",
 ];
 
 const validateFormat = (name, value, employeeType) => {
-  const trimmed = String(value || '').trim();
+  const trimmed = String(value || "").trim();
 
   // If empty and not required:
   if (!trimmed) {
-    if (['full_name', 'phone_number', 'email', 'address', 'area_locality', 'city', 'district', 'state', 'pincode'].includes(name)) {
-      return `${name.replace(/_/g, ' ')} is required`;
+    if (
+      ["full_name", "phone_number", "email", "address", "area_locality", "city", "district", "state", "pincode"].includes(
+        name
+      )
+    ) {
+      return `${name.replace(/_/g, " ")} is required`;
     }
-    if (employeeType === 'Chef' && name === 'cuisine_type') {
-      return 'Cuisine type is required for Chef';
+    if (employeeType === "Chef" && name === "cuisine_type") {
+      return "Cuisine type is required for Chef";
     }
-    if (employeeType === 'Delivery Partner' && ['vehicle_type', 'vehicle_number', 'driving_license_number'].includes(name)) {
-      return `${name.replace(/_/g, ' ')} is required for Delivery Partner`;
+    if (
+      employeeType === "Delivery Partner" &&
+      ["vehicle_type", "vehicle_number", "driving_license_number"].includes(name)
+    ) {
+      return `${name.replace(/_/g, " ")} is required for Delivery Partner`;
     }
-    return '';
+    return "";
   }
 
   switch (name) {
-    case 'phone_number': {
-      const cleanPhone = trimmed.replace(/^\+91/, '').replace(/[\s\-()]/g, '');
+    case "phone_number": {
+      const cleanPhone = trimmed.replace(/^\+91/, "").replace(/[\s\-()]/g, "");
       if (!/^[6-9]\d{9}$/.test(cleanPhone)) {
-        return 'Phone number must be a 10-digit number starting with 6, 7, 8, or 9';
+        return "Phone number must be a 10-digit number starting with 6, 7, 8, or 9";
       }
-      return '';
+      return "";
     }
-    case 'whatsapp_number': {
-      const cleanPhone = trimmed.replace(/^\+91/, '').replace(/[\s\-()]/g, '');
+    case "whatsapp_number": {
+      const cleanPhone = trimmed.replace(/^\+91/, "").replace(/[\s\-()]/g, "");
       if (!/^[6-9]\d{9}$/.test(cleanPhone)) {
-        return 'WhatsApp number must be a 10-digit number starting with 6, 7, 8, or 9';
+        return "WhatsApp number must be a 10-digit number starting with 6, 7, 8, or 9";
       }
-      return '';
+      return "";
     }
-    case 'email': {
+    case "email": {
       const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
       if (!emailRegex.test(trimmed)) {
-        return 'Please enter a valid email address (e.g. employee@restaurant.com)';
+        return "Please enter a valid email address (e.g. employee@restaurant.com)";
       }
-      return '';
+      return "";
     }
-    case 'account_number': {
-      const cleanAcc = trimmed.replace(/[\s\-]/g, '');
+    case "account_number": {
+      const cleanAcc = trimmed.replace(/[\s\-]/g, "");
       if (!/^\d{9,18}$/.test(cleanAcc)) {
-        return 'Account number must be 9 to 18 digits (e.g. 123456789012)';
+        return "Account number must be 9 to 18 digits (e.g. 123456789012)";
       }
-      return '';
+      return "";
     }
-    case 'ifsc_code': {
-      const cleanIfsc = trimmed.toUpperCase().replace(/\s/g, '');
+    case "ifsc_code": {
+      const cleanIfsc = trimmed.toUpperCase().replace(/\s/g, "");
       if (!/^[A-Z]{4}0[A-Z0-9]{6}$/.test(cleanIfsc)) {
-        return 'IFSC code must be 11 characters (e.g. SBIN0001234: 4 letters, 0, then 6 alphanumeric characters)';
+        return "IFSC code must be 11 characters (e.g. SBIN0001234: 4 letters, 0, then 6 alphanumeric characters)";
       }
-      return '';
+      return "";
     }
-    case 'upi_id': {
+    case "upi_id": {
       const upiRegex = /^[a-zA-Z0-9.\-_]{2,256}@[a-zA-Z]{2,64}$/;
       if (!upiRegex.test(trimmed)) {
-        return 'UPI ID must be a valid format (e.g. employee@okaxis or 9876543210@upi)';
+        return "UPI ID must be a valid format (e.g. employee@okaxis or 9876543210@upi)";
       }
-      return '';
+      return "";
     }
-    case 'aadhaar_number': {
-      const cleanAadhaar = trimmed.replace(/[\s\-]/g, '');
+    case "aadhaar_number": {
+      const cleanAadhaar = trimmed.replace(/[\s\-]/g, "");
       if (!/^\d{12}$/.test(cleanAadhaar)) {
-        return 'Aadhaar number must be a 12-digit number (e.g. 1234 5678 9012)';
+        return "Aadhaar number must be a 12-digit number (e.g. 1234 5678 9012)";
       }
-      return '';
+      return "";
     }
-    case 'pan_number':
-    case 'pan_card_number': {
-      const cleanPan = trimmed.replace(/[\s\-]/g, '').toUpperCase();
+    case "pan_number":
+    case "pan_card_number": {
+      const cleanPan = trimmed.replace(/[\s\-]/g, "").toUpperCase();
       if (!/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/.test(cleanPan)) {
-        return 'PAN number must be 10 characters: 5 letters, 4 numbers, 1 letter (e.g. ABCDE1234F)';
+        return "PAN number must be 10 characters: 5 letters, 4 numbers, 1 letter (e.g. ABCDE1234F)";
       }
-      return '';
+      return "";
     }
-    case 'vehicle_number': {
-      const cleanVeh = trimmed.replace(/[\s\-]/g, '').toUpperCase();
+    case "vehicle_number": {
+      const cleanVeh = trimmed.replace(/[\s\-]/g, "").toUpperCase();
       if (!/^[A-Z]{2}[0-9]{1,2}[A-Z]{0,3}[0-9]{4}$/.test(cleanVeh)) {
-        return 'Vehicle number must match registration format (e.g. TN01AB1234 or TN 01 AB 1234)';
+        return "Vehicle number must match registration format (e.g. TN01AB1234 or TN 01 AB 1234)";
       }
-      return '';
+      return "";
     }
-    case 'driving_license_number': {
-      const cleanDl = trimmed.replace(/[\s\-]/g, '').toUpperCase();
+    case "driving_license_number": {
+      const cleanDl = trimmed.replace(/[\s\-]/g, "").toUpperCase();
       if (!/^[A-Z]{2}[0-9]{2}[0-9A-Z]{7,12}$/.test(cleanDl)) {
-        return 'Driving license must match standard format (e.g. TN0120200001234: 11-16 characters)';
+        return "Driving license must match standard format (e.g. TN0120200001234: 11-16 characters)";
       }
-      return '';
+      return "";
     }
-    case 'pincode': {
-      const cleanPin = trimmed.replace(/[\s\-]/g, '');
+    case "pincode": {
+      const cleanPin = trimmed.replace(/[\s\-]/g, "");
       if (!/^\d{6}$/.test(cleanPin)) {
-        return 'Pincode must be 6 digits (e.g. 600001)';
+        return "Pincode must be 6 digits (e.g. 600001)";
       }
-      return '';
+      return "";
     }
     default:
-      return '';
+      return "";
   }
 };
 
@@ -489,10 +618,32 @@ const EmployeeFields = ({
   const isDelivery = employeeType === "Delivery Partner";
   const isBasic = !isChef && !isDelivery;
   const [deliverySalaryType, setDeliverySalaryType] = useState(initialData?.salary_type || "Monthly Basis");
+  const [selectedWorkingDays, setSelectedWorkingDays] = useState(() => {
+    if (!initialData?.working_days) return [];
+    if (Array.isArray(initialData.working_days)) return initialData.working_days;
+    try {
+      const parsed = JSON.parse(initialData.working_days);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      return [];
+    }
+  });
+
+  const toggleDay = (day) => {
+    setSelectedWorkingDays((prev) =>
+      prev.includes(day) ? prev.filter((d) => d !== day) : [...prev, day]
+    );
+  };
 
   return (
     <>
-      <Section icon={UserRound} title="Personal details" description="Identity, contact and account access">
+      {/* 1. PERSONAL DETAILS */}
+      <Section
+        id="personal-section"
+        icon={UserRound}
+        title="Personal & Access Details"
+        description="Employee identity, contact channels, and system authentication"
+      >
         <Field
           label={isChef ? "Chef Name" : "Full Name"}
           name="full_name"
@@ -500,7 +651,7 @@ const EmployeeFields = ({
           placeholder="e.g. John Doe"
           error={fieldErrors.full_name}
           onChange={handleFieldChange}
-          onBlur={(e) => handleFieldBlur('full_name', e.target.value)}
+          onBlur={(e) => handleFieldBlur("full_name", e.target.value)}
         />
         <UploadField label="Profile Photo" initialData={initialData} />
         <Field label="Gender" options={["Female", "Male", "Non-binary", "Prefer not to say"]} />
@@ -510,20 +661,20 @@ const EmployeeFields = ({
           type="tel"
           required
           placeholder="e.g. 9876543210 (10 digits starting with 6, 7, 8, 9)"
-          helperText="10-digit number starting with 6, 7, 8, or 9"
+          helperText="10-digit mobile number starting with 6, 7, 8, or 9"
           error={fieldErrors.phone_number}
           onChange={handleFieldChange}
-          onBlur={(e) => handleFieldBlur('phone_number', e.target.value)}
+          onBlur={(e) => handleFieldBlur("phone_number", e.target.value)}
         />
         {isDelivery && (
           <Field
             label="WhatsApp Number"
             type="tel"
             placeholder="e.g. 9876543210 (10 digits starting with 6, 7, 8, 9)"
-            helperText="10-digit number starting with 6, 7, 8, or 9"
+            helperText="WhatsApp contact for order notifications"
             error={fieldErrors.whatsapp_number}
             onChange={handleFieldChange}
-            onBlur={(e) => handleFieldBlur('whatsapp_number', e.target.value)}
+            onBlur={(e) => handleFieldBlur("whatsapp_number", e.target.value)}
           />
         )}
         <Field
@@ -533,27 +684,74 @@ const EmployeeFields = ({
           placeholder="e.g. employee@restaurant.com"
           error={fieldErrors.email}
           onChange={handleFieldChange}
-          onBlur={(e) => handleFieldBlur('email', e.target.value)}
+          onBlur={(e) => handleFieldBlur("email", e.target.value)}
         />
-        <label className="block min-w-0 space-y-2">
-          <span className="block text-xs font-semibold text-[#34443b]">{isChef ? "Chef ID / Employee ID" : isDelivery ? "Delivery Boy ID / Employee ID" : "Employee ID"}</span>
-          <input readOnly value={employeeId} placeholder="Generated automatically on save" className={`${fieldStyles} bg-[#f2f5f1] text-[#66746a]`} />
-        </label>
+        <div className="block min-w-0 space-y-1.5">
+          <label className="block text-xs font-semibold text-slate-700">
+            {isChef ? "Chef ID" : isDelivery ? "Delivery Partner ID" : "Employee ID"}
+          </label>
+          <input
+            readOnly
+            value={employeeId || ""}
+            placeholder="Auto-generated on creation"
+            className={`${fieldStyles} bg-slate-100 font-mono text-slate-500 cursor-not-allowed`}
+          />
+        </div>
         <Field label="Status" options={["Active", "Inactive"]} />
-        <Field label="Password" type="password" name="password" required={!isEditing} error={fieldErrors.password} onChange={handleFieldChange} />
-        <Field label="Confirm Password" type="password" name="confirm_password" required={!isEditing} error={fieldErrors.confirm_password} onChange={handleFieldChange} />
+        <Field
+          label="Password"
+          type="password"
+          name="password"
+          required={!isEditing}
+          placeholder={isEditing ? "Leave blank to keep unchanged" : "Create login password"}
+          error={fieldErrors.password}
+          onChange={handleFieldChange}
+        />
+        <Field
+          label="Confirm Password"
+          type="password"
+          name="confirm_password"
+          required={!isEditing}
+          placeholder={isEditing ? "Repeat only if changing password" : "Re-enter password"}
+          error={fieldErrors.confirm_password}
+          onChange={handleFieldChange}
+        />
       </Section>
 
+      {/* 2. CHEF DETAILS */}
       {isChef && (
-        <Section icon={Utensils} title="Restaurant details" description="Cuisine, experience and food specialties">
-          <Field label="Cuisine Type" required options={["South Indian", "North Indian", "Chinese", "Bakery", "Italian", "Continental", "Other"]} error={fieldErrors.cuisine_type} onChange={handleFieldChange} />
+        <Section
+          id="chef-section"
+          icon={Utensils}
+          title="Culinary & Cuisine Details"
+          description="Chef experience, food specialty, and kitchen background"
+        >
+          <Field
+            label="Cuisine Type"
+            required
+            options={["South Indian", "North Indian", "Chinese", "Bakery", "Italian", "Continental", "Other"]}
+            error={fieldErrors.cuisine_type}
+            onChange={handleFieldChange}
+          />
           <Field label="Experience (Years)" type="number" placeholder="e.g. 5" />
           <Field label="Food Preference" options={["Veg", "Non-Veg", "Both"]} />
-          <StringListField name="special_dishes" label="Special Dishes" initialValue={initialData?.special_dishes} placeholder="e.g. signature biryani" />
-          <Field label="Description / About Chef" type="textarea" wide placeholder="Brief background or achievements" />
+          <StringListField
+            name="special_dishes"
+            label="Special Dishes"
+            initialValue={initialData?.special_dishes}
+            placeholder="e.g. Signature Hyderabadi Dum Biryani"
+          />
+          <Field
+            label="Description / About Chef"
+            name="description_about_chef"
+            type="textarea"
+            wide
+            placeholder="Brief professional background, awards, culinary certificates or achievements"
+          />
         </Section>
       )}
 
+      {/* 3. LOCATION DETAILS */}
       <LocationFields
         showCoordinates={isChef || isDelivery}
         delivery={isDelivery}
@@ -562,29 +760,41 @@ const EmployeeFields = ({
         handleFieldBlur={handleFieldBlur}
       />
 
+      {/* 4. DELIVERY PARTNER VEHICLE DETAILS */}
       {isDelivery && (
-        <Section icon={Bike} title="Vehicle details" description="Vehicle and driving licence information">
-          <Field label="Vehicle Type" required options={["Bike", "Scooter", "Bicycle", "Electric Vehicle"]} error={fieldErrors.vehicle_type} onChange={handleFieldChange} />
+        <Section
+          id="vehicle-section"
+          icon={Bike}
+          title="Vehicle & Driving License"
+          description="Delivery transportation equipment and statutory driving permits"
+        >
+          <Field
+            label="Vehicle Type"
+            required
+            options={["Bike", "Scooter", "Bicycle", "Electric Vehicle"]}
+            error={fieldErrors.vehicle_type}
+            onChange={handleFieldChange}
+          />
           <Field
             label="Vehicle Number"
             required
             uppercase
-            placeholder="e.g. TN01AB1234 (e.g. TN 01 AB 1234)"
-            helperText="State, District, Series, 4-digit number"
+            placeholder="e.g. TN01AB1234"
+            helperText="Format: State, District, Series, 4-digit number (e.g. TN01AB1234)"
             error={fieldErrors.vehicle_number}
             onChange={handleFieldChange}
-            onBlur={(e) => handleFieldBlur('vehicle_number', e.target.value)}
+            onBlur={(e) => handleFieldBlur("vehicle_number", e.target.value)}
           />
           <Field label="Vehicle Model" placeholder="e.g. Honda Activa 6G" />
           <Field
             label="Driving License Number"
             required
             uppercase
-            placeholder="e.g. TN0120200001234 (15 or 16 characters)"
-            helperText="Standard DL format (e.g. TN0120200001234)"
+            placeholder="e.g. TN0120200001234"
+            helperText="Standard DL format (11 to 16 alphanumeric characters)"
             error={fieldErrors.driving_license_number}
             onChange={handleFieldChange}
-            onBlur={(e) => handleFieldBlur('driving_license_number', e.target.value)}
+            onBlur={(e) => handleFieldBlur("driving_license_number", e.target.value)}
           />
           <Field label="Driving License Expiry Date" type="date" />
           <Field label="RC Number" uppercase placeholder="e.g. TN01AB1234" />
@@ -594,14 +804,47 @@ const EmployeeFields = ({
         </Section>
       )}
 
+      {/* 5. DELIVERY PARTNER SCHEDULE & AVAILABILITY */}
       {isDelivery && (
-        <Section icon={Clock3} title="Availability" description="Working schedule and delivery status">
-          <div className="md:col-span-2 lg:col-span-3">
-            <span className="block text-xs font-semibold text-[#34443b]">Working Days</span>
-            <div className="mt-3 flex flex-wrap gap-x-5 gap-y-3">
-                {["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"].map((day) => (
-                  <label key={day} className="inline-flex items-center gap-2 text-xs text-[#536259]"><input type="checkbox" name="working_days" value={day} className="h-4 w-4 accent-[#42694f]" />{day}</label>
-              ))}
+        <Section
+          id="schedule-section"
+          icon={Clock3}
+          title="Work Schedule & Shift Availability"
+          description="Operating days of the week, shift hours, and dispatch status"
+        >
+          <div className="md:col-span-2 lg:col-span-3 space-y-2">
+            <span className="block text-xs font-semibold text-slate-700">Active Working Days</span>
+            <div className="flex flex-wrap gap-2 pt-1">
+              {["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"].map((day) => {
+                const isSelected = selectedWorkingDays.includes(day);
+                return (
+                  <button
+                    key={day}
+                    type="button"
+                    onClick={() => toggleDay(day)}
+                    className={`inline-flex items-center gap-1.5 rounded-xl px-3.5 py-2 text-xs font-semibold transition ${
+                      isSelected
+                        ? "bg-[#1a3c36] text-white shadow-xs"
+                        : "bg-slate-100 text-slate-600 hover:bg-slate-200/80"
+                    }`}
+                  >
+                    {isSelected ? (
+                      <Check className="h-3.5 w-3.5 text-emerald-300" />
+                    ) : (
+                      <span className="h-2 w-2 rounded-full bg-slate-300" />
+                    )}
+                    <span>{day}</span>
+                    <input
+                      type="checkbox"
+                      name="working_days"
+                      value={day}
+                      checked={isSelected}
+                      readOnly
+                      className="sr-only"
+                    />
+                  </button>
+                );
+              })}
             </div>
           </div>
           <Field label="Start Time" type="time" />
@@ -611,158 +854,168 @@ const EmployeeFields = ({
         </Section>
       )}
 
-      {(isChef || isBasic) && (
-        <Section icon={CreditCard} title="Bank & payment details" description="Payment destination and identity details">
-          <Field label="Account Holder Name" placeholder="e.g. John Doe" />
-          <Field label="Bank Name" placeholder="e.g. State Bank of India" />
-          <Field
-            label="Account Number"
-            placeholder="e.g. 123456789012 (9 to 18 digits)"
-            helperText="9 to 18 digits bank account number"
-            error={fieldErrors.account_number}
-            onChange={handleFieldChange}
-            onBlur={(e) => handleFieldBlur('account_number', e.target.value)}
-          />
-          <Field
-            label="IFSC Code"
-            uppercase
-            placeholder="e.g. SBIN0001234 (11 characters)"
-            helperText="11 characters: 4 letters, 0, 6 letters/digits"
-            error={fieldErrors.ifsc_code}
-            onChange={handleFieldChange}
-            onBlur={(e) => handleFieldBlur('ifsc_code', e.target.value)}
-          />
-          <Field
-            label="UPI ID"
-            placeholder="e.g. employee@okaxis or 9876543210@upi"
-            helperText="Virtual payment address"
-            error={fieldErrors.upi_id}
-            onChange={handleFieldChange}
-            onBlur={(e) => handleFieldBlur('upi_id', e.target.value)}
-          />
-          {(isChef || isBasic) && (
-            <Field
-              label="PAN Number"
-              uppercase
-              value={panValue}
-              placeholder="e.g. ABCDE1234F (10 characters: 5 letters, 4 numbers, 1 letter)"
-              helperText="10 characters: 5 letters, 4 numbers, 1 letter"
-              error={fieldErrors.pan_number || fieldErrors.pan_card_number}
-              onChange={(e) => handlePanChange(e.target.value)}
-              onBlur={(e) => handleFieldBlur('pan_number', e.target.value)}
-            />
-          )}
-          <UploadField label="Bank Passbook" initialData={initialData} />
-        </Section>
-      )}
-
-      {isDelivery && (
-        <Section icon={CreditCard} title="Bank & payment details" description="Payment destination">
-          <Field label="Account Holder Name" placeholder="e.g. John Doe" />
-          <Field label="Bank Name" placeholder="e.g. State Bank of India" />
-          <Field
-            label="Account Number"
-            placeholder="e.g. 123456789012 (9 to 18 digits)"
-            helperText="9 to 18 digits bank account number"
-            error={fieldErrors.account_number}
-            onChange={handleFieldChange}
-            onBlur={(e) => handleFieldBlur('account_number', e.target.value)}
-          />
-          <Field
-            label="IFSC Code"
-            uppercase
-            placeholder="e.g. SBIN0001234 (11 characters)"
-            helperText="11 characters: 4 letters, 0, 6 letters/digits"
-            error={fieldErrors.ifsc_code}
-            onChange={handleFieldChange}
-            onBlur={(e) => handleFieldBlur('ifsc_code', e.target.value)}
-          />
-          <Field
-            label="UPI ID"
-            placeholder="e.g. employee@okaxis or 9876543210@upi"
-            helperText="Virtual payment address"
-            error={fieldErrors.upi_id}
-            onChange={handleFieldChange}
-            onBlur={(e) => handleFieldBlur('upi_id', e.target.value)}
-          />
+      {/* 6. BANKING & PAYMENT DETAILS */}
+      <Section
+        id="bank-section"
+        icon={CreditCard}
+        title="Bank & Payment Details"
+        description="Salary disbursement account, UPI handle, and tax identification"
+      >
+        <Field label="Account Holder Name" placeholder="e.g. John Doe" />
+        <Field label="Bank Name" placeholder="e.g. State Bank of India" />
+        <Field
+          label="Account Number"
+          placeholder="e.g. 123456789012 (9 to 18 digits)"
+          helperText="9 to 18 digits bank account number"
+          error={fieldErrors.account_number}
+          onChange={handleFieldChange}
+          onBlur={(e) => handleFieldBlur("account_number", e.target.value)}
+        />
+        <Field
+          label="IFSC Code"
+          uppercase
+          placeholder="e.g. SBIN0001234"
+          helperText="11 characters (e.g. SBIN0001234)"
+          error={fieldErrors.ifsc_code}
+          onChange={handleFieldChange}
+          onBlur={(e) => handleFieldBlur("ifsc_code", e.target.value)}
+        />
+        <Field
+          label="UPI ID"
+          placeholder="e.g. employee@okaxis or 9876543210@upi"
+          helperText="Virtual payment address (VPA)"
+          error={fieldErrors.upi_id}
+          onChange={handleFieldChange}
+          onBlur={(e) => handleFieldBlur("upi_id", e.target.value)}
+        />
+        <Field
+          label="PAN Number"
+          uppercase
+          value={panValue}
+          placeholder="e.g. ABCDE1234F"
+          helperText="10 characters: 5 letters, 4 numbers, 1 letter"
+          error={fieldErrors.pan_number || fieldErrors.pan_card_number}
+          onChange={(e) => handlePanChange(e.target.value)}
+          onBlur={(e) => handleFieldBlur("pan_number", e.target.value)}
+        />
+        {isDelivery ? (
           <UploadField label="Cancelled Cheque / Bank Proof" initialData={initialData} />
-        </Section>
-      )}
+        ) : (
+          <UploadField label="Bank Passbook" initialData={initialData} />
+        )}
+      </Section>
 
-      <Section icon={Banknote} title="Salary details" description="Compensation and payroll information">
+      {/* 7. SALARY DETAILS */}
+      <Section
+        id="salary-section"
+        icon={Banknote}
+        title="Compensation & Payroll"
+        description="Wage structure, base pay, and regular payroll adjustments"
+      >
         {isDelivery && (
-          <label htmlFor="delivery-salary-type" className="block min-w-0 space-y-2 md:col-span-2 lg:col-span-3">
-            <span className="block text-xs font-semibold text-[#34443b]">Salary Type</span>
+          <div className="block min-w-0 space-y-1.5 md:col-span-2 lg:col-span-3">
+            <label htmlFor="delivery-salary-type" className="block text-xs font-semibold text-slate-700">
+              Salary Structure Type
+            </label>
             <div className="relative">
               <select
                 id="delivery-salary-type"
                 name="salary_type"
                 value={deliverySalaryType}
                 onChange={(event) => setDeliverySalaryType(event.target.value)}
-                className={`${fieldStyles} appearance-none pr-9`}
+                className={`${fieldStyles} appearance-none pr-9 font-semibold`}
               >
                 <option value="Monthly Basis">Monthly Basis</option>
-                <option value="Order Basis">Order Basis</option>
+                <option value="Order Basis">Order Basis (Per-delivery Commission)</option>
               </select>
-              <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#75847a]" />
+              <ChevronDown className="pointer-events-none absolute right-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
             </div>
-          </label>
+          </div>
         )}
         {(!isDelivery || deliverySalaryType === "Monthly Basis") && (
           <>
-            <Field label="Basic Salary" type="number" placeholder="Enter basic salary" required error={fieldErrors.basic_salary} onChange={handleFieldChange} />
-            <Field label="Allowances" type="number" placeholder="Enter allowances" />
-            <Field label="Deductions" type="number" placeholder="Enter deductions" />
-            <Field label="Net Salary" type="number" placeholder="Enter net salary" />
-            <Field label="Payroll Notes" type="textarea" wide />
+            <Field
+              label="Basic Salary"
+              type="number"
+              placeholder="e.g. 25000"
+              required
+              error={fieldErrors.basic_salary}
+              onChange={handleFieldChange}
+            />
+            <Field label="Allowances" type="number" placeholder="e.g. 3000" />
+            <Field label="Deductions" type="number" placeholder="e.g. 1500" />
+            <Field label="Net Salary" type="number" placeholder="Calculated / Net pay" />
+            <Field
+              label="Payroll Notes"
+              type="textarea"
+              wide
+              placeholder="Special allowance notes, bonus terms, or overtime rates"
+            />
           </>
         )}
       </Section>
 
-      <Section icon={FileCheck2} title="Documents" description="Identity and supporting documents">
+      {/* 8. DOCUMENTS & IDENTITY PROOFS */}
+      <Section
+        id="documents-section"
+        icon={FileCheck2}
+        title="Identity Proofs & Documents"
+        description="Statutory identity documents and government certificate uploads"
+      >
         <Field
           label="Aadhaar Number"
-          placeholder="e.g. 1234 5678 9012 (12 digits)"
+          placeholder="e.g. 1234 5678 9012"
           helperText="12-digit Aadhaar number"
           error={fieldErrors.aadhaar_number}
           onChange={handleFieldChange}
-          onBlur={(e) => handleFieldBlur('aadhaar_number', e.target.value)}
+          onBlur={(e) => handleFieldBlur("aadhaar_number", e.target.value)}
         />
         <UploadField label="Aadhaar / ID Proof" initialData={initialData} />
         <Field
           label="PAN Card Number"
           uppercase
           value={panValue}
-          placeholder="e.g. ABCDE1234F (10 characters: 5 letters, 4 numbers, 1 letter)"
+          placeholder="e.g. ABCDE1234F"
           helperText="10 characters: 5 letters, 4 numbers, 1 letter"
           error={fieldErrors.pan_card_number || fieldErrors.pan_number}
           onChange={(e) => handlePanChange(e.target.value)}
-          onBlur={(e) => handleFieldBlur('pan_card_number', e.target.value)}
+          onBlur={(e) => handleFieldBlur("pan_card_number", e.target.value)}
         />
         <UploadField label="PAN Card" initialData={initialData} />
         {isChef && <UploadField label="FSSAI Certificate" initialData={initialData} />}
+        {isChef && <UploadField label="Chef Photo" initialData={initialData} />}
         {isDelivery && <UploadField label="Driving License" initialData={initialData} />}
         {isDelivery && <UploadField label="RC Book" initialData={initialData} />}
         {isDelivery && <UploadField label="Insurance Certificate" initialData={initialData} />}
         <UploadField label="Address Proof" initialData={initialData} />
-        {isChef && <UploadField label="Chef Photo" initialData={initialData} />}
-        {isDelivery && <UploadField label="Profile Photo" initialData={initialData} />}
         <UploadField label="Other Documents" initialData={initialData} />
       </Section>
 
+      {/* 9. DELIVERY PARTNER VERIFICATION & APP ACCESS */}
       {isDelivery && (
         <>
-          <Section icon={ShieldCheck} title="Admin / verification" description="Review and onboarding details">
+          <Section
+            id="verification-section"
+            icon={ShieldCheck}
+            title="Verification & Onboarding"
+            description="Background verification clearance and delivery commission"
+          >
             <Field label="Verification Status" options={["Pending", "Verified", "Rejected"]} />
             <Field label="Background Verification" options={["Pending", "In Progress", "Cleared", "Rejected"]} />
             <Field label="Joining Date" type="date" />
-            <Field label="Commission %" type="number" />
-            <Field label="Admin Notes" type="textarea" wide />
+            <Field label="Commission %" name="commission_percent" type="number" placeholder="e.g. 10" />
+            <Field label="Admin Notes" type="textarea" wide placeholder="Notes on onboarding or vehicle inspection" />
           </Section>
-          <Section icon={BriefcaseBusiness} title="Login / app access" description="Partner account access">
-            <Field label="Username / Phone Number" />
+
+          <Section
+            id="app-access-section"
+            icon={BriefcaseBusiness}
+            title="Partner Mobile App Access"
+            description="Delivery mobile app credentials and account permissions"
+          >
+            <Field label="Username / Phone Number" name="username_phone_number" placeholder="Partner username" />
             <Field label="App Access" options={["Enabled", "Disabled"]} />
-            <Field label="Login Status" options={["Logged In", "Logged Out"]} />
+            <Field label="Login Status" options={["Logged Out", "Logged In"]} />
           </Section>
         </>
       )}
@@ -776,7 +1029,7 @@ const AddEmployee = () => {
   const formRef = useRef(null);
   const isEditing = Boolean(routeEmployeeId);
   const initialEmployeeType = employeeTypes.find(
-    (type) => type.toLowerCase().replaceAll(" ", "-") === routeEmployeeType,
+    (type) => type.toLowerCase().replaceAll(" ", "-") === routeEmployeeType
   );
   const [typeChoice, setTypeChoice] = useState({
     routeEmployeeType,
@@ -795,14 +1048,17 @@ const AddEmployee = () => {
   const employeeType = isEditing
     ? employeeData?.employee_type || initialEmployeeType || "Chef"
     : typeChoice.routeEmployeeType === routeEmployeeType
-      ? typeChoice.value
-      : initialEmployeeType || "Chef";
+    ? typeChoice.value
+    : initialEmployeeType || "Chef";
+
+  const RoleIcon = getRoleIcon(employeeType);
 
   useEffect(() => {
     if (!isEditing) return undefined;
 
     let isMounted = true;
-    api.get(`/employees/${encodeURIComponent(routeEmployeeId)}`)
+    api
+      .get(`/employees/${encodeURIComponent(routeEmployeeId)}`)
       .then((response) => {
         if (!isMounted) return;
         const employee = response.data?.employee;
@@ -817,13 +1073,16 @@ const AddEmployee = () => {
         }
       })
       .catch((requestError) => {
-        if (isMounted) setLoadError(requestError.response?.data?.message || "Employee details could not be loaded.");
+        if (isMounted)
+          setLoadError(requestError.response?.data?.message || "Employee details could not be loaded.");
       })
       .finally(() => {
         if (isMounted) setIsLoadingEmployee(false);
       });
 
-    return () => { isMounted = false; };
+    return () => {
+      isMounted = false;
+    };
   }, [initialEmployeeType, isEditing, routeEmployeeId]);
 
   useEffect(() => {
@@ -831,12 +1090,12 @@ const AddEmployee = () => {
     const days = Array.isArray(employeeData.working_days)
       ? employeeData.working_days
       : (() => {
-        try {
-          return JSON.parse(employeeData.working_days || "[]");
-        } catch {
-          return [];
-        }
-      })();
+          try {
+            return JSON.parse(employeeData.working_days || "[]");
+          } catch {
+            return [];
+          }
+        })();
 
     Array.from(formRef.current.elements).forEach((field) => {
       if (!field.name || field.type === "file" || field.type === "password") return;
@@ -845,14 +1104,16 @@ const AddEmployee = () => {
         field.checked = days.includes(field.value);
         return;
       }
-      const value = field.name === "description_about_chef"
-        ? employeeData.description
-        : employeeData[field.name];
+      const value =
+        field.name === "description_about_chef" ? employeeData.description : employeeData[field.name];
       if (value === null || value === undefined) return;
       const stringValue = String(value);
-      field.value = field.type === "date"
-        ? stringValue.slice(0, 10)
-        : field.type === "time" ? stringValue.slice(0, 5) : stringValue;
+      field.value =
+        field.type === "date"
+          ? stringValue.slice(0, 10)
+          : field.type === "time"
+          ? stringValue.slice(0, 5)
+          : stringValue;
     });
   }, [employeeData]);
 
@@ -881,7 +1142,11 @@ const AddEmployee = () => {
   const handleFieldBlur = async (name, value) => {
     const trimmed = String(value || "").trim();
     if (!trimmed) {
-      if (["full_name", "phone_number", "email", "address", "area_locality", "city", "district", "state", "pincode"].includes(name)) {
+      if (
+        ["full_name", "phone_number", "email", "address", "area_locality", "city", "district", "state", "pincode"].includes(
+          name
+        )
+      ) {
         setFieldErrors((prev) => ({ ...prev, [name]: "This field is required" }));
       } else {
         setFieldErrors((prev) => {
@@ -951,7 +1216,7 @@ const AddEmployee = () => {
 
     const newErrors = {};
     for (const [key, val] of formData.entries()) {
-      if (typeof val === 'string' && key !== 'employee_type') {
+      if (typeof val === "string" && key !== "employee_type") {
         const err = validateFormat(key, val, employeeType);
         if (err) {
           newErrors[key] = err;
@@ -965,7 +1230,7 @@ const AddEmployee = () => {
       const firstErrorField = Object.keys(newErrors)[0];
       const el = formRef.current?.querySelector(`[name="${firstErrorField}"]`);
       if (el) {
-        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        el.scrollIntoView({ behavior: "smooth", block: "center" });
         el.focus?.();
       }
       return;
@@ -988,13 +1253,15 @@ const AddEmployee = () => {
       }
     } catch (requestError) {
       const respData = requestError.response?.data;
-      const errorMsg = respData?.message || `Employee could not be ${isEditing ? "updated" : "created"}. Please try again.`;
+      const errorMsg =
+        respData?.message ||
+        `Employee could not be ${isEditing ? "updated" : "created"}. Please try again.`;
       setSubmitError(errorMsg);
       if (respData?.field) {
         setFieldErrors((prev) => ({ ...prev, [respData.field]: errorMsg }));
         const el = formRef.current?.querySelector(`[name="${respData.field}"]`);
         if (el) {
-          el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          el.scrollIntoView({ behavior: "smooth", block: "center" });
           el.focus?.();
         }
       }
@@ -1004,108 +1271,282 @@ const AddEmployee = () => {
   };
 
   return (
-    <form ref={formRef} onSubmit={handleSubmit}>
-    <main className="mx-auto w-full max-w-6xl px-1 pb-10 pt-2 sm:px-3 sm:pt-4">
-      <input type="hidden" name="employee_type" value={employeeType} />
-      <div className="mb-6 flex flex-col gap-4 border-b border-[#dfe5df] pb-5 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <Link to="/admin/employees" className="mb-3 inline-flex items-center gap-1.5 text-xs font-semibold text-[#64736a] transition hover:text-[#355443]"><ArrowLeft className="h-3.5 w-3.5" /> All Employees</Link>
-          <p className="text-[10px] font-bold uppercase tracking-[0.17em] text-[#9a7442]">People & access</p>
-          <h1 className="mt-1 text-2xl font-bold text-[#203129]">{isEditing ? "Edit employee" : "Add employee"}</h1>
-          <p className="mt-1 text-sm text-[#758179]">{isEditing ? "Update this employee's details and account access." : "Review employee information fields before setting up the workflow."}</p>
-        </div>
-        <div className="w-full sm:w-64">
-          <label htmlFor="employee-type" className="mb-2 block text-xs font-semibold text-[#34443b]">Employee type <span className="text-[#c16b3a">*</span></label>
-          <div className="relative">
-            <select
-              id="employee-type"
-              value={employeeType}
-              disabled={isEditing}
-              onChange={(event) => {
-                setTypeChoice({ routeEmployeeType, value: event.target.value });
-                setCreatedEmployeeId("");
-                setFieldErrors({});
-                setSubmitError("");
-              }}
-              className={`${fieldStyles} appearance-none pr-9 font-semibold disabled:cursor-not-allowed disabled:opacity-70`}
+    <form ref={formRef} onSubmit={handleSubmit} className="min-h-screen bg-slate-50/50 pb-20">
+      <main className="mx-auto w-full max-w-6xl px-3 pt-4 sm:px-6 sm:pt-6">
+        <input type="hidden" name="employee_type" value={employeeType} />
+
+        {/* Top Header & Breadcrumbs */}
+        <div className="mb-6 space-y-4">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <Link
+              to="/admin/employees"
+              className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3.5 py-1.5 text-xs font-bold text-slate-600 shadow-2xs transition hover:border-slate-300 hover:text-[#1a3c36]"
             >
-              {employeeTypes.map((type) => <option key={type} value={type}>{type}</option>)}
-            </select>
-            <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#75847a]" />
+              <ArrowLeft className="h-3.5 w-3.5" />
+              <span>Back to Employees</span>
+            </Link>
+
+            {isEditing && (
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-800 border border-emerald-200">
+                <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />
+                Editing Mode
+              </span>
+            )}
+          </div>
+
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-slate-200 pb-5">
+            <div>
+              <div className="flex items-center gap-2.5">
+                <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-[#1a3c36] to-[#25524a] text-white shadow-md">
+                  <RoleIcon className="h-5 w-5" />
+                </div>
+                <div>
+                  <h1 className="font-serif text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
+                    {isEditing ? `Edit ${employeeData?.full_name || "Employee"}` : "Add New Employee"}
+                  </h1>
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    {isEditing
+                      ? "Update employee identity, contact, salary, role details and documents."
+                      : "Create a staff record with profile details, access credentials, and payroll."}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Role indicator in Edit mode */}
+            {isEditing && (
+              <div className="flex items-center gap-3 rounded-2xl border border-emerald-200/80 bg-emerald-50/60 p-3 sm:px-4">
+                <RoleIcon className="h-5 w-5 text-emerald-800" />
+                <div>
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-emerald-900/60">Current Role</p>
+                  <p className="text-xs font-bold text-slate-800">{employeeType}</p>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Interactive Role Switcher in ADD mode */}
+          {!isEditing && (
+            <div className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-2xs">
+              <label className="mb-2.5 block text-xs font-bold uppercase tracking-wider text-slate-500">
+                Select Employee Role <span className="text-rose-500">*</span>
+              </label>
+              <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6">
+                {employeeTypes.map((type) => {
+                  const Icon = getRoleIcon(type);
+                  const isSelected = employeeType === type;
+                  return (
+                    <button
+                      key={type}
+                      type="button"
+                      onClick={() => {
+                        setTypeChoice({ routeEmployeeType, value: type });
+                        setCreatedEmployeeId("");
+                        setFieldErrors({});
+                        setSubmitError("");
+                      }}
+                      className={`flex items-center gap-2.5 rounded-xl border p-3 text-left transition-all ${
+                        isSelected
+                          ? "border-[#1a3c36] bg-[#1a3c36] text-white shadow-md ring-2 ring-[#1a3c36]/20 font-bold"
+                          : "border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50 font-medium"
+                      }`}
+                    >
+                      <div
+                        className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${
+                          isSelected ? "bg-white/20 text-white" : "bg-slate-100 text-slate-600"
+                        }`}
+                      >
+                        <Icon className="h-4 w-4" />
+                      </div>
+                      <span className="truncate text-xs">{type}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Quick Jump In-Page Nav */}
+          <nav className="flex items-center gap-2 overflow-x-auto rounded-xl border border-slate-200/80 bg-white p-1.5 shadow-2xs scrollbar-none">
+            <a
+              href="#personal-section"
+              className="rounded-lg px-3 py-1.5 text-xs font-bold text-slate-600 hover:bg-emerald-50 hover:text-emerald-900 transition whitespace-nowrap"
+            >
+              Personal & Access
+            </a>
+            {employeeType === "Chef" && (
+              <a
+                href="#chef-section"
+                className="rounded-lg px-3 py-1.5 text-xs font-bold text-slate-600 hover:bg-emerald-50 hover:text-emerald-900 transition whitespace-nowrap"
+              >
+                Culinary Specialty
+              </a>
+            )}
+            {employeeType === "Delivery Partner" && (
+              <>
+                <a
+                  href="#vehicle-section"
+                  className="rounded-lg px-3 py-1.5 text-xs font-bold text-slate-600 hover:bg-emerald-50 hover:text-emerald-900 transition whitespace-nowrap"
+                >
+                  Vehicle & License
+                </a>
+                <a
+                  href="#schedule-section"
+                  className="rounded-lg px-3 py-1.5 text-xs font-bold text-slate-600 hover:bg-emerald-50 hover:text-emerald-900 transition whitespace-nowrap"
+                >
+                  Schedule
+                </a>
+              </>
+            )}
+            <a
+              href="#location-section"
+              className="rounded-lg px-3 py-1.5 text-xs font-bold text-slate-600 hover:bg-emerald-50 hover:text-emerald-900 transition whitespace-nowrap"
+            >
+              Location
+            </a>
+            <a
+              href="#bank-section"
+              className="rounded-lg px-3 py-1.5 text-xs font-bold text-slate-600 hover:bg-emerald-50 hover:text-emerald-900 transition whitespace-nowrap"
+            >
+              Bank & Payment
+            </a>
+            <a
+              href="#salary-section"
+              className="rounded-lg px-3 py-1.5 text-xs font-bold text-slate-600 hover:bg-emerald-50 hover:text-emerald-900 transition whitespace-nowrap"
+            >
+              Salary & Payroll
+            </a>
+            <a
+              href="#documents-section"
+              className="rounded-lg px-3 py-1.5 text-xs font-bold text-slate-600 hover:bg-emerald-50 hover:text-emerald-900 transition whitespace-nowrap"
+            >
+              Documents
+            </a>
+          </nav>
+        </div>
+
+        {/* Global Error & Status Banners */}
+        {(loadError || submitError) && (
+          <div
+            role="alert"
+            className="mb-5 flex items-center gap-3 rounded-2xl border border-rose-200 bg-rose-50/80 p-4 text-xs font-semibold text-rose-700 shadow-2xs animate-fadeIn"
+          >
+            <AlertCircle className="h-5 w-5 shrink-0 text-rose-600" />
+            <span>{loadError || submitError}</span>
+          </div>
+        )}
+
+        {createdEmployeeId && (
+          <div
+            role="status"
+            className="mb-5 flex items-center gap-3 rounded-2xl border border-emerald-200 bg-emerald-50/80 p-4 text-xs font-semibold text-emerald-800 shadow-2xs animate-fadeIn"
+          >
+            <CheckCircle2 className="h-5 w-5 shrink-0 text-emerald-600" />
+            <span>
+              Employee saved successfully! Generated System Employee ID: <strong>{createdEmployeeId}</strong>
+            </span>
+          </div>
+        )}
+
+        {isLoadingEmployee ? (
+          <div className="rounded-3xl border border-slate-200 bg-white py-20 text-center shadow-xs">
+            <LoaderCircle className="mx-auto h-8 w-8 animate-spin text-[#1a3c36]" />
+            <p className="mt-3 text-sm font-semibold text-slate-700">Loading employee details...</p>
+          </div>
+        ) : !isEditing || employeeData ? (
+          <div className="space-y-6">
+            <EmployeeFields
+              employeeType={employeeType}
+              employeeId={createdEmployeeId}
+              isEditing={isEditing}
+              initialData={employeeData}
+              fieldErrors={fieldErrors}
+              handleFieldChange={handleFieldChange}
+              handleFieldBlur={handleFieldBlur}
+              panValue={panValue}
+              handlePanChange={handlePanChange}
+            />
+          </div>
+        ) : null}
+
+        {/* Bottom Floating Action Bar */}
+        <div className="sticky bottom-4 z-30 mt-8 flex flex-col-reverse items-center justify-between gap-4 rounded-2xl border border-slate-200/90 bg-white/95 p-4 shadow-xl backdrop-blur-md sm:flex-row">
+          <div className="flex items-center gap-2 text-xs text-slate-500">
+            <ShieldCheck className="h-4 w-4 text-emerald-600 shrink-0" />
+            <span>
+              All required fields marked with <span className="font-bold text-rose-500">*</span> are validated for format
+              and system uniqueness.
+            </span>
+          </div>
+
+          <div className="flex w-full items-center justify-end gap-3 sm:w-auto">
+            <Link
+              to="/admin/employees"
+              className="inline-flex h-11 flex-1 items-center justify-center rounded-xl border border-slate-200 bg-white px-5 text-xs font-bold text-slate-700 shadow-2xs transition hover:bg-slate-50 sm:flex-none"
+            >
+              Cancel
+            </Link>
+            <button
+              type="submit"
+              disabled={isSubmitting || isLoadingEmployee || Boolean(loadError)}
+              className="inline-flex h-11 flex-1 cursor-pointer items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#1a3c36] to-[#25524a] px-6 text-xs font-bold text-white shadow-md transition hover:from-[#142f2a] hover:to-[#1d443d] active:scale-98 disabled:opacity-60 sm:flex-none"
+            >
+              {isSubmitting ? (
+                <LoaderCircle className="h-4 w-4 animate-spin text-white" />
+              ) : (
+                <Upload className="h-4 w-4 text-emerald-300" />
+              )}
+              <span>
+                {isSubmitting
+                  ? isEditing
+                    ? "Saving changes..."
+                    : "Adding employee..."
+                  : isEditing
+                  ? "Save Changes"
+                  : `Save ${employeeType}`}
+              </span>
+            </button>
           </div>
         </div>
-      </div>
 
-      <div className="mb-5 flex items-center gap-3 rounded-lg border border-[#dce6db] bg-[#f5f8f3] px-4 py-3">
-        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white text-[#42694f]"><UserPlus className="h-[18px] w-[18px]" /></span>
-        <div className="min-w-0 flex-1">
-          <p className="text-sm font-bold text-[#294333]">{employeeType} profile</p>
-          <p className="mt-0.5 text-xs text-[#748177]">Fields marked with <span className="font-bold text-[#c16b3a">*</span> are required.</p>
-        </div>
-      </div>
+        {/* Server Dining Table Assignment Modal */}
+        {newlyCreatedServer && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-xs animate-fadeIn">
+            <div className="w-full max-w-md rounded-3xl bg-white p-7 text-center shadow-2xl border border-slate-100 animate-scaleUp">
+              <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-[#1a3c36] to-[#25524a] text-amber-300 shadow-lg">
+                <UtensilsCrossed className="h-8 w-8" />
+              </div>
+              <h3 className="font-serif text-2xl font-bold text-slate-900">Server Registered!</h3>
+              <p className="mt-2 text-xs text-slate-600 leading-relaxed">
+                <strong>{newlyCreatedServer.full_name}</strong> has been successfully added to your staff directory.
+                Would you like to assign dining tables to this server now?
+              </p>
 
-      {(loadError || submitError) && <p role="alert" className="mb-4 rounded-lg border border-[#edc7c1] bg-[#fff4f1] px-4 py-3 text-sm text-[#a13e30]">{loadError || submitError}</p>}
-      {createdEmployeeId && <p role="status" className="mb-4 rounded-lg border border-[#cfe2d1] bg-[#f2f8f2] px-4 py-3 text-sm font-semibold text-[#315a3c]">Employee created successfully. Employee ID: {createdEmployeeId}</p>}
-
-      {isLoadingEmployee ? (
-        <p className="rounded-xl border border-[#e1e7e1] bg-white px-5 py-12 text-center text-sm text-[#849087]">Loading employee details...</p>
-      ) : !isEditing || employeeData ? (
-        <div className="space-y-4">
-          <EmployeeFields
-            employeeType={employeeType}
-            employeeId={createdEmployeeId}
-            isEditing={isEditing}
-            initialData={employeeData}
-            fieldErrors={fieldErrors}
-            handleFieldChange={handleFieldChange}
-            handleFieldBlur={handleFieldBlur}
-            panValue={panValue}
-            handlePanChange={handlePanChange}
-          />
-        </div>
-      ) : null}
-
-      <div className="mt-6 flex flex-col-reverse gap-3 border-t border-[#dfe5df] pt-5 sm:flex-row sm:justify-end">
-        <Link to="/admin/employees" className="inline-flex h-11 items-center justify-center rounded-lg border border-[#d5ddd5] bg-white px-5 text-sm font-semibold text-[#56645a] transition hover:bg-[#f7f8f6]">Cancel</Link>
-        <button type="submit" disabled={isSubmitting || isLoadingEmployee || Boolean(loadError)} aria-busy={isSubmitting} className="inline-flex h-11 cursor-pointer items-center justify-center gap-2 rounded-lg bg-[#244b36] px-5 text-sm font-semibold text-white transition hover:bg-[#1b3d2b] disabled:opacity-60">{isSubmitting ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />} {isSubmitting ? (isEditing ? "Saving changes..." : "Adding employee...") : (isEditing ? "Save changes" : "Save employee")}</button>
-      </div>
-
-      {newlyCreatedServer && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm animate-fadeIn">
-          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl text-center">
-            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-[#1f3228] text-[#d4a843] shadow-md">
-              <UtensilsCrossed className="h-7 w-7" />
-            </div>
-            <h3 className="text-xl font-bold text-gray-900 font-serif">Server Added Successfully!</h3>
-            <p className="mt-2 text-sm text-gray-600">
-              <strong>{newlyCreatedServer.full_name}</strong> has been registered. You can assign dining tables to this server now.
-            </p>
-
-            <div className="mt-6 flex flex-col gap-2.5">
-              <button
-                type="button"
-                onClick={() => {
-                  navigate("/admin/servers", { state: { assignServer: newlyCreatedServer } });
-                }}
-                className="inline-flex h-11 cursor-pointer items-center justify-center gap-2 rounded-xl bg-[#1a3c36] px-4 text-sm font-semibold text-white shadow-md transition hover:bg-[#234e46]"
-              >
-                <UtensilsCrossed className="h-4 w-4 text-[#d4a843]" />
-                <span>Assign Tables Now</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  navigate("/admin/servers");
-                }}
-                className="inline-flex h-11 cursor-pointer items-center justify-center rounded-xl border border-gray-200 bg-white text-sm font-semibold text-gray-700 transition hover:bg-gray-50"
-              >
-                Go to Manage Servers
-              </button>
+              <div className="mt-6 flex flex-col gap-2.5">
+                <button
+                  type="button"
+                  onClick={() => {
+                    navigate("/admin/servers", { state: { assignServer: newlyCreatedServer } });
+                  }}
+                  className="inline-flex h-11 cursor-pointer items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#1a3c36] to-[#25524a] px-5 text-xs font-bold text-white shadow-md transition hover:from-[#142f2a] hover:to-[#1d443d]"
+                >
+                  <UtensilsCrossed className="h-4 w-4 text-amber-300" />
+                  <span>Assign Dining Tables Now</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    navigate("/admin/servers");
+                  }}
+                  className="inline-flex h-11 cursor-pointer items-center justify-center rounded-xl border border-slate-200 bg-white text-xs font-bold text-slate-700 shadow-2xs transition hover:bg-slate-50"
+                >
+                  Go to Manage Servers
+                </button>
+              </div>
             </div>
           </div>
-        </div>
-      )}
-    </main>
+        )}
+      </main>
     </form>
   );
 };

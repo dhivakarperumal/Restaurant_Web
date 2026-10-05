@@ -4,6 +4,7 @@ import { Bike, BriefcaseBusiness, Eye, LayoutGrid, Pencil, Search, Table2, Trash
 import api from "../api";
 import EmployeeDocument from "./EmployeeDocument";
 import AssignTableModal from "./AssignTableModal";
+import ViewEmployeeModal from "./ViewEmployeeModal";
 
 const AllEmployees = () => {
   const location = useLocation();
@@ -427,57 +428,21 @@ const AllEmployees = () => {
         </div>
       </section>
     </div>
-    {(detailsLoading || selectedEmployee || detailsError) && (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" role="presentation" onClick={(event) => {
-        if (event.target === event.currentTarget) {
-          setSelectedEmployee(null);
-          setDetailsError("");
-        }
-      }}>
-        <section role="dialog" aria-modal="true" aria-labelledby="employee-details-title" className="max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-xl bg-white shadow-xl">
-          <div className="sticky top-0 flex items-center justify-between border-b border-[#edf0ec] bg-white px-5 py-4">
-            <div>
-              <p className="text-[10px] font-bold uppercase tracking-[0.17em] text-[#9a7442]">Employee record</p>
-              <h2 id="employee-details-title" className="mt-1 text-lg font-bold text-[#203129]">{selectedEmployee?.full_name || (detailsLoading ? "Loading employee..." : "Employee details")}</h2>
-            </div>
-            <button type="button" onClick={() => { setSelectedEmployee(null); setDetailsError(""); }} aria-label="Close employee details" className="rounded-md p-2 text-[#758179] hover:bg-[#f2f5f1]"><X className="h-5 w-5" /></button>
-          </div>
-          {detailsLoading ? (
-            <p className="p-8 text-center text-sm text-[#849087]">Loading employee details...</p>
-          ) : detailsError ? (
-            <p role="alert" className="m-5 rounded-lg border border-[#edc7c1] bg-[#fff4f1] px-4 py-3 text-sm text-[#a13e30]">{detailsError}</p>
-          ) : selectedEmployee && (
-            <div className="grid gap-3 p-5 sm:grid-cols-2">
-              {Object.entries(selectedEmployee)
-                .filter(([key, value]) => value !== null && value !== "" && !["user_id", "created_by", "updated_by"].includes(key))
-                .map(([key, value]) => {
-                  const isDocument = /(_upload|_proof|_photo|_card|_certificate|_book|_license|_documents)$/.test(key)
-                    && typeof value === "string";
-                  return (
-                    <div key={key} className="min-w-0 rounded-lg border border-[#edf0ec] p-3">
-                      <p className="text-[10px] font-bold uppercase tracking-wide text-[#849087]">{key.replaceAll("_", " ")}</p>
-                      {isDocument ? (
-                        <EmployeeDocument filename={value} />
-                      ) : (
-                        <p className="mt-1 break-words text-sm text-[#34443b]">
-                          {key === "special_dishes" ? (() => {
-                            try {
-                              const items = JSON.parse(value);
-                              return Array.isArray(items) ? items.join(", ") : String(value);
-                            } catch {
-                              return String(value);
-                            }
-                          })() : typeof value === "object" ? JSON.stringify(value) : String(value)}
-                        </p>
-                      )}
-                    </div>
-                  );
-                })}
-            </div>
-          )}
-        </section>
-      </div>
-    )}
+    <ViewEmployeeModal
+      isOpen={Boolean(detailsLoading || selectedEmployee || detailsError)}
+      loading={detailsLoading}
+      error={detailsError}
+      employee={selectedEmployee}
+      serverTableCount={selectedEmployee?.employee_id ? serverTableCounts[selectedEmployee.employee_id] || 0 : 0}
+      onClose={() => {
+        setSelectedEmployee(null);
+        setDetailsError("");
+      }}
+      onAssignTable={(emp) => {
+        setSelectedEmployee(null);
+        setAssignModalServer(emp);
+      }}
+    />
 
     {assignModalServer && (
       <AssignTableModal
