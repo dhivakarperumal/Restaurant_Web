@@ -1,4 +1,4 @@
-import { StrictMode, lazy } from 'react'
+import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { createHashRouter, RouterProvider } from 'react-router-dom'
 import './index.css'
@@ -44,9 +44,8 @@ import ServerDashboard from './Server Restaurant/ServerDashboard.jsx'
 import ServerFood from './Server Restaurant/ServerFood/ServerFood.jsx'
 import ServerTables from './Server Restaurant/ServerTables/ServerTables.jsx'
 import ServerLayout from './Server Restaurant/Serverpanel.jsx'
-import DeliveryDashboard from './Delivery Restaurant/DeliveryDashboard.jsx'
 import DeliveryLayout from './Delivery Restaurant/Deliverypanel.jsx'
-
+import { DeliveryOrdersPage, DeliveryPartnerDashboard, DeliveryPartnerPages } from './Delivery Restaurant/DeliveryRoutePages.jsx'
 
 import { AuthProvider } from './PrivateRouter/AuthContext.jsx'
 import { StoreProvider } from './PrivateRouter/StoreContext.jsx'
@@ -255,15 +254,24 @@ const router = createHashRouter([
       {
         path: 'delivery',
         element: (
-          <PrivateRoute allowedRoles={["Super Admin", "delivery"]}>
+          <PrivateRoute allowedRoles={["Super Admin", "delivery", "Delivery Partner"]}>
             <DeliveryLayout />
           </PrivateRoute>
         ),
         children: [
           {
             index: true,
-            element: <DeliveryDashboard />,
+            element: <DeliveryPartnerDashboard />,
           },
+          {
+            path: 'orders',
+            element: <DeliveryOrdersPage />,
+          },
+          { path: 'earnings', element: <DeliveryPartnerPages section="earnings" /> },
+          { path: 'history', element: <DeliveryPartnerPages section="history" /> },
+          { path: 'notifications', element: <DeliveryPartnerPages section="notifications" /> },
+          { path: 'profile', element: <DeliveryPartnerPages section="profile" /> },
+          { path: 'support', element: <DeliveryPartnerPages section="support" /> },
         ],
       },
     ],
