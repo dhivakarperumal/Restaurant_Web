@@ -28,6 +28,15 @@ const listBanners = async () => {
   return rows.map(parseBanner);
 };
 
+const listActiveHeroBanners = async () => {
+  const [rows] = await db.execute(
+    `SELECT * FROM banners
+     WHERE active = 1 AND LOWER(type) = 'hero'
+     ORDER BY created_at DESC, id DESC`
+  );
+  return rows.map(parseBanner);
+};
+
 const findBannerById = async (id) => {
   const [rows] = await db.execute('SELECT * FROM banners WHERE id = ? LIMIT 1', [id]);
   return parseBanner(rows[0]);
@@ -57,4 +66,12 @@ const deleteBanner = async (id) => {
   return result.affectedRows > 0;
 };
 
-module.exports = { createBanner, deleteBanner, findBannerById, initializeBannerSchema, listBanners, updateBanner };
+module.exports = {
+  createBanner,
+  deleteBanner,
+  findBannerById,
+  initializeBannerSchema,
+  listActiveHeroBanners,
+  listBanners,
+  updateBanner,
+};

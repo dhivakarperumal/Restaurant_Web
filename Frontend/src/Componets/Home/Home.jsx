@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState, useContext } from 'react';
-import { ArrowLeft, ArrowRight, ArrowUpRight, Sparkles, UtensilsCrossed } from 'lucide-react';
+import { ArrowLeft, ArrowRight, UtensilsCrossed } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import api from '../../api';
 import FoodProductCard from '../../CommonComponents/FoodProductCard';
 import FoodCustomizationModal from '../../CommonComponents/FoodCustomizationModal';
+import HomeBanner from '../../CommonComponents/HomeBanner';
 import PageContainer from '../../CommonComponents/PageContainer';
 import { StoreContext } from '../../PrivateRouter/StoreContext';
 
@@ -75,37 +76,7 @@ const Home = () => {
 
   return (
     <main className="min-h-screen bg-[#fcfbf9] pb-16 pt-24 text-[#203129]">
-      <section className="relative overflow-hidden bg-gradient-to-br from-[#0d221d] via-[#16382f] to-[#20493e] py-14 text-white sm:py-20">
-        <div className="pointer-events-none absolute -right-20 -top-24 h-80 w-80 rounded-full bg-[#d4a843]/10 blur-3xl" />
-        <div className="pointer-events-none absolute -bottom-28 left-1/3 h-72 w-72 rounded-full bg-emerald-300/10 blur-3xl" />
-        <PageContainer>
-          <div className="relative grid items-center gap-8 md:grid-cols-[1.2fr_0.8fr]">
-            <div>
-              <span className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1.5 text-xs font-semibold text-[#e8c873]">
-                <Sparkles className="h-3.5 w-3.5" /> Fresh from our kitchen
-              </span>
-              <h1 className="mt-5 max-w-2xl font-serif text-4xl font-bold leading-tight tracking-tight sm:text-5xl lg:text-6xl">
-                Good food brings us together.
-              </h1>
-              <p className="mt-4 max-w-xl text-sm leading-6 text-emerald-50/80 sm:text-base">
-                Discover freshly prepared favorites made with care. Find your next
-                meal and make it your own.
-              </p>
-              <Link
-                to="/shop"
-                className="mt-7 inline-flex items-center gap-2 rounded-xl bg-[#d4a843] px-5 py-3 text-sm font-bold text-[#172c24] transition hover:bg-[#e3bd60]"
-              >
-                Explore the menu <ArrowUpRight className="h-4 w-4" />
-              </Link>
-            </div>
-            <div className="hidden justify-self-end rounded-[2rem] border border-white/10 bg-white/5 p-8 text-center backdrop-blur-sm md:block">
-              <UtensilsCrossed className="mx-auto h-16 w-16 text-[#d4a843]" />
-              <p className="mt-4 font-serif text-xl font-bold">Made fresh. Served with love.</p>
-              <p className="mt-2 text-sm text-emerald-50/70">Your table is waiting.</p>
-            </div>
-          </div>
-        </PageContainer>
-      </section>
+      <HomeBanner />
 
       <section className="py-12 sm:py-16">
         <PageContainer>

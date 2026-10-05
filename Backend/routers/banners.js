@@ -21,6 +21,7 @@ const requireAdmin = async (req, res, next) => {
   }
 };
 
+router.get('/public', controller.publicList);
 router.use(requireAdmin);
 router.get('/', controller.list);
 router.get('/:bannerId', controller.getById);
