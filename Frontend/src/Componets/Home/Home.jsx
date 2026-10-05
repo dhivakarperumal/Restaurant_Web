@@ -75,7 +75,7 @@ const Home = () => {
   };
 
   return (
-    <main className="min-h-screen bg-[#fcfbf9] pb-16 pt-24 text-[#203129]">
+    <main className="min-h-screen bg-[#fcfbf9] pb-16 text-[#203129]">
       <HomeBanner />
 
       <section className="py-12 sm:py-16">

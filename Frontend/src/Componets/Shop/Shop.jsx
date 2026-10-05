@@ -263,7 +263,7 @@ export default function Shop() {
   };
 
   return (
-    <div className="min-h-screen bg-[#fcfbf9] text-[#203129] pt-24 pb-20">
+    <div className="min-h-screen bg-[#fcfbf9] text-[#203129] pb-20">
       {/* 1. Hero Banner */}
       <section className="relative overflow-hidden bg-gradient-to-r from-[#0d221d] via-[#16382f] to-[#20493e] py-12 text-white">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(212,168,67,0.15),transparent_50%)] pointer-events-none" />
