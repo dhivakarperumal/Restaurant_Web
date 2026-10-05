@@ -1238,7 +1238,7 @@ export default function ServerTables() {
               </div>
 
               {/* Status Select Field */}
-              <div>
+              {/* <div>
                 <label className="block text-xs font-semibold text-gray-700 mb-1">
                   Table Status
                 </label>
@@ -1254,7 +1254,7 @@ export default function ServerTables() {
                   <option value="Reserved">Reserved (Booked)</option>
                   <option value="Maintenance">Maintenance (Out of service)</option>
                 </select>
-              </div>
+              </div> */}
 
               {editingTable && (
                 <div className="p-3 bg-gray-50 rounded-xl border border-gray-100 text-xs space-y-1 text-gray-500">
