@@ -90,11 +90,20 @@ const create = async (req, res) => {
     }
 
     const config = await paymentConfig();
-    if (config.disabled || !config.keyId || !config.keySecret) {
+    if (config.disabled) {
       await failOnlineOrder(createdOrder.orderNumber, getUserId(req));
       return res.status(503).json({
         success: false,
-        message: 'Online payment is not configured. Please choose cash on delivery or contact the restaurant.',
+        message: 'Online payment is disabled in restaurant payment settings. Please choose cash on delivery or contact the restaurant.',
+      });
+    }
+    if (!config.keyId || !config.keySecret) {
+      await failOnlineOrder(createdOrder.orderNumber, getUserId(req));
+      return res.status(503).json({
+        success: false,
+        message: !config.keySecret
+          ? 'Razorpay server configuration is incomplete. Set RAZORPAY_KEY_SECRET in Backend/.env, then restart the backend.'
+          : 'Razorpay Key ID is missing. Set RAZORPAY_KEY_ID in Backend/.env or restaurant payment settings.',
       });
     }
 
