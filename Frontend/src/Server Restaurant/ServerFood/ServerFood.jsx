@@ -68,6 +68,9 @@ export default function ServerFood() {
   // View Details Modal
   const [viewingFood, setViewingFood] = useState(null);
   const [activeImageIndex, setActiveImageIndex] = useState(0);
+  const [selectedAddons, setSelectedAddons] = useState([]);
+  const [selectedCustomizations, setSelectedCustomizations] = useState({});
+  const [customizeQuantity, setCustomizeQuantity] = useState(1);
 
   const fetchActiveBill = async () => {
     if (!selectedTable?.table_id) return;
@@ -225,25 +228,123 @@ export default function ServerFood() {
   const handleOpenDetails = (food) => {
     setViewingFood(food);
     setActiveImageIndex(0);
+    setSelectedAddons([]);
+    setSelectedCustomizations({});
+    setCustomizeQuantity(1);
   };
 
-  const updateCartQuantity = (food, quantity) => {
-    const foodId = food.food_id || food.id;
+  const getDefaultCartKey = (food) => `${food.food_id || food.id}:default`;
+  const getFoodQuantity = (food) => {
+    const foodId = String(food.food_id || food.id);
+    return Object.values(cart).reduce(
+      (total, item) => total + (item.foodId === foodId ? item.quantity : 0),
+      0,
+    );
+  };
+
+  const updateCartQuantity = (food, quantity, cartKey = getDefaultCartKey(food)) => {
+    const foodId = String(food.food_id || food.id);
     setCart((currentCart) => {
       const nextCart = { ...currentCart };
       if (quantity <= 0) {
-        delete nextCart[foodId];
+        delete nextCart[cartKey];
       } else {
-        nextCart[foodId] = { food, quantity: Math.min(quantity, 99) };
+        const existingItem = currentCart[cartKey];
+        nextCart[cartKey] = {
+          food,
+          foodId,
+          quantity: Math.min(quantity, 99),
+          selected_addons: existingItem?.selected_addons || [],
+          selected_customizations: existingItem?.selected_customizations || {},
+          unitPrice: existingItem?.unitPrice ?? Number(food.final_price || 0),
+        };
       }
       return nextCart;
     });
   };
 
+  const adjustFoodQuantity = (food, change) => {
+    const defaultKey = getDefaultCartKey(food);
+    const defaultQuantity = cart[defaultKey]?.quantity || 0;
+    if (change > 0) {
+      const requiredGroup = (food.customizations || []).find((group) => (
+        group.required === true || Number(group.required) === 1 || group.required === "true"
+      ));
+      if (requiredGroup) {
+        handleOpenDetails(food);
+        return;
+      }
+      updateCartQuantity(food, defaultQuantity + 1, defaultKey);
+      return;
+    }
+    if (defaultQuantity > 0) {
+      updateCartQuantity(food, defaultQuantity - 1, defaultKey);
+      return;
+    }
+    const foodId = String(food.food_id || food.id);
+    const variant = Object.entries(cart).find(([, item]) => item.foodId === foodId);
+    if (variant) updateCartQuantity(variant[1].food, variant[1].quantity - 1, variant[0]);
+  };
+
+  const getConfiguredUnitPrice = () => {
+    if (!viewingFood) return 0;
+    const addonPrice = (viewingFood.addons || [])
+      .filter((addon) => selectedAddons.includes(addon.addon_name || addon.name))
+      .reduce((total, addon) => total + Number(addon.price || 0), 0);
+    const customizationPrice = (viewingFood.customizations || []).reduce((total, group) => {
+      const selected = selectedCustomizations[group.name];
+      const names = Array.isArray(selected) ? selected : selected ? [selected] : [];
+      return total + names.reduce((groupTotal, name) => {
+        const option = (group.options || []).find((candidate) => candidate.name === name);
+        return groupTotal + Number(option?.price || 0);
+      }, 0);
+    }, 0);
+    return Number((Number(viewingFood.final_price || 0) + addonPrice + customizationPrice).toFixed(2));
+  };
+
+  const addConfiguredFood = () => {
+    if (!viewingFood) return;
+    const missingRequiredGroup = (viewingFood.customizations || []).find((group) => {
+      const selection = selectedCustomizations[group.name];
+      const isRequired = group.required === true || Number(group.required) === 1 || group.required === "true";
+      return isRequired
+        && (!selection || (Array.isArray(selection) && selection.length === 0));
+    });
+    if (missingRequiredGroup) {
+      toast.error(`Choose ${missingRequiredGroup.name} before adding this item.`);
+      return;
+    }
+
+    const foodId = String(viewingFood.food_id || viewingFood.id);
+    const selectedAddonsCopy = [...selectedAddons].sort();
+    const selectedCustomizationsCopy = Object.fromEntries(
+      Object.entries(selectedCustomizations)
+        .map(([name, selection]) => [name, Array.isArray(selection) ? [...selection].sort() : selection])
+        .sort(([first], [second]) => first.localeCompare(second)),
+    );
+    const cartKey = `${foodId}:${JSON.stringify([selectedAddonsCopy, selectedCustomizationsCopy])}`;
+    setCart((currentCart) => {
+      const currentQuantity = currentCart[cartKey]?.quantity || 0;
+      return {
+        ...currentCart,
+        [cartKey]: {
+          food: viewingFood,
+          foodId,
+          quantity: Math.min(currentQuantity + customizeQuantity, 99),
+          selected_addons: selectedAddonsCopy,
+          selected_customizations: selectedCustomizationsCopy,
+          unitPrice: getConfiguredUnitPrice(),
+        },
+      };
+    });
+    toast.success(`${viewingFood.food_name} added to this order.`);
+    setViewingFood(null);
+  };
+
   const cartItems = Object.entries(cart);
   const cartQuantity = cartItems.reduce((total, [, item]) => total + item.quantity, 0);
   const cartTotal = cartItems.reduce(
-    (total, [, item]) => total + Number(item.food.final_price || 0) * item.quantity,
+    (total, [, item]) => total + item.unitPrice * item.quantity,
     0,
   );
 
@@ -253,9 +354,11 @@ export default function ServerFood() {
       setSubmittingOrder(true);
       const response = await api.post("/kitchen-orders", {
         table_id: selectedTable.table_id,
-        items: cartItems.map(([foodId, item]) => ({
-          food_id: foodId,
+        items: cartItems.map(([, item]) => ({
+          food_id: item.foodId,
           quantity: item.quantity,
+          selected_addons: item.selected_addons,
+          selected_customizations: item.selected_customizations,
         })),
       });
       setCart({});
@@ -696,11 +799,11 @@ export default function ServerFood() {
                     <div className="flex items-center justify-between rounded-xl bg-gray-50 p-2">
                       <span className="text-xs font-medium text-gray-600">Quantity</span>
                       <div className="flex items-center gap-2">
-                        <button type="button" onClick={() => updateCartQuantity(food, (cart[food.food_id || food.id]?.quantity || 0) - 1)} aria-label={`Decrease ${food.food_name} quantity`} disabled={!cart[food.food_id || food.id]} className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-700 disabled:cursor-not-allowed disabled:opacity-40">
+                        <button type="button" onClick={() => adjustFoodQuantity(food, -1)} aria-label={`Decrease ${food.food_name} quantity`} disabled={!getFoodQuantity(food)} className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-700 disabled:cursor-not-allowed disabled:opacity-40">
                           <Minus className="h-4 w-4" />
                         </button>
-                        <span className="w-5 text-center text-sm font-bold">{cart[food.food_id || food.id]?.quantity || 0}</span>
-                        <button type="button" onClick={() => updateCartQuantity(food, (cart[food.food_id || food.id]?.quantity || 0) + 1)} aria-label={`Increase ${food.food_name} quantity`} disabled={!isAvailable || (cart[food.food_id || food.id]?.quantity || 0) >= 99} className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-700 disabled:cursor-not-allowed disabled:opacity-40">
+                        <span className="w-5 text-center text-sm font-bold">{getFoodQuantity(food)}</span>
+                        <button type="button" onClick={() => adjustFoodQuantity(food, 1)} aria-label={`Increase ${food.food_name} quantity`} disabled={!isAvailable || getFoodQuantity(food) >= 99} className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-700 disabled:cursor-not-allowed disabled:opacity-40">
                           <Plus className="h-4 w-4" />
                         </button>
                       </div>
@@ -712,7 +815,7 @@ export default function ServerFood() {
                     className="w-full flex items-center justify-center gap-2 py-2 px-3 bg-gray-50 hover:bg-[#1f3228] text-gray-700 hover:text-[#d4a843] rounded-xl text-xs font-semibold transition border border-gray-200 hover:border-[#1f3228] cursor-pointer"
                   >
                     <Eye className="w-3.5 h-3.5" />
-                    <span>View Food Details</span>
+                    <span>{selectedTable ? "Customize & Add" : "View Food Details"}</span>
                   </button>
                 </div>
               </div>
@@ -868,11 +971,11 @@ export default function ServerFood() {
                         <div className="flex items-center justify-end gap-2">
                           {selectedTable && (
                             <div className="flex items-center gap-1.5">
-                              <button type="button" onClick={() => updateCartQuantity(food, (cart[food.food_id || food.id]?.quantity || 0) - 1)} aria-label={`Decrease ${food.food_name} quantity`} disabled={!cart[food.food_id || food.id]} className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg border border-gray-200 disabled:cursor-not-allowed disabled:opacity-40">
+                              <button type="button" onClick={() => adjustFoodQuantity(food, -1)} aria-label={`Decrease ${food.food_name} quantity`} disabled={!getFoodQuantity(food)} className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg border border-gray-200 disabled:cursor-not-allowed disabled:opacity-40">
                                 <Minus className="h-3.5 w-3.5" />
                               </button>
-                              <span className="w-5 text-center text-xs font-bold">{cart[food.food_id || food.id]?.quantity || 0}</span>
-                              <button type="button" onClick={() => updateCartQuantity(food, (cart[food.food_id || food.id]?.quantity || 0) + 1)} aria-label={`Increase ${food.food_name} quantity`} disabled={!isAvailable || (cart[food.food_id || food.id]?.quantity || 0) >= 99} className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg border border-gray-200 disabled:cursor-not-allowed disabled:opacity-40">
+                              <span className="w-5 text-center text-xs font-bold">{getFoodQuantity(food)}</span>
+                              <button type="button" onClick={() => adjustFoodQuantity(food, 1)} aria-label={`Increase ${food.food_name} quantity`} disabled={!isAvailable || getFoodQuantity(food) >= 99} className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg border border-gray-200 disabled:cursor-not-allowed disabled:opacity-40">
                                 <Plus className="h-3.5 w-3.5" />
                               </button>
                             </div>
@@ -883,7 +986,7 @@ export default function ServerFood() {
                             className="inline-flex cursor-pointer items-center gap-1.5 rounded-xl border border-gray-200 px-3 py-1.5 text-xs font-semibold text-gray-700 transition hover:border-[#1f3228] hover:bg-[#1f3228] hover:text-[#d4a843]"
                           >
                             <Eye className="h-3.5 w-3.5" />
-                            <span>View</span>
+                            <span>{selectedTable ? "Customize & Add" : "View"}</span>
                           </button>
                         </div>
                       </td>
@@ -969,18 +1072,29 @@ export default function ServerFood() {
           </div>
           {cartItems.length ? (
             <div className="space-y-3">
-              {cartItems.map(([foodId, item]) => (
-                <div key={foodId} className="flex flex-wrap items-center justify-between gap-3">
+              {cartItems.map(([cartKey, item]) => (
+                <div key={cartKey} className="flex flex-wrap items-center justify-between gap-3">
                   <div className="min-w-0">
                     <p className="truncate text-sm font-semibold text-gray-800">{item.food.food_name}</p>
-                    <p className="text-xs text-gray-500">₹{Number(item.food.final_price || 0).toFixed(2)} each</p>
+                    {(item.selected_addons.length > 0 || Object.keys(item.selected_customizations).length > 0) && (
+                      <p className="mt-0.5 text-xs text-gray-500">
+                        {[
+                          ...item.selected_addons,
+                          ...Object.entries(item.selected_customizations).flatMap(([group, selection]) => {
+                            const options = Array.isArray(selection) ? selection : [selection];
+                            return options.filter(Boolean).map((option) => `${group}: ${option}`);
+                          }),
+                        ].join(" · ")}
+                      </p>
+                    )}
+                    <p className="text-xs text-gray-500">₹{item.unitPrice.toFixed(2)} each</p>
                   </div>
                   <div className="flex items-center gap-2">
-                    <button type="button" onClick={() => updateCartQuantity(item.food, item.quantity - 1)} aria-label={`Decrease ${item.food.food_name} quantity`} className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg border border-gray-200 text-gray-700 hover:bg-gray-50">
+                    <button type="button" onClick={() => updateCartQuantity(item.food, item.quantity - 1, cartKey)} aria-label={`Decrease ${item.food.food_name} quantity`} className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg border border-gray-200 text-gray-700 hover:bg-gray-50">
                       <Minus className="h-4 w-4" />
                     </button>
                     <span className="w-6 text-center text-sm font-bold text-gray-800">{item.quantity}</span>
-                    <button type="button" onClick={() => updateCartQuantity(item.food, item.quantity + 1)} aria-label={`Increase ${item.food.food_name} quantity`} disabled={item.quantity >= 99} className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg border border-gray-200 text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50">
+                    <button type="button" onClick={() => updateCartQuantity(item.food, item.quantity + 1, cartKey)} aria-label={`Increase ${item.food.food_name} quantity`} disabled={item.quantity >= 99} className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg border border-gray-200 text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50">
                       <Plus className="h-4 w-4" />
                     </button>
                   </div>
@@ -1200,36 +1314,128 @@ export default function ServerFood() {
               </div>
             ) : null}
 
-            {/* Addons / Customizations if available */}
-            {Array.isArray(viewingFood.addons) &&
-            viewingFood.addons.length > 0 ? (
-              <div className="mb-5 space-y-1">
-                <h4 className="text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                  Available Add-ons
-                </h4>
-                <div className="flex flex-wrap gap-1.5">
-                  {viewingFood.addons.map((addon, i) => (
-                    <span
-                      key={i}
-                      className="px-2.5 py-1 bg-gray-100 text-gray-800 text-xs rounded-lg font-medium"
-                    >
-                      {addon.name || addon.addon_name || JSON.stringify(addon)}{" "}
-                      {addon.price ? `(+₹${addon.price})` : ""}
-                    </span>
-                  ))}
+            {selectedTable && (
+              <div className="mb-5 space-y-5">
+                {Array.isArray(viewingFood.addons) && viewingFood.addons.some((addon) => String(addon.status || "Active").toLowerCase() === "active") && (
+                  <fieldset className="space-y-2">
+                    <legend className="text-xs font-semibold uppercase tracking-wider text-gray-700">Add-ons</legend>
+                    <div className="grid gap-2 sm:grid-cols-2">
+                      {viewingFood.addons
+                        .filter((addon) => String(addon.status || "Active").toLowerCase() === "active")
+                        .map((addon) => {
+                          const name = addon.addon_name || addon.name;
+                          return (
+                            <label key={name} className="flex cursor-pointer items-center justify-between gap-3 rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-sm">
+                              <span className="flex items-center gap-2">
+                                <input
+                                  type="checkbox"
+                                  checked={selectedAddons.includes(name)}
+                                  onChange={(event) => setSelectedAddons((current) => event.target.checked
+                                    ? [...current, name]
+                                    : current.filter((selected) => selected !== name))}
+                                  className="h-4 w-4 accent-[#1f3228]"
+                                />
+                                <span className="font-medium text-gray-800">{name}</span>
+                              </span>
+                              <span className="text-xs font-semibold text-gray-600">+₹{Number(addon.price || 0).toFixed(2)}</span>
+                            </label>
+                          );
+                        })}
+                    </div>
+                  </fieldset>
+                )}
+
+                {(viewingFood.customizations || []).map((group) => {
+                  const isMultiple = String(group.selection_type || "Single").toLowerCase() === "multiple";
+                  const selection = selectedCustomizations[group.name];
+                  const selectedOptions = Array.isArray(selection) ? selection : selection ? [selection] : [];
+                  return (
+                    <fieldset key={group.name} className="space-y-2">
+                      <legend className="text-xs font-semibold uppercase tracking-wider text-gray-700">
+                        {group.name}{(group.required === true || Number(group.required) === 1 || group.required === "true") ? " *" : ""}{" "}
+                        <span className="normal-case font-normal text-gray-500">
+                          ({isMultiple ? "choose any" : "choose one"})
+                        </span>
+                      </legend>
+                      <div className="grid gap-2 sm:grid-cols-2">
+                        {!(group.required === true || Number(group.required) === 1 || group.required === "true") && !isMultiple && (
+                          <label className="flex cursor-pointer items-center gap-2 rounded-xl border border-gray-200 px-3 py-2 text-sm">
+                            <input
+                              type="radio"
+                              name={`customization-${group.name}`}
+                              checked={!selection}
+                              onChange={() => setSelectedCustomizations((current) => {
+                                const next = { ...current };
+                                delete next[group.name];
+                                return next;
+                              })}
+                              className="h-4 w-4 accent-[#1f3228]"
+                            />
+                            <span>No preference</span>
+                          </label>
+                        )}
+                        {(group.options || []).map((option) => (
+                          <label key={option.name} className="flex cursor-pointer items-center justify-between gap-3 rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-sm">
+                            <span className="flex items-center gap-2">
+                              <input
+                                type={isMultiple ? "checkbox" : "radio"}
+                                name={`customization-${group.name}`}
+                                checked={selectedOptions.includes(option.name)}
+                                onChange={(event) => setSelectedCustomizations((current) => {
+                                  if (isMultiple) {
+                                    const nextOptions = event.target.checked
+                                      ? [...selectedOptions, option.name]
+                                      : selectedOptions.filter((name) => name !== option.name);
+                                    return { ...current, [group.name]: nextOptions };
+                                  }
+                                  return { ...current, [group.name]: option.name };
+                                })}
+                                className="h-4 w-4 accent-[#1f3228]"
+                              />
+                              <span className="font-medium text-gray-800">{option.name}</span>
+                            </span>
+                            {Number(option.price || 0) > 0 && (
+                              <span className="text-xs font-semibold text-gray-600">+₹{Number(option.price).toFixed(2)}</span>
+                            )}
+                          </label>
+                        ))}
+                      </div>
+                    </fieldset>
+                  );
+                })}
+
+                <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl bg-gray-50 p-3">
+                  <div>
+                    <p className="text-xs font-semibold text-gray-700">Quantity</p>
+                    <div className="mt-1 flex items-center gap-2">
+                      <button type="button" onClick={() => setCustomizeQuantity((quantity) => Math.max(1, quantity - 1))} aria-label="Decrease customized food quantity" className="flex h-8 w-8 items-center justify-center rounded-lg border border-gray-200 bg-white"><Minus className="h-4 w-4" /></button>
+                      <span className="w-6 text-center text-sm font-bold">{customizeQuantity}</span>
+                      <button type="button" onClick={() => setCustomizeQuantity((quantity) => Math.min(99, quantity + 1))} aria-label="Increase customized food quantity" disabled={customizeQuantity >= 99} className="flex h-8 w-8 items-center justify-center rounded-lg border border-gray-200 bg-white disabled:opacity-50"><Plus className="h-4 w-4" /></button>
+                    </div>
+                  </div>
+                  <p className="text-sm font-bold text-gray-900">₹{getConfiguredUnitPrice().toFixed(2)} each</p>
                 </div>
               </div>
-            ) : null}
+            )}
 
-            {/* Modal Bottom: Close Button */}
-            <div className="pt-3 border-t border-gray-100 flex items-center justify-end">
+            <div className="flex flex-wrap items-center justify-end gap-2 border-t border-gray-100 pt-3">
               <button
                 type="button"
                 onClick={() => setViewingFood(null)}
-                className="px-5 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-800 rounded-xl text-sm font-semibold transition cursor-pointer"
+                className="cursor-pointer rounded-xl bg-gray-100 px-5 py-2.5 text-sm font-semibold text-gray-800 transition hover:bg-gray-200"
               >
-                Close Details
+                {selectedTable ? "Cancel" : "Close Details"}
               </button>
+              {selectedTable && (
+                <button
+                  type="button"
+                  onClick={addConfiguredFood}
+                  className="inline-flex cursor-pointer items-center gap-2 rounded-xl bg-[#1f3228] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[#29483b]"
+                >
+                  <ShoppingCart className="h-4 w-4" />
+                  Add to order · ₹{(getConfiguredUnitPrice() * customizeQuantity).toFixed(2)}
+                </button>
+              )}
             </div>
           </div>
         </div>

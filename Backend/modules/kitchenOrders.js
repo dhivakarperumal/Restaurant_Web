@@ -15,6 +15,7 @@ async function initializeKitchenOrderSchema() {
       table_number VARCHAR(100) NOT NULL,
       status VARCHAR(30) NOT NULL DEFAULT 'Pending',
       created_by VARCHAR(255) NOT NULL,
+      user_id VARCHAR(255) NULL,
       created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
       updated_at TIMESTAMP NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
       INDEX kitchen_orders_status_idx (status),
@@ -31,12 +32,30 @@ async function initializeKitchenOrderSchema() {
       food_name VARCHAR(180) NOT NULL,
       quantity SMALLINT UNSIGNED NOT NULL,
       unit_price DECIMAL(10,2) NOT NULL,
+      selected_addons LONGTEXT NULL,
+      selected_customizations LONGTEXT NULL,
       created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
       INDEX kitchen_order_items_order_idx (order_id),
       CONSTRAINT kitchen_order_items_order_fk FOREIGN KEY (order_id)
         REFERENCES kitchen_orders (order_id) ON DELETE CASCADE
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
   `);
+
+  const [orderUserIdColumn] = await db.query("SHOW COLUMNS FROM kitchen_orders LIKE 'user_id'");
+  if (!orderUserIdColumn.length) {
+    await db.query('ALTER TABLE kitchen_orders ADD COLUMN user_id VARCHAR(255) NULL AFTER created_by');
+    await db.query('UPDATE kitchen_orders SET user_id = created_by WHERE user_id IS NULL');
+  }
+
+  const [selectedAddonsColumn] = await db.query("SHOW COLUMNS FROM kitchen_order_items LIKE 'selected_addons'");
+  if (!selectedAddonsColumn.length) {
+    await db.query('ALTER TABLE kitchen_order_items ADD COLUMN selected_addons LONGTEXT NULL AFTER unit_price');
+  }
+
+  const [selectedCustomizationsColumn] = await db.query("SHOW COLUMNS FROM kitchen_order_items LIKE 'selected_customizations'");
+  if (!selectedCustomizationsColumn.length) {
+    await db.query('ALTER TABLE kitchen_order_items ADD COLUMN selected_customizations LONGTEXT NULL AFTER selected_addons');
+  }
 
   await initializeTableBillsSchema();
 }
@@ -67,14 +86,15 @@ async function createKitchenOrder({ tableId, userId, items }) {
     }
 
     const foodIds = items.map((item) => item.food_id);
-    const placeholders = foodIds.map(() => '?').join(', ');
+    const placeholders = [...new Set(foodIds)].map(() => '?').join(', ');
     const [foodRows] = await connection.execute(
-      `SELECT food_id, food_name, final_price, is_available, dining_available, status
+      `SELECT food_id, food_name, final_price, is_available, dining_available, status,
+              addons, customizations
        FROM foods WHERE food_id IN (${placeholders}) FOR UPDATE`,
-      foodIds
+      [...new Set(foodIds)]
     );
     const foodsById = new Map(foodRows.map((food) => [food.food_id, food]));
-    if (foodRows.length !== foodIds.length) {
+    if (foodRows.length !== new Set(foodIds).size) {
       const error = new Error('One or more selected menu items no longer exist.');
       error.statusCode = 400;
       throw error;
@@ -87,6 +107,84 @@ async function createKitchenOrder({ tableId, userId, items }) {
         error.statusCode = 409;
         throw error;
       }
+
+      let availableAddons;
+      let availableCustomizations;
+      try {
+        availableAddons = JSON.parse(food.addons || '[]');
+        availableCustomizations = JSON.parse(food.customizations || '[]');
+      } catch {
+        const error = new Error(`${food.food_name} has invalid menu options. Please contact an administrator.`);
+        error.statusCode = 500;
+        throw error;
+      }
+      if (!Array.isArray(availableAddons) || !Array.isArray(availableCustomizations)) {
+        const error = new Error(`${food.food_name} has invalid menu options. Please contact an administrator.`);
+        error.statusCode = 500;
+        throw error;
+      }
+
+      const selectedAddons = item.selected_addons || [];
+      const selectedCustomizations = item.selected_customizations || {};
+      if (!Array.isArray(selectedAddons) || selectedAddons.some((name) => typeof name !== 'string')
+        || new Set(selectedAddons).size !== selectedAddons.length) {
+        const error = new Error(`Choose valid add-ons for ${food.food_name}.`);
+        error.statusCode = 400;
+        throw error;
+      }
+      if (!selectedCustomizations || typeof selectedCustomizations !== 'object'
+        || Array.isArray(selectedCustomizations)) {
+        const error = new Error(`Choose valid customizations for ${food.food_name}.`);
+        error.statusCode = 400;
+        throw error;
+      }
+
+      let optionPrice = 0;
+      for (const addonName of selectedAddons) {
+        const addon = availableAddons.find((candidate) => candidate.addon_name === addonName);
+        if (!addon || String(addon.status || 'Active').toLowerCase() !== 'active') {
+          const error = new Error(`An add-on for ${food.food_name} is no longer available.`);
+          error.statusCode = 409;
+          throw error;
+        }
+        optionPrice += Number(addon.price || 0);
+      }
+
+      const groupNames = new Set(availableCustomizations.map((group) => group.name));
+      if (Object.keys(selectedCustomizations).some((name) => !groupNames.has(name))) {
+        const error = new Error(`A customization for ${food.food_name} is no longer available.`);
+        error.statusCode = 409;
+        throw error;
+      }
+      for (const group of availableCustomizations) {
+        const selected = selectedCustomizations[group.name];
+        const selectedNames = Array.isArray(selected) ? selected : selected ? [selected] : [];
+        const required = group.required === true || Number(group.required) === 1;
+        if (required && selectedNames.length === 0) {
+          const error = new Error(`Choose ${group.name} for ${food.food_name}.`);
+          error.statusCode = 400;
+          throw error;
+        }
+        if ((group.selection_type !== 'Multiple' && selectedNames.length > 1)
+          || new Set(selectedNames).size !== selectedNames.length
+          || selectedNames.some((name) => typeof name !== 'string')) {
+          const error = new Error(`Choose valid options for ${group.name}.`);
+          error.statusCode = 400;
+          throw error;
+        }
+        for (const optionName of selectedNames) {
+          const option = (group.options || []).find((candidate) => candidate.name === optionName);
+          if (!option) {
+            const error = new Error(`A customization for ${food.food_name} is no longer available.`);
+            error.statusCode = 409;
+            throw error;
+          }
+          optionPrice += Number(option.price || 0);
+        }
+      }
+      item.selected_addons = selectedAddons;
+      item.selected_customizations = selectedCustomizations;
+      item.unit_price = Number((Number(food.final_price) + optionPrice).toFixed(2));
     }
 
     const table = tableRows[0];
@@ -125,17 +223,26 @@ async function createKitchenOrder({ tableId, userId, items }) {
     const roundNumber = Number(existingOrders[0]?.count || 0) + 1;
 
     await connection.execute(
-      `INSERT INTO kitchen_orders (order_id, bill_id, round_number, table_id, table_number, status, created_by)
-       VALUES (?, ?, ?, ?, ?, 'Pending', ?)`,
-      [orderId, activeBill.bill_id, roundNumber, table.table_id, table.table_number, userId]
+      `INSERT INTO kitchen_orders (order_id, bill_id, round_number, table_id, table_number, status, created_by, user_id)
+       VALUES (?, ?, ?, ?, ?, 'Pending', ?, ?)` ,
+      [orderId, activeBill.bill_id, roundNumber, table.table_id, table.table_number, userId, userId]
     );
 
     for (const item of items) {
       const food = foodsById.get(item.food_id);
       await connection.execute(
-        `INSERT INTO kitchen_order_items (order_id, food_id, food_name, quantity, unit_price)
-         VALUES (?, ?, ?, ?, ?)`,
-        [orderId, food.food_id, food.food_name, item.quantity, food.final_price]
+        `INSERT INTO kitchen_order_items
+           (order_id, food_id, food_name, quantity, unit_price, selected_addons, selected_customizations)
+         VALUES (?, ?, ?, ?, ?, ?, ?)`,
+        [
+          orderId,
+          food.food_id,
+          food.food_name,
+          item.quantity,
+          item.unit_price,
+          JSON.stringify(item.selected_addons),
+          JSON.stringify(item.selected_customizations),
+        ]
       );
     }
 
@@ -155,7 +262,9 @@ async function createKitchenOrder({ tableId, userId, items }) {
         food_id: food.food_id,
         food_name: food.food_name,
         quantity: item.quantity,
-        unit_price: Number(food.final_price),
+        unit_price: item.unit_price,
+        selected_addons: item.selected_addons,
+        selected_customizations: item.selected_customizations,
       };
     });
     return {
@@ -167,6 +276,7 @@ async function createKitchenOrder({ tableId, userId, items }) {
       table_number: table.table_number,
       status: 'Pending',
       created_by: userId,
+      user_id: userId,
       created_at: new Date(),
       items: orderItems,
       bill: {
@@ -192,7 +302,7 @@ async function updateKitchenOrderStatus({ orderId, status }) {
   if (result.affectedRows === 0) return null;
 
   const [orders] = await db.execute(
-    `SELECT order_id, bill_id, round_number, table_id, table_number, status, created_by, created_at, updated_at
+    `SELECT order_id, bill_id, round_number, table_id, table_number, status, created_by, user_id, created_at, updated_at
      FROM kitchen_orders WHERE order_id = ? LIMIT 1`,
     [orderId]
   );
@@ -201,7 +311,7 @@ async function updateKitchenOrderStatus({ orderId, status }) {
 
 async function listKitchenOrders(filters = {}) {
   let query = `SELECT ko.order_id, ko.bill_id, ko.round_number, ko.table_id, ko.table_number,
-                      ko.status, ko.created_by, ko.created_at, ko.updated_at,
+                      ko.status, ko.created_by, ko.user_id, ko.created_at, ko.updated_at,
                       tb.bill_number, tb.status AS bill_status
                FROM kitchen_orders ko
                LEFT JOIN table_bills tb ON ko.bill_id = tb.bill_id`;
@@ -227,7 +337,7 @@ async function listKitchenOrders(filters = {}) {
   const orderIds = orders.map((order) => order.order_id);
   const placeholders = orderIds.map(() => '?').join(', ');
   const [items] = await db.execute(
-    `SELECT order_id, food_id, food_name, quantity, unit_price
+    `SELECT order_id, food_id, food_name, quantity, unit_price, selected_addons, selected_customizations
      FROM kitchen_order_items WHERE order_id IN (${placeholders}) ORDER BY id`,
     orderIds
   );
@@ -239,6 +349,8 @@ async function listKitchenOrders(filters = {}) {
       food_name: item.food_name,
       quantity: Number(item.quantity),
       unit_price: Number(item.unit_price),
+      selected_addons: parseStoredJson(item.selected_addons, []),
+      selected_customizations: parseStoredJson(item.selected_customizations, {}),
     });
     itemsByOrder.set(item.order_id, orderItems);
   }
@@ -250,5 +362,14 @@ async function listKitchenOrders(filters = {}) {
   }));
 }
 
-module.exports = { createKitchenOrder, initializeKitchenOrderSchema, listKitchenOrders, updateKitchenOrderStatus };
+function parseStoredJson(value, fallback) {
+  if (!value) return fallback;
+  if (typeof value === 'object') return value;
+  try {
+    return JSON.parse(value);
+  } catch {
+    return fallback;
+  }
+}
 
+module.exports = { createKitchenOrder, initializeKitchenOrderSchema, listKitchenOrders, updateKitchenOrderStatus };
