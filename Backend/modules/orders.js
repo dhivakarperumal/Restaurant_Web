@@ -3,7 +3,7 @@ const db = require('../config/db');
 
 const initializeOrderSchema = async () => {
   await db.query(`
-    CREATE TABLE IF NOT EXISTS user_addresses (
+    CREATE TABLE IF NOT EXISTS \`address\` (
       id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
       user_id VARCHAR(255) NOT NULL,
       address_line VARCHAR(255) NOT NULL,
@@ -14,10 +14,23 @@ const initializeOrderSchema = async () => {
       landmark VARCHAR(180) NULL,
       address_hash CHAR(64) NOT NULL,
       created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-      UNIQUE KEY user_addresses_user_hash_unique (user_id, address_hash),
-      INDEX user_addresses_user_id_idx (user_id)
+      UNIQUE KEY address_user_hash_unique (user_id, address_hash),
+      INDEX address_user_id_idx (user_id)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
   `);
+
+  const [legacyAddressTable] = await db.execute(
+    `SELECT 1 FROM information_schema.TABLES
+     WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'user_addresses' LIMIT 1`
+  );
+  if (legacyAddressTable.length > 0) {
+    await db.query(`
+      INSERT IGNORE INTO \`address\`
+        (id, user_id, address_line, area_locality, city, state, pincode, landmark, address_hash, created_at)
+      SELECT id, user_id, address_line, area_locality, city, state, pincode, landmark, address_hash, created_at
+      FROM user_addresses
+    `);
+  }
 
   await db.query(`
     CREATE TABLE IF NOT EXISTS orders (
@@ -95,7 +108,7 @@ const invalidCartError = (message) => {
 const getUserAddresses = async (userId) => {
   const [rows] = await db.execute(
     `SELECT id, address_line, area_locality, city, state, pincode, landmark
-     FROM user_addresses WHERE user_id = ? ORDER BY created_at DESC, id DESC`,
+     FROM \`address\` WHERE user_id = ? ORDER BY created_at DESC, id DESC`,
     [userId]
   );
   return rows;
@@ -211,7 +224,7 @@ const createOrderFromCart = async ({ userId, customer, fulfillmentType, address,
       const normalizedAddress = normalizeAddress(address);
       const hash = addressHash(normalizedAddress);
       const [insertResult] = await connection.execute(
-        `INSERT INTO user_addresses
+        `INSERT INTO \`address\`
           (user_id, address_line, area_locality, city, state, pincode, landmark, address_hash)
          VALUES (?, ?, ?, ?, ?, ?, ?, ?)
          ON DUPLICATE KEY UPDATE id = LAST_INSERT_ID(id)`,
