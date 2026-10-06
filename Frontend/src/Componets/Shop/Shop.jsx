@@ -504,71 +504,6 @@ export default function Shop() {
                 </fieldset>
               )}
 
-              {/* Spicy toggle */}
-              <button
-                type="button"
-                onClick={() => { setOnlySpicy(!onlySpicy); setCurrentPage(1); }}
-                className={`inline-flex h-9 items-center gap-1 rounded-xl px-3 text-xs font-bold transition ${
-                  onlySpicy
-                    ? "bg-amber-500 text-white shadow-2xs"
-                    : "border border-slate-200 bg-slate-50/60 text-slate-600 hover:bg-slate-100"
-                }`}
-              >
-                <Flame className="h-3.5 w-3.5" />
-                <span>Spicy</span>
-              </button>
-
-              {/* In Stock toggle */}
-              <button
-                type="button"
-                onClick={() => { setOnlyAvailable(!onlyAvailable); setCurrentPage(1); }}
-                className={`inline-flex h-9 items-center gap-1 rounded-xl px-3 text-xs font-bold transition ${
-                  onlyAvailable
-                    ? "bg-[#1a3c36] text-white shadow-2xs"
-                    : "border border-slate-200 bg-slate-50/60 text-slate-600 hover:bg-slate-100"
-                }`}
-              >
-                <span>Available</span>
-              </button>
-
-              {/* Sort By Dropdown */}
-              <div className="relative">
-                <select
-                  value={sortBy}
-                  onChange={(e) => { setSortBy(e.target.value); setCurrentPage(1); }}
-                  className="h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-700 outline-none transition focus:border-[#1a3c36]"
-                >
-                  <option value="recommended">Featured First</option>
-                  <option value="price-low">Price: Low to High</option>
-                  <option value="price-high">Price: High to Low</option>
-                  <option value="rating">Top Rated</option>
-                  <option value="prep-time">Fastest Preparation</option>
-                </select>
-              </div>
-
-              {/* View Mode Toggle */}
-              <div className="flex items-center rounded-xl border border-slate-200 bg-slate-50 p-0.5">
-                <button
-                  type="button"
-                  onClick={() => setViewMode("grid")}
-                  aria-label="Grid view"
-                  className={`rounded-lg p-1.5 transition ${
-                    viewMode === "grid" ? "bg-white text-[#1a3c36] shadow-2xs" : "text-slate-400 hover:text-slate-700"
-                  }`}
-                >
-                  <LayoutGrid className="h-3.5 w-3.5" />
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setViewMode("list")}
-                  aria-label="List view"
-                  className={`rounded-lg p-1.5 transition ${
-                    viewMode === "list" ? "bg-white text-[#1a3c36] shadow-2xs" : "text-slate-400 hover:text-slate-700"
-                  }`}
-                >
-                  <List className="h-3.5 w-3.5" />
-                </button>
-              </div>
             </div>
           </div>
 
@@ -615,9 +550,7 @@ export default function Shop() {
             minimumPrice !== "" ||
             maximumPrice !== "" ||
             minimumRating > 0 ||
-            selectedOfferRange ||
-            onlySpicy ||
-            onlyAvailable) && (
+            selectedOfferRange) && (
             <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-slate-100 pt-2.5 text-xs">
               <span className="text-slate-400 font-medium">Active Filters:</span>
               {searchQuery && (
@@ -642,18 +575,6 @@ export default function Shop() {
                 <span className="inline-flex items-center gap-1 rounded-lg bg-slate-100 px-2.5 py-1 text-slate-700 font-medium">
                   Type: {selectedFoodType}
                   <button type="button" aria-label="Clear dietary filter" onClick={() => { setSelectedFoodType("all"); setCurrentPage(1); }}><X className="h-3 w-3" /></button>
-                </span>
-              )}
-              {onlySpicy && (
-                <span className="inline-flex items-center gap-1 rounded-lg bg-amber-50 px-2.5 py-1 text-amber-800 font-medium border border-amber-200/60">
-                  Spicy Only
-                  <button type="button" aria-label="Clear spicy filter" onClick={() => { setOnlySpicy(false); setCurrentPage(1); }}><X className="h-3 w-3" /></button>
-                </span>
-              )}
-              {onlyAvailable && (
-                <span className="inline-flex items-center gap-1 rounded-lg bg-slate-100 px-2.5 py-1 text-slate-700 font-medium">
-                  Available Only
-                  <button type="button" aria-label="Clear availability filter" onClick={() => { setOnlyAvailable(false); setCurrentPage(1); }}><X className="h-3 w-3" /></button>
                 </span>
               )}
               {(minimumPrice !== "" || maximumPrice !== "") && (
@@ -683,10 +604,45 @@ export default function Shop() {
             <h2 className="text-lg font-bold text-[#1a3c36]">Our menu</h2>
             <p className="mt-1 text-xs text-slate-500">Showing {filteredFoods.length ? (currentPage - 1) * productsPerPage + 1 : 0}–{Math.min(currentPage * productsPerPage, filteredFoods.length)} of {filteredFoods.length} dishes</p>
           </div>
+          <div className="ml-auto flex flex-wrap items-center justify-end gap-2">
+            <label className="sr-only" htmlFor="shop-sort">Sort menu</label>
+            <select
+              id="shop-sort"
+              value={sortBy}
+              onChange={(event) => { setSortBy(event.target.value); setCurrentPage(1); }}
+              className="h-10 rounded-lg border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-700 outline-none focus:border-[#1a3c36]"
+            >
+              <option value="recommended">Featured First</option>
+              <option value="price-low">Price: Low to High</option>
+              <option value="price-high">Price: High to Low</option>
+              <option value="rating">Top Rated</option>
+              <option value="prep-time">Fastest Preparation</option>
+            </select>
+            <div className="flex items-center rounded-lg border border-slate-200 bg-slate-50 p-1">
+              <button
+                type="button"
+                onClick={() => setViewMode("grid")}
+                aria-label="Grid view"
+                aria-pressed={viewMode === "grid"}
+                className={`rounded-md p-2 transition ${viewMode === "grid" ? "bg-white text-[#1a3c36] shadow-sm" : "text-slate-400 hover:text-slate-700"}`}
+              >
+                <LayoutGrid className="h-4 w-4" />
+              </button>
+              <button
+                type="button"
+                onClick={() => setViewMode("list")}
+                aria-label="List view"
+                aria-pressed={viewMode === "list"}
+                className={`rounded-md p-2 transition ${viewMode === "list" ? "bg-white text-[#1a3c36] shadow-sm" : "text-slate-400 hover:text-slate-700"}`}
+              >
+                <List className="h-4 w-4" />
+              </button>
+            </div>
+          </div>
         </div>
         <div className="mt-4">
           {loading ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-3">
               {[1, 2, 3, 4, 5, 6, 7, 8].map((n) => (
                 <div key={n} className="rounded-3xl border border-slate-200/80 bg-white p-4 shadow-2xs animate-pulse">
                   <div className="h-48 w-full rounded-2xl bg-slate-200" />
@@ -733,7 +689,7 @@ export default function Shop() {
             </div>
           ) : viewMode === "grid" ? (
             /* Grid View */
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-3">
               {paginatedFoods.map((food) => (
                 <FoodProductCard
                   key={food.food_id || food.id}
