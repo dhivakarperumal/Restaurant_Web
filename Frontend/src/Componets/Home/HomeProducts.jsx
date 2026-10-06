@@ -105,8 +105,8 @@ function HomeProducts() {
 
           {loading ? (
             <div className="flex gap-5 overflow-hidden">
-              {[1, 2, 3, 4].map((item) => (
-                <div key={item} className="w-[270px] shrink-0 animate-pulse rounded-3xl border border-slate-200 bg-white p-4">
+              {[1, 2, 3, 4, 5].map((item) => (
+                <div key={item} className="basis-[calc((100%-1.25rem)/2)] shrink-0 animate-pulse rounded-3xl border border-slate-200 bg-white p-4 sm:basis-[calc((100%-2.5rem)/3)] lg:basis-[calc((100%-3.75rem)/4)] xl:basis-[calc((100%-5rem)/5)]">
                   <div className="aspect-[4/3] rounded-2xl bg-slate-200" />
                   <div className="mt-4 h-4 w-2/3 rounded bg-slate-200" />
                   <div className="mt-2 h-3 w-full rounded bg-slate-100" />
@@ -129,7 +129,7 @@ function HomeProducts() {
                 <FoodProductCard
                   key={food.food_id || food.id}
                   food={food}
-                  className="w-[270px] shrink-0 snap-start sm:w-[290px]"
+                  className="basis-[calc((100%-1.25rem)/2)] shrink-0 snap-start sm:basis-[calc((100%-2.5rem)/3)] lg:basis-[calc((100%-3.75rem)/4)] xl:basis-[calc((100%-5rem)/5)]"
                   onSelect={() => setSelectedFood(food)}
                   onAdd={setSelectedFood}
                   isInWishlist={wishlist.some((item) => (
