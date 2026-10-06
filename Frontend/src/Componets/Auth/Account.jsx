@@ -5,6 +5,8 @@ import {
   ChevronRight,
   Eye,
   EyeOff,
+  Gift,
+  Heart,
   LockKeyhole,
   LogOut,
   MapPin,
@@ -14,13 +16,13 @@ import {
   Search,
   ShoppingBag,
   Trash2,
+  Utensils,
   UserRound,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import api from "../../api";
 import PageContainer from "../../CommonComponents/PageContainer";
 import { useAuth } from "../../PrivateRouter/AuthContext";
-import PageHeader from "../../CommonComponents/PageHeader";
 import OrderDetailsModal from "./OrderDetailsModal";
 import LogoutConfirmModal from "../../CommonComponents/LogoutConfirmModal";
 
@@ -355,82 +357,111 @@ const Account = () => {
 
   return (
     <>
-      <PageHeader title="Account" />
-      <main className="min-h-screen bg-[#f5f7f3] pb-20 pt-8 sm:pt-12">
-        <PageContainer className="max-w-[1440px]">
-          <section className="relative mb-7 overflow-hidden rounded-[28px] bg-[#071C18] px-6 py-7 text-white shadow-xl shadow-[#071C18]/10 sm:px-9 sm:py-9">
-            <div aria-hidden="true" className="pointer-events-none absolute -right-10 -top-24 h-72 w-72 rounded-full border-[36px] border-white/[0.035]" />
-            <div aria-hidden="true" className="pointer-events-none absolute -bottom-28 right-32 h-56 w-56 rounded-full bg-[#FD5E02]/10 blur-2xl" />
-            <div className="relative flex flex-col gap-7 sm:flex-row sm:items-center sm:justify-between">
-              <div className="flex items-center gap-4 sm:gap-5">
-                <span className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl border border-white/15 bg-white/10 font-serif text-2xl font-bold text-[#FEB914] sm:h-[76px] sm:w-[76px] sm:text-3xl">
+      <main className="min-h-screen bg-[#f7f7f3] pb-16 pt-2 sm:pt-4">
+        <PageContainer className="max-w-[1500px]">
+          <section className="relative mb-4 min-h-[300px] overflow-hidden rounded-[26px] bg-[#002d1c] text-white shadow-lg sm:min-h-[322px]">
+            <img src="/images/tab.png" alt="" aria-hidden="true" className="absolute inset-y-0 right-0 h-full w-full object-cover object-center opacity-65 sm:w-[68%] sm:object-[center_44%]" />
+            <div className="absolute inset-0 bg-gradient-to-r from-[#002b1a] via-[#00351f]/95 to-[#002b1a]/15" />
+            <div className="absolute inset-0 bg-gradient-to-t from-[#001d12]/90 via-transparent to-[#001d12]/10" />
+            <div className="relative flex min-h-[235px] flex-col justify-center gap-5 px-5 pb-6 pt-7 sm:min-h-[242px] sm:flex-row sm:items-center sm:gap-8 sm:px-10 sm:pb-10">
+              <div className="flex shrink-0 items-center gap-4 sm:gap-6">
+                <div className="relative flex h-[82px] w-[82px] shrink-0 items-center justify-center rounded-full border-[4px] border-[#FEB914] bg-[#146b3a] text-4xl font-bold text-white shadow-xl sm:h-[112px] sm:w-[112px] sm:text-5xl">
                   {userInitial}
-                </span>
-                <div className="min-w-0">
-                  <p className="text-xs font-bold uppercase tracking-[0.2em] text-[#FEB914]">Your Foodie account</p>
-                  <h1 className="mt-1 truncate font-serif text-3xl font-bold sm:text-4xl">Welcome, {displayName}</h1>
-                  <p className="mt-1 truncate text-sm text-white/65">{user?.email || "Manage your personal details and orders"}</p>
+                  <span className="absolute -bottom-1 -right-1 flex h-9 w-9 items-center justify-center rounded-full border-2 border-[#00351f] bg-[#FEB914] text-[#05341f]">
+                    <Utensils size={17} />
+                  </span>
                 </div>
+                <div className="min-w-0">
+                  <p className="text-[11px] font-extrabold uppercase tracking-[0.22em] text-[#FEB914]">My account</p>
+                  <h1 className="mt-1 font-serif text-3xl font-extrabold leading-[1.04] sm:text-4xl lg:text-[46px]">
+                    Welcome back,<br />
+                    <span className="text-[#FEB914]">{displayName}!</span>
+                  </h1>
+                  <p className="mt-2 text-xs text-white/80 sm:text-sm">Good food, good times, always with you.</p>
+                  <div className="mt-3 inline-flex items-center gap-1.5 rounded-full border border-[#FEB914]/40 bg-[#FEB914]/15 px-3 py-1 text-[11px] font-semibold text-[#ffe18a]">
+                    <Heart size={13} fill="currentColor" /> Food lover
+                  </div>
+                </div>
+              </div>
+              <div aria-hidden="true" className="hidden max-w-32 -rotate-6 text-center font-serif text-2xl font-bold italic leading-tight text-white drop-shadow sm:block">
+                Food<br />Brings<br />People<br /><span className="text-[#FEB914]">Together</span>
               </div>
               <button
                 type="button"
                 onClick={() => setShowLogoutConfirm(true)}
-                className="inline-flex w-fit items-center gap-2 rounded-xl border border-white/20 bg-white/[0.07] px-4 py-2.5 text-sm font-semibold text-white transition hover:border-[#FD5E02] hover:bg-[#FD5E02] sm:self-center"
+                className="absolute right-5 top-5 hidden items-center gap-2 rounded-full border border-white/25 bg-black/20 px-4 py-2 text-xs font-semibold text-white transition hover:bg-[#FD5E02] sm:inline-flex"
               >
-                <LogOut size={16} /> Sign out
+                <LogOut size={15} /> Sign out
               </button>
             </div>
-            <div className="relative mt-7 grid grid-cols-2 gap-3 border-t border-white/10 pt-5 sm:grid-cols-3">
-              <div className="rounded-xl bg-white/[0.06] px-4 py-3">
-                <p className="text-2xl font-bold text-white">{orders.length}</p>
-                <p className="mt-0.5 text-xs text-white/60">Your orders</p>
-              </div>
-              <div className="rounded-xl bg-white/[0.06] px-4 py-3">
-                <p className="text-2xl font-bold text-white">{addresses.length}</p>
-                <p className="mt-0.5 text-xs text-white/60">Saved addresses</p>
-              </div>
-              <div className="col-span-2 rounded-xl bg-white/[0.06] px-4 py-3 sm:col-span-1">
-                <p className="truncate text-sm font-semibold text-white">{profile.mobile_number || "Add a phone number"}</p>
-                <p className="mt-1 text-xs text-white/60">Contact number</p>
-              </div>
+            <div className="relative grid grid-cols-2 gap-2 px-4 pb-4 sm:grid-cols-2 sm:gap-3 lg:absolute lg:inset-x-7 lg:bottom-2 lg:grid-cols-4 lg:pb-0">
+              {[
+                { id: "orders", icon: Package, value: orders.length, title: "Total Orders", detail: "Your food journey", tone: "text-[#FD5E02]", wash: "bg-[#fff0e6]" },
+                { id: "address", icon: MapPin, value: addresses.length, title: "Saved Addresses", detail: "Faster checkout", tone: "text-[#396F0B]", wash: "bg-[#edf5e9]" },
+                { id: "profile", icon: Heart, value: profile.mobile_number ? "Ready" : "Add", title: "Your Details", detail: "Keep in touch", tone: "text-[#eaa600]", wash: "bg-[#fff6d8]" },
+                { id: "password", icon: LockKeyhole, value: "Secure", title: "Your Account", detail: "Privacy matters", tone: "text-[#e84747]", wash: "bg-[#fff0f0]" },
+              ].map(({ id, icon: Icon, value, title, detail, tone, wash }) => (
+                <button
+                  key={id}
+                  type="button"
+                  onClick={() => handleTabSelect(id)}
+                  className="group flex min-w-0 items-center gap-2.5 rounded-2xl border border-[#e9e5dd] bg-white px-3 py-3 text-left text-[#10221a] shadow-md transition hover:-translate-y-1 hover:shadow-lg sm:gap-3.5 sm:px-4"
+                >
+                  <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${wash} ${tone} sm:h-11 sm:w-11`}>
+                    <Icon size={20} />
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block text-base font-extrabold leading-none sm:text-lg">{value}</span>
+                    <span className="mt-1 block truncate text-[10px] font-bold sm:text-xs">{title}</span>
+                    <span className="hidden truncate text-[10px] text-slate-500 sm:block">{detail}</span>
+                  </span>
+                  <ChevronRight size={15} className={`shrink-0 ${tone} transition group-hover:translate-x-0.5`} />
+                </button>
+              ))}
             </div>
           </section>
 
-          <nav className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4" aria-label="Account sections">
-            {TAB_CONFIG.map((tab) => {
-              const Icon = tab.icon;
-              const isActive = activeTab === tab.id;
-              const count = tab.id === "orders" ? orders.length : null;
-              return (
-                <button
-                  key={tab.id}
-                  type="button"
-                  onClick={() => handleTabSelect(tab.id)}
-                  aria-current={isActive ? "page" : undefined}
-                  className={`group flex min-h-[78px] items-center gap-3 rounded-2xl border p-3 text-left transition duration-200 sm:min-h-[88px] sm:p-4 ${
-                    isActive
-                      ? "border-[#396F0B] bg-[#396F0B] text-white shadow-lg shadow-[#396F0B]/15"
-                      : "border-[#e2e8df] bg-white text-[#071C18] hover:-translate-y-0.5 hover:border-[#396F0B]/40 hover:shadow-md"
-                  }`}
-                >
-                  <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${isActive ? "bg-white/15 text-[#FEB914]" : "bg-[#eff5e9] text-[#396F0B]"}`}>
-                    <Icon size={19} />
-                  </span>
-                  <span className="min-w-0 flex-1">
-                    <span className="flex items-center gap-2 text-sm font-bold leading-tight">
-                      {tab.id === "profile" ? "Personal info" : tab.id === "address" ? "Addresses" : tab.id === "orders" ? "Orders" : "Password"}
-                      {count !== null && <span className={`rounded-full px-1.5 py-0.5 text-[10px] ${isActive ? "bg-white/15 text-white" : "bg-[#eff5e9] text-[#396F0B]"}`}>{count}</span>}
-                    </span>
-                    <span className={`mt-1 hidden truncate text-xs sm:block ${isActive ? "text-white/65" : "text-slate-500"}`}>{tab.desc}</span>
-                  </span>
-                  <ChevronRight size={16} className={`hidden shrink-0 sm:block ${isActive ? "text-[#FEB914]" : "text-slate-300 group-hover:text-[#396F0B]"}`} />
+          <div className="grid items-stretch gap-3 lg:grid-cols-[minmax(225px,0.78fr)_minmax(0,1.55fr)_minmax(205px,0.64fr)]">
+            <aside className="relative overflow-hidden rounded-[22px] bg-[#00351f] text-white shadow-md">
+              <img src="/images/tab.png" alt="" aria-hidden="true" className="absolute inset-0 h-full w-full object-cover opacity-35" />
+              <div className="absolute inset-0 bg-gradient-to-b from-[#00351f]/95 via-[#00351f]/80 to-[#001f14]/95" />
+              <div className="relative flex h-full flex-col p-4 sm:p-5">
+                <p className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-[#FEB914]">Account</p>
+                <h2 className="mt-1 font-serif text-2xl font-bold leading-tight">Your Foodie Space</h2>
+                <p className="mt-1 text-xs leading-5 text-white/70">Manage everything in one place</p>
+                <nav className="mt-5 space-y-1.5" aria-label="Account sections">
+                  {TAB_CONFIG.map((tab) => {
+                    const Icon = tab.icon;
+                    const isActive = activeTab === tab.id;
+                    const label = tab.id === "profile" ? "Profile Details" : tab.id === "address" ? "Saved Address" : tab.id === "orders" ? "Your Orders" : "Change Password";
+                    return (
+                      <button
+                        key={tab.id}
+                        type="button"
+                        onClick={() => handleTabSelect(tab.id)}
+                        aria-current={isActive ? "page" : undefined}
+                        className={`group flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left transition ${
+                          isActive ? "bg-[#eff5e9] text-[#07321f] shadow-sm" : "text-white hover:bg-white/10"
+                        }`}
+                      >
+                        <Icon size={19} className={`shrink-0 ${isActive ? "text-[#396F0B]" : "text-[#FEB914]"}`} />
+                        <span className="min-w-0 flex-1">
+                          <span className="block text-xs font-bold">{label}</span>
+                          <span className={`mt-0.5 block truncate text-[10px] ${isActive ? "text-slate-500" : "text-white/55"}`}>{tab.desc}</span>
+                        </span>
+                        <ChevronRight size={15} className={`shrink-0 transition group-hover:translate-x-0.5 ${isActive ? "text-[#396F0B]" : "text-white/45"}`} />
+                      </button>
+                    );
+                  })}
+                </nav>
+                <button type="button" onClick={() => setShowLogoutConfirm(true)} className="mt-auto flex items-center gap-3 rounded-xl border-t border-white/15 px-3 pt-4 text-sm font-semibold text-[#ffb5a9] transition hover:text-white">
+                  <LogOut size={18} /> Sign out <span className="ml-auto text-[10px] text-white/50">Leave your account</span>
                 </button>
-              );
-            })}
-          </nav>
+              </div>
+            </aside>
 
-          <section className="min-w-0">
-            <div className="account-content min-h-[460px] rounded-[24px] border border-[#e2e8df] bg-white p-5 shadow-sm sm:p-8 lg:p-10">
+            <section className="min-w-0">
+              <div className="account-content min-h-[460px] h-full rounded-[22px] border border-[#ecece5] bg-white p-5 shadow-sm sm:p-7 lg:p-8">
                 {/* TAB 1: PROFILE DETAILS */}
                 {activeTab === "profile" && (
                   <div>
@@ -933,6 +964,31 @@ const Account = () => {
                 )}
             </div>
           </section>
+          <aside className="rounded-[22px] border border-[#eeeae0] bg-white p-4 shadow-sm sm:p-5">
+            <div className="relative h-40 overflow-hidden rounded-[18px] bg-[#00351f]">
+              <img src="/images/tab.png" alt="A selection of restaurant dishes" className="h-full w-full object-cover object-[center_38%]" />
+              <div className="absolute inset-0 bg-gradient-to-t from-[#002817]/60 via-transparent to-transparent" />
+              <span className="absolute bottom-3 left-3 rounded-full bg-[#FEB914] px-3 py-1 text-[10px] font-extrabold uppercase tracking-wider text-[#17391c]">Made for food lovers</span>
+            </div>
+            <div className="mt-4 space-y-4">
+              <div className="flex items-start gap-3">
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#eff5e9] text-[#396F0B]"><Utensils size={17} /></span>
+                <div><h3 className="text-xs font-extrabold text-[#071C18]">Explore the menu</h3><p className="mt-0.5 text-[10px] leading-4 text-slate-500">Find something delicious for your next meal.</p></div>
+              </div>
+              <div className="flex items-start gap-3">
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#fff4dd] text-[#d68a00]"><Heart size={17} fill="currentColor" /></span>
+                <div><h3 className="text-xs font-extrabold text-[#071C18]">Your favourites</h3><p className="mt-0.5 text-[10px] leading-4 text-slate-500">Keep your favourite dishes close at hand.</p></div>
+              </div>
+              <div className="flex items-start gap-3">
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#fff0e8] text-[#FD5E02]"><Gift size={17} /></span>
+                <div><h3 className="text-xs font-extrabold text-[#071C18]">Special offers</h3><p className="mt-0.5 text-[10px] leading-4 text-slate-500">Discover current deals and new dishes.</p></div>
+              </div>
+            </div>
+            <Link to="/offers" className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#FD5E02] px-4 py-3 text-xs font-extrabold text-white transition hover:bg-[#e65300]">
+              View today&apos;s offers <ChevronRight size={15} />
+            </Link>
+          </aside>
+        </div>
         </PageContainer>
       </main>
 
