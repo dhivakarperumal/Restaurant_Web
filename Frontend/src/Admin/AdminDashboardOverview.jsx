@@ -52,7 +52,7 @@ const parseImages = (value) => {
 };
 const imageUrl = (value) => {
   if (!value) return '';
-  if (/^https?:\/\//i.test(value)) return value;
+  if (/^(https?:\/\/|data:|blob:)/i.test(value)) return value;
   return `${BACKEND_BASE_URL}${value.startsWith('/') ? value : `/${value}`}`;
 };
 const errorText = (error) => error?.response?.data?.message || 'Some dashboard data could not be loaded.';
@@ -147,7 +147,7 @@ const AdminDashboardOverview = () => {
   const [customFrom, setCustomFrom] = useState('');
   const [customTo, setCustomTo] = useState('');
   const [includeOrders, setIncludeOrders] = useState(true);
-  const [snapshot, setSnapshot] = useState({ orders: [], bills: [], kitchenOrders: [], users: [], foods: [], inventory: {}, kitchenRequests: [] });
+  const [snapshot, setSnapshot] = useState({ orders: [], bills: [], kitchenOrders: [], users: [], foods: [], categories: [], inventory: {}, kitchenRequests: [] });
   const [report, setReport] = useState({ summary: null, trend: [], statuses: [] });
   const [loading, setLoading] = useState(true);
   const [reportLoading, setReportLoading] = useState(true);
@@ -164,6 +164,7 @@ const AdminDashboardOverview = () => {
       api.get('/foods', { signal: controller.signal }),
       api.get('/inventory/dashboard', { signal: controller.signal }),
       api.get('/inventory/kitchen-requests', { signal: controller.signal }),
+      api.get('/categories', { signal: controller.signal }),
     ]).then((results) => {
       if (controller.signal.aborted) return;
       const value = (index, path, fallback) => {
@@ -178,6 +179,7 @@ const AdminDashboardOverview = () => {
         foods: value(4, ['data', 'data'], []),
         inventory: value(5, ['data', 'data'], {}),
         kitchenRequests: value(6, ['data', 'data'], []),
+        categories: value(7, ['data', 'data'], []),
       });
       const failures = results.filter((result) => result.status === 'rejected');
       setError(failures.length ? 'Some dashboard sections are temporarily unavailable.' : '');
@@ -251,20 +253,24 @@ const AdminDashboardOverview = () => {
     }));
   });
   const topSellingItems = [...topItems.values()].sort((a, b) => b.revenue - a.revenue).slice(0, 5);
-  const categoryGroups = new Map();
-  snapshot.foods
-    .filter((food) => food.is_menu_visible && String(food.status || '').toLowerCase() === 'active')
-    .forEach((food) => {
-      const category = String(food.category_name || 'Other').trim() || 'Other';
-      const items = categoryGroups.get(category) || [];
-      items.push(food);
-      categoryGroups.set(category, items);
-    });
-  const categoryTiles = [...categoryGroups.entries()].slice(0, 6).map(([name, items]) => ({
-    name,
-    count: items.length,
-    image: items.map((food) => parseImages(food.food_images)[0]).find(Boolean) || '',
-  }));
+  const visibleFoods = snapshot.foods.filter((food) => (
+    food.is_menu_visible && String(food.status || '').toLowerCase() === 'active'
+  ));
+  const categoryTiles = snapshot.categories
+    .filter((category) => String(category.status || 'Active').toLowerCase() === 'active')
+    .map((category) => {
+      const categoryFoods = visibleFoods.filter((food) => (
+        (category.category_id && String(food.category_id) === String(category.category_id))
+        || String(food.category_name || '').trim().toLowerCase() === String(category.category_name || '').trim().toLowerCase()
+      ));
+      return {
+        name: category.category_name || 'Category',
+        count: categoryFoods.length,
+        image: category.category_image || categoryFoods.map((food) => parseImages(food.food_images)[0]).find(Boolean) || '',
+      };
+    })
+    .filter((category) => category.count > 0)
+    .slice(0, 6);
 
   const recentOrders = [
     ...dateRangeOrders.map((order) => ({
