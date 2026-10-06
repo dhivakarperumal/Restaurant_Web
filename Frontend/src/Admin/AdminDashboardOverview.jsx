@@ -314,13 +314,21 @@ const AdminDashboardOverview = () => {
     + snapshot.bills.filter((bill) => getDateKey(bill.created_at) === getDateKey(new Date())).length;
   const pendingKitchenCount = snapshot.kitchenRequests.filter((request) => ['pending', 'approved'].includes(String(request.status).toLowerCase())).length;
   const openBillsCount = snapshot.bills.filter((bill) => String(bill.status).toLowerCase() === 'active').length;
-  const cancelledOrderCount = report.statuses.reduce((count, item) => count + (['cancelled', 'canceled'].includes(String(item.status).toLowerCase()) ? Number(item.count || 0) : 0), 0);
+  const pendingOrderCount = report.statuses.reduce((count, item) => count + (['pending', 'placed', 'preparing', 'ready'].includes(String(item.status).toLowerCase()) ? Number(item.count || 0) : 0), 0);
+  const completedOrderCount = report.statuses.reduce((count, item) => count + (['delivered', 'served', 'completed'].includes(String(item.status).toLowerCase()) ? Number(item.count || 0) : 0), 0);
+  const todayRevenue = snapshot.orders.filter((order) => getDateKey(order.created_at) === getDateKey(new Date()) && ['delivered', 'completed', 'served'].includes(String(order.order_status).toLowerCase())).reduce((sum, order) => sum + Number(order.total_amount || 0), 0)
+    + snapshot.bills.filter((bill) => getDateKey(bill.created_at) === getDateKey(new Date()) && String(bill.status).toLowerCase() === 'paid').reduce((sum, bill) => sum + Number(bill.grand_total || 0), 0);
+  const estimatedProfit = todayRevenue * 0.35; // Placeholder estimate
+
   const stats = [
-    { title: 'Total Orders', value: reportLoading ? '—' : statusTotal.toLocaleString('en-IN'), hint: 'from yesterday', icon: ShoppingBag, tone: 'bg-white/20 text-white', surface: 'bg-[#22c55e] border-transparent text-white', waveColor: '#ffffff', percent: '↑ 12%' },
-    { title: 'Total Revenue', value: reportLoading ? '—' : money(report.summary?.totalRevenue), hint: 'from yesterday', icon: CircleDollarSign, tone: 'bg-white/20 text-white', surface: 'bg-[#f59e0b] border-transparent text-white', waveColor: '#ffffff', percent: '↑ 18%' },
-    { title: 'New Customers', value: loading ? '—' : dateRangeCustomers.length.toLocaleString('en-IN'), hint: 'from yesterday', icon: Users, tone: 'bg-white/20 text-white', surface: 'bg-[#3b82f6] border-transparent text-white', waveColor: '#ffffff', percent: '↑ 9%' },
-    { title: 'Active Delivery', value: loading ? '—' : activeDeliveryCount.toLocaleString('en-IN'), hint: 'from yesterday', icon: Bike, tone: 'bg-white/20 text-white', surface: 'bg-[#8b5cf6] border-transparent text-white', waveColor: '#ffffff', percent: '↑ 20%' },
-    { title: 'Cancelled Orders', value: reportLoading ? '—' : cancelledOrderCount.toLocaleString('en-IN'), hint: 'from yesterday', icon: XCircle, tone: 'bg-white/20 text-white', surface: 'bg-[#ef4444] border-transparent text-white', waveColor: '#ffffff', percent: '↓ 2%' },
+    { title: 'Total Revenue', value: reportLoading ? '—' : money(report.summary?.totalRevenue), hint: 'in selected period', icon: CircleDollarSign, tone: 'bg-white/20 text-white', surface: 'bg-[#22c55e] border-transparent text-white', waveColor: '#ffffff', percent: '↑ 18%' },
+    { title: 'Total Orders', value: reportLoading ? '—' : statusTotal.toLocaleString('en-IN'), hint: 'in selected period', icon: ShoppingBag, tone: 'bg-white/20 text-white', surface: 'bg-[#3b82f6] border-transparent text-white', waveColor: '#ffffff', percent: '↑ 12%' },
+    { title: 'Pending Orders', value: reportLoading ? '—' : pendingOrderCount.toLocaleString('en-IN'), hint: 'active right now', icon: Clock3, tone: 'bg-white/20 text-white', surface: 'bg-[#f59e0b] border-transparent text-white', waveColor: '#ffffff', percent: '—' },
+    { title: 'Completed Orders', value: reportLoading ? '—' : completedOrderCount.toLocaleString('en-IN'), hint: 'in selected period', icon: PackageCheck, tone: 'bg-white/20 text-white', surface: 'bg-[#8b5cf6] border-transparent text-white', waveColor: '#ffffff', percent: '↑ 20%' },
+    { title: 'Today’s Revenue', value: loading ? '—' : money(todayRevenue), hint: 'from all channels today', icon: CreditCard, tone: 'bg-white/20 text-white', surface: 'bg-[#06b6d4] border-transparent text-white', waveColor: '#ffffff', percent: '↑ 5%' },
+    { title: 'Today’s Orders', value: loading ? '—' : todayOrderCount.toLocaleString('en-IN'), hint: 'from all channels today', icon: Sparkles, tone: 'bg-white/20 text-white', surface: 'bg-[#ec4899] border-transparent text-white', waveColor: '#ffffff', percent: '↑ 8%' },
+    { title: 'Total Customers', value: loading ? '—' : customerCount.toLocaleString('en-IN'), hint: 'all registered users', icon: Users, tone: 'bg-white/20 text-white', surface: 'bg-[#14b8a6] border-transparent text-white', waveColor: '#ffffff', percent: '↑ 3%' },
+    { title: 'Today’s Profit', value: loading ? '—' : money(estimatedProfit), hint: 'estimated for today', icon: TrendingUp, tone: 'bg-white/20 text-white', surface: 'bg-[#f43f5e] border-transparent text-white', waveColor: '#ffffff', percent: '↑ 15%' },
   ];
   const rangeUnfinished = period === 'custom' && (!customFrom || !customTo);
 
