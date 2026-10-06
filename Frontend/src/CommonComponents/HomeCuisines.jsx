@@ -98,28 +98,31 @@ function HomeCuisines() {
                     aria-label={`Browse ${cuisineName} cuisine`}
                     className="group relative w-[250px] shrink-0 snap-start overflow-hidden rounded-xl bg-[#17251e] shadow-sm transition hover:-translate-y-1 hover:shadow-lg sm:w-[300px]"
                   >
-                    <div className="aspect-[3/2] overflow-hidden bg-[#17251e]">
+                    <div className="relative aspect-[3/2] overflow-hidden bg-[#17251e]">
                       {image ? (
-                        <img
-                          src={image}
-                          alt={cuisineName}
-                          loading="lazy"
-                          className="h-full w-full object-cover"
-                        />
+                        <>
+                          <img
+                            src={image}
+                            alt=""
+                            aria-hidden="true"
+                            loading="lazy"
+                            className="absolute inset-0 h-full w-full scale-110 object-cover opacity-50 blur-lg"
+                          />
+                          <img
+                            src={image}
+                            alt={cuisineName}
+                            loading="lazy"
+                            className="relative h-full w-full object-contain"
+                          />
+                        </>
                       ) : (
                         <div className="flex h-full items-center justify-center bg-[#315d2d] text-white/80">
                           <Utensils className="h-12 w-12" />
                         </div>
                       )}
                     </div>
-                    <div className="absolute inset-x-0 bottom-0 flex min-h-[76px] items-end justify-between gap-3 bg-gradient-to-t from-black/90 via-black/65 to-transparent px-4 pb-3 pt-8 text-white">
-                      <div className="min-w-0">
-                        <h3 className="truncate text-base font-bold sm:text-lg">{cuisineName}</h3>
-                        <p className="mt-0.5 line-clamp-1 text-xs text-white/90 sm:text-sm">
-                          {cuisine.description || 'Discover delicious dishes'}
-                        </p>
-                      </div>
-                      <span className="mb-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white text-[#203129] transition group-hover:bg-[#fff8ed]">
+                    <div className="absolute inset-x-0 bottom-0 flex justify-end p-3">
+                      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white text-[#203129] transition group-hover:bg-[#fff8ed]">
                         <ArrowRight className="h-4 w-4" />
                       </span>
                     </div>
