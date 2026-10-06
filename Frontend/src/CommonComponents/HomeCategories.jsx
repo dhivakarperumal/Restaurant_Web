@@ -1,8 +1,11 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ChevronLeft, ChevronRight, ImageIcon } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { Autoplay } from 'swiper/modules';
+import { Swiper, SwiperSlide } from 'swiper/react';
 import api, { BACKEND_BASE_URL } from '../api';
 import PageContainer from './PageContainer';
+import 'swiper/css';
 
 const resolveImageUrl = (image) => {
   if (!image || typeof image !== 'string') return '';
@@ -11,10 +14,18 @@ const resolveImageUrl = (image) => {
 };
 
 function HomeCategories() {
-  const carouselRef = useRef(null);
+  const swiperRef = useRef(null);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const carouselCategories = useMemo(() => (
+    categories.length
+      ? Array.from(
+        { length: Math.max(8, categories.length) },
+        (_, index) => categories[index % categories.length],
+      )
+      : []
+  ), [categories]);
 
   const fetchCategories = useCallback(async () => {
     setLoading(true);
@@ -38,13 +49,6 @@ function HomeCategories() {
     fetchCategories();
   }, [fetchCategories]);
 
-  const scrollCategories = (direction) => {
-    carouselRef.current?.scrollBy({
-      left: direction * carouselRef.current.clientWidth * 0.75,
-      behavior: 'smooth',
-    });
-  };
-
   return (
     <section className="bg-white py-10 sm:py-12" aria-labelledby="home-categories-heading">
       <PageContainer>
@@ -60,7 +64,7 @@ function HomeCategories() {
         {loading ? (
           <div className="scrollbar-hide flex gap-4 overflow-hidden px-2">
             {[1, 2, 3, 4, 5].map((item) => (
-              <div key={item} className="w-[180px] shrink-0 animate-pulse rounded-2xl border-2 border-slate-200 bg-white p-2 sm:w-[200px]">
+              <div key={item} className="basis-[calc((100%-1rem)/2)] shrink-0 animate-pulse rounded-2xl border-2 border-slate-200 bg-white p-2 sm:basis-[calc((100%-2rem)/3)] lg:basis-[calc((100%-3rem)/4)] xl:basis-[calc((100%-6rem)/7)]">
                 <div className="aspect-[4/3] rounded-xl bg-slate-200" />
                 <div className="mx-auto mt-3 h-4 w-2/3 rounded bg-slate-200" />
               </div>
@@ -77,52 +81,67 @@ function HomeCategories() {
           <div className="relative">
             <button
               type="button"
-              onClick={() => scrollCategories(-1)}
+              onClick={() => swiperRef.current?.slidePrev()}
               aria-label="Scroll categories left"
               className="absolute -left-1 top-1/2 z-10 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-[#e7e0d8] bg-white text-[#203129] shadow-md transition hover:bg-[#fff8ed] sm:-left-3 sm:h-10 sm:w-10"
             >
               <ChevronLeft className="h-5 w-5" />
             </button>
-            <div
-              ref={carouselRef}
-              className="scrollbar-hide flex snap-x snap-mandatory gap-4 overflow-x-auto scroll-smooth px-2 pb-3 pt-1"
+            <Swiper
+              onSwiper={(swiper) => { swiperRef.current = swiper; }}
+              modules={[Autoplay]}
+              loop={categories.length > 1}
+              autoplay={categories.length > 1
+                && !window.matchMedia('(prefers-reduced-motion: reduce)').matches
+                ? { delay: 3000, disableOnInteraction: false, pauseOnMouseEnter: true }
+                : false}
+              slidesPerView={2}
+              slidesPerGroup={1}
+              spaceBetween={16}
+              breakpoints={{
+                640: { slidesPerView: 3 },
+                1024: { slidesPerView: 4 },
+                1280: { slidesPerView: 7 },
+              }}
+              className="!px-2 !pb-3 !pt-1"
             >
-              {categories.map((category) => {
+              {carouselCategories.map((category, index) => {
                 const categoryId = category.category_id || category.id;
                 const categoryName = category.category_name || 'Category';
                 const categoryFilter = category.category_id || category.category_name || category.id;
                 const image = resolveImageUrl(category.category_image);
                 return (
-                  <Link
-                    key={categoryId}
-                    to={`/shop?category=${encodeURIComponent(categoryFilter)}`}
-                    aria-label={`Browse ${categoryName}`}
-                    className="group w-[180px] shrink-0 snap-start overflow-hidden rounded-2xl border-2 border-[#e5e5e5] bg-white p-2 shadow-sm transition hover:-translate-y-1 hover:border-[#d8c7a7] hover:shadow-lg sm:w-[200px]"
-                  >
-                    <div className="aspect-[4/3] overflow-hidden rounded-xl bg-[#f5efe5]">
-                      {image ? (
-                        <img
-                          src={image}
-                          alt={categoryName}
-                          loading="lazy"
-                          className="h-full w-full object-cover transition duration-300 group-hover:scale-105"
-                        />
-                      ) : (
-                        <div className="flex h-full items-center justify-center text-[#a05c2a]">
-                          <ImageIcon className="h-10 w-10" />
-                        </div>
-                      )}
-                    </div>
-                    <h3 className="truncate px-1 pb-1 pt-3 text-center text-sm font-bold text-[#202020]" title={categoryName}>
-                      {categoryName}
-                    </h3>
-                  </Link>
+                  <SwiperSlide key={`${categoryId}-${index}`} className="!h-auto">
+                    <Link
+                      to={`/shop?category=${encodeURIComponent(categoryFilter)}`}
+                      aria-label={`Browse ${categoryName}`}
+                      className="group block h-full overflow-hidden rounded-2xl border-2 border-[#e5e5e5] bg-white p-2 shadow-sm transition hover:-translate-y-1 hover:border-[#d8c7a7] hover:shadow-lg"
+                    >
+                      <div className="aspect-[4/3] overflow-hidden rounded-xl bg-[#f5efe5]">
+                        {image ? (
+                          <img
+                            src={image}
+                            alt={categoryName}
+                            loading="lazy"
+                            className="h-full w-full object-cover transition duration-300 group-hover:scale-105"
+                          />
+                        ) : (
+                          <div className="flex h-full items-center justify-center text-[#a05c2a]">
+                            <ImageIcon className="h-10 w-10" />
+                          </div>
+                        )}
+                      </div>
+                      <h3 className="truncate px-1 pb-1 pt-3 text-center text-sm font-bold text-[#202020]" title={categoryName}>
+                        {categoryName}
+                      </h3>
+                    </Link>
+                  </SwiperSlide>
                 );
               })}
-            </div>
+            </Swiper>
             <button
               type="button"
-              onClick={() => scrollCategories(1)}
+              onClick={() => swiperRef.current?.slideNext()}
               aria-label="Scroll categories right"
               className="absolute -right-1 top-1/2 z-10 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-[#e7e0d8] bg-white text-[#203129] shadow-md transition hover:bg-[#fff8ed] sm:-right-3 sm:h-10 sm:w-10"
             >
