@@ -237,7 +237,7 @@ function CustomerOrdersPage({ audience = 'admin', view = 'all', showOrderFilters
         ) : showOrderFilters && layout === 'table' ? (
           <div className="overflow-x-auto rounded-2xl border border-[#e3e7e1] bg-white shadow-sm">
             <table className="w-full min-w-[900px] text-left text-sm">
-              <thead className="bg-[#1a3c36] text-xs uppercase tracking-wide text-white">
+              <thead className="bg-[#d4a843] text-xs uppercase tracking-wide text-white">
                 <tr>{['Order', 'Customer', 'Items', 'Type', 'Status', 'Payment', 'Total', 'Placed'].map((heading) => <th key={heading} className="whitespace-nowrap px-4 py-4 font-bold">{heading}</th>)}</tr>
               </thead>
               <tbody className="divide-y divide-[#edf0eb]">
