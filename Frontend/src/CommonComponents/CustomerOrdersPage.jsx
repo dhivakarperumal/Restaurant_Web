@@ -135,6 +135,52 @@ function CustomerOrdersPage({ audience = 'admin', view = 'all' }) {
           </button>
         </header>
 
+        {!isCustomer && audience === 'admin' && (() => {
+          const totalOrders = orders.length;
+          const pendingOrders = orders.filter(o => ['placed', 'confirmed', 'preparing'].includes((o.order_status || '').toLowerCase())).length;
+          const completedOrders = orders.filter(o => ['delivered', 'completed'].includes((o.order_status || '').toLowerCase())).length;
+          const cancelledOrders = orders.filter(o => (o.order_status || '').toLowerCase() === 'cancelled').length;
+          const adminCards = [
+            { title: 'Total Orders', value: totalOrders, icon: UtensilsCrossed, bg: 'bg-[#22c55e]', hint: 'All orders in view' },
+            { title: 'Pending / Active', value: pendingOrders, icon: Clock3, bg: 'bg-[#f59e0b]', hint: 'In progress' },
+            { title: 'Completed', value: completedOrders, icon: PackageCheck, bg: 'bg-[#3b82f6]', hint: 'Delivered or completed' },
+            { title: 'Cancelled', value: cancelledOrders, icon: MapPin, bg: cancelledOrders > 0 ? 'bg-[#ef4444]' : 'bg-[#8b5cf6]', hint: 'Cancelled orders' },
+          ];
+          return (
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+              {adminCards.map(({ title, value, icon: Icon, bg, hint }, index) => (
+                <article key={title} className={`relative min-w-0 overflow-hidden rounded-xl border border-transparent p-4 sm:p-5 shadow-[0_2px_10px_rgba(20,56,34,0.08)] flex flex-col justify-between min-h-[140px] ${bg} text-white`}>
+                  <div className="flex items-start gap-3 relative z-10">
+                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg shadow-sm bg-white/20">
+                      <Icon size={24} strokeWidth={2.2} className="text-white" />
+                    </div>
+                    <div className="flex-1 mt-0.5 min-w-0">
+                      <h3 className="text-[12px] font-semibold opacity-90 mb-1 truncate">{title}</h3>
+                      <div className="text-[26px] font-extrabold leading-none tracking-tight">{value}</div>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 mt-5 relative z-10">
+                    <span className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[11px] font-bold bg-white/25">↑ Live</span>
+                    <span className="text-[11px] font-medium opacity-75 truncate">{hint}</span>
+                  </div>
+                  <div className="absolute right-0 bottom-0 w-24 h-16 pointer-events-none opacity-50">
+                    <svg viewBox="0 0 100 50" preserveAspectRatio="none" className="w-full h-full">
+                      <defs>
+                        <linearGradient id={`ordgrad-${index}`} x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="0%" stopColor="#ffffff" stopOpacity="0.4" />
+                          <stop offset="100%" stopColor="#ffffff" stopOpacity="0.0" />
+                        </linearGradient>
+                      </defs>
+                      <path d="M0,50 L0,40 Q25,30 50,40 T100,20 L100,50 Z" fill={`url(#ordgrad-${index})`} />
+                      <path d="M0,40 Q25,30 50,40 T100,20" fill="none" stroke="#ffffff" strokeWidth="2.5" />
+                    </svg>
+                  </div>
+                </article>
+              ))}
+            </div>
+          );
+        })()}
+
         {error && (
           <div role="alert" className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
             {error}
