@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   Award,
@@ -170,7 +170,7 @@ const AdminReviews = () => {
     }
   };
 
-  const fetchReviewsAndStats = async () => {
+  const fetchReviewsAndStats = useCallback(async () => {
     try {
       setLoading(true);
       setReviewsError("");
@@ -194,7 +194,7 @@ const AdminReviews = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [selectedProductId]);
 
   useEffect(() => {
     fetchProducts();
@@ -202,7 +202,7 @@ const AdminReviews = () => {
 
   useEffect(() => {
     fetchReviewsAndStats();
-  }, [selectedProductId]);
+  }, [fetchReviewsAndStats]);
 
   // ==========================================
   // OPEN CREATE / EDIT MODAL
@@ -454,14 +454,19 @@ const AdminReviews = () => {
   };
 
   // Filtered reviews calculation
+  const normalizedSearchTerm = searchTerm.trim().toLowerCase();
+  const hasActiveFilters = Boolean(normalizedSearchTerm)
+    || selectedProductId !== "all"
+    || filterRating !== "all"
+    || filterStatus !== "all";
   const filteredReviews = reviewsList.filter((r) => {
     const matchesSearch =
-      r.reviewer_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      r.product_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      r.product_code?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      r.comment?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      r.created_by?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      r.review_id?.toLowerCase().includes(searchTerm.toLowerCase());
+      String(r.reviewer_name || "").toLowerCase().includes(normalizedSearchTerm) ||
+      String(r.product_name || "").toLowerCase().includes(normalizedSearchTerm) ||
+      String(r.product_code || "").toLowerCase().includes(normalizedSearchTerm) ||
+      String(r.comment || "").toLowerCase().includes(normalizedSearchTerm) ||
+      String(r.created_by || "").toLowerCase().includes(normalizedSearchTerm) ||
+      String(r.review_id || "").toLowerCase().includes(normalizedSearchTerm);
 
     const matchesRating =
       filterRating === "all" || String(r.rating) === String(filterRating);
@@ -472,53 +477,13 @@ const AdminReviews = () => {
     return matchesSearch && matchesRating && matchesStatus;
   });
 
-  // Top Stats Cards Configuration (Matching Dashboard screenshot style)
+  // Top Stats Cards Configuration
   const statCardsData = [
-    {
-      title: "Total Reviews",
-      value: String(stats.total_reviews),
-      inc: "+ 18.6%",
-      sub: "from last month",
-      icon: <MessageSquare size={24} className="text-white" />,
-      iconBg: "bg-[#22c55e]", // Green
-      colorHex: "#22c55e",
-    },
-    {
-      title: "Average Rating",
-      value: `${stats.avg_rating || "0.0"} / 5.0`,
-      inc: "+ 22.4%",
-      sub: "positive score",
-      icon: <Star size={24} className="text-white" />,
-      iconBg: "bg-[#f59e0b]", // Amber
-      colorHex: "#f59e0b",
-    },
-    {
-      title: "5 Star Reviews",
-      value: String(stats.five_star_count),
-      inc: stats.total_reviews > 0 ? `${Math.round((stats.five_star_count / stats.total_reviews) * 100)}%` : "0%",
-      sub: "of total reviews",
-      icon: <ThumbsUp size={24} className="text-white" />,
-      iconBg: "bg-[#06b6d4]", // Cyan
-      colorHex: "#06b6d4",
-    },
-    {
-      title: "Photo Reviews",
-      value: String(stats.photo_reviews_count),
-      inc: "+ 10.7%",
-      sub: "with customer photos",
-      icon: <Camera size={24} className="text-white" />,
-      iconBg: "bg-[#a855f7]", // Purple
-      colorHex: "#a855f7",
-    },
-    {
-      title: "Published Reviews",
-      value: String(stats.published_count),
-      inc: "+ 12.5%",
-      sub: "live in storefront",
-      icon: <CheckCircle2 size={24} className="text-white" />,
-      iconBg: "bg-[#f97316]", // Orange
-      colorHex: "#f97316",
-    },
+    { title: "Total Reviews", value: String(stats.total_reviews), inc: "18.6%", sub: "from last month", icon: MessageSquare, bg: "bg-[#22c55e]" },
+    { title: "Average Rating", value: `${stats.avg_rating || "0.0"} / 5.0`, inc: "22.4%", sub: "positive score", icon: Star, bg: "bg-[#f59e0b]" },
+    { title: "5 Star Reviews", value: String(stats.five_star_count), inc: stats.total_reviews > 0 ? `${Math.round((stats.five_star_count / stats.total_reviews) * 100)}%` : "0%", sub: "of total reviews", icon: ThumbsUp, bg: "bg-[#06b6d4]" },
+    { title: "Photo Reviews", value: String(stats.photo_reviews_count), inc: "10.7%", sub: "with customer photos", icon: Camera, bg: "bg-[#a855f7]" },
+    { title: "Published Reviews", value: String(stats.published_count), inc: "12.5%", sub: "live in storefront", icon: CheckCircle2, bg: "bg-[#f97316]" },
   ];
 
   return (
@@ -528,43 +493,34 @@ const AdminReviews = () => {
 
         {/* ================= TOP STATS CARDS (DASHBOARD DESIGN WITH BOTTOM WAVES) ================= */}
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-6">
-          {statCardsData.map((stat, i) => (
-            <div
-              key={i}
-              className="bg-white rounded-xl p-5 border border-gray-100 shadow-sm relative overflow-hidden flex flex-col h-full"
-            >
-              <div className="flex items-start space-x-4 flex-1">
-                <div
-                  className={`w-14 h-14 rounded-full flex items-center justify-center shrink-0 ${stat.iconBg}`}
-                >
-                  {stat.icon}
+          {statCardsData.map(({ title, value, icon: Icon, bg, sub, inc }, index) => (
+            <article key={title} className={`relative min-w-0 overflow-hidden rounded-xl border border-transparent p-4 sm:p-5 shadow-[0_2px_10px_rgba(20,56,34,0.08)] flex flex-col justify-between min-h-[140px] ${bg} text-white`}>
+              <div className="flex items-start gap-3 relative z-10">
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg shadow-sm bg-white/20">
+                  <Icon size={24} strokeWidth={2.2} className="text-white" />
                 </div>
-                <div className="flex flex-col">
-                  <p className="text-gray-600 text-xs font-medium mb-1">{stat.title}</p>
-                  <h3 className="text-2xl font-bold text-gray-900 mb-3">{stat.value}</h3>
-                  <div className="flex flex-col">
-                    <div className="flex items-center text-emerald-600 text-xs font-medium mb-1">
-                      <TrendingUp size={12} className="mr-1" />
-                      <span>{stat.inc}</span>
-                    </div>
-                    <p className="text-gray-400 text-[10px]">{stat.sub}</p>
-                  </div>
+                <div className="flex-1 mt-0.5 min-w-0">
+                  <h3 className="text-[12px] font-semibold opacity-90 mb-1 truncate">{title}</h3>
+                  <div className="text-[26px] font-extrabold leading-none tracking-tight">{value}</div>
                 </div>
               </div>
-
-              {/* Decorative wave at bottom */}
-              <div className="absolute bottom-0 left-0 w-full h-8 overflow-hidden pointer-events-none">
-                <svg
-                  viewBox="0 0 100 20"
-                  preserveAspectRatio="none"
-                  className="w-full h-full opacity-35"
-                  fill="currentColor"
-                  style={{ color: stat.colorHex }}
-                >
-                  <path d="M0,10 C30,25 70,0 100,10 L100,20 L0,20 Z" />
+              <div className="flex items-center gap-2 mt-5 relative z-10">
+                <span className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[11px] font-bold bg-white/25">↑ {inc}</span>
+                <span className="text-[11px] font-medium opacity-75 truncate">{sub}</span>
+              </div>
+              <div className="absolute right-0 bottom-0 w-24 h-16 pointer-events-none opacity-50">
+                <svg viewBox="0 0 100 50" preserveAspectRatio="none" className="w-full h-full">
+                  <defs>
+                    <linearGradient id={`revsgrad-${index}`} x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#ffffff" stopOpacity="0.4" />
+                      <stop offset="100%" stopColor="#ffffff" stopOpacity="0.0" />
+                    </linearGradient>
+                  </defs>
+                  <path d="M0,50 L0,40 Q25,30 50,40 T100,20 L100,50 Z" fill={`url(#revsgrad-${index})`} />
+                  <path d="M0,40 Q25,30 50,40 T100,20" fill="none" stroke="#ffffff" strokeWidth="2.5" />
                 </svg>
               </div>
-            </div>
+            </article>
           ))}
         </div>
 
@@ -670,20 +626,24 @@ const AdminReviews = () => {
               <div className="mb-3 text-5xl">💬</div>
               <h3 className="text-base font-bold text-[#333]">No Reviews Found</h3>
               <p className="mx-auto mt-1 max-w-sm text-xs text-[#888]">
-                {searchTerm
-                  ? "No reviews match your search filter."
-                  : selectedProductId !== "all"
-                  ? "No reviews added for this selected product yet. Click 'Add Review' to add one."
+                {hasActiveFilters
+                  ? "No reviews match the selected filters. Adjust or clear the filters to see more reviews."
                   : "No product reviews exist yet. Click 'Add Review' to post customer feedback."}
               </p>
-              <button
-                type="button"
-                onClick={() => handleOpenCreateModal()}
-                className="mt-5 inline-flex items-center gap-2 rounded-xl bg-[#1a3c36] px-5 py-2.5 text-xs font-bold text-white shadow-sm transition hover:bg-[#235048]"
-              >
-                <Plus className="h-4 w-4" />
-                Add Review
-              </button>
+              {hasActiveFilters ? (
+                <button type="button" onClick={() => { setSearchTerm(""); setSelectedProductId("all"); setFilterRating("all"); setFilterStatus("all"); }} className="mt-5 rounded-xl border border-[#dfe2e5] bg-white px-5 py-2.5 text-xs font-bold text-[#34443b] hover:bg-[#faf9f8]">
+                  Clear filters
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => handleOpenCreateModal()}
+                  className="mt-5 inline-flex items-center gap-2 rounded-xl bg-[#1a3c36] px-5 py-2.5 text-xs font-bold text-white shadow-sm transition hover:bg-[#235048]"
+                >
+                  <Plus className="h-4 w-4" />
+                  Add Review
+                </button>
+              )}
             </div>
           ) : viewMode === "card" ? (
             <div className="grid gap-4 p-1 sm:grid-cols-2 xl:grid-cols-3">
@@ -968,10 +928,10 @@ const AdminReviews = () => {
                       Email
                     </label>
                     <input
-                      type="text"
+                      type="email"
                       value={formReviewerEmail}
                       onChange={(e) => setFormReviewerEmail(e.target.value)}
-                      placeholder="e.g. priya@example.com or Chennai"
+                      placeholder="e.g. priya@example.com"
                       className="h-10 w-full rounded-xl border border-[#e8e1d9] bg-white px-3 text-xs text-[#222] shadow-xs outline-none focus:border-[#d4a553]"
                     />
                   </div>

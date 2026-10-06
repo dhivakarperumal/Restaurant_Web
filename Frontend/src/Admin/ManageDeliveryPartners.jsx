@@ -244,38 +244,10 @@ const ManageDeliveryPartners = () => {
   const busyCount = partners.filter((p) => p.current_status === "Busy").length;
 
   const statCards = [
-    {
-      title: "Total Delivery Partners",
-      value: partners.length,
-      icon: Bike,
-      iconBg: "bg-[#1a3c36]",
-      description: "Registered fleet riders",
-      waveColor: "#1a3c36",
-    },
-    {
-      title: "Active Partners",
-      value: activeCount,
-      icon: UserCheck,
-      iconBg: "bg-[#22c55e]",
-      description: "Currently active staff",
-      waveColor: "#22c55e",
-    },
-    {
-      title: "Available for Delivery",
-      value: availableCount,
-      icon: Bike,
-      iconBg: "bg-[#06b6d4]",
-      description: "Ready to pick up orders",
-      waveColor: "#06b6d4",
-    },
-    {
-      title: "Busy / On Duty",
-      value: busyCount,
-      icon: Clock3,
-      iconBg: busyCount > 0 ? "bg-[#f59e0b]" : "bg-[#64748b]",
-      description: "Currently delivering",
-      waveColor: busyCount > 0 ? "#f59e0b" : "#64748b",
-    },
+    { title: "Total Delivery Partners", value: partners.length, icon: Bike, bg: "bg-[#22c55e]", hint: "Registered fleet riders" },
+    { title: "Active Partners", value: activeCount, icon: UserCheck, bg: "bg-[#3b82f6]", hint: "Currently active staff" },
+    { title: "Available for Delivery", value: availableCount, icon: Bike, bg: "bg-[#06b6d4]", hint: "Ready to pick up orders" },
+    { title: "Busy / On Duty", value: busyCount, icon: Clock3, bg: busyCount > 0 ? "bg-[#f59e0b]" : "bg-[#8b5cf6]", hint: "Currently delivering" },
   ];
 
   return (
@@ -356,35 +328,34 @@ const ManageDeliveryPartners = () => {
 
         {/* Stat Cards */}
         <div className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
-          {statCards.map(({ title, value, icon: Icon, iconBg, description, waveColor }) => (
-            <div
-              key={title}
-              className="relative flex h-full min-h-[160px] flex-col overflow-hidden rounded-xl border border-gray-100 bg-white p-5 shadow-sm"
-            >
-              <div className="flex flex-1 items-start gap-4">
-                <div
-                  className={`flex h-13 w-13 shrink-0 items-center justify-center rounded-2xl ${iconBg} shadow-sm`}
-                >
-                  <Icon className="h-6 w-6 text-white" />
+          {statCards.map(({ title, value, icon: Icon, bg, hint }, index) => (
+            <article key={title} className={`relative min-w-0 overflow-hidden rounded-xl border border-transparent p-4 sm:p-5 shadow-[0_2px_10px_rgba(20,56,34,0.08)] flex flex-col justify-between min-h-[140px] ${bg} text-white`}>
+              <div className="flex items-start gap-3 relative z-10">
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg shadow-sm bg-white/20">
+                  <Icon size={24} strokeWidth={2.2} className="text-white" />
                 </div>
-                <div>
-                  <p className="mb-1 text-xs font-medium text-gray-500">{title}</p>
-                  <h2 className="text-2xl font-bold text-gray-900">{value}</h2>
-                  <p className="mt-1.5 text-[11px] text-gray-400">{description}</p>
+                <div className="flex-1 mt-0.5 min-w-0">
+                  <h3 className="text-[12px] font-semibold opacity-90 mb-1 truncate">{title}</h3>
+                  <div className="text-[26px] font-extrabold leading-none tracking-tight">{value}</div>
                 </div>
               </div>
-              <div className="pointer-events-none absolute bottom-0 left-0 h-7 w-full overflow-hidden">
-                <svg
-                  viewBox="0 0 100 20"
-                  preserveAspectRatio="none"
-                  className="h-full w-full opacity-35"
-                  style={{ color: waveColor }}
-                  fill="currentColor"
-                >
-                  <path d="M0,10 C30,25 70,0 100,10 L100,20 L0,20 Z" />
+              <div className="flex items-center gap-2 mt-5 relative z-10">
+                <span className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[11px] font-bold bg-white/25">↑ 12%</span>
+                <span className="text-[11px] font-medium opacity-75 truncate">{hint}</span>
+              </div>
+              <div className="absolute right-0 bottom-0 w-24 h-16 pointer-events-none opacity-50">
+                <svg viewBox="0 0 100 50" preserveAspectRatio="none" className="w-full h-full">
+                  <defs>
+                    <linearGradient id={`dlpgrad-${index}`} x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#ffffff" stopOpacity="0.4" />
+                      <stop offset="100%" stopColor="#ffffff" stopOpacity="0.0" />
+                    </linearGradient>
+                  </defs>
+                  <path d="M0,50 L0,40 Q25,30 50,40 T100,20 L100,50 Z" fill={`url(#dlpgrad-${index})`} />
+                  <path d="M0,40 Q25,30 50,40 T100,20" fill="none" stroke="#ffffff" strokeWidth="2.5" />
                 </svg>
               </div>
-            </div>
+            </article>
           ))}
         </div>
 
