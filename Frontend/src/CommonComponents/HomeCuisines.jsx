@@ -104,7 +104,7 @@ function HomeCuisines() {
                           src={image}
                           alt={cuisineName}
                           loading="lazy"
-                          className="h-full w-full object-contain"
+                          className="h-full w-full object-cover"
                         />
                       ) : (
                         <div className="flex h-full items-center justify-center bg-[#315d2d] text-white/80">
