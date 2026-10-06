@@ -5,6 +5,7 @@ import api from '../../api';
 import FoodProductCard from '../../CommonComponents/FoodProductCard';
 import FoodCustomizationModal from '../../CommonComponents/FoodCustomizationModal';
 import HomeCategories from '../../CommonComponents/HomeCategories';
+import HomeCuisines from '../../CommonComponents/HomeCuisines';
 import HomeBanner from '../../CommonComponents/HomeBanner';
 import PageContainer from '../../CommonComponents/PageContainer';
 import { StoreContext } from '../../PrivateRouter/StoreContext';
@@ -79,6 +80,7 @@ const Home = () => {
     <main className="min-h-screen bg-[#fcfbf9] pb-16 text-[#203129]">
       <HomeBanner />
       <HomeCategories />
+      <HomeCuisines />
 
       <section className="py-12 sm:py-16">
         <PageContainer>
