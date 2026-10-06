@@ -420,7 +420,7 @@ const Account = () => {
             </div>
           </section>
 
-          <div className={`grid items-stretch gap-3 ${activeTab === "address" ? "lg:grid-cols-[220px_minmax(0,1fr)]" : "lg:grid-cols-[minmax(225px,0.78fr)_minmax(0,1.55fr)_minmax(205px,0.64fr)]"}`}>
+          <div className={`grid items-stretch gap-3 ${activeTab === "address" ? "lg:grid-cols-[minmax(225px,0.78fr)_minmax(0,2.19fr)]" : "lg:grid-cols-[minmax(225px,0.78fr)_minmax(0,1.55fr)_minmax(205px,0.64fr)]"}`}>
             <aside className="relative overflow-hidden rounded-[22px] bg-[#00351f] text-white shadow-md">
               <img src="/images/tab.png" alt="" aria-hidden="true" className="absolute inset-0 h-full w-full object-cover opacity-35" />
               <div className="absolute inset-0 bg-gradient-to-b from-[#00351f]/95 via-[#00351f]/80 to-[#001f14]/95" />
