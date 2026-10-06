@@ -171,6 +171,7 @@ export default function Shop() {
   const filteredFoods = useMemo(() => {
     return foods
       .filter((food) => {
+        if (food.is_menu_visible === false) return false;
         // Status check
         if (food.status === "Inactive") return false;
 

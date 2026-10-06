@@ -6,9 +6,12 @@ import {
   CheckCircle2,
   Clock3,
   Flame,
+  LayoutGrid,
   Loader2,
+  List,
   MoreVertical,
   RefreshCw,
+  Search,
   Sparkles,
   Table2,
   UtensilsCrossed,
@@ -80,6 +83,8 @@ const ChefKitchenOrders = () => {
   const [error, setError] = useState("");
   const [updatingOrderId, setUpdatingOrderId] = useState("");
   const [activeTab, setActiveTab] = useState("all");
+  const [viewMode, setViewMode] = useState("card");
+  const [searchQuery, setSearchQuery] = useState("");
 
   const fetchOrders = useCallback(async (showLoading = false) => {
     if (showLoading) setLoading(true);
@@ -133,9 +138,18 @@ const ChefKitchenOrders = () => {
   }, [orders]);
 
   const filteredOrders = useMemo(() => {
-    if (activeTab === "all") return orders;
-    return orders.filter((o) => (o.status || "Pending") === activeTab);
-  }, [orders, activeTab]);
+    const query = searchQuery.trim().toLowerCase();
+    return orders.filter((order) => {
+      const matchesStatus = activeTab === "all" || (order.status || "Pending") === activeTab;
+      const searchableText = [
+        order.order_id,
+        order.table_number,
+        order.bill_number,
+        ...(order.items || []).map((item) => item.food_name),
+      ].join(" ").toLowerCase();
+      return matchesStatus && (!query || searchableText.includes(query));
+    });
+  }, [orders, activeTab, searchQuery]);
 
   return (
     <main className="min-h-screen bg-[#f2f3f0] p-4 md:p-6 lg:p-8">
@@ -167,8 +181,33 @@ const ChefKitchenOrders = () => {
           </div>
         </div>
 
+        <section aria-label="Kitchen order status summaries" className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          {[
+            { status: 'Pending', label: 'Pending', count: counts.Pending, caption: 'Waiting to start', icon: Clock3, iconTone: 'bg-amber-500', wave: '#fbd48a', valueTone: 'text-amber-700' },
+            { status: 'Preparing', label: 'Preparing', count: counts.Preparing, caption: 'Being prepared', icon: Flame, iconTone: 'bg-blue-500', wave: '#a9d2ff', valueTone: 'text-blue-700' },
+            { status: 'Ready to Serve', label: 'Ready to Serve', count: counts['Ready to Serve'], caption: 'Ready for pickup', icon: Bell, iconTone: 'bg-cyan-500', wave: '#9be0e8', valueTone: 'text-cyan-700' },
+            { status: 'Served', label: 'Served', count: counts.Served, caption: 'Completed tickets', icon: CheckCircle2, iconTone: 'bg-emerald-500', wave: '#a3e5bb', valueTone: 'text-emerald-700' },
+          ].map(({ status, label, count, caption, icon: Icon, iconTone, wave, valueTone }) => (
+            <button key={status} type="button" aria-pressed={activeTab === status} onClick={() => { setActiveTab(activeTab === status ? 'all' : status); setSearchQuery(''); }} className={`relative flex min-h-[132px] items-start gap-4 overflow-hidden rounded-xl border bg-white p-5 text-left shadow-sm transition hover:-translate-y-0.5 hover:shadow-md ${activeTab === status ? 'border-[#1a3c36] ring-2 ring-[#1a3c36]/10' : 'border-[#e5e9e5]'}`}>
+              <span className={`grid h-14 w-14 shrink-0 place-items-center rounded-full text-white ${iconTone}`}><Icon size={25} /></span>
+              <span className="relative z-10 min-w-0">
+                <span className="block text-sm font-medium text-[#57645b]">{label}</span>
+                <strong className={`mt-1 block text-2xl font-bold leading-none ${valueTone}`}>{count}</strong>
+                <span className="mt-4 block text-[11px] text-[#879188]">{caption}</span>
+              </span>
+              <svg viewBox="0 0 100 12" preserveAspectRatio="none" aria-hidden="true" className="absolute inset-x-0 bottom-0 h-5 w-full" fill={wave}><path d="M0 5 C20 12 35 7 54 5 S83 1 100 5 V12 H0 Z" /></svg>
+            </button>
+          ))}
+        </section>
+
         {/* Filter Tabs Bar */}
-        <div className="flex flex-wrap items-center gap-2 border-b border-[#e1ded8] pb-3 text-sm">
+        <div className="grid items-center gap-3 border-b border-[#e1ded8] pb-3 text-sm lg:grid-cols-[minmax(220px,0.8fr)_minmax(0,2fr)]">
+          <label className="relative block w-full lg:max-w-sm">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#7a857d]" />
+            <input type="search" value={searchQuery} onChange={(event) => setSearchQuery(event.target.value)} placeholder="Search table, ticket, food..." aria-label="Search kitchen orders" className="h-10 w-full rounded-lg border border-[#dfe2e5] bg-white pl-9 pr-3 text-xs text-[#2d3830] outline-none placeholder:text-[#89938c] focus:border-[#6d9a79]" />
+          </label>
+          <div className="flex min-w-0 flex-col gap-2 xl:flex-row xl:items-center xl:justify-end">
+          <div className="flex min-w-0 flex-wrap items-center gap-2">
           <button
             type="button"
             onClick={() => setActiveTab("all")}
@@ -231,6 +270,12 @@ const ChefKitchenOrders = () => {
           >
             Served / Completed ({counts.Served})
           </button>
+          </div>
+          <div className="flex self-start overflow-hidden rounded-lg border border-[#dfe2e5] bg-white xl:self-auto" role="group" aria-label="Kitchen orders view">
+            <button type="button" onClick={() => setViewMode("table")} aria-label="Table view" aria-pressed={viewMode === "table"} title="Table view" className={`grid h-9 w-10 place-items-center border-r border-[#dfe2e5] ${viewMode === "table" ? "bg-[#1a3c36] text-white" : "text-[#66736b] hover:bg-gray-50"}`}><List size={16} /></button>
+            <button type="button" onClick={() => setViewMode("card")} aria-label="Card view" aria-pressed={viewMode === "card"} title="Card view" className={`grid h-9 w-10 place-items-center ${viewMode === "card" ? "bg-[#1a3c36] text-white" : "text-[#66736b] hover:bg-gray-50"}`}><LayoutGrid size={16} /></button>
+          </div>
+        </div>
         </div>
 
         {/* Content */}
@@ -255,6 +300,35 @@ const ChefKitchenOrders = () => {
             <p className="mt-1 text-xs text-[#888]">
               Orders sent by servers from their dining tables will appear here live.
             </p>
+          </div>
+        ) : viewMode === "table" ? (
+          <div className="overflow-x-auto rounded-2xl border border-[#e7e0d8] bg-white shadow-sm">
+            <table className="w-full min-w-[940px] border-collapse text-left text-sm">
+              <thead className="sticky top-0 bg-[#f5f6f2] text-[11px] uppercase tracking-wide text-[#66736b]">
+                <tr>
+                  {['Kitchen Order', 'Table / Bill', 'Round', 'Items', 'Amount', 'Status', 'Placed', 'Action'].map((heading) => <th key={heading} className="whitespace-nowrap px-4 py-3 font-bold">{heading}</th>)}
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-[#edf0eb]">
+                {filteredOrders.map((order) => {
+                  const currentStatus = order.status || 'Pending';
+                  const cfg = STATUS_CONFIG[currentStatus] || STATUS_CONFIG.Pending;
+                  const isUpdating = updatingOrderId === order.order_id;
+                  const totalItems = order.items.reduce((sum, item) => sum + Number(item.quantity || 1), 0);
+                  const orderTotal = order.items.reduce((sum, item) => sum + Number(item.unit_price || 0) * Number(item.quantity || 1), 0);
+                  return <tr key={order.order_id} className="align-middle hover:bg-[#fbfcfa]">
+                    <td className="whitespace-nowrap px-4 py-3"><span className="font-mono text-xs font-semibold text-[#244b35]" title={order.order_id}>{String(order.order_id).slice(0, 8).toUpperCase()}</span><span className="mt-1 block text-[10px] text-[#89938c]">{totalItems} item{totalItems === 1 ? '' : 's'}</span></td>
+                    <td className="whitespace-nowrap px-4 py-3"><span className="font-semibold text-[#34443b]">Table {order.table_number}</span>{order.bill_number && <span className="mt-1 block text-[10px] text-[#7c8980]">{order.bill_number}</span>}</td>
+                    <td className="whitespace-nowrap px-4 py-3 text-xs text-[#66736b]">{order.round_number > 1 ? `Round ${order.round_number} · Add-on` : 'Round 1'}</td>
+                    <td className="max-w-[280px] px-4 py-3"><div className="space-y-1">{order.items.map((item) => <p key={`${order.order_id}-${item.food_id}`} className="truncate text-xs text-[#46554b]" title={`${item.quantity}× ${item.food_name}`}><strong className="text-[#276a3e]">{item.quantity}×</strong> {item.food_name}</p>)}</div></td>
+                    <td className="whitespace-nowrap px-4 py-3 font-semibold text-[#283c2f]">₹{orderTotal.toFixed(2)}</td>
+                    <td className="whitespace-nowrap px-4 py-3"><span className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-bold ${cfg.badgeBg}`}><span className={`h-1.5 w-1.5 rounded-full ${cfg.dotBg}`} />{currentStatus}</span></td>
+                    <td className="whitespace-nowrap px-4 py-3 text-xs text-[#7c8980]">{formatTimeAgo(order.created_at)}</td>
+                    <td className="whitespace-nowrap px-4 py-3">{cfg.nextAction && <button type="button" onClick={() => updateOrderStatus(order.order_id, cfg.nextStatus)} disabled={isUpdating} className={`rounded-lg px-3 py-2 text-[11px] font-bold disabled:opacity-50 ${cfg.nextBtnStyle}`}>{isUpdating ? 'Updating…' : currentStatus === 'Pending' ? 'Start cooking' : currentStatus === 'Preparing' ? 'Mark ready' : 'Mark served'}</button>}{!cfg.nextAction && <span className="text-xs text-[#849087]">No action</span>}</td>
+                  </tr>;
+                })}
+              </tbody>
+            </table>
           </div>
         ) : (
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">

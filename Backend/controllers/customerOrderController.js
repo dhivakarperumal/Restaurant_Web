@@ -1,6 +1,6 @@
 const db = require('../config/db');
 
-const orderStatuses = ['placed', 'preparing', 'ready', 'completed', 'cancelled'];
+const orderStatuses = ['placed', 'preparing', 'ready', 'completed', 'delivered', 'cancelled'];
 const parseJson = (value, fallback) => {
   if (value && typeof value === 'object') return value;
   try {

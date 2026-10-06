@@ -52,6 +52,13 @@ router.get('/products', withErrorHandler(async (req, res) => {
   res.json({ success: true, data: products });
 }));
 
+router.get('/products/options', withErrorHandler(async (req, res) => {
+  const [products] = await require('../config/db').query(
+    'SELECT id, product_name FROM inventory_products WHERE deleted_at IS NULL ORDER BY product_name ASC'
+  );
+  res.json({ success: true, data: products });
+}));
+
 router.post('/products', withErrorHandler(async (req, res) => {
   const result = await createProduct({ ...req.body, created_by: req.auth?.name || 'admin' });
   res.status(201).json({ success: true, message: 'Product added successfully.', data: result });
@@ -158,7 +165,23 @@ router.post('/adjustments', withErrorHandler(async (req, res) => {
 }));
 
 router.get('/kitchen-requests', withErrorHandler(async (req, res) => {
-  const [rows] = await require('../config/db').query('SELECT * FROM kitchen_requests ORDER BY request_date DESC');
+  const db = require('../config/db');
+  const [rows] = await db.query('SELECT * FROM kitchen_requests ORDER BY request_date DESC, id DESC');
+  if (rows.length) {
+    const requestIds = rows.map((request) => request.id);
+    const [items] = await db.query(
+      "SELECT request_items.*, COALESCE(NULLIF(request_items.product_name, ''), products.product_name) AS item_name FROM kitchen_request_items request_items LEFT JOIN inventory_products products ON products.id = request_items.product_id WHERE request_items.request_id IN (?) ORDER BY request_items.id",
+      [requestIds]
+    );
+    const itemsByRequest = items.reduce((grouped, item) => {
+      grouped[item.request_id] = grouped[item.request_id] || [];
+      grouped[item.request_id].push(item);
+      return grouped;
+    }, {});
+    rows.forEach((request) => {
+      request.items = itemsByRequest[request.id] || [];
+    });
+  }
   res.json({ success: true, data: rows });
 }));
 

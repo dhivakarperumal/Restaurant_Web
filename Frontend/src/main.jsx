@@ -1,4 +1,4 @@
-import { StrictMode } from 'react'
+import { StrictMode, lazy } from 'react'
 import { createRoot } from 'react-dom/client'
 import { createHashRouter, Navigate, RouterProvider } from 'react-router-dom'
 import './index.css'
@@ -13,10 +13,12 @@ import Register from './Componets/Auth/Register.jsx'
 import PrivateRoute from './PrivateRouter/PrivateRouter.jsx'
 
 
-import AdminDashboard from './Admin/AdminDashboard.jsx'
+import AdminDashboard from './Admin/AdminDashboardOverview.jsx'
 import AdminSettings from './Admin/AdminSettings.jsx'
 import AdminProfile from './Admin/AdminProfile.jsx'
 import ChefSettings from './Chef Restaurant/ChefSettings.jsx'
+import ChefInventoryRequests from './Chef Restaurant/ChefInventoryRequests.jsx'
+import ChefProducts from './Chef Restaurant/ChefProducts.jsx'
 import AddEmployee from './Admin/AddEmployee.jsx'
 import AllEmployees from './Admin/AllEmployees.jsx'
 import ManageServers from './Admin/ManageServers.jsx'
@@ -38,6 +40,7 @@ import PointOfSale from './Admin/Billings/PointOfSale.jsx'
 import Billing from './Admin/Billings/Billing.jsx'
 import NewBilling from './Admin/Billings/NewBilling.jsx'
 import OrderDetails from './Admin/Billings/OrderDetails.jsx'
+const RevenuePage = lazy(() => import('./Admin/RevenuePage.jsx'))
 
 
 
@@ -157,6 +160,10 @@ const router = createHashRouter([
             element: <CustomerOrdersPage audience="admin" view="all" />,
           },
           {
+            path: 'kitchen-orders',
+            element: <ChefKitchenOrders />,
+          },
+          {
             path: 'orders/new',
             element: <CustomerOrdersPage audience="admin" view="new" />,
           },
@@ -233,6 +240,10 @@ const router = createHashRouter([
             element: <AdminReviews />,
           },
           {
+            path: 'revenue',
+            element: <RevenuePage />,
+          },
+          {
             path: 'billing',
             element: <PointOfSale />,
           },
@@ -267,6 +278,14 @@ const router = createHashRouter([
           {
             path: 'orders',
             element: <ChefKitchenOrders />,
+          },
+          {
+            path: 'requests',
+            element: <ChefInventoryRequests />,
+          },
+          {
+            path: 'products',
+            element: <ChefProducts />,
           },
           {
             path: 'settings',

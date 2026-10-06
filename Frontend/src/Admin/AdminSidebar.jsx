@@ -9,6 +9,7 @@ import {
   BookOpen,
   Receipt,
   DollarSign,
+  CircleDollarSign,
   CalendarOff,
   ClipboardCheck,
   BarChart3,
@@ -79,7 +80,7 @@ const navItems = [
       { path: "/admin/products", label: "All Products", icon: Package },
       { path: "/admin/products/categories", label: "Category", icon: Layers },
       { path: "/admin/products/cuisines", label: "Cuisine", icon: Utensils },
-      { path: "/admin/products/stock-details", label: "Stock Details", icon: ClipboardList },
+     
     ],
   },
 
@@ -92,10 +93,10 @@ const navItems = [
     label: "Inventory Management",
     icon: Boxes,
     children: [
-      { path: "/admin/inventory", label: "Dashboard", icon: LayoutDashboard },
+      // { path: "/admin/inventory", label: "Dashboard", icon: LayoutDashboard },
       { path: "/admin/inventory/products", label: "Products", icon: Package },
-      { path: "/admin/inventory/categories", label: "Categories", icon: Layers },
-      { path: "/admin/inventory/units", label: "Units", icon: ClipboardList },
+      // { path: "/admin/inventory/categories", label: "Categories", icon: Layers },
+      // { path: "/admin/inventory/units", label: "Units", icon: ClipboardList },
       { path: "/admin/inventory/suppliers", label: "Suppliers", icon: Users },
       { path: "/admin/inventory/purchases", label: "Purchases", icon: ShoppingCart },
       { path: "/admin/inventory/kitchen-requests", label: "Kitchen Requests", icon: UtensilsCrossed },
@@ -112,6 +113,12 @@ const navItems = [
       { path: "/admin/orders/delivery", label: "Delivery Orders", icon: Package },
       { path: "/admin/orders/cancelled", label: "Cancelled Orders", icon: XCircle },
     ],
+  },
+
+  {
+    path: "/admin/kitchen-orders",
+    label: "Kitchen Orders",
+    icon: UtensilsCrossed,
   },
 
  
@@ -139,6 +146,12 @@ const navItems = [
     path: "/admin/billing",
     label: "Billing",
     icon: Receipt,
+  },
+
+  {
+    path: "/admin/revenue",
+    label: "Revenue",
+    icon: CircleDollarSign,
   },
 
   {

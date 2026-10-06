@@ -1257,14 +1257,6 @@ export default function InventoryModule() {
   return (
     <InventoryContext>
       <div className="space-y-6">
-        <div className="flex flex-wrap gap-2 md:gap-3">
-          {INVENTORY_NAV.map((item) => (
-            <NavLink key={item.path} to={item.path} className={({ isActive }) => `inline-flex items-center gap-2 rounded-xl border px-3 py-2 text-sm font-medium ${isActive ? 'border-[#1a3c36] bg-[#1a3c36] text-white' : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300'}`}>
-              <item.icon size={15} />
-              {item.label}
-            </NavLink>
-          ))}
-        </div>
         <Toaster position="top-right" />
         <InventoryRoutes />
       </div>

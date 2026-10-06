@@ -38,7 +38,7 @@ const PointOfSale = () => {
       if (!mounted) return;
       if (foodResult.status === "fulfilled") {
         const rows = foodResult.value?.data?.data;
-        setFoods(Array.isArray(rows) ? rows.filter((food) => food.status !== "Inactive" && food.is_available !== false) : []);
+        setFoods(Array.isArray(rows) ? rows.filter((food) => food.is_menu_visible !== false && food.status !== "Inactive" && food.is_available !== false) : []);
       } else {
         toast.error("Could not load menu items.");
       }

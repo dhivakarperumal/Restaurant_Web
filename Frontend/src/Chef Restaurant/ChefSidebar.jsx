@@ -57,7 +57,7 @@ const Logo = "/favicon.svg";
 /* ================= NAV ITEMS ================= */
 const navItems = [
   {
-    path: "/admin",
+    path: "/chef",
     label: "Dashboard",
     icon: LayoutDashboard,
     exact: true,
@@ -67,19 +67,16 @@ const navItems = [
     label: "Kitchen Orders",
     icon: UtensilsCrossed,
   },
-
-
-  /* ---- PRODUCTS ---- */
   {
-    label: "Foods",
-    icon: Package,
-    children: [
-     
-      { path: "/admin/products", label: "All Products", icon: Package },
-      { path: "/admin/products/categories", label: "Category", icon: Layers },
-      { path: "/admin/products/stock-details", label: "Stock Details", icon: ClipboardList },
-    ],
+    path: "/chef/requests",
+    label: "Inventory Requests",
+    icon: ClipboardList,
   },
+
+
+
+
+  { path: "/chef/products", label: "All Foods", icon: Package },
 
 
 
@@ -287,7 +284,7 @@ const ChefSidebar = ({ isOpen, onClose, collapsed, onToggleCollapse }) => {
             }
 
             /* ===== NORMAL ITEM ===== */
-            const isActive = isRouteActive(item.path);
+            const isActive = isRouteActive(item.path, item.exact);
             return (
               <NavLink
                 key={item.path}
