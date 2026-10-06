@@ -406,36 +406,90 @@ const AdminDashboard = () => {
       </div>
 
       {/* Top Stats Cards */}
-      <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="mb-6 grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-4">
         {[
-          { title: 'Total Sales', value: `₹${filteredOrderCounts.revenue.toLocaleString('en-IN')}`, inc: '22.4%', icon: <ShoppingBag size={22} />, background: 'linear-gradient(120deg, #13a98e, #31dc82)', text: 'text-white', pill: 'bg-white/20 text-white border-white/30' },
-          { title: 'Total Orders', value: filteredOrderCounts.orders.toLocaleString(), inc: '18.6%', icon: <ShoppingBag size={22} />, background: 'linear-gradient(120deg, #4778e8, #8850df)', text: 'text-white', pill: 'bg-white/20 text-white border-white/30' },
-          { title: 'Total Customers', value: dashboardCounts.customers.toLocaleString(), inc: '15.3%', icon: <Users size={22} />, background: 'linear-gradient(120deg, #ed45b7, #c3227c)', text: 'text-white', pill: 'bg-white/20 text-white border-white/30' },
-          { title: 'Total Products', value: dashboardCounts.products.toLocaleString(), inc: '10.7%', icon: <Package size={22} />, background: 'linear-gradient(120deg, #ff9915, #ffc400)', text: 'text-[#493500]', pill: 'bg-black/10 text-[#493500] border-black/10' },
+          {
+            title: 'Total Sales',
+            value: `₹${filteredOrderCounts.revenue.toLocaleString('en-IN')}`,
+            sub: `${filteredOrderCounts.orders} orders`,
+            inc: '+22.4%',
+            icon: <IndianRupee size={26} />,
+            gradient: 'from-[#0ea56e] to-[#22e89b]',
+            glow: 'shadow-[0_12px_28px_rgba(14,165,110,0.45)]',
+            sparkHeights: [28, 45, 38, 62, 50, 74, 90],
+            iconBg: 'bg-white/20 border-white/30',
+          },
+          {
+            title: 'Total Orders',
+            value: filteredOrderCounts.orders.toLocaleString(),
+            sub: `${filteredOrderCounts.todayOrders} today`,
+            inc: '+18.6%',
+            icon: <ShoppingCart size={26} />,
+            gradient: 'from-[#3b5fe0] to-[#8b4df0]',
+            glow: 'shadow-[0_12px_28px_rgba(59,95,224,0.45)]',
+            sparkHeights: [40, 55, 35, 70, 45, 80, 95],
+            iconBg: 'bg-white/20 border-white/30',
+          },
+          {
+            title: 'Total Customers',
+            value: dashboardCounts.customers.toLocaleString(),
+            sub: 'registered users',
+            inc: '+15.3%',
+            icon: <Users size={26} />,
+            gradient: 'from-[#e0347a] to-[#f06aac]',
+            glow: 'shadow-[0_12px_28px_rgba(224,52,122,0.45)]',
+            sparkHeights: [32, 48, 55, 42, 68, 72, 85],
+            iconBg: 'bg-white/20 border-white/30',
+          },
+          {
+            title: 'Total Products',
+            value: dashboardCounts.products.toLocaleString(),
+            sub: `${dashboardCounts.lowStock} low stock`,
+            inc: '+10.7%',
+            icon: <Package size={26} />,
+            gradient: 'from-[#f97316] to-[#fbbf24]',
+            glow: 'shadow-[0_12px_28px_rgba(249,115,22,0.40)]',
+            sparkHeights: [22, 40, 60, 35, 55, 78, 88],
+            iconBg: 'bg-black/10 border-black/10',
+          },
         ].map((stat, i) => (
           <div
             key={i}
-            className={`relative isolate flex min-h-[220px] flex-col overflow-hidden rounded-[22px] p-6 shadow-[0_10px_22px_rgba(16,24,40,0.16)] ${stat.text}`}
-            style={{ background: stat.background }}
+            className={`group relative isolate flex min-h-[190px] flex-col overflow-hidden rounded-3xl bg-gradient-to-br p-5 text-white ${stat.gradient} ${stat.glow} transition-transform duration-300 hover:-translate-y-1.5 hover:shadow-2xl`}
           >
-            <div className="pointer-events-none absolute -right-8 -top-10 h-36 w-36 rounded-full bg-white/15" />
-            <div className="relative z-10 flex items-start justify-between gap-3">
+            {/* Decorative blob */}
+            <div className="pointer-events-none absolute -right-10 -top-10 h-40 w-40 rounded-full bg-white/10 blur-2xl" />
+            <div className="pointer-events-none absolute -bottom-8 -left-6 h-32 w-32 rounded-full bg-black/10 blur-xl" />
+
+            {/* Top row: title + icon */}
+            <div className="relative z-10 flex items-start justify-between gap-2">
               <div>
-                <p className="text-[13px] font-bold uppercase">{stat.title}</p>
-                <h3 className="mt-4 text-[34px] font-extrabold leading-none">{stat.value}</h3>
+                <p className="text-[11px] font-semibold uppercase tracking-widest text-white/70">{stat.title}</p>
+                <h3 className="mt-2 text-[30px] font-extrabold leading-none tracking-tight">{stat.value}</h3>
+                <p className="mt-1 text-[11px] text-white/60">{stat.sub}</p>
               </div>
-              <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-[18px] border border-white/30 bg-white/15">
+              <div className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border backdrop-blur-sm ${stat.iconBg}`}>
                 {stat.icon}
               </div>
             </div>
-            <div className="pointer-events-none absolute bottom-[62px] left-6 right-6 flex h-9 items-end gap-1 opacity-30" aria-hidden="true">
-              {[34, 58, 42, 72, 51, 65, 88].map((height, index) => (
-                <span key={index} className="flex-1 rounded-t-[3px] bg-white" style={{ height: `${height}%` }} />
+
+            {/* Sparkline bars */}
+            <div className="pointer-events-none relative z-10 mt-auto mb-3 flex h-10 items-end gap-[3px] opacity-40" aria-hidden="true">
+              {stat.sparkHeights.map((h, idx) => (
+                <span
+                  key={idx}
+                  className="flex-1 rounded-t-sm bg-white"
+                  style={{ height: `${h}%` }}
+                />
               ))}
             </div>
-            <div className={`relative z-10 mt-auto inline-flex w-fit items-center gap-1.5 rounded-full border px-3 py-1.5 text-[11px] font-bold ${stat.pill}`}>
-              <TrendingUp size={12} />
-              <span>+{stat.inc} vs previous</span>
+
+            {/* Trend badge */}
+            <div className="relative z-10">
+              <span className="inline-flex items-center gap-1 rounded-full bg-white/20 border border-white/30 px-3 py-1 text-[11px] font-bold backdrop-blur-sm">
+                <TrendingUp size={11} />
+                {stat.inc} vs last period
+              </span>
             </div>
           </div>
         ))}

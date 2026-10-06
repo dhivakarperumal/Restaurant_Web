@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  AlertTriangle, ArrowDownRight, ArrowRight, ArrowUpRight, Bike, CalendarDays,
+  AlertTriangle, ArrowRight, Bike, CalendarDays,
   Check, ChefHat, CircleDollarSign, Clock3, CreditCard, CookingPot, Package,
   PackageCheck, Plus, Search, ShoppingBag, ShoppingCart, Sparkles, Table2,
   TrendingUp, Users, UtensilsCrossed,
+  XCircle,
 } from 'lucide-react';
 import {
   Area, AreaChart, CartesianGrid, Cell, Line, LineChart, Pie, PieChart,
@@ -101,23 +102,18 @@ const normalizeStatus = (status) => {
   return raw;
 };
 
-function MetricCard({ title, value, icon: Icon, tone, hint, trend, onClick }) {
+function MetricCard({ title, value, icon: Icon, tone, hint, surface, waveColor }) {
   return (
-    <article className="relative min-w-0 overflow-hidden border border-[#e5ece6] bg-white p-4 shadow-[0_2px_10px_rgba(20,56,34,0.04)] sm:p-5">
+    <article className={`relative min-w-0 overflow-hidden rounded-xl border p-4 shadow-[0_2px_10px_rgba(20,56,34,0.04)] sm:p-5 ${surface}`}>
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <p className="text-xs font-medium text-[#516157]">{title}</p>
           <p className="mt-2 truncate text-[25px] font-extrabold leading-none text-[#17231b]">{value}</p>
-          <p className="mt-3 inline-flex items-center gap-1 rounded-full bg-[#e9f8eb] px-2 py-1 text-[10px] font-semibold text-[#1f9b43]">
-            {trend === 'down' ? <ArrowDownRight size={12} /> : <ArrowUpRight size={12} />}{hint}
-          </p>
+          <p className="mt-3 text-[10px] text-[#7b887f]">{hint}</p>
         </div>
-        <span className={`grid h-10 w-10 shrink-0 place-items-center ${tone}`}><Icon size={20} /></span>
+        <span className={`grid h-14 w-14 shrink-0 place-items-center rounded-full text-white ${tone}`}><Icon size={22} /></span>
       </div>
-      <div className="pointer-events-none absolute -bottom-1 right-3 flex h-9 w-[34%] items-end gap-1 opacity-30" aria-hidden="true">
-        {[30, 45, 38, 64, 50, 79, 100].map((height, index) => <span key={index} className="flex-1 rounded-t-sm bg-current" style={{ height: `${height}%` }} />)}
-      </div>
-      {onClick && <button type="button" onClick={onClick} className="absolute inset-0" aria-label={`Open ${title}`} />}
+      <svg viewBox="0 0 100 12" preserveAspectRatio="none" aria-hidden="true" className="absolute inset-x-0 bottom-0 h-5 w-full" fill={waveColor}><path d="M0 5 C20 12 35 7 54 5 S83 1 100 5 V12 H0 Z" /></svg>
     </article>
   );
 }
@@ -233,6 +229,20 @@ const AdminDashboardOverview = () => {
     }));
   });
   const topSellingItems = [...topItems.values()].sort((a, b) => b.revenue - a.revenue).slice(0, 5);
+  const categoryGroups = new Map();
+  snapshot.foods
+    .filter((food) => food.is_menu_visible && String(food.status || '').toLowerCase() === 'active')
+    .forEach((food) => {
+      const category = String(food.category_name || 'Other').trim() || 'Other';
+      const items = categoryGroups.get(category) || [];
+      items.push(food);
+      categoryGroups.set(category, items);
+    });
+  const categoryTiles = [...categoryGroups.entries()].slice(0, 6).map(([name, items]) => ({
+    name,
+    count: items.length,
+    image: items.map((food) => parseImages(food.food_images)[0]).find(Boolean) || '',
+  }));
 
   const recentOrders = [
     ...dateRangeOrders.map((order) => ({
@@ -282,11 +292,13 @@ const AdminDashboardOverview = () => {
     + snapshot.bills.filter((bill) => getDateKey(bill.created_at) === getDateKey(new Date())).length;
   const pendingKitchenCount = snapshot.kitchenRequests.filter((request) => ['pending', 'approved'].includes(String(request.status).toLowerCase())).length;
   const openBillsCount = snapshot.bills.filter((bill) => String(bill.status).toLowerCase() === 'active').length;
+  const cancelledOrderCount = report.statuses.reduce((count, item) => count + (['cancelled', 'canceled'].includes(String(item.status).toLowerCase()) ? Number(item.count || 0) : 0), 0);
   const stats = [
-    { title: 'Total Orders', value: reportLoading ? '—' : statusTotal.toLocaleString('en-IN'), hint: `${todayOrderCount} today`, icon: ShoppingBag, tone: 'bg-[#e9f8eb] text-[#229849]' },
-    { title: 'Total Revenue', value: reportLoading ? '—' : money(report.summary?.totalRevenue), hint: 'Delivered orders', icon: CircleDollarSign, tone: 'bg-[#fff3df] text-[#ef9d00]' },
-    { title: 'New Customers', value: loading ? '—' : dateRangeCustomers.length.toLocaleString('en-IN'), hint: 'in selected period', icon: Users, tone: 'bg-[#eaf2ff] text-[#277be3]' },
-    { title: 'Active Delivery', value: loading ? '—' : activeDeliveryCount.toLocaleString('en-IN'), hint: 'Orders in progress', icon: Bike, tone: 'bg-[#fff0ee] text-[#ec5448]' },
+    { title: 'Total Orders', value: reportLoading ? '—' : statusTotal.toLocaleString('en-IN'), hint: `${todayOrderCount} today`, icon: ShoppingBag, tone: 'bg-[#19c45b]', surface: 'border-[#d9f1df] bg-[#f3fbf4]', waveColor: '#a6e9bb' },
+    { title: 'Total Revenue', value: reportLoading ? '—' : money(report.summary?.totalRevenue), hint: 'Delivered orders', icon: CircleDollarSign, tone: 'bg-[#ff9f05]', surface: 'border-[#f4e8cf] bg-[#fffaf1]', waveColor: '#f8d99a' },
+    { title: 'New Customers', value: loading ? '—' : dateRangeCustomers.length.toLocaleString('en-IN'), hint: 'in selected period', icon: Users, tone: 'bg-[#2089ef]', surface: 'border-[#dce9fa] bg-[#f5f9ff]', waveColor: '#b4d6fb' },
+    { title: 'Active Delivery', value: loading ? '—' : activeDeliveryCount.toLocaleString('en-IN'), hint: 'Orders in progress', icon: Bike, tone: 'bg-[#8650eb]', surface: 'border-[#e7def8] bg-[#faf7ff]', waveColor: '#d4baf8' },
+    { title: 'Cancelled Orders', value: reportLoading ? '—' : cancelledOrderCount.toLocaleString('en-IN'), hint: 'in selected period', icon: XCircle, tone: 'bg-[#ff4d4f]', surface: 'border-[#f3dfdf] bg-[#fff7f6]', waveColor: '#f4b4ad' },
   ];
   const rangeUnfinished = period === 'custom' && (!customFrom || !customTo);
 
@@ -321,8 +333,17 @@ const AdminDashboardOverview = () => {
       {error && <div role="status" className="border border-[#efd7bd] bg-[#fff8ed] px-4 py-2 text-xs text-[#88602a]">{error}</div>}
       {rangeUnfinished && <div role="status" className="text-xs text-[#88602a]">Select a start and end date to load the custom range.</div>}
 
-      <section className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        {stats.map(({ title, value, hint, icon: Icon, tone }) => <MetricCard key={title} title={title} value={value} hint={hint} icon={Icon} tone={tone} />)}
+      <section className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-5">
+        {stats.map(({ title, value, hint, icon: Icon, tone, surface, waveColor }) => <MetricCard key={title} title={title} value={value} hint={hint} icon={Icon} tone={tone} surface={surface} waveColor={waveColor} />)}
+      </section>
+
+      <section aria-label="Menu categories" className="grid grid-cols-1 gap-2 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-6">
+        {loading ? [0, 1, 2, 3, 4, 5].map((item) => <div key={item} className="h-[76px] animate-pulse border border-[#e5ece6] bg-white" />) : categoryTiles.length ? categoryTiles.map((category, index) => (
+          <button type="button" key={category.name} onClick={() => navigate('/admin/products')} className={`flex min-w-0 items-center gap-2.5 border p-2 text-left transition hover:-translate-y-0.5 hover:shadow-sm ${['bg-[#f0fbf1] border-[#e0f1df]', 'bg-[#fff8eb] border-[#f2eadb]', 'bg-[#edf7ff] border-[#dceaf5]', 'bg-[#fff2f0] border-[#f3e2df]', 'bg-[#effbf8] border-[#d8eee8]', 'bg-[#f5f1ff] border-[#e6ddf8]'][index % 6]}`}>
+            <span className="relative h-12 w-12 shrink-0 overflow-hidden rounded-lg bg-white/80"><UtensilsCrossed size={18} className="absolute inset-0 m-auto text-[#66816b]" /><img src={imageUrl(category.image)} alt="" className="relative z-10 h-full w-full object-cover" onError={(event) => { event.currentTarget.style.display = 'none'; }} /></span>
+            <span className="min-w-0 flex-1"><span className="block truncate text-[11px] font-bold text-[#304538]">{category.name}</span><span className="mt-1 block text-[9px] text-[#77847b]">{category.count} {category.count === 1 ? 'item' : 'items'}</span></span><ArrowRight size={13} className="shrink-0 rotate-[-45deg] text-[#718078]" />
+          </button>
+        )) : <div className="col-span-full border border-dashed border-[#dfe8e0] bg-white px-4 py-5 text-center text-xs text-[#7e8b82]">No visible food categories found.</div>}
       </section>
 
       <section className="grid gap-3 xl:grid-cols-[minmax(0,1.55fr)_minmax(260px,0.95fr)_minmax(260px,0.85fr)]">

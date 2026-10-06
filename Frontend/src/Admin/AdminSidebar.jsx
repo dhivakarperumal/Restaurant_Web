@@ -94,7 +94,7 @@ const navItems = [
     icon: Boxes,
     children: [
       // { path: "/admin/inventory", label: "Dashboard", icon: LayoutDashboard },
-      { path: "/admin/inventory/products", label: "Products", icon: Package },
+      { path: "/admin/inventory/products", label: "Groceries", icon: Package },
       // { path: "/admin/inventory/categories", label: "Categories", icon: Layers },
       // { path: "/admin/inventory/units", label: "Units", icon: ClipboardList },
       { path: "/admin/inventory/suppliers", label: "Suppliers", icon: Users },
@@ -283,7 +283,7 @@ const Sidebar = ({ isOpen, onClose, collapsed, onToggleCollapse }) => {
                     onClick={() => toggleMenu(item.label)}
                     title={collapsed ? item.label : ""}
                     className={`
-                      w-full flex items-center gap-3 px-3 py-3 rounded-xl text-sm
+                      w-full flex items-center gap-3 px-3 py-3 rounded-lg text-sm
                       transition-all duration-200 group
                       ${isAnyChildActive
                         ? "bg-[#1f3228] text-white border-l-2 border-white"
@@ -329,14 +329,14 @@ const Sidebar = ({ isOpen, onClose, collapsed, onToggleCollapse }) => {
                               flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-xs
                               transition-all duration-200
                               ${isActive
-                                ? "bg-[#d4a843] text-[#162420] font-semibold"
+                                ? "bg-[#14532d] text-white font-semibold"
                                 : "text-white hover:text-white hover:bg-[#1f3228]"
                               }
                             `}
                             title={collapsed && sub.badge ? `${sub.label} (${pendingCount})` : ''}
                           >
-                            <SubIcon className={`w-3.5 h-3.5 shrink-0 ${isActive ? "text-[#162420]" : "text-white"}`} />
-                            <span className={`truncate flex-1 ${isActive ? "text-[#162420]" : "text-white"}`}>{sub.label}</span>
+                            <SubIcon className={`w-3.5 h-3.5 shrink-0 ${isActive ? "text-white" : "text-white"}`} />
+                            <span className="truncate flex-1 text-white">{sub.label}</span>
                             {sub.badge === 'pending' && pendingCount > 0 && !collapsed && (
                               <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/20 text-amber-400 border border-amber-500/30 ml-2 shrink-0">
                                 {pendingCount}
@@ -361,17 +361,17 @@ const Sidebar = ({ isOpen, onClose, collapsed, onToggleCollapse }) => {
                 title={collapsed ? item.label : ""}
                 onClick={() => isOpen && onClose()}
                 className={`
-                  flex items-center gap-3 px-3 py-3 rounded-xl text-sm
+                  flex items-center gap-3 px-3 py-3 rounded-lg text-sm
                   transition-all duration-200
                   ${isActive
-                    ? "bg-[#d4a843] text-[#162420] font-semibold shadow-md"
+                    ? "bg-[#14532d] text-white font-semibold shadow-md shadow-[#14532d]/20"
                     : "text-white hover:text-white hover:bg-[#1f3228]/70"
                   }
                   ${collapsed ? "justify-center" : ""}
                 `}
               >
-                <Icon className={`w-[17px] h-[17px] shrink-0 ${isActive ? "text-[#162420]" : "text-white"}`} />
-                {!collapsed && <span className={`font-medium truncate ${isActive ? "text-[#162420]" : "text-white"}`}>{item.label}</span>}
+                <Icon className="w-[17px] h-[17px] shrink-0 text-white" />
+                {!collapsed && <span className="font-medium truncate text-white">{item.label}</span>}
               </NavLink>
             );
           })}
@@ -383,17 +383,17 @@ const Sidebar = ({ isOpen, onClose, collapsed, onToggleCollapse }) => {
           title={collapsed ? "Back Home" : ""}
           onClick={() => isOpen && onClose()}
           className={`
-            mx-3 mb-3 flex items-center gap-3 px-3 py-3 rounded-xl text-sm
+            mx-3 mb-3 flex items-center gap-3 px-3 py-3 rounded-lg text-sm
             transition-all duration-200
             ${isRouteActive("/")
-              ? "bg-[#d4a843] text-[#162420] font-semibold shadow-md"
+              ? "bg-[#14532d] text-white font-semibold shadow-md shadow-[#14532d]/20"
               : "text-white hover:text-white hover:bg-[#1f3228]/70"
             }
             ${collapsed ? "justify-center" : ""}
           `}
         >
-          <Home className={`w-[17px] h-[17px] shrink-0 ${isRouteActive("/") ? "text-[#162420]" : "text-white"}`} />
-          {!collapsed && <span className={`font-medium truncate ${isRouteActive("/") ? "text-[#162420]" : "text-white"}`}>Back Home</span>}
+          <Home className="w-[17px] h-[17px] shrink-0 text-white" />
+          {!collapsed && <span className="font-medium truncate text-white">Back Home</span>}
         </NavLink>
 
         {/* ========== COLLAPSE BUTTON ========== */}
