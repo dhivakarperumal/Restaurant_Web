@@ -21,6 +21,7 @@ const blankFood = (foodId = '', actor = '') => ({
   servingSize: '',
   portionSize: 'Full',
   preparationTime: '0',
+  availableTime: '10:00 AM - 1:00 PM',
   foodType: 'Veg',
   isSpicy: false,
   isAvailable: true,
@@ -187,6 +188,7 @@ const AddFood = ({ drawer = false, onClose, onSaved }) => {
             servingSize: food.serving_size || '',
             portionSize: food.portion_size || 'Full',
             preparationTime: String(food.preparation_time ?? 0),
+            availableTime: food.available_time || '10:00 AM - 1:00 PM',
             foodType: food.food_type || 'Veg',
             isSpicy: Boolean(food.is_spicy),
             isAvailable: Boolean(food.is_available),
@@ -365,6 +367,7 @@ const AddFood = ({ drawer = false, onClose, onSaved }) => {
       serving_size: form.servingSize.trim(),
       portion_size: form.portionSize,
       preparation_time: Number(form.preparationTime),
+      available_time: form.availableTime.trim(),
       food_type: form.foodType,
       is_spicy: form.isSpicy,
       is_available: form.isAvailable,
@@ -496,6 +499,10 @@ const AddFood = ({ drawer = false, onClose, onSaved }) => {
           </Section>
 
           <Section number="04" title="Availability" description="Control service channels and menu visibility." columns={3}>
+            <label className="block text-sm font-medium text-gray-700">Available time
+              <input type="text" value={form.availableTime} onChange={(event) => setValue('availableTime', event.target.value)} maxLength={100} placeholder="e.g. 10:00 AM - 1:00 PM" className="mt-1.5 h-10 w-full rounded-md border border-gray-300 px-3 outline-none focus:border-emerald-700" />
+              <span className="mt-1 block text-xs font-normal text-gray-500">Default: 10:00 AM - 1:00 PM</span>
+            </label>
             <Toggle label="Available" checked={form.isAvailable} onChange={(value) => setValue('isAvailable', value)} />
             <Toggle label="Dining available" checked={form.diningAvailable} onChange={(value) => setValue('diningAvailable', value)} />
             <Toggle label="Takeaway available" checked={form.takeawayAvailable} onChange={(value) => setValue('takeawayAvailable', value)} />

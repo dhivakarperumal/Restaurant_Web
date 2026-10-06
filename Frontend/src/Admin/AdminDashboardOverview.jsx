@@ -417,7 +417,7 @@ const AdminDashboardOverview = () => {
         <article className="min-w-0 border border-[#e6ebe7] bg-white p-4 sm:p-5">
           <div className="mb-3 flex items-center justify-between"><h2 className="text-sm font-bold text-[#1c2c22] sm:text-base">Quick Actions</h2><button type="button" onClick={() => navigate('/admin')} className="text-[10px] font-medium text-[#66756b] hover:text-[#178a36]">View All <ArrowRight size={11} className="ml-1 inline" /></button></div>
           <div className="grid grid-cols-2 gap-2">
-            {quickActions.map(({ label, icon: Icon, path, tone }) => <button type="button" key={label} onClick={() => navigate(path)} className="flex min-h-[74px] flex-col items-center justify-center gap-2 border border-transparent px-2 py-2 text-center transition hover:border-[#e1e9e2] hover:shadow-sm">
+            {quickActions.map(({ label, icon: Icon, path, tone }) => <button type="button" key={label} onClick={() => navigate(path)} className="flex min-h-[74px] flex-col items-center justify-center gap-2 rounded-full border border-[#d7e5f7] bg-[#eaf2ff] px-2 py-2 text-center transition hover:border-[#bfd5f3] hover:bg-[#dbeaff] hover:shadow-sm">
               <span className={`grid h-10 w-10 place-items-center ${tone}`}><Icon size={20} /></span><span className="text-[10px] font-semibold text-[#45544a]">{label}</span>
             </button>)}
           </div>

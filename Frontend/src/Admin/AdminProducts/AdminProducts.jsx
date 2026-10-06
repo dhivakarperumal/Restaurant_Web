@@ -188,71 +188,51 @@ const AdminProducts = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-[#f2f3f0] p-4 md:p-6">
+    <div className="min-h-screen  p-4 md:p-2">
       <div className="mx-auto max-w-[1500px]">
-        {/* ================= TOP TOOLBAR ================= */}
-        <div className="mb-5 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-          <div>
-            <h1 className="text-[2.1rem] font-bold tracking-[-0.05em] text-[#1f1d1b]">Products</h1>
-            <p className="mt-2 text-[13px] text-[#646464]">
-              Dashboard <span className="mx-2 text-[#9a9a9a]">&gt;</span> <span className="font-medium text-[#2a2a2a]">Products</span>
-            </p>
-          </div>
 
-          <div className="flex flex-wrap items-center gap-3">
-
-            {/* ADD NEW PRODUCT BUTTON */}
-            <button
-              type="button"
-              onClick={() => setAddFoodOpen(true)}
-              className="inline-flex h-[46px] items-center gap-2 rounded-xl bg-[#1a3c36] px-4 text-[15px] font-semibold text-white shadow-[0_6px_14px_rgba(26,60,54,0.18)] transition hover:bg-[#214a42]"
-            >
-              <Plus className="h-4 w-4" />
-              Add Food
-            </button>
-          </div>
-        </div>
 
         {/* ================= STAT CARDS ================= */}
         <div className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
-          {statCards.map((stat, index) => (
-            <div
-              key={index}
-              className="relative flex h-full min-h-[170px] flex-col overflow-hidden rounded-xl border border-gray-100 bg-white p-5 shadow-sm"
-            >
-              <div className="flex flex-1 items-start gap-4">
-                <div
-                  className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-full ${stat.iconBg}`}
-                >
-                  {stat.icon}
-                </div>
-
-                <div className="flex flex-col">
-                  <p className="mb-1 text-xs font-medium text-gray-600">{stat.title}</p>
-                  <h3 className="mb-3 text-2xl font-bold text-gray-900">{stat.value}</h3>
-                  <div className="flex flex-col">
-                    <div className="mb-1 flex items-center text-xs font-medium text-emerald-600">
-                      <TrendingUp size={12} className="mr-1" />
-                      <span>{stat.inc}</span>
-                    </div>
-                    <p className="text-[10px] text-gray-400">from last month</p>
+          {statCards.map((stat, index) => {
+            const isNegative = String(stat.inc).includes('↓') || String(stat.inc).includes('-');
+            return (
+              <article
+                key={index}
+                className={`relative min-w-0 overflow-hidden rounded-xl border border-transparent p-4 sm:p-5 shadow-[0_2px_10px_rgba(20,56,34,0.04)] flex flex-col justify-between min-h-[140px] ${stat.iconBg} text-white`}
+              >
+                <div className="flex items-start gap-3 relative z-10">
+                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg shadow-sm bg-white/20">
+                    {React.cloneElement(stat.icon, { size: 24, strokeWidth: 2.2, className: 'text-white' })}
+                  </div>
+                  <div className="flex-1 mt-0.5 min-w-0">
+                    <h3 className="text-[12px] font-semibold opacity-90 mb-1 truncate">{stat.title}</h3>
+                    <div className="text-[22px] sm:text-[25px] font-extrabold leading-none tracking-tight truncate">{stat.value}</div>
                   </div>
                 </div>
-              </div>
 
-              <div className="pointer-events-none absolute bottom-0 left-0 h-8 w-full overflow-hidden">
-                <svg
-                  viewBox="0 0 100 20"
-                  preserveAspectRatio="none"
-                  className="h-full w-full opacity-40"
-                  style={{ color: stat.waveColor }}
-                  fill="currentColor"
-                >
-                  <path d="M0,10 C30,25 70,0 100,10 L100,20 L0,20 Z" />
-                </svg>
-              </div>
-            </div>
-          ))}
+                <div className="flex items-center gap-2 mt-5 relative z-10">
+                  <span className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[11px] font-bold bg-white/25">
+                    ↑ {stat.inc}
+                  </span>
+                  <span className="text-[11px] font-medium opacity-75 truncate">from last month</span>
+                </div>
+
+                <div className="absolute right-0 bottom-0 w-24 h-16 pointer-events-none opacity-50">
+                  <svg viewBox="0 0 100 50" preserveAspectRatio="none" className="w-full h-full">
+                    <defs>
+                      <linearGradient id={`grad-${stat.title.replace(/\s+/g, '')}`} x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="#ffffff" stopOpacity="0.4" />
+                        <stop offset="100%" stopColor="#ffffff" stopOpacity="0.0" />
+                      </linearGradient>
+                    </defs>
+                    <path d="M0,50 L0,40 Q25,30 50,40 T100,20 L100,50 Z" fill={`url(#grad-${stat.title.replace(/\s+/g, '')})`} />
+                    <path d="M0,40 Q25,30 50,40 T100,20" fill="none" stroke="#ffffff" strokeWidth="2.5" />
+                  </svg>
+                </div>
+              </article>
+            );
+          })}
         </div>
 
         {/* ================= TABLE CARD ================= */}
@@ -271,31 +251,31 @@ const AdminProducts = () => {
               </div>
 
               <div className="flex flex-wrap items-center gap-3 lg:ml-auto">
-              <select
-                value={selectedCategory}
-                onChange={(e) => setSelectedCategory(e.target.value)}
-                className="h-[46px] rounded-xl border border-[#dfe2e5] bg-[#faf9f8] px-3 text-[14px] font-medium text-[#2d2d2d] outline-none focus:border-[#d2bc8a]"
-              >
-                <option value="All Categories">All Categories</option>
-                <option value="Gift">Gifts</option>
-                {categoriesList.map((cat) => (
-                  <option key={cat.category_id || cat.id} value={cat.category_name}>
-                    {cat.category_name}
-                  </option>
-                ))}
-              </select>
+                <select
+                  value={selectedCategory}
+                  onChange={(e) => setSelectedCategory(e.target.value)}
+                  className="h-[46px] rounded-xl border border-[#dfe2e5] bg-[#faf9f8] px-3 text-[14px] font-medium text-[#2d2d2d] outline-none focus:border-[#d2bc8a]"
+                >
+                  <option value="All Categories">All Categories</option>
+                  <option value="Gift">Gifts</option>
+                  {categoriesList.map((cat) => (
+                    <option key={cat.category_id || cat.id} value={cat.category_name}>
+                      {cat.category_name}
+                    </option>
+                  ))}
+                </select>
 
-              <select
-                value={selectedStatus}
-                onChange={(e) => setSelectedStatus(e.target.value)}
-                className="h-[46px] rounded-xl border border-[#dfe2e5] bg-[#faf9f8] px-3 text-[14px] font-medium text-[#2d2d2d] outline-none focus:border-[#d2bc8a]"
-              >
-                <option value="All Status">All Status</option>
-                <option value="Active">Active</option>
-                <option value="Inactive">Inactive</option>
-              </select>
+                <select
+                  value={selectedStatus}
+                  onChange={(e) => setSelectedStatus(e.target.value)}
+                  className="h-[46px] rounded-xl border border-[#dfe2e5] bg-[#faf9f8] px-3 text-[14px] font-medium text-[#2d2d2d] outline-none focus:border-[#d2bc8a]"
+                >
+                  <option value="All Status">All Status</option>
+                  <option value="Active">Active</option>
+                  <option value="Inactive">Inactive</option>
+                </select>
 
-              
+                
               </div>
             </div>
 
@@ -331,6 +311,14 @@ const AdminProducts = () => {
                   <LayoutGrid className="h-4 w-4" />
                 </button>
               </div>
+              <button
+                  type="button"
+                  onClick={() => setAddFoodOpen(true)}
+                  className="inline-flex h-[46px] items-center gap-2 rounded-xl bg-[#1a3c36] px-4 text-[15px] font-semibold text-white shadow-[0_6px_14px_rgba(26,60,54,0.18)] transition hover:bg-[#214a42]"
+                >
+                  <Plus className="h-4 w-4" />
+                  Add Food
+                </button>
             </div>
           </div>
 
@@ -389,111 +377,111 @@ const AdminProducts = () => {
                   ))}
                 </div>
               ) : (
-              <div className="overflow-hidden rounded-md border border-[#e8e4df]">
-                <div className="overflow-x-auto">
-                <table className="min-w-full border-separate border-spacing-0">
-                  <thead>
-                    <tr className="bg-[#f0e6d2] text-left text-sm font-semibold text-[#3d3d3d]">
-                      <th className="px-4 py-4">S.No</th>
-                      <th className="px-4 py-4">Product</th>
-                      <th className="px-4 py-4">Category</th>
-                      <th className="px-4 py-4">Price</th>
-                      <th className="px-4 py-4">Prep time</th>
-                      <th className="px-4 py-4">Status</th>
-                      {/* <th className="px-4 py-4">Views</th> */}
-                      <th className="px-4 py-4">Actions</th>
-                    </tr>
-                  </thead>
-
-                  <tbody>
-                    {filteredProducts.map((product, index) => {
-                      return (
-                        <tr key={product.id || index} className="border-t border-[#f0ebe6] align-middle">
-                          <td className="px-4 py-4">{index + 1}</td>
-                          <td className="px-4 py-4">
-                            <div className="flex items-center gap-3">
-                              <div className="flex h-16 w-16 items-center justify-center overflow-hidden rounded-xl border border-[#e7e0d8] bg-[#f5f1ec]">
-                                {product.image && (product.image.startsWith('http') || product.image.startsWith('/')) ? (
-                                  <img
-                                    src={product.image}
-                                    alt={product.name}
-                                    className="h-full w-full object-contain"
-                                  />
-                                ) : (
-                                  <div
-                                    className="h-11 w-11 rounded-lg border border-[#d9c5a7] shadow-inner"
-                                    style={{ background: product.image || '#eee' }}
-                                  />
-                                )}
-                              </div>
-                              <div>
-                                <div className="text-lg font-semibold text-[#1f1f1f]">{product.name}</div>
-                                <div className="text-sm font-mono text-[#7a7a7a]">{product.code}</div>
-                              </div>
-                            </div>
-                          </td>
-
-                          <td className="px-4 py-4 text-sm text-[#4d4d4d]">{product.category}</td>
-
-                          <td className="px-4 py-4">
-                            <div className="text-lg font-bold text-[#1e1e1e]">{product.price}</div>
-                            {product.oldPrice && (
-                              <div className="text-xs text-[#8a8a8a] line-through">{product.oldPrice}</div>
-                            )}
-                          </td>
-
-                          <td className="px-4 py-4">
-                            <div className="flex items-center gap-3">
-                              <div className="text-sm font-medium text-[#333]">{product.stock} min</div>
-                            </div>
-                          </td>
-
-                          <td className="px-4 py-4">
-                            <span className="inline-flex items-center gap-2 rounded-full bg-[#edf7f1] px-2.5 py-1 text-xs font-semibold text-[#2d7b5a]">
-                              <span className="h-2 w-2 rounded-full bg-[#2d7b5a]" />
-                              {product.status}
-                            </span>
-                          </td>
-
-                          {/* <td className="px-4 py-4 text-sm font-medium text-[#313131]">{product.views}</td> */}
-
-                          <td className="px-4 py-4">
-                            <div className="flex items-center gap-2">
-                              <button
-                                type="button"
-                                onClick={() => navigate(`/admin/products/edit/${product.id}`)}
-                                className="flex h-9 w-9 items-center justify-center rounded-lg border border-[#e2d9cf] bg-white text-[#4d4d4d] transition hover:border-[#d0b997] hover:text-[#1a1a1a]"
-                                aria-label="Edit product"
-                                title="Edit product"
-                              >
-                                <Pencil className="h-4 w-4" />
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => setSelectedProductView(product)}
-                                className="flex h-9 w-9 items-center justify-center rounded-lg border border-[#e2d9cf] bg-white text-[#4d4d4d] transition hover:border-[#d0b997] hover:text-[#1a1a1a]"
-                                aria-label="View product"
-                                title="View product details & frame layout"
-                              >
-                                <Eye className="h-4 w-4" />
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => handleDeleteProduct(product.id)}
-                                className="flex h-9 w-9 items-center justify-center rounded-lg border border-[#f3d7d7] bg-[#fff8f8] text-[#d04d4d] transition hover:bg-[#fff0f0]"
-                                aria-label="Delete product"
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </button>
-                            </div>
-                          </td>
+                <div className="overflow-hidden rounded-md border border-[#e8e4df]">
+                  <div className="overflow-x-auto">
+                    <table className="min-w-full border-separate border-spacing-0">
+                      <thead>
+                        <tr className="bg-[#d4a843] text-left text-sm font-semibold text-white">
+                          <th className="px-4 py-4">S.No</th>
+                          <th className="px-4 py-4">Product</th>
+                          <th className="px-4 py-4">Category</th>
+                          <th className="px-4 py-4">Price</th>
+                          <th className="px-4 py-4">Prep time</th>
+                          <th className="px-4 py-4">Status</th>
+                          {/* <th className="px-4 py-4">Views</th> */}
+                          <th className="px-4 py-4">Actions</th>
                         </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
+                      </thead>
+
+                      <tbody>
+                        {filteredProducts.map((product, index) => {
+                          return (
+                            <tr key={product.id || index} className="border-t border-[#f0ebe6] align-middle">
+                              <td className="px-4 py-4">{index + 1}</td>
+                              <td className="px-4 py-4">
+                                <div className="flex items-center gap-3">
+                                  <div className="flex h-16 w-16 items-center justify-center overflow-hidden rounded-xl border border-[#e7e0d8] bg-[#f5f1ec]">
+                                    {product.image && (product.image.startsWith('http') || product.image.startsWith('/')) ? (
+                                      <img
+                                        src={product.image}
+                                        alt={product.name}
+                                        className="h-full w-full object-contain"
+                                      />
+                                    ) : (
+                                      <div
+                                        className="h-11 w-11 rounded-lg border border-[#d9c5a7] shadow-inner"
+                                        style={{ background: product.image || '#eee' }}
+                                      />
+                                    )}
+                                  </div>
+                                  <div>
+                                    <div className="text-lg font-semibold text-[#1f1f1f]">{product.name}</div>
+                                    <div className="text-sm font-mono text-[#7a7a7a]">{product.code}</div>
+                                  </div>
+                                </div>
+                              </td>
+
+                              <td className="px-4 py-4 text-sm text-[#4d4d4d]">{product.category}</td>
+
+                              <td className="px-4 py-4">
+                                <div className="text-lg font-bold text-[#1e1e1e]">{product.price}</div>
+                                {product.oldPrice && (
+                                  <div className="text-xs text-[#8a8a8a] line-through">{product.oldPrice}</div>
+                                )}
+                              </td>
+
+                              <td className="px-4 py-4">
+                                <div className="flex items-center gap-3">
+                                  <div className="text-sm font-medium text-[#333]">{product.stock} min</div>
+                                </div>
+                              </td>
+
+                              <td className="px-4 py-4">
+                                <span className="inline-flex items-center gap-2 rounded-full bg-[#edf7f1] px-2.5 py-1 text-xs font-semibold text-[#2d7b5a]">
+                                  <span className="h-2 w-2 rounded-full bg-[#2d7b5a]" />
+                                  {product.status}
+                                </span>
+                              </td>
+
+                              {/* <td className="px-4 py-4 text-sm font-medium text-[#313131]">{product.views}</td> */}
+
+                              <td className="px-4 py-4">
+                                <div className="flex items-center gap-2">
+                                  <button
+                                    type="button"
+                                    onClick={() => navigate(`/admin/products/edit/${product.id}`)}
+                                    className="flex h-9 w-9 items-center justify-center rounded-lg border border-[#e2d9cf] bg-white text-[#4d4d4d] transition hover:border-[#d0b997] hover:text-[#1a1a1a]"
+                                    aria-label="Edit product"
+                                    title="Edit product"
+                                  >
+                                    <Pencil className="h-4 w-4" />
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => setSelectedProductView(product)}
+                                    className="flex h-9 w-9 items-center justify-center rounded-lg border border-[#e2d9cf] bg-white text-[#4d4d4d] transition hover:border-[#d0b997] hover:text-[#1a1a1a]"
+                                    aria-label="View product"
+                                    title="View product details & frame layout"
+                                  >
+                                    <Eye className="h-4 w-4" />
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleDeleteProduct(product.id)}
+                                    className="flex h-9 w-9 items-center justify-center rounded-lg border border-[#f3d7d7] bg-[#fff8f8] text-[#d04d4d] transition hover:bg-[#fff0f0]"
+                                    aria-label="Delete product"
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
-              </div>
               )}
 
               <div className="mt-6 flex flex-col gap-3 border-t border-[#efebe7] pt-4 text-sm text-[#6a6a6a] md:flex-row md:items-center md:justify-between">

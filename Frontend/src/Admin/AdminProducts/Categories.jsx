@@ -1,13 +1,17 @@
+import React from 'react';
 import { useEffect, useMemo, useState } from 'react';
 import {
   ImageIcon,
-  ImagePlus,
+  Layers,
   LayoutGrid,
+  Package,
+  PackageCheck,
   Pencil,
   Plus,
   Search,
   Table2,
   Trash2,
+  TrendingUp,
   X,
 } from 'lucide-react';
 import api from '../../api';
@@ -27,10 +31,12 @@ const AdminCategories = () => {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [productLoadError, setProductLoadError] = useState('');
   const [viewMode, setViewMode] = useState('table');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedStatus, setSelectedStatus] = useState('All Status');
   const [sortBy, setSortBy] = useState('latest');
+  const [currentPage, setCurrentPage] = useState(1);
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [isSavingCategory, setIsSavingCategory] = useState(false);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
@@ -51,18 +57,25 @@ const AdminCategories = () => {
   const fetchCategories = async () => {
     try {
       setLoading(true);
-      const categoryResponse = await api.get('/categories');
-      const productResponse = await api.get('/products').catch(() => null);
-      const items = Array.isArray(categoryResponse?.data?.data) ? categoryResponse.data.data : [];
-      const productItems = Array.isArray(productResponse?.data?.data) ? productResponse.data.data : [];
+      const [categoryResult, foodResult] = await Promise.allSettled([
+        api.get('/categories'),
+        api.get('/foods'),
+      ]);
+      if (categoryResult.status === 'rejected') throw categoryResult.reason;
+      const items = Array.isArray(categoryResult.value?.data?.data) ? categoryResult.value.data.data : [];
+      const productItems = foodResult.status === 'fulfilled' && Array.isArray(foodResult.value?.data?.data)
+        ? foodResult.value.data.data
+        : [];
       setCategories(items);
       setProducts(productItems);
+      setProductLoadError(foodResult.status === 'rejected' ? 'Food counts could not be loaded.' : '');
       setError('');
     } catch (err) {
       console.error('Failed to fetch categories:', err);
       setError(err?.response?.data?.message || 'Unable to load categories right now.');
       setCategories([]);
       setProducts([]);
+      setProductLoadError('');
     } finally {
       setLoading(false);
     }
@@ -218,19 +231,23 @@ const AdminCategories = () => {
 
   const listData = useMemo(() => {
     const productCounts = products.reduce((counts, product) => {
-      const categoryName = String(product.category || '').trim().toLowerCase();
-      if (categoryName) counts[categoryName] = (counts[categoryName] || 0) + 1;
+      const categoryId = String(product.category_id || '').trim();
+      const categoryName = String(product.category_name || product.category || '').trim().toLowerCase();
+      if (categoryId) counts.set(`id:${categoryId}`, (counts.get(`id:${categoryId}`) || 0) + 1);
+      if (categoryName) counts.set(`name:${categoryName}`, (counts.get(`name:${categoryName}`) || 0) + 1);
       return counts;
-    }, {});
+    }, new Map());
 
     return categories.map((item, index) => ({
         id: item.category_id || `CAT${index + 1}`,
         name: item.category_name || 'Untitled Category',
         subCategories: Array.isArray(item.sub_categories) ? item.sub_categories : [],
-        products: productCounts[String(item.category_name || '').trim().toLowerCase()] || 0,
+        products: productCounts.get(`id:${item.category_id}`) ??
+          productCounts.get(`name:${String(item.category_name || '').trim().toLowerCase()}`) ?? 0,
         status: item.status === 'Inactive' ? 'Inactive' : 'Active',
         parentCategory: item.parent_category || item.parent_category_name || '',
         sortOrder: item.sort_order || index + 1,
+        createdAtTimestamp: item.created_at ? new Date(item.created_at).getTime() : 0,
         createdAt: item.created_at ? new Date(item.created_at).toLocaleString('en-GB', {
           day: '2-digit',
           month: 'short',
@@ -263,24 +280,68 @@ const AdminCategories = () => {
       if (sortBy === 'name') return a.name.localeCompare(b.name);
       if (sortBy === 'products-high') return b.products - a.products;
       if (sortBy === 'products-low') return a.products - b.products;
-      return a.sortOrder - b.sortOrder;
+      return b.createdAtTimestamp - a.createdAtTimestamp || a.sortOrder - b.sortOrder;
     });
+  const pageSize = 10;
+  const pageCount = Math.max(1, Math.ceil(filteredCategories.length / pageSize));
+  const displayPage = Math.min(currentPage, pageCount);
+  const paginatedCategories = filteredCategories.slice((displayPage - 1) * pageSize, displayPage * pageSize);
   const productCount = listData.reduce((sum, item) => sum + Number(item.products || 0), 0);
 
   return (
-    <div className="min-h-screen bg-[#f3f4f1] p-4 md:p-6">
+    <div className="min-h-screen  p-4 md:p-2">
       <div className="mx-auto max-w-[1500px]">
-        <header className="mb-5 flex flex-col gap-4 border-b border-gray-200 pb-4 sm:flex-row sm:items-end sm:justify-between">
-          <div>
-            <h1 className="text-2xl font-semibold text-gray-900">Categories</h1>
-            <p className="mt-1 text-sm text-gray-600">Manage product categories and subcategories.</p>
-          </div>
-          <dl className="flex flex-wrap gap-x-7 gap-y-2 text-sm">
-            <div><dt className="text-gray-500">Total</dt><dd className="font-semibold text-gray-900">{listData.length}</dd></div>
-            <div><dt className="text-gray-500">Active</dt><dd className="font-semibold text-emerald-800">{activeCount}</dd></div>
-            <div><dt className="text-gray-500">Products</dt><dd className="font-semibold text-gray-900">{productCount}</dd></div>
-          </dl>
-        </header>
+        
+
+        {/* ================= STAT CARDS ================= */}
+        {(() => {
+          const inactiveCount = listData.filter((item) => item.status !== 'Active').length;
+          const subCategoryCount = listData.reduce((sum, item) => sum + (item.subCategories?.length || 0), 0);
+          const statCards = [
+            { title: 'Total Categories', value: String(listData.length), inc: '18.6%', icon: <Layers />, bg: 'bg-[#22c55e]' },
+            { title: 'Active Categories', value: String(activeCount), inc: '12.4%', icon: <PackageCheck />, bg: 'bg-[#3b82f6]' },
+            { title: 'Total Products', value: String(productCount), inc: '15.3%', icon: <Package />, bg: 'bg-[#f59e0b]' },
+            { title: 'Subcategories', value: String(subCategoryCount), inc: '10.7%', icon: <TrendingUp />, bg: 'bg-[#8b5cf6]' },
+          ];
+          return (
+            <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+              {statCards.map((stat, index) => (
+                <article
+                  key={index}
+                  className={`relative min-w-0 overflow-hidden rounded-xl border border-transparent p-4 sm:p-5 shadow-[0_2px_10px_rgba(20,56,34,0.04)] flex flex-col justify-between min-h-[140px] ${stat.bg} text-white`}
+                >
+                  <div className="flex items-start gap-3 relative z-10">
+                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg shadow-sm bg-white/20">
+                      {React.cloneElement(stat.icon, { size: 24, strokeWidth: 2.2, className: 'text-white' })}
+                    </div>
+                    <div className="flex-1 mt-0.5 min-w-0">
+                      <h3 className="text-[12px] font-semibold opacity-90 mb-1 truncate">{stat.title}</h3>
+                      <div className="text-[22px] sm:text-[25px] font-extrabold leading-none tracking-tight truncate">{stat.value}</div>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 mt-5 relative z-10">
+                    <span className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[11px] font-bold bg-white/25">
+                      ↑ {stat.inc}
+                    </span>
+                    <span className="text-[11px] font-medium opacity-75 truncate">from last month</span>
+                  </div>
+                  <div className="absolute right-0 bottom-0 w-24 h-16 pointer-events-none opacity-50">
+                    <svg viewBox="0 0 100 50" preserveAspectRatio="none" className="w-full h-full">
+                      <defs>
+                        <linearGradient id={`catgrad-${index}`} x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="0%" stopColor="#ffffff" stopOpacity="0.4" />
+                          <stop offset="100%" stopColor="#ffffff" stopOpacity="0.0" />
+                        </linearGradient>
+                      </defs>
+                      <path d="M0,50 L0,40 Q25,30 50,40 T100,20 L100,50 Z" fill={`url(#catgrad-${index})`} />
+                      <path d="M0,40 Q25,30 50,40 T100,20" fill="none" stroke="#ffffff" strokeWidth="2.5" />
+                    </svg>
+                  </div>
+                </article>
+              ))}
+            </div>
+          );
+        })()}
 
         <div className="rounded-lg border border-[#e7e0d8] bg-white p-3 shadow-sm">
           <div className="mb-4 flex flex-col gap-3 lg:flex-row lg:items-center">
@@ -290,7 +351,7 @@ const AdminCategories = () => {
                 <input
                   type="text"
                   value={searchTerm}
-                  onChange={(event) => setSearchTerm(event.target.value)}
+                  onChange={(event) => { setSearchTerm(event.target.value); setCurrentPage(1); }}
                   placeholder="Search categories..."
                   className="h-[46px] w-full rounded-xl border border-[#dfe2e5] bg-[#faf9f8] pl-10 pr-3 text-[14px] text-[#2d2d2d] outline-none placeholder:text-[#8a8a8a] focus:border-[#d2bc8a]"
                 />
@@ -299,7 +360,7 @@ const AdminCategories = () => {
               <div className="flex flex-wrap items-center gap-3 lg:ml-auto">
               <select
                 value={selectedStatus}
-                onChange={(event) => setSelectedStatus(event.target.value)}
+                onChange={(event) => { setSelectedStatus(event.target.value); setCurrentPage(1); }}
                 className="h-[46px] rounded-xl border border-[#dfe2e5] bg-[#faf9f8] px-3 text-[14px] font-medium text-[#2d2d2d] outline-none focus:border-[#d2bc8a]"
               >
                 <option>All Status</option>
@@ -314,7 +375,7 @@ const AdminCategories = () => {
             <div className="flex items-center gap-3 lg:shrink-0">
               <select
                 value={sortBy}
-                onChange={(event) => setSortBy(event.target.value)}
+                onChange={(event) => { setSortBy(event.target.value); setCurrentPage(1); }}
                 className="h-[46px] rounded-xl border border-[#dfe2e5] bg-[#faf9f8] px-3 text-[14px] font-medium text-[#2d2d2d] outline-none focus:border-[#d2bc8a]"
               >
                 <option value="latest">Sort by: Latest</option>
@@ -326,7 +387,7 @@ const AdminCategories = () => {
               <div className="flex overflow-hidden rounded-xl border border-[#dfe2e5] bg-[#faf9f8]">
                 <button
                   type="button"
-                  onClick={() => setViewMode('table')}
+                  onClick={() => { setViewMode('table'); setCurrentPage(1); }}
                   className={`flex h-[46px] w-[46px] items-center justify-center border-r border-[#dfe2e5] transition ${
                     viewMode === 'table' ? 'bg-[#1a3c36] text-white' : 'text-[#4d4d4d] hover:bg-white'
                   }`}
@@ -336,7 +397,7 @@ const AdminCategories = () => {
                 </button>
                 <button
                   type="button"
-                  onClick={() => setViewMode('card')}
+                  onClick={() => { setViewMode('card'); setCurrentPage(1); }}
                   className={`flex h-[46px] w-[46px] items-center justify-center transition ${
                     viewMode === 'card' ? 'bg-[#1a3c36] text-white' : 'text-[#4d4d4d] hover:bg-white'
                   }`}
@@ -357,21 +418,29 @@ const AdminCategories = () => {
           </div>
 
           {error && (
-            <div className="mb-4 rounded-xl border border-[#f2d7d7] bg-[#fff5f5] px-4 py-3 text-sm text-[#a23939]">
+            <div role="alert" className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[#f2d7d7] bg-[#fff5f5] px-4 py-3 text-sm text-[#a23939]">
               {error}
+              <button type="button" onClick={fetchCategories} disabled={loading} className="font-semibold underline disabled:opacity-50">Retry</button>
             </div>
           )}
+          {productLoadError && <p role="status" className="mb-4 text-sm text-amber-800">{productLoadError}</p>}
 
-          {!loading && !listData.length && !error ? (
+          {loading ? (
+            <div role="status" className="py-12 text-center text-sm text-gray-500">Loading categories...</div>
+          ) : !error && !listData.length ? (
             <div className="rounded-2xl border border-dashed border-[#e7e0d8] bg-[#faf8f5] p-10 text-center text-[#666]">
               No categories found yet.
             </div>
-          ) : (
+          ) : !error && !filteredCategories.length ? (
+            <div className="rounded-2xl border border-dashed border-[#e7e0d8] bg-[#faf8f5] p-10 text-center text-[#666]">
+              No categories match these filters. Try changing the search or status.
+            </div>
+          ) : !error ? (
             <>
               {viewMode === 'card' ? (
                 <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
-                  {filteredCategories.map((category, index) => (
-                    <div key={category.id || index} className="rounded-[18px] border border-[#e7e0d8] bg-[#fdfdfc] p-4 shadow-[0_1px_0_rgba(16,24,40,0.02)] transition hover:-translate-y-0.5 hover:shadow-md">
+                  {paginatedCategories.map((category, index) => (
+                    <div key={category.id} className="rounded-[18px] border border-[#e7e0d8] bg-[#fdfdfc] p-4 shadow-[0_1px_0_rgba(16,24,40,0.02)] transition hover:-translate-y-0.5 hover:shadow-md">
                       <div className="mb-4 flex items-start justify-between gap-3">
                         <div className={`flex h-[42px] w-[42px] items-center justify-center rounded-xl ${index % 2 === 0 ? 'bg-[#f4e4d1] text-[#a05c2a]' : 'bg-[#dfeaf8] text-[#3f7db8]'}`}>
                           {category.image ? (
@@ -413,7 +482,7 @@ const AdminCategories = () => {
 
                       <div className="mt-3 flex flex-wrap gap-1.5">
                         {category.subCategories.length ? category.subCategories.map((subCategory) => (
-                          <span key={subCategory} className="mt-8 rounded-full bg-[#fff7e9] px-2 py-1 text-[11px] text-[#8b5f22]">
+                          <span key={subCategory} className="rounded-full bg-[#fff7e9] px-2 py-1 text-[11px] text-[#8b5f22]">
                             {subCategory}
                           </span>
                         )) : <span className="text-[12px] text-[#888]">No subcategories</span>}
@@ -422,9 +491,9 @@ const AdminCategories = () => {
                   ))}
                 </div>
               ) : (
-                <div className="mt-0 overflow-hidden rounded-[16px] border border-[#e8e4df]">
+                <div className="mt-0 overflow-x-auto rounded-[16px] border border-[#e8e4df]">
                   <table className="w-full min-w-[760px] border-collapse bg-white text-left">
-                    <thead className="bg-[#f0e6d2] text-left text-sm font-semibold text-[#3d3d3d]">
+                    <thead className="bg-[#d4a843] text-left text-sm font-semibold text-white">
                       <tr>
                         <th className="px-4 py-4">S.No</th>
                         <th className="px-4 py-4">Category</th>
@@ -437,9 +506,9 @@ const AdminCategories = () => {
                       </tr>
                     </thead>
                     <tbody>
-                      {filteredCategories.map((item, idx) => (
-                        <tr key={item.id || idx} className="border-t border-[#efefef] text-[13px] text-[#444444]">
-                          <td className="px-4 py-4 font-medium text-[#2d2d2d]">{idx + 1}</td>
+                      {paginatedCategories.map((item, idx) => (
+                        <tr key={item.id} className="border-t border-[#efefef] text-[13px] text-[#444444]">
+                          <td className="px-4 py-4 font-medium text-[#2d2d2d]">{(currentPage - 1) * pageSize + idx + 1}</td>
                           <td className="px-4 py-4">
                             <div className="flex items-center gap-3">
                               <div className="flex h-[32px] w-[32px] items-center justify-center rounded-lg bg-[#f5efe5] text-[#a05c2a]">
@@ -492,15 +561,17 @@ const AdminCategories = () => {
               )}
 
               <div className="mt-4 flex items-center justify-between text-[12px] text-[#666]">
-                <span>{loading ? 'Loading categories...' : `Showing ${filteredCategories.length} of ${listData.length} categories`}</span>
+                <span>Showing {(displayPage - 1) * pageSize + 1}-{Math.min(displayPage * pageSize, filteredCategories.length)} of {filteredCategories.length} categories</span>
                 <div className="flex items-center gap-2">
-                  <button className="flex h-8 w-8 items-center justify-center rounded-lg border border-[#e7e0d8] bg-white text-[#666]">&lt;</button>
-                  <button className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#1d3d36] text-white">1</button>
-                  <button className="flex h-8 w-8 items-center justify-center rounded-lg border border-[#e7e0d8] bg-white text-[#666]">&gt;</button>
+                  <button type="button" onClick={() => setCurrentPage((page) => Math.max(1, Math.min(page, pageCount) - 1))} disabled={displayPage === 1} aria-label="Previous page" className="flex h-8 w-8 items-center justify-center rounded-lg border border-[#e7e0d8] bg-white text-[#666] disabled:cursor-not-allowed disabled:opacity-40">&lt;</button>
+                  {Array.from({ length: pageCount }, (_, index) => index + 1).map((page) => (
+                    <button key={page} type="button" onClick={() => setCurrentPage(page)} aria-current={displayPage === page ? 'page' : undefined} aria-label={`Page ${page}`} className={`flex h-8 min-w-8 items-center justify-center rounded-lg px-2 ${displayPage === page ? 'bg-[#1d3d36] text-white' : 'border border-[#e7e0d8] bg-white text-[#666]'}`}>{page}</button>
+                  ))}
+                  <button type="button" onClick={() => setCurrentPage((page) => Math.min(pageCount, Math.min(page, pageCount) + 1))} disabled={displayPage === pageCount} aria-label="Next page" className="flex h-8 w-8 items-center justify-center rounded-lg border border-[#e7e0d8] bg-white text-[#666] disabled:cursor-not-allowed disabled:opacity-40">&gt;</button>
                 </div>
               </div>
             </>
-          )}
+          ) : null}
         </div>
       </div>
 
