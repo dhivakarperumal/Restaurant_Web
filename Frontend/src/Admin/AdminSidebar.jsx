@@ -108,7 +108,7 @@ const navItems = [
     label: "Orders",
     icon: ShoppingCart,
     children: [
-      { path: "/admin/orders/st", label: "Delivery Orders", icon: PlusSquare },
+      { path: "/admin/orders/homedelivery", label: "Home Delivery Orders", icon: PlusSquare },
       { path: "/admin/orders/pickup", label: "Pickup Orders", icon: PlusSquare },
       { path: "/admin/orders/dining", label: "Dining Orders", icon: PlusSquare },
       { path: "/admin/orders/new", label: "New Order", icon: PlusSquare },

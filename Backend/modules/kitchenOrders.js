@@ -325,7 +325,7 @@ async function updateKitchenOrderStatus({ orderId, status }) {
 
 async function listKitchenOrders(filters = {}) {
   let query = `SELECT ko.order_id, ko.bill_id, ko.round_number, ko.table_id, ko.table_number,
-                      ko.status, ko.created_by, ko.user_id, ko.created_at, ko.updated_at,
+                      ko.order_type, ko.status, ko.created_by, ko.user_id, ko.created_at, ko.updated_at,
                       tb.bill_number, tb.status AS bill_status
                FROM kitchen_orders ko
                LEFT JOIN table_bills tb ON ko.bill_id = tb.bill_id`;
@@ -339,6 +339,10 @@ async function listKitchenOrders(filters = {}) {
   if (filters.table_id) {
     conditions.push('ko.table_id = ?');
     params.push(filters.table_id);
+  }
+  if (filters.order_type) {
+    conditions.push('ko.order_type = ?');
+    params.push(filters.order_type);
   }
   if (conditions.length > 0) {
     query += ` WHERE ${conditions.join(' AND ')}`;

@@ -17,6 +17,7 @@ const FILTERS = {
   all: {},
   new: { status: 'placed' },
   delivery: { order_type: 'home_delivery' },
+  pickup: { order_type: 'pickup' },
   cancelled: { status: 'cancelled' },
 };
 
@@ -43,7 +44,10 @@ function CustomerOrdersPage({ audience = 'admin', view = 'all' }) {
   const isCustomer = audience === 'customer';
   const title = isCustomer
     ? 'My Orders'
-    : audience === 'chef' ? 'Customer Kitchen Orders' : 'Customer Orders';
+    : audience === 'chef' ? 'Customer Kitchen Orders'
+      : view === 'pickup' ? 'Pickup Orders'
+        : view === 'delivery' ? 'Delivery Orders'
+          : 'Customer Orders';
   const filterStatus = FILTERS[view]?.status;
   const filterOrderType = FILTERS[view]?.order_type;
 

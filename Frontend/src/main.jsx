@@ -172,6 +172,18 @@ const router = createHashRouter([
             element: <CustomerOrdersPage audience="admin" view="delivery" />,
           },
           {
+            path: 'orders/homedelivery',
+            element: <CustomerOrdersPage audience="admin" view="delivery" />,
+          },
+          {
+            path: 'orders/pickup',
+            element: <CustomerOrdersPage audience="admin" view="pickup" />,
+          },
+          {
+            path: 'orders/dining',
+            element: <ChefKitchenOrders defaultViewMode="table" orderTypeFilter="dine-in" />,
+          },
+          {
             path: 'orders/cancelled',
             element: <CustomerOrdersPage audience="admin" view="cancelled" />,
           },
