@@ -7,6 +7,9 @@ import Home from './Componets/Home/Home.jsx'
 import Shop from './Componets/Shop/Shop.jsx'
 import Offers from './Componets/Shop/Offers.jsx'
 import Checkout from './Componets/Checkout/Checkout.jsx'
+import About from './Componets/About.jsx'
+import Gallery from './Componets/Gallery.jsx'
+import Contact from './Componets/Contact.jsx'
 
 import Login from './Componets/Auth/Login.jsx'
 import Register from './Componets/Auth/Register.jsx'
@@ -86,6 +89,18 @@ const router = createHashRouter([
       {
         path: 'menu',
         element: <Shop />,
+      },
+      {
+        path: 'about',
+        element: <About />,
+      },
+      {
+        path: 'gallery',
+        element: <Gallery />,
+      },
+      {
+        path: 'contact',
+        element: <Contact />,
       },
       {
         path: 'food/:foodId',
