@@ -1,8 +1,11 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ArrowRight, ChevronLeft, ChevronRight, Utensils } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { Autoplay } from 'swiper/modules';
+import { Swiper, SwiperSlide } from 'swiper/react';
 import api, { BACKEND_BASE_URL } from '../api';
 import PageContainer from './PageContainer';
+import 'swiper/css';
 
 const resolveImageUrl = (image) => {
   if (!image || typeof image !== 'string') return '';
@@ -11,10 +14,18 @@ const resolveImageUrl = (image) => {
 };
 
 function HomeCuisines() {
-  const carouselRef = useRef(null);
+  const swiperRef = useRef(null);
   const [cuisines, setCuisines] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const carouselCuisines = useMemo(() => (
+    cuisines.length
+      ? Array.from(
+        { length: Math.max(6, cuisines.length) },
+        (_, index) => cuisines[index % cuisines.length],
+      )
+      : []
+  ), [cuisines]);
 
   const fetchCuisines = useCallback(async () => {
     setLoading(true);
@@ -37,13 +48,6 @@ function HomeCuisines() {
   useEffect(() => {
     fetchCuisines();
   }, [fetchCuisines]);
-
-  const scrollCuisines = (direction) => {
-    carouselRef.current?.scrollBy({
-      left: direction * carouselRef.current.clientWidth * 0.75,
-      behavior: 'smooth',
-    });
-  };
 
   return (
     <section className="bg-white pb-10 sm:pb-12" aria-labelledby="home-cuisines-heading">
@@ -76,63 +80,78 @@ function HomeCuisines() {
           <div className="relative">
             <button
               type="button"
-              onClick={() => scrollCuisines(-1)}
+              onClick={() => swiperRef.current?.slidePrev()}
               aria-label="Scroll cuisines left"
               className="absolute -left-1 top-1/2 z-10 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-[#e7e0d8] bg-white text-[#203129] shadow-md transition hover:bg-[#fff8ed] sm:-left-3 sm:h-10 sm:w-10"
             >
               <ChevronLeft className="h-5 w-5" />
             </button>
-            <div
-              ref={carouselRef}
-              className="scrollbar-hide flex snap-x snap-mandatory gap-4 overflow-x-auto scroll-smooth px-2 pb-3 pt-1"
+            <Swiper
+              onSwiper={(swiper) => { swiperRef.current = swiper; }}
+              modules={[Autoplay]}
+              loop={cuisines.length > 1}
+              autoplay={cuisines.length > 1
+                && !window.matchMedia('(prefers-reduced-motion: reduce)').matches
+                ? { delay: 3000, disableOnInteraction: false, pauseOnMouseEnter: true }
+                : false}
+              slidesPerView={2}
+              slidesPerGroup={1}
+              spaceBetween={16}
+              breakpoints={{
+                640: { slidesPerView: 3 },
+                1024: { slidesPerView: 4 },
+                1280: { slidesPerView: 5 },
+              }}
+              className="!px-2 !pb-3 !pt-1"
             >
-              {cuisines.map((cuisine) => {
+              {carouselCuisines.map((cuisine, index) => {
                 const cuisineId = cuisine.cuisine_id || cuisine.id;
                 const cuisineName = cuisine.cuisine_name || 'Cuisine';
                 const cuisineFilter = cuisine.cuisine_id || cuisine.cuisine_name || cuisine.id;
                 const image = resolveImageUrl(cuisine.image);
                 return (
-                  <Link
-                    key={cuisineId}
-                    to={`/shop?cuisine=${encodeURIComponent(cuisineFilter)}`}
-                    aria-label={`Browse ${cuisineName} cuisine`}
-                    className="group relative basis-[calc((100%-1rem)/2)] shrink-0 snap-start overflow-hidden rounded-xl bg-[#17251e] shadow-sm transition hover:-translate-y-1 hover:shadow-lg sm:basis-[calc((100%-2rem)/3)] lg:basis-[calc((100%-3rem)/4)] xl:basis-[calc((100%-4rem)/5)]"
-                  >
-                    <div className="relative aspect-[3/2] overflow-hidden bg-[#17251e]">
-                      {image ? (
-                        <>
-                          <img
-                            src={image}
-                            alt=""
-                            aria-hidden="true"
-                            loading="lazy"
-                            className="absolute inset-0 h-full w-full scale-110 object-cover opacity-70 blur-sm"
-                          />
-                          <img
-                            src={image}
-                            alt={cuisineName}
-                            loading="lazy"
-                            className="relative h-full w-full object-contain"
-                          />
-                        </>
-                      ) : (
-                        <div className="flex h-full items-center justify-center bg-[#315d2d] text-white/80">
-                          <Utensils className="h-12 w-12" />
-                        </div>
-                      )}
-                    </div>
-                    <div className="absolute inset-x-0 bottom-0 flex justify-end p-3">
-                      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white text-[#203129] transition group-hover:bg-[#fff8ed]">
-                        <ArrowRight className="h-4 w-4" />
-                      </span>
-                    </div>
-                  </Link>
+                  <SwiperSlide key={`${cuisineId}-${index}`} className="!h-auto">
+                    <Link
+                      to={`/shop?cuisine=${encodeURIComponent(cuisineFilter)}`}
+                      aria-label={`Browse ${cuisineName} cuisine`}
+                      className="group relative block h-full overflow-hidden rounded-xl bg-[#17251e] shadow-sm transition hover:-translate-y-1 hover:shadow-lg"
+                    >
+                      <div className="relative aspect-[3/2] overflow-hidden bg-[#17251e]">
+                        {image ? (
+                          <>
+                            <img
+                              src={image}
+                              alt=""
+                              aria-hidden="true"
+                              loading="lazy"
+                              className="absolute inset-0 h-full w-full scale-110 object-cover opacity-70 blur-sm"
+                            />
+                            <img
+                              src={image}
+                              alt={cuisineName}
+                              loading="lazy"
+                              className="relative h-full w-full object-contain"
+                            />
+                          </>
+                        ) : (
+                          <div className="flex h-full items-center justify-center bg-[#315d2d] text-white/80">
+                            <Utensils className="h-12 w-12" />
+                          </div>
+                        )}
+                      </div>
+                      <div className="absolute inset-x-0 bottom-0 flex justify-end p-3">
+                        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white text-[#203129] transition group-hover:bg-[#fff8ed]">
+                          <ArrowRight className="h-4 w-4" />
+                        </span>
+                      </div>
+                    </Link>
+                  </SwiperSlide>
                 );
               })}
-            </div>
+            </Swiper>
             <button
               type="button"
-              onClick={() => scrollCuisines(1)}
+              onClick={() => swiperRef.current?.slideNext()}
               aria-label="Scroll cuisines right"
               className="absolute -right-1 top-1/2 z-10 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-[#e7e0d8] bg-white text-[#203129] shadow-md transition hover:bg-[#fff8ed] sm:-right-3 sm:h-10 sm:w-10"
             >
