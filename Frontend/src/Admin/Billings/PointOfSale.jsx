@@ -155,7 +155,7 @@ const PointOfSale = () => {
         </div>
       </header>
 
-      <main className="pos-layout grid min-h-0 flex-1 gap-3 p-3 md:grid-cols-[160px_minmax(0,2.8fr)_minmax(320px,1fr)] md:gap-2 md:overflow-hidden md:p-2">
+      <main className="pos-layout grid min-h-0 flex-1 gap-3 p-3 md:grid-cols-[160px_minmax(0,2.8fr)_minmax(320px,1fr)] md:grid-rows-[minmax(0,1fr)] md:gap-2 md:overflow-hidden md:p-2">
         <nav className="pos-category-rail flex gap-2 overflow-x-auto rounded-lg bg-[#f3f4f6] p-2 md:flex-col md:overflow-hidden">
           <button type="button" onClick={() => setSelectedCategory("all")} className={`flex min-w-[88px] items-center gap-2 rounded-md px-2 py-3 text-left text-xs font-semibold transition md:min-w-0 ${selectedCategory === "all" ? "bg-[#1a3c36] text-white shadow-sm" : "text-[#1f2937] hover:bg-white/80"}`}><Utensils className="h-5 w-5 shrink-0" /><span>All Items</span></button>
           {menuCategories.map((category) => {
