@@ -137,7 +137,7 @@ const PointOfSale = () => {
   };
 
   return (
-    <div className="pos-shell flex min-h-screen flex-col bg-[#f3f4f6] text-[#1f2937]">
+    <div className="pos-shell flex min-h-screen flex-col bg-[#f3f4f6] text-[#1f2937] md:h-full md:min-h-0 md:overflow-hidden">
       <style>{`@media print { body * { visibility: hidden !important; } .pos-bill, .pos-bill * { visibility: visible !important; } .pos-bill { position: absolute; inset: 0; width: 100%; border: 0 !important; box-shadow: none !important; } .pos-actions, .pos-header, .pos-category-rail, .pos-menu { display: none !important; } }`}</style>
       <header className="pos-header flex min-h-[76px] flex-wrap items-center gap-3 border-b border-[#e5e7eb] bg-white px-4 py-3 md:px-6">
         <div className="flex min-w-[190px] items-center gap-3">
@@ -155,8 +155,8 @@ const PointOfSale = () => {
         </div>
       </header>
 
-      <main className="pos-layout grid min-h-0 flex-1 gap-3 p-3 md:grid-cols-[160px_minmax(0,2.8fr)_minmax(320px,1fr)] md:gap-2 md:p-2">
-        <nav className="pos-category-rail flex gap-2 overflow-x-auto rounded-lg bg-[#f3f4f6] p-2 md:flex-col md:overflow-y-auto">
+      <main className="pos-layout grid min-h-0 flex-1 gap-3 p-3 md:grid-cols-[160px_minmax(0,2.8fr)_minmax(320px,1fr)] md:gap-2 md:overflow-hidden md:p-2">
+        <nav className="pos-category-rail flex gap-2 overflow-x-auto rounded-lg bg-[#f3f4f6] p-2 md:flex-col md:overflow-hidden">
           <button type="button" onClick={() => setSelectedCategory("all")} className={`flex min-w-[88px] items-center gap-2 rounded-md px-2 py-3 text-left text-xs font-semibold transition md:min-w-0 ${selectedCategory === "all" ? "bg-[#1a3c36] text-white shadow-sm" : "text-[#1f2937] hover:bg-white/80"}`}><Utensils className="h-5 w-5 shrink-0" /><span>All Items</span></button>
           {menuCategories.map((category) => {
             const id = String(category.category_id || category.id || category.category_name);
@@ -166,7 +166,7 @@ const PointOfSale = () => {
           })}
         </nav>
 
-        <section className="pos-menu min-h-[35vh] overflow-y-auto rounded-lg bg-white p-2 md:min-h-0 md:p-1">
+        <section className="pos-menu min-h-[35vh] overflow-y-auto rounded-lg bg-white p-2 md:min-h-0 md:overscroll-contain md:p-1">
           {loading ? <div className="flex h-full min-h-40 items-center justify-center text-sm font-medium text-[#806b5e]">Loading menu...</div> : visibleFoods.length ? (
             <div className="grid grid-cols-2 gap-2 xl:grid-cols-5">
               {visibleFoods.map((food) => {
