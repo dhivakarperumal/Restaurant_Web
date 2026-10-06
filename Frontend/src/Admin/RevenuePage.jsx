@@ -56,17 +56,38 @@ const itemImage = (value) => {
   return /^https?:\/\//i.test(image) ? image : `${BACKEND_BASE_URL}${image.startsWith("/") ? image : `/${image}`}`;
 };
 
-const Card = ({ label, value, detail, icon: Icon, loading }) => (
-  <article className="min-w-0 border border-[#e0e8e1] bg-white p-4 shadow-[0_2px_10px_rgba(25,65,39,0.035)] sm:p-5">
-    <div className="flex items-start justify-between gap-3">
-      <div className="min-w-0">
-        <p className="text-xs font-semibold uppercase tracking-[0.08em] text-[#718078]">{label}</p>
-        {loading
-          ? <div className="mt-3 h-7 w-32 animate-pulse bg-[#edf2ed]" />
-          : <p className="mt-2 truncate text-2xl font-bold text-[#173d29]">{value}</p>}
-        {detail && <p className="mt-2 text-xs text-[#819087]">{detail}</p>}
+const CARD_THEMES = [
+  'bg-[#22c55e]', 'bg-[#3b82f6]', 'bg-[#8b5cf6]', 'bg-[#f59e0b]',
+];
+
+const Card = ({ label, value, detail, icon: Icon, loading, index = 0 }) => (
+  <article className={`relative min-w-0 overflow-hidden rounded-xl border border-transparent p-4 sm:p-5 shadow-[0_2px_10px_rgba(20,56,34,0.08)] flex flex-col justify-between min-h-[140px] ${CARD_THEMES[index % CARD_THEMES.length]} text-white`}>
+    <div className="flex items-start gap-3 relative z-10">
+      <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg shadow-sm bg-white/20">
+        <Icon size={24} strokeWidth={2.2} className="text-white" />
       </div>
-      <span className="grid h-10 w-10 shrink-0 place-items-center bg-[#edf5ee] text-[#267447]"><Icon size={19} /></span>
+      <div className="flex-1 mt-0.5 min-w-0">
+        <h3 className="text-[12px] font-semibold opacity-90 mb-1 truncate">{label}</h3>
+        {loading
+          ? <div className="mt-1 h-7 w-28 animate-pulse rounded bg-white/30" />
+          : <div className="text-[20px] sm:text-[22px] font-extrabold leading-none tracking-tight truncate">{value}</div>}
+      </div>
+    </div>
+    <div className="flex items-center gap-2 mt-5 relative z-10">
+      <span className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[11px] font-bold bg-white/25">↑ 12%</span>
+      {detail && <span className="text-[11px] font-medium opacity-75 truncate">{detail}</span>}
+    </div>
+    <div className="absolute right-0 bottom-0 w-24 h-16 pointer-events-none opacity-50">
+      <svg viewBox="0 0 100 50" preserveAspectRatio="none" className="w-full h-full">
+        <defs>
+          <linearGradient id={`revgrad-${index}`} x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#ffffff" stopOpacity="0.4" />
+            <stop offset="100%" stopColor="#ffffff" stopOpacity="0.0" />
+          </linearGradient>
+        </defs>
+        <path d="M0,50 L0,40 Q25,30 50,40 T100,20 L100,50 Z" fill={`url(#revgrad-${index})`} />
+        <path d="M0,40 Q25,30 50,40 T100,20" fill="none" stroke="#ffffff" strokeWidth="2.5" />
+      </svg>
     </div>
   </article>
 );
@@ -231,11 +252,11 @@ const RevenuePage = () => {
       {error && <div role="alert" className="flex flex-wrap items-center justify-between gap-3 border border-[#e8c8c0] bg-[#fff7f4] px-4 py-3 text-sm text-[#8c4437]"><span>{error}</span><button type="button" onClick={() => setReloadKey((previous) => previous + 1)} className="font-semibold underline">Retry</button></div>}
       {customRangeIncomplete && <p role="status" className="text-sm text-[#8a672a]">Choose both dates to load a custom range.</p>}
 
-      <section className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <Card label="Total Revenue" value={currency(summary?.totalRevenue)} detail={filteredRangeText} icon={CircleDollarSign} loading={loading} />
-        <Card label="Today Revenue" value={currency(summary?.todayRevenue)} detail="Delivered orders today" icon={CalendarDays} loading={loading} />
-        <Card label="Delivered Orders" value={Number(summary?.deliveredOrders || 0).toLocaleString("en-IN")} detail="Exact Delivered status" icon={PackageCheck} loading={loading} />
-        <Card label="Average Order Value" value={currency(summary?.averageOrderValue)} detail="Delivered revenue / orders" icon={ShoppingBag} loading={loading} />
+      <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <Card index={0} label="Total Revenue" value={currency(summary?.totalRevenue)} detail={filteredRangeText} icon={CircleDollarSign} loading={loading} />
+        <Card index={1} label="Today Revenue" value={currency(summary?.todayRevenue)} detail="Delivered orders today" icon={CalendarDays} loading={loading} />
+        <Card index={2} label="Delivered Orders" value={Number(summary?.deliveredOrders || 0).toLocaleString("en-IN")} detail="Exact Delivered status" icon={PackageCheck} loading={loading} />
+        <Card index={3} label="Average Order Value" value={currency(summary?.averageOrderValue)} detail="Delivered revenue / orders" icon={ShoppingBag} loading={loading} />
       </section>
 
       <section className="grid gap-5 xl:grid-cols-[minmax(0,1.75fr)_minmax(300px,1fr)]">
@@ -297,37 +318,38 @@ const RevenuePage = () => {
         </div>
       </section>
 
-      <section className="border border-[#e0e8e1] bg-white">
+      <section className="overflow-hidden rounded-2xl border border-[#e0e8e1] bg-white">
         <div className="flex flex-col gap-3 border-b border-[#e6ece7] p-4 sm:flex-row sm:items-center sm:justify-between sm:px-5">
           <div><h2 className="text-base font-bold text-[#1c3828]">Delivered Orders</h2><p className="mt-1 text-xs text-[#748178]">Delivery orders require Delivered; dining bills require Paid and all kitchen tickets Served</p></div>
           <label className="relative block w-full sm:max-w-xs"><Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#87948b]" /><input type="search" value={search} onChange={(event) => { setPage(1); setSearch(event.target.value); }} placeholder="Search order, customer, phone" className="h-10 w-full border border-[#d5dfd7] bg-white pl-9 pr-3 text-sm outline-none focus:border-[#42815a]" /></label>
         </div>
         {ordersError ? <div role="alert" className="p-6 text-sm text-[#8c4437]">{ordersError}</div> : ordersLoading ? <div className="space-y-3 p-5"><div className="h-8 animate-pulse bg-[#f0f4f0]" /><div className="h-12 animate-pulse bg-[#f6f8f6]" /><div className="h-12 animate-pulse bg-[#f6f8f6]" /></div> : pageData.rows.length === 0 ? <div className="px-5 py-14 text-center"><span className="mx-auto grid h-12 w-12 place-items-center bg-[#edf5ee] text-[#4b805b]"><PackageCheck size={22} /></span><h3 className="mt-4 text-sm font-bold text-[#304638]">No delivered orders found</h3><p className="mx-auto mt-1 max-w-md text-sm text-[#829087]">Orders will appear here after their status is set to Delivered. Pending, cancelled, paid-but-unserved, and incomplete records are excluded.</p></div> : <>
-          <div className="max-h-[560px] overflow-auto">
+          <div className="max-h-[560px] overflow-auto rounded-xl">
             <table className="w-full min-w-[1840px] border-collapse text-left text-xs">
-              <thead className="sticky top-0 z-10 bg-[#f1f6f1] text-[10px] uppercase tracking-[0.07em] text-[#56685c] shadow-[0_1px_0_#dfe8e0]">
-                <tr>{["Order ID", "Order Date", "Customer", "Phone", "Type", "Items", "Qty", "Subtotal", "Discount", "Delivery", "Tax", "Total", "Payment", "Payment Status", "Delivery Partner", "Delivered At", "Status", ""].map((label) => <th key={label} className="whitespace-nowrap px-3 py-3 font-bold">{label}</th>)}</tr>
+              <thead className="sticky top-0 z-10 bg-[#d4a843] text-[10px] uppercase tracking-[0.07em] text-white shadow-[0_1px_0_#c39732]">
+                <tr>{["S No", "Order ID", "Order Date", "Customer", "Phone", "Type", "Items", "Qty", "Subtotal", "Discount", "Delivery", "Tax", "Total", "Payment", "Payment Status", "Delivery Partner", "Delivered At", "Status", ""].map((label) => <th key={label} className="whitespace-nowrap px-4 py-4 font-bold">{label}</th>)}</tr>
               </thead>
               <tbody className="divide-y divide-[#edf1ed]">
-                {pageData.rows.map((order) => <tr key={order.record_id} className="hover:bg-[#fafcf9]">
-                  <td className="whitespace-nowrap px-3 py-3 font-semibold text-[#275b3a]">{order.order_id}</td>
-                  <td className="whitespace-nowrap px-3 py-3 text-[#637168]">{dateTime(order.order_date)}</td>
-                  <td className="max-w-40 truncate px-3 py-3">{order.customer_name || "—"}</td>
-                  <td className="whitespace-nowrap px-3 py-3">{order.customer_phone || "—"}</td>
-                  <td className="whitespace-nowrap px-3 py-3">{order.order_type}</td>
-                  <td className="max-w-56 truncate px-3 py-3" title={order.items}>{order.items || "—"}</td>
-                  <td className="px-3 py-3">{Number(order.quantity || 0)}</td>
-                  <td className="whitespace-nowrap px-3 py-3">{currency(order.subtotal)}</td>
-                  <td className="whitespace-nowrap px-3 py-3">{order.discount === null ? "—" : currency(order.discount)}</td>
-                  <td className="whitespace-nowrap px-3 py-3">{order.delivery_charge === null ? "—" : currency(order.delivery_charge)}</td>
-                  <td className="whitespace-nowrap px-3 py-3">{order.tax === null ? "—" : currency(order.tax)}</td>
-                  <td className="whitespace-nowrap px-3 py-3 font-bold text-[#203d2b]">{currency(order.total_amount)}</td>
-                  <td className="whitespace-nowrap px-3 py-3">{order.payment_method || "—"}</td>
-                  <td className="whitespace-nowrap px-3 py-3">{order.payment_status || "—"}</td>
-                  <td className="whitespace-nowrap px-3 py-3">{order.delivery_partner || "Not recorded"}</td>
-                  <td className="whitespace-nowrap px-3 py-3">{dateTime(order.delivered_at)}</td>
-                  <td className="whitespace-nowrap px-3 py-3"><span className="inline-flex items-center gap-1.5 text-[#287648]"><span className="h-1.5 w-1.5 rounded-full bg-[#287648]" />{orderStatusLabel(order.status)}</span></td>
-                  <td className="whitespace-nowrap px-3 py-3"><button type="button" onClick={() => setSelectedOrder(order)} className="border border-[#b9d2bf] px-2.5 py-1.5 font-semibold text-[#236640] hover:bg-[#f2f8f3]">View Details</button></td>
+                {pageData.rows.map((order, index) => <tr key={order.record_id} className="hover:bg-[#fafcf9]">
+                  <td className="whitespace-nowrap px-4 py-4 text-xs text-[#66736b]">{(pageData.page - 1) * pageData.pageSize + index + 1}</td>
+                  <td className="whitespace-nowrap px-4 py-4 font-semibold text-[#275b3a]">{order.order_id}</td>
+                  <td className="whitespace-nowrap px-4 py-4 text-[#637168]">{dateTime(order.order_date)}</td>
+                  <td className="max-w-40 truncate px-4 py-4">{order.customer_name || "—"}</td>
+                  <td className="whitespace-nowrap px-4 py-4">{order.customer_phone || "—"}</td>
+                  <td className="whitespace-nowrap px-4 py-4">{order.order_type}</td>
+                  <td className="max-w-56 truncate px-4 py-4" title={order.items}>{order.items || "—"}</td>
+                  <td className="px-4 py-4">{Number(order.quantity || 0)}</td>
+                  <td className="whitespace-nowrap px-4 py-4">{currency(order.subtotal)}</td>
+                  <td className="whitespace-nowrap px-4 py-4">{order.discount === null ? "—" : currency(order.discount)}</td>
+                  <td className="whitespace-nowrap px-4 py-4">{order.delivery_charge === null ? "—" : currency(order.delivery_charge)}</td>
+                  <td className="whitespace-nowrap px-4 py-4">{order.tax === null ? "—" : currency(order.tax)}</td>
+                  <td className="whitespace-nowrap px-4 py-4 font-bold text-[#203d2b]">{currency(order.total_amount)}</td>
+                  <td className="whitespace-nowrap px-4 py-4">{order.payment_method || "—"}</td>
+                  <td className="whitespace-nowrap px-4 py-4">{order.payment_status || "—"}</td>
+                  <td className="whitespace-nowrap px-4 py-4">{order.delivery_partner || "Not recorded"}</td>
+                  <td className="whitespace-nowrap px-4 py-4">{dateTime(order.delivered_at)}</td>
+                  <td className="whitespace-nowrap px-4 py-4"><span className="inline-flex items-center gap-1.5 text-[#287648]"><span className="h-1.5 w-1.5 rounded-full bg-[#287648]" />{orderStatusLabel(order.status)}</span></td>
+                  <td className="whitespace-nowrap px-4 py-4"><button type="button" onClick={() => setSelectedOrder(order)} className="border border-[#b9d2bf] px-2.5 py-1.5 font-semibold text-[#236640] hover:bg-[#f2f8f3]">View Details</button></td>
                 </tr>)}
               </tbody>
             </table>

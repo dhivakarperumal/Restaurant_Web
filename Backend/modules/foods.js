@@ -21,6 +21,7 @@ const initializeFoodSchema = async () => {
       serving_size VARCHAR(100) NULL,
       portion_size VARCHAR(30) NOT NULL,
       preparation_time SMALLINT UNSIGNED NOT NULL DEFAULT 0,
+      available_time VARCHAR(100) NOT NULL DEFAULT '10:00 AM - 1:00 PM',
       food_type VARCHAR(20) NOT NULL,
       is_spicy TINYINT(1) NOT NULL DEFAULT 0,
       is_available TINYINT(1) NOT NULL DEFAULT 1,
@@ -55,6 +56,11 @@ const initializeFoodSchema = async () => {
   const [menuVisibilityColumns] = await db.query("SHOW COLUMNS FROM foods LIKE 'is_menu_visible'");
   if (!menuVisibilityColumns.length) {
     await db.query('ALTER TABLE foods ADD COLUMN is_menu_visible TINYINT(1) NOT NULL DEFAULT 1 AFTER is_available');
+  }
+
+  const [availableTimeColumns] = await db.query("SHOW COLUMNS FROM foods LIKE 'available_time'");
+  if (!availableTimeColumns.length) {
+    await db.query("ALTER TABLE foods ADD COLUMN available_time VARCHAR(100) NOT NULL DEFAULT '10:00 AM - 1:00 PM' AFTER preparation_time");
   }
 };
 
@@ -120,6 +126,7 @@ const foodValues = (food) => [
   food.serving_size || null,
   food.portion_size,
   food.preparation_time,
+  food.available_time,
   food.food_type,
   Number(food.is_spicy),
   Number(food.is_available),
@@ -139,9 +146,9 @@ const createFood = async (food) => {
     `INSERT INTO foods (
       food_id, food_name, cuisine_id, cuisine_name, category_id, category_name, subcategory_name,
       description, food_images, mrp, discount, final_price, rating, stock_quantity, serving_size, portion_size,
-      preparation_time, food_type, is_spicy, is_available, dining_available, takeaway_available,
+      preparation_time, available_time, food_type, is_spicy, is_available, dining_available, takeaway_available,
       delivery_available, featured, status, addons, customizations, created_by, updated_by
-    ) VALUES (${Array(29).fill('?').join(', ')})`,
+    ) VALUES (${Array(30).fill('?').join(', ')})`,
     foodValues(food)
   );
   return findFoodById(food.food_id);
@@ -155,7 +162,7 @@ const updateFood = async (foodId, food) => {
     `UPDATE foods SET
       food_name = ?, cuisine_id = ?, cuisine_name = ?, category_id = ?, category_name = ?, subcategory_name = ?,
       description = ?, food_images = ?, mrp = ?, discount = ?, final_price = ?, rating = ?, stock_quantity = ?, serving_size = ?, portion_size = ?,
-      preparation_time = ?, food_type = ?, is_spicy = ?, is_available = ?, dining_available = ?, takeaway_available = ?,
+      preparation_time = ?, available_time = ?, food_type = ?, is_spicy = ?, is_available = ?, dining_available = ?, takeaway_available = ?,
       delivery_available = ?, featured = ?, status = ?, addons = ?, customizations = ?, updated_by = ?
      WHERE food_id = ?`,
     [...values.slice(0, -2), food.updated_by, foodId]

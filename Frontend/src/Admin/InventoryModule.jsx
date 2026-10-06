@@ -22,7 +22,7 @@ const EMPTY_DASHBOARD = {
 
 const INVENTORY_NAV = [
   { path: '/admin/inventory', label: 'Dashboard', icon: Gauge },
-  { path: '/admin/inventory/products', label: 'Products', icon: Package },
+  { path: '/admin/inventory/products', label: 'Groceries', icon: Package },
   { path: '/admin/inventory/suppliers', label: 'Suppliers', icon: Truck },
   { path: '/admin/inventory/purchases', label: 'Purchases', icon: ShoppingCart },
   { path: '/admin/inventory/stock-in', label: 'Stock In', icon: PackagePlus },
@@ -321,7 +321,7 @@ function ProductsPage() {
 
   const columns = [
     { key: 'image_url', label: 'Product Image', render: () => <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-slate-100 text-slate-500"> <Package size={18} /> </div> },
-    { key: 'product_name', label: 'Product Name' },
+    { key: 'product_name', label: 'Grocery Name' },
     { key: 'sku', label: 'SKU' },
     { key: 'barcode', label: 'Barcode' },
     { key: 'category_name', label: 'Category' },
@@ -335,9 +335,9 @@ function ProductsPage() {
 
   return (
     <>
-      <InventoryCrudPage title="Products" subtitle="Manage all inventory items, stock levels and supplier linkage." actions={
+      <InventoryCrudPage title="Groceries" subtitle="Manage grocery stock levels and supplier linkage." actions={
         <div className="flex gap-2">
-          <button className="rounded-xl bg-[#1a3c36] px-4 py-2 text-sm font-semibold text-white" onClick={() => setIsAddModalOpen(true)}>Add Product</button>
+          <button className="rounded-xl bg-[#1a3c36] px-4 py-2 text-sm font-semibold text-white" onClick={() => setIsAddModalOpen(true)}>Add Grocery</button>
           <button className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700" onClick={() => navigate('/admin/inventory/stock-in')}>Stock In</button>
         </div>
       }>
@@ -345,10 +345,10 @@ function ProductsPage() {
           <div className="mb-4 flex items-center justify-between gap-3">
             <div className="relative w-full max-w-md">
               <Search size={16} className="absolute left-3 top-3 text-slate-400" />
-              <input value={search} onChange={(e) => setSearch(e.target.value)} className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2.5 pl-9 text-sm text-slate-700 outline-none focus:border-[#1a3c36]" placeholder="Search products" />
+              <input value={search} onChange={(e) => setSearch(e.target.value)} className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2.5 pl-9 text-sm text-slate-700 outline-none focus:border-[#1a3c36]" placeholder="Search groceries" />
             </div>
           </div>
-          <InventoryTable columns={columns} rows={filtered} emptyText="No products found." />
+          <InventoryTable columns={columns} rows={filtered} emptyText="No groceries found." />
         </div>
       </InventoryCrudPage>
 
@@ -356,15 +356,15 @@ function ProductsPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/45 p-4">
           <div className="w-full max-w-2xl rounded-2xl border border-slate-200 bg-white p-5 shadow-2xl">
             <div className="mb-4 flex items-center justify-between">
-              <h2 className="text-xl font-bold text-slate-900">Add Product</h2>
+              <h2 className="text-xl font-bold text-slate-900">Add Grocery</h2>
               <button type="button" onClick={() => setIsAddModalOpen(false)} className="rounded-full bg-slate-100 px-2.5 py-1 text-sm font-semibold text-slate-600">×</button>
             </div>
             <form className="space-y-3" onSubmit={(event) => {
               handleSubmit(event);
               setIsAddModalOpen(false);
             }}>
-              <FormField label="Product name" required>
-                <input value={form.product_name} onChange={(e) => setForm({ ...form, product_name: e.target.value })} placeholder="Enter product name" className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" required />
+              <FormField label="Grocery name" required>
+                <input value={form.product_name} onChange={(e) => setForm({ ...form, product_name: e.target.value })} placeholder="Enter grocery name" className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" required />
               </FormField>
               <div className="grid grid-cols-2 gap-3">
                 <FormField label="SKU">

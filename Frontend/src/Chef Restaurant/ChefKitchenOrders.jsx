@@ -77,14 +77,15 @@ const formatTimeAgo = (dateValue) => {
   return `${diffHours}h ${diffMins % 60}m ago`;
 };
 
-const ChefKitchenOrders = () => {
+const ChefKitchenOrders = ({ defaultViewMode = "card" }) => {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [updatingOrderId, setUpdatingOrderId] = useState("");
   const [activeTab, setActiveTab] = useState("all");
-  const [viewMode, setViewMode] = useState("card");
+  const [viewMode, setViewMode] = useState(defaultViewMode);
   const [searchQuery, setSearchQuery] = useState("");
+  const [sortBy, setSortBy] = useState("latest");
 
   const fetchOrders = useCallback(async (showLoading = false) => {
     if (showLoading) setLoading(true);
@@ -148,134 +149,83 @@ const ChefKitchenOrders = () => {
         ...(order.items || []).map((item) => item.food_name),
       ].join(" ").toLowerCase();
       return matchesStatus && (!query || searchableText.includes(query));
+    }).sort((first, second) => {
+      const firstTime = new Date(first.created_at || 0).getTime();
+      const secondTime = new Date(second.created_at || 0).getTime();
+      return sortBy === "latest" ? secondTime - firstTime : firstTime - secondTime;
     });
-  }, [orders, activeTab, searchQuery]);
+  }, [orders, activeTab, searchQuery, sortBy]);
 
   return (
-    <main className="min-h-screen bg-[#f2f3f0] p-4 md:p-6 lg:p-8">
+    <main className="min-h-screen  p-4 md:p-2 lg:p-2">
       <div className="mx-auto max-w-[1500px] space-y-6">
-        {/* Header */}
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <h1 className="text-[2.1rem] font-bold tracking-[-0.05em] text-[#1f1d1b]">
-              Kitchen Orders
-            </h1>
-            <p className="mt-1 text-[13px] text-[#646464]">
-              Dashboard <span className="mx-2 text-[#9a9a9a]">&gt;</span>{" "}
-              <span className="font-medium text-[#2a2a2a]">Live Kitchen Orders</span>
-            </p>
-          </div>
-
-          <div className="flex items-center gap-3">
-            <span className="hidden sm:inline-flex items-center gap-1.5 text-xs font-semibold text-gray-500 bg-white px-3 py-2 rounded-xl border border-gray-200">
-              <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" /> Live polling every 10s
-            </span>
-            <button
-              type="button"
-              onClick={() => fetchOrders(true)}
-              disabled={loading}
-              className="inline-flex h-[44px] cursor-pointer items-center justify-center gap-2 rounded-xl border border-[#dfe2e5] bg-white px-4 text-sm font-semibold text-[#34443b] shadow-sm transition hover:bg-[#faf9f8] disabled:cursor-wait disabled:opacity-60"
-            >
-              <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin text-[#1a3c36]" : ""}`} /> Refresh
-            </button>
-          </div>
-        </div>
-
-        <section aria-label="Kitchen order status summaries" className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+       
+        <section aria-label="Kitchen order status summaries" className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
           {[
-            { status: 'Pending', label: 'Pending', count: counts.Pending, caption: 'Waiting to start', icon: Clock3, iconTone: 'bg-amber-500', wave: '#fbd48a', valueTone: 'text-amber-700' },
-            { status: 'Preparing', label: 'Preparing', count: counts.Preparing, caption: 'Being prepared', icon: Flame, iconTone: 'bg-blue-500', wave: '#a9d2ff', valueTone: 'text-blue-700' },
-            { status: 'Ready to Serve', label: 'Ready to Serve', count: counts['Ready to Serve'], caption: 'Ready for pickup', icon: Bell, iconTone: 'bg-cyan-500', wave: '#9be0e8', valueTone: 'text-cyan-700' },
-            { status: 'Served', label: 'Served', count: counts.Served, caption: 'Completed tickets', icon: CheckCircle2, iconTone: 'bg-emerald-500', wave: '#a3e5bb', valueTone: 'text-emerald-700' },
-          ].map(({ status, label, count, caption, icon: Icon, iconTone, wave, valueTone }) => (
-            <button key={status} type="button" aria-pressed={activeTab === status} onClick={() => { setActiveTab(activeTab === status ? 'all' : status); setSearchQuery(''); }} className={`relative flex min-h-[132px] items-start gap-4 overflow-hidden rounded-xl border bg-white p-5 text-left shadow-sm transition hover:-translate-y-0.5 hover:shadow-md ${activeTab === status ? 'border-[#1a3c36] ring-2 ring-[#1a3c36]/10' : 'border-[#e5e9e5]'}`}>
-              <span className={`grid h-14 w-14 shrink-0 place-items-center rounded-full text-white ${iconTone}`}><Icon size={25} /></span>
-              <span className="relative z-10 min-w-0">
-                <span className="block text-sm font-medium text-[#57645b]">{label}</span>
-                <strong className={`mt-1 block text-2xl font-bold leading-none ${valueTone}`}>{count}</strong>
-                <span className="mt-4 block text-[11px] text-[#879188]">{caption}</span>
-              </span>
-              <svg viewBox="0 0 100 12" preserveAspectRatio="none" aria-hidden="true" className="absolute inset-x-0 bottom-0 h-5 w-full" fill={wave}><path d="M0 5 C20 12 35 7 54 5 S83 1 100 5 V12 H0 Z" /></svg>
+            { status: 'Pending', label: 'Pending Orders', count: counts.Pending, caption: 'Waiting to start', icon: Clock3, bg: 'bg-[#f59e0b]' },
+            { status: 'Preparing', label: 'Preparing', count: counts.Preparing, caption: 'Being prepared', icon: Flame, bg: 'bg-[#3b82f6]' },
+            { status: 'Ready to Serve', label: 'Ready to Serve', count: counts['Ready to Serve'], caption: 'Ready for pickup', icon: Bell, bg: 'bg-[#06b6d4]' },
+            { status: 'Served', label: 'Served', count: counts.Served, caption: 'Completed tickets', icon: CheckCircle2, bg: 'bg-[#22c55e]' },
+          ].map(({ status, label, count, caption, icon: Icon, bg }) => (
+            <button
+              key={status}
+              type="button"
+              aria-pressed={activeTab === status}
+              onClick={() => { setActiveTab(activeTab === status ? 'all' : status); setSearchQuery(''); }}
+              className={`relative min-w-0 overflow-hidden rounded-xl border border-transparent p-4 sm:p-5 shadow-[0_2px_10px_rgba(20,56,34,0.08)] flex flex-col justify-between min-h-[140px] text-white text-left transition hover:-translate-y-0.5 hover:shadow-lg ${bg} ${activeTab === status ? 'ring-4 ring-white/40' : ''}`}
+            >
+              <div className="flex items-start gap-3 relative z-10">
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg shadow-sm bg-white/20">
+                  <Icon size={24} strokeWidth={2.2} className="text-white" />
+                </div>
+                <div className="flex-1 mt-0.5 min-w-0">
+                  <h3 className="text-[12px] font-semibold opacity-90 mb-1 truncate">{label}</h3>
+                  <div className="text-[26px] font-extrabold leading-none tracking-tight">{count}</div>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 mt-5 relative z-10">
+                <span className="text-[11px] font-medium opacity-75">{caption}</span>
+              </div>
+              <div className="absolute right-0 bottom-0 w-24 h-16 pointer-events-none opacity-50">
+                <svg viewBox="0 0 100 50" preserveAspectRatio="none" className="w-full h-full">
+                  <defs>
+                    <linearGradient id={`kitchengrad-${status}`} x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#ffffff" stopOpacity="0.4" />
+                      <stop offset="100%" stopColor="#ffffff" stopOpacity="0.0" />
+                    </linearGradient>
+                  </defs>
+                  <path d={`M0,50 L0,40 Q25,30 50,40 T100,20 L100,50 Z`} fill={`url(#kitchengrad-${status})`} />
+                  <path d="M0,40 Q25,30 50,40 T100,20" fill="none" stroke="#ffffff" strokeWidth="2.5" />
+                </svg>
+              </div>
             </button>
           ))}
         </section>
 
-        {/* Filter Tabs Bar */}
-        <div className="grid items-center gap-3 border-b border-[#e1ded8] pb-3 text-sm lg:grid-cols-[minmax(220px,0.8fr)_minmax(0,2fr)]">
-          <label className="relative block w-full lg:max-w-sm">
-            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#7a857d]" />
-            <input type="search" value={searchQuery} onChange={(event) => setSearchQuery(event.target.value)} placeholder="Search table, ticket, food..." aria-label="Search kitchen orders" className="h-10 w-full rounded-lg border border-[#dfe2e5] bg-white pl-9 pr-3 text-xs text-[#2d3830] outline-none placeholder:text-[#89938c] focus:border-[#6d9a79]" />
+        {/* Search and filters */}
+        <div className="flex flex-col gap-3 rounded-xl border border-[#e1ded8] bg-white p-3 sm:flex-row sm:items-center sm:justify-between">
+          <label className="relative block w-full sm:max-w-sm sm:flex-1">
+            <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-[#7a857d]" />
+            <input type="search" value={searchQuery} onChange={(event) => setSearchQuery(event.target.value)} placeholder="Search table, ticket, food..." aria-label="Search kitchen orders" className="h-[46px] w-full rounded-xl border border-[#dfe2e5] bg-[#faf9f8] pl-11 pr-3 text-sm text-[#2d3830] outline-none placeholder:text-[#89938c] focus:border-[#6d9a79]" />
           </label>
-          <div className="flex min-w-0 flex-col gap-2 xl:flex-row xl:items-center xl:justify-end">
-          <div className="flex min-w-0 flex-wrap items-center gap-2">
-          <button
-            type="button"
-            onClick={() => setActiveTab("all")}
-            className={`flex items-center gap-1.5 rounded-xl px-3.5 py-2 text-xs font-bold transition ${
-              activeTab === "all"
-                ? "bg-[#1a3c36] text-white shadow-sm"
-                : "bg-white text-gray-700 hover:bg-gray-100 border border-gray-200"
-            }`}
-          >
-            All Orders ({counts.all})
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setActiveTab("Pending")}
-            className={`flex items-center gap-1.5 rounded-xl px-3.5 py-2 text-xs font-bold transition ${
-              activeTab === "Pending"
-                ? "bg-amber-600 text-white shadow-sm"
-                : "bg-white text-amber-700 hover:bg-amber-50 border border-amber-200"
-            }`}
-          >
-            <span className="h-2 w-2 rounded-full bg-amber-500" />
-            Pending ({counts.Pending})
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setActiveTab("Preparing")}
-            className={`flex items-center gap-1.5 rounded-xl px-3.5 py-2 text-xs font-bold transition ${
-              activeTab === "Preparing"
-                ? "bg-blue-600 text-white shadow-sm"
-                : "bg-white text-blue-700 hover:bg-blue-50 border border-blue-200"
-            }`}
-          >
-            <span className="h-2 w-2 rounded-full bg-blue-500" />
-            Preparing ({counts.Preparing})
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setActiveTab("Ready to Serve")}
-            className={`flex items-center gap-1.5 rounded-xl px-3.5 py-2 text-xs font-bold transition ${
-              activeTab === "Ready to Serve"
-                ? "bg-emerald-600 text-white shadow-sm ring-2 ring-emerald-500/20"
-                : "bg-white text-emerald-700 hover:bg-emerald-50 border border-emerald-300"
-            }`}
-          >
-            <span className="h-2 w-2 rounded-full bg-emerald-500 animate-ping" />
-            Ready to Serve 🔔 ({counts["Ready to Serve"]})
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setActiveTab("Served")}
-            className={`flex items-center gap-1.5 rounded-xl px-3.5 py-2 text-xs font-bold transition ${
-              activeTab === "Served"
-                ? "bg-gray-800 text-white shadow-sm"
-                : "bg-white text-gray-600 hover:bg-gray-100 border border-gray-200"
-            }`}
-          >
-            Served / Completed ({counts.Served})
-          </button>
+          <div className="flex flex-wrap items-center gap-2 sm:justify-end">
+            <span className="mr-1 text-xs text-gray-500">{filteredOrders.length} of {orders.length}</span>
+            <select value={activeTab} onChange={(event) => setActiveTab(event.target.value)} aria-label="Filter kitchen orders by status" className="h-[46px] rounded-xl border border-[#dfe2e5] bg-white px-3 text-sm text-[#34443b] outline-none focus:border-[#6d9a79]">
+              <option value="all">All Status ({counts.all})</option>
+              <option value="Pending">Pending ({counts.Pending})</option>
+              <option value="Preparing">Preparing ({counts.Preparing})</option>
+              <option value="Ready to Serve">Ready to Serve ({counts["Ready to Serve"]})</option>
+              <option value="Served">Served / Completed ({counts.Served})</option>
+            </select>
+            <select value={sortBy} onChange={(event) => setSortBy(event.target.value)} aria-label="Sort kitchen orders" className="h-[46px] rounded-xl border border-[#dfe2e5] bg-white px-3 text-sm text-[#34443b] outline-none focus:border-[#6d9a79]">
+              <option value="latest">Sort by: Latest</option>
+              <option value="oldest">Sort by: Oldest</option>
+            </select>
+            <div className="flex h-[46px] overflow-hidden rounded-xl border border-[#dfe2e5] bg-white" role="group" aria-label="Kitchen orders view">
+              <button type="button" onClick={() => setViewMode("table")} aria-label="Table view" aria-pressed={viewMode === "table"} title="Table view" className={`grid w-11 place-items-center border-r border-[#dfe2e5] ${viewMode === "table" ? "bg-[#1a3c36] text-white" : "text-[#66736b] hover:bg-gray-50"}`}><List size={16} /></button>
+              <button type="button" onClick={() => setViewMode("card")} aria-label="Card view" aria-pressed={viewMode === "card"} title="Card view" className={`grid w-11 place-items-center ${viewMode === "card" ? "bg-[#1a3c36] text-white" : "text-[#66736b] hover:bg-gray-50"}`}><LayoutGrid size={16} /></button>
+            </div>
           </div>
-          <div className="flex self-start overflow-hidden rounded-lg border border-[#dfe2e5] bg-white xl:self-auto" role="group" aria-label="Kitchen orders view">
-            <button type="button" onClick={() => setViewMode("table")} aria-label="Table view" aria-pressed={viewMode === "table"} title="Table view" className={`grid h-9 w-10 place-items-center border-r border-[#dfe2e5] ${viewMode === "table" ? "bg-[#1a3c36] text-white" : "text-[#66736b] hover:bg-gray-50"}`}><List size={16} /></button>
-            <button type="button" onClick={() => setViewMode("card")} aria-label="Card view" aria-pressed={viewMode === "card"} title="Card view" className={`grid h-9 w-10 place-items-center ${viewMode === "card" ? "bg-[#1a3c36] text-white" : "text-[#66736b] hover:bg-gray-50"}`}><LayoutGrid size={16} /></button>
-          </div>
-        </div>
         </div>
 
         {/* Content */}
@@ -304,19 +254,20 @@ const ChefKitchenOrders = () => {
         ) : viewMode === "table" ? (
           <div className="overflow-x-auto rounded-2xl border border-[#e7e0d8] bg-white shadow-sm">
             <table className="w-full min-w-[940px] border-collapse text-left text-sm">
-              <thead className="sticky top-0 bg-[#f5f6f2] text-[11px] uppercase tracking-wide text-[#66736b]">
+              <thead className="sticky top-0 bg-[#d4a843] text-[11px] uppercase tracking-wide text-white">
                 <tr>
-                  {['Kitchen Order', 'Table / Bill', 'Round', 'Items', 'Amount', 'Status', 'Placed', 'Action'].map((heading) => <th key={heading} className="whitespace-nowrap px-4 py-3 font-bold">{heading}</th>)}
+                  {['S No', 'Kitchen Order', 'Table / Bill', 'Round', 'Items', 'Amount', 'Status', 'Placed', 'Action'].map((heading) => <th key={heading} className="whitespace-nowrap px-4 py-4 font-bold">{heading}</th>)}
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#edf0eb]">
-                {filteredOrders.map((order) => {
+                {filteredOrders.map((order, index) => {
                   const currentStatus = order.status || 'Pending';
                   const cfg = STATUS_CONFIG[currentStatus] || STATUS_CONFIG.Pending;
                   const isUpdating = updatingOrderId === order.order_id;
                   const totalItems = order.items.reduce((sum, item) => sum + Number(item.quantity || 1), 0);
                   const orderTotal = order.items.reduce((sum, item) => sum + Number(item.unit_price || 0) * Number(item.quantity || 1), 0);
                   return <tr key={order.order_id} className="align-middle hover:bg-[#fbfcfa]">
+                    <td className="whitespace-nowrap px-4 py-3 font-medium text-[#66736b]">{index + 1}</td>
                     <td className="whitespace-nowrap px-4 py-3"><span className="font-mono text-xs font-semibold text-[#244b35]" title={order.order_id}>{String(order.order_id).slice(0, 8).toUpperCase()}</span><span className="mt-1 block text-[10px] text-[#89938c]">{totalItems} item{totalItems === 1 ? '' : 's'}</span></td>
                     <td className="whitespace-nowrap px-4 py-3"><span className="font-semibold text-[#34443b]">Table {order.table_number}</span>{order.bill_number && <span className="mt-1 block text-[10px] text-[#7c8980]">{order.bill_number}</span>}</td>
                     <td className="whitespace-nowrap px-4 py-3 text-xs text-[#66736b]">{order.round_number > 1 ? `Round ${order.round_number} · Add-on` : 'Round 1'}</td>

@@ -58,7 +58,7 @@ import {
 } from "lucide-react";
 
 import { useAuth } from "../PrivateRouter/AuthContext";
-const Logo = "/images/logo.png";
+const Logo = "/images/adminlogo.png";
 
 /* ================= NAV ITEMS ================= */
 const navItems = [
@@ -94,7 +94,7 @@ const navItems = [
     icon: Boxes,
     children: [
       // { path: "/admin/inventory", label: "Dashboard", icon: LayoutDashboard },
-      { path: "/admin/inventory/products", label: "Products", icon: Package },
+      { path: "/admin/inventory/products", label: "Groceries", icon: Package },
       // { path: "/admin/inventory/categories", label: "Categories", icon: Layers },
       // { path: "/admin/inventory/units", label: "Units", icon: ClipboardList },
       { path: "/admin/inventory/suppliers", label: "Suppliers", icon: Users },
@@ -239,16 +239,16 @@ const Sidebar = ({ isOpen, onClose, collapsed, onToggleCollapse }) => {
         `}
       >
         {/* ========== LOGO ========== */}
-        <div className={`flex items-center gap-3 border-b border-[#1f3228] shrink-0 ${collapsed ? "px-3 py-5 justify-center" : "px-5 py-5"}`}>
-          <div className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0 p-1 border border-[#d4a843]/30 bg-white">
-            <img src={Logo} alt="Buy Food logo" className="w-full h-full object-contain" />
+        <div className={`flex items-center gap-3 border-b border-[#1f3228] shrink-0 ${collapsed ? "px-3 py-3 justify-center" : "px-5 py-3"}`}>
+          <div className={`flex shrink-0 items-center justify-center overflow-hidden rounded-xl border border-[#d4a843]/30 bg-white shadow-sm ${collapsed ? "h-12 w-12 p-1" : "h-16 w-16"}`}>
+            <img src={Logo} alt="Admin restaurant logo" className="w-full h-full object-contain" />
           </div>
 
           {!collapsed && (
             <div className="overflow-hidden flex-1">
-              <h1 className="text-base font-bold text-white tracking-wide font-serif">Foodie Restaurant</h1>
+              <h1 className="text-base font-bold text-white tracking-wide font-serif">Buy Foods</h1>
               <p className="text-[10px] text-white tracking-[0.2em] uppercase">
-                Fresh Food, Warm Welcome
+                Fresh Food WellCome
               </p>
             </div>
           )}
@@ -283,7 +283,7 @@ const Sidebar = ({ isOpen, onClose, collapsed, onToggleCollapse }) => {
                     onClick={() => toggleMenu(item.label)}
                     title={collapsed ? item.label : ""}
                     className={`
-                      w-full flex items-center gap-3 px-3 py-3 rounded-xl text-sm
+                      w-full flex items-center gap-3 px-3 py-3 rounded-lg text-sm
                       transition-all duration-200 group
                       ${isAnyChildActive
                         ? "bg-[#1f3228] text-white border-l-2 border-white"
@@ -361,7 +361,7 @@ const Sidebar = ({ isOpen, onClose, collapsed, onToggleCollapse }) => {
                 title={collapsed ? item.label : ""}
                 onClick={() => isOpen && onClose()}
                 className={`
-                  flex items-center gap-3 px-3 py-3 rounded-xl text-sm
+                  flex items-center gap-3 px-3 py-3 rounded-lg text-sm
                   transition-all duration-200
                   ${isActive
                     ? "bg-[#d4a843] text-[#162420] font-semibold shadow-md"
@@ -383,7 +383,7 @@ const Sidebar = ({ isOpen, onClose, collapsed, onToggleCollapse }) => {
           title={collapsed ? "Back Home" : ""}
           onClick={() => isOpen && onClose()}
           className={`
-            mx-3 mb-3 flex items-center gap-3 px-3 py-3 rounded-xl text-sm
+            mx-3 mb-3 flex items-center gap-3 px-3 py-3 rounded-lg text-sm
             transition-all duration-200
             ${isRouteActive("/")
               ? "bg-[#d4a843] text-[#162420] font-semibold shadow-md"

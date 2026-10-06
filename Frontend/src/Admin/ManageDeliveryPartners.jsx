@@ -244,101 +244,15 @@ const ManageDeliveryPartners = () => {
   const busyCount = partners.filter((p) => p.current_status === "Busy").length;
 
   const statCards = [
-    {
-      title: "Total Delivery Partners",
-      value: partners.length,
-      icon: Bike,
-      iconBg: "bg-[#1a3c36]",
-      description: "Registered fleet riders",
-      waveColor: "#1a3c36",
-    },
-    {
-      title: "Active Partners",
-      value: activeCount,
-      icon: UserCheck,
-      iconBg: "bg-[#22c55e]",
-      description: "Currently active staff",
-      waveColor: "#22c55e",
-    },
-    {
-      title: "Available for Delivery",
-      value: availableCount,
-      icon: Bike,
-      iconBg: "bg-[#06b6d4]",
-      description: "Ready to pick up orders",
-      waveColor: "#06b6d4",
-    },
-    {
-      title: "Busy / On Duty",
-      value: busyCount,
-      icon: Clock3,
-      iconBg: busyCount > 0 ? "bg-[#f59e0b]" : "bg-[#64748b]",
-      description: "Currently delivering",
-      waveColor: busyCount > 0 ? "#f59e0b" : "#64748b",
-    },
+    { title: "Total Delivery Partners", value: partners.length, icon: Bike, bg: "bg-[#22c55e]", hint: "Registered fleet riders" },
+    { title: "Active Partners", value: activeCount, icon: UserCheck, bg: "bg-[#3b82f6]", hint: "Currently active staff" },
+    { title: "Available for Delivery", value: availableCount, icon: Bike, bg: "bg-[#06b6d4]", hint: "Ready to pick up orders" },
+    { title: "Busy / On Duty", value: busyCount, icon: Clock3, bg: busyCount > 0 ? "bg-[#f59e0b]" : "bg-[#8b5cf6]", hint: "Currently delivering" },
   ];
 
   return (
     <main className="min-h-screen bg-[#f2f3f0] p-4 md:p-6">
       <div className="mx-auto max-w-[1500px]">
-        {/* Navigation Tabs Header */}
-        <div className="mb-4 flex flex-wrap items-center gap-2 border-b border-[#e1ded8] pb-3 text-sm">
-          <Link
-            to="/admin/employees"
-            className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 font-medium text-[#68706a] hover:bg-[#e7e5e0] hover:text-[#1f2d24]"
-          >
-            <Users className="h-4 w-4" /> All Employees
-          </Link>
-          <Link
-            to="/admin/servers"
-            className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 font-medium text-[#68706a] hover:bg-[#e7e5e0] hover:text-[#1f2d24]"
-          >
-            <UtensilsCrossed className="h-4 w-4" /> Manage Servers
-          </Link>
-          <div className="flex items-center gap-1.5 rounded-lg bg-[#1a3c36] px-3 py-1.5 font-semibold text-white shadow-sm">
-            <Bike className="h-4 w-4 text-[#d4a843]" /> Manage Delivery Partners
-            <span className="ml-1 rounded-full bg-[#d4a843] px-2 py-0.2 text-[11px] font-bold text-[#1a3c36]">
-              {partners.length}
-            </span>
-          </div>
-          <Link
-            to="/admin/orders/delivery"
-            className="ml-auto flex items-center gap-1.5 rounded-lg border border-[#d5ded6] bg-white px-3 py-1.5 text-xs font-semibold text-[#1a3c36] shadow-sm hover:bg-[#fafafa]"
-          >
-            <Bike className="h-3.5 w-3.5 text-[#d4a843]" /> Delivery Orders
-          </Link>
-        </div>
-
-        {/* Page Title & Add Delivery Partner CTA */}
-        <div className="mb-5 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-          <div>
-            <h1 className="text-[2.1rem] font-bold tracking-[-0.05em] text-[#1f1d1b]">
-              Manage Delivery Partners
-            </h1>
-            <p className="mt-1 text-[13px] text-[#646464]">
-              Dashboard <span className="mx-2 text-[#9a9a9a]">&gt;</span>
-              Employees <span className="mx-2 text-[#9a9a9a]">&gt;</span>
-              <span className="font-medium text-[#2a2a2a]">Manage Delivery Partners</span>
-            </p>
-          </div>
-
-          <div className="flex flex-wrap items-center gap-3">
-            <button
-              type="button"
-              onClick={loadPartners}
-              title="Refresh delivery partners data"
-              className="flex h-[44px] w-[44px] items-center justify-center rounded-xl border border-[#dcd7d0] bg-white text-[#4d4d4d] shadow-sm transition hover:bg-[#f6f5f3]"
-            >
-              <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
-            </button>
-            <Link
-              to="/admin/employees/add/delivery-partner"
-              className="inline-flex h-[46px] items-center gap-2 rounded-xl bg-[#1a3c36] px-4 text-[15px] font-semibold text-white shadow-[0_6px_14px_rgba(26,60,54,0.18)] transition hover:bg-[#214a42]"
-            >
-              <Plus className="h-4 w-4 text-[#d4a843]" /> Add Delivery Partner
-            </Link>
-          </div>
-        </div>
 
         {/* Action alerts */}
         {actionSuccess && (
@@ -356,35 +270,34 @@ const ManageDeliveryPartners = () => {
 
         {/* Stat Cards */}
         <div className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
-          {statCards.map(({ title, value, icon: Icon, iconBg, description, waveColor }) => (
-            <div
-              key={title}
-              className="relative flex h-full min-h-[160px] flex-col overflow-hidden rounded-xl border border-gray-100 bg-white p-5 shadow-sm"
-            >
-              <div className="flex flex-1 items-start gap-4">
-                <div
-                  className={`flex h-13 w-13 shrink-0 items-center justify-center rounded-2xl ${iconBg} shadow-sm`}
-                >
-                  <Icon className="h-6 w-6 text-white" />
+          {statCards.map(({ title, value, icon: Icon, bg, hint }, index) => (
+            <article key={title} className={`relative min-w-0 overflow-hidden rounded-xl border border-transparent p-4 sm:p-5 shadow-[0_2px_10px_rgba(20,56,34,0.08)] flex flex-col justify-between min-h-[140px] ${bg} text-white`}>
+              <div className="flex items-start gap-3 relative z-10">
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg shadow-sm bg-white/20">
+                  <Icon size={24} strokeWidth={2.2} className="text-white" />
                 </div>
-                <div>
-                  <p className="mb-1 text-xs font-medium text-gray-500">{title}</p>
-                  <h2 className="text-2xl font-bold text-gray-900">{value}</h2>
-                  <p className="mt-1.5 text-[11px] text-gray-400">{description}</p>
+                <div className="flex-1 mt-0.5 min-w-0">
+                  <h3 className="text-[12px] font-semibold opacity-90 mb-1 truncate">{title}</h3>
+                  <div className="text-[26px] font-extrabold leading-none tracking-tight">{value}</div>
                 </div>
               </div>
-              <div className="pointer-events-none absolute bottom-0 left-0 h-7 w-full overflow-hidden">
-                <svg
-                  viewBox="0 0 100 20"
-                  preserveAspectRatio="none"
-                  className="h-full w-full opacity-35"
-                  style={{ color: waveColor }}
-                  fill="currentColor"
-                >
-                  <path d="M0,10 C30,25 70,0 100,10 L100,20 L0,20 Z" />
+              <div className="flex items-center gap-2 mt-5 relative z-10">
+                <span className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[11px] font-bold bg-white/25">↑ 12%</span>
+                <span className="text-[11px] font-medium opacity-75 truncate">{hint}</span>
+              </div>
+              <div className="absolute right-0 bottom-0 w-24 h-16 pointer-events-none opacity-50">
+                <svg viewBox="0 0 100 50" preserveAspectRatio="none" className="w-full h-full">
+                  <defs>
+                    <linearGradient id={`dlpgrad-${index}`} x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#ffffff" stopOpacity="0.4" />
+                      <stop offset="100%" stopColor="#ffffff" stopOpacity="0.0" />
+                    </linearGradient>
+                  </defs>
+                  <path d="M0,50 L0,40 Q25,30 50,40 T100,20 L100,50 Z" fill={`url(#dlpgrad-${index})`} />
+                  <path d="M0,40 Q25,30 50,40 T100,20" fill="none" stroke="#ffffff" strokeWidth="2.5" />
                 </svg>
               </div>
-            </div>
+            </article>
           ))}
         </div>
 
@@ -438,27 +351,12 @@ const ManageDeliveryPartners = () => {
                   <option value="Bicycle">Bicycle</option>
                 </select>
 
-                <select
-                  value={selectedSalaryType}
-                  onChange={(e) => setSelectedSalaryType(e.target.value)}
-                  className="h-[46px] min-w-36 rounded-xl border border-[#dfe2e5] bg-[#faf9f8] px-3 text-[14px] font-medium text-[#2d2d2d] outline-none focus:border-[#d2bc8a]"
-                >
-                  <option value="All Salaries">All Salary Types</option>
-                  <option value="Monthly Basis">Monthly Basis</option>
-                  <option value="Order Basis">Order Basis</option>
-                </select>
+                
               </div>
             </div>
 
             <div className="flex flex-wrap items-center gap-3">
-              <select
-                value={sortBy}
-                onChange={(e) => setSortBy(e.target.value)}
-                className="h-[46px] rounded-xl border border-[#dfe2e5] bg-[#faf9f8] px-3 text-[14px] font-medium text-[#2d2d2d] outline-none focus:border-[#d2bc8a]"
-              >
-                <option value="latest">Sort: Latest</option>
-                <option value="name">Name: A to Z</option>
-              </select>
+         
 
               <div className="flex h-[46px] items-center overflow-hidden rounded-xl border border-[#dfe2e5] bg-[#faf9f8]">
                 <button
@@ -482,6 +380,13 @@ const ManageDeliveryPartners = () => {
                   <LayoutGrid className="h-4 w-4" />
                 </button>
               </div>
+
+               <Link
+              to="/admin/employees/add/delivery-partner"
+              className="inline-flex h-[46px] items-center gap-2 rounded-xl bg-[#1a3c36] px-4 text-[15px] font-semibold text-white shadow-[0_6px_14px_rgba(26,60,54,0.18)] transition hover:bg-[#214a42]"
+            >
+              <Plus className="h-4 w-4 text-[#d4a843]" /> Add Delivery 
+            </Link>
             </div>
           </div>
 
@@ -491,10 +396,9 @@ const ManageDeliveryPartners = () => {
               <div className="overflow-x-auto">
                 <table className="min-w-full border-separate border-spacing-0 text-left">
                   <thead>
-                    <tr className="bg-[#f0e6d2] text-sm font-semibold text-[#3d3d3d]">
+                    <tr className="bg-[#d4a843] text-sm font-semibold text-white">
                       <th className="px-4 py-4">ID</th>
                       <th className="px-4 py-4">Delivery Partner</th>
-                      <th className="px-4 py-4">Partner ID</th>
                       <th className="px-4 py-4">Contact</th>
                       <th className="px-4 py-4">Vehicle Details</th>
                       <th className="px-4 py-4">Availability</th>
@@ -506,7 +410,7 @@ const ManageDeliveryPartners = () => {
                   <tbody>
                     {loading ? (
                       <tr>
-                        <td colSpan={9} className="px-5 py-14 text-center text-sm text-[#777]">
+                        <td colSpan={8} className="px-5 py-14 text-center text-sm text-[#777]">
                           <div className="flex items-center justify-center gap-2">
                             <RefreshCw className="h-4 w-4 animate-spin text-[#1a3c36]" />
                             <span>Loading delivery partners...</span>
@@ -515,7 +419,7 @@ const ManageDeliveryPartners = () => {
                       </tr>
                     ) : error ? (
                       <tr>
-                        <td colSpan={9} className="px-5 py-12 text-center text-sm text-[#a13e30]">
+                        <td colSpan={8} className="px-5 py-12 text-center text-sm text-[#a13e30]">
                           {error}
                         </td>
                       </tr>
@@ -549,9 +453,6 @@ const ManageDeliveryPartners = () => {
                                   </div>
                                 </div>
                               </div>
-                            </td>
-                            <td className="px-4 py-4 font-mono text-xs font-semibold text-[#1a3c36]">
-                              {partner.employee_id}
                             </td>
                             <td className="px-4 py-4">
                               <div className="text-xs font-medium text-[#2d2d2d]">
