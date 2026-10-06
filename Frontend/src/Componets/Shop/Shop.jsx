@@ -546,7 +546,7 @@ export default function Shop() {
             </div>
             <div className="space-y-2 border-t border-slate-100 pt-3">
               <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Rating</p>
-              {[5, 4, 3, 2, 1, 0].map((rating) => (
+              {[0, 5, 4, 3, 2, 1].map((rating) => (
                 <label key={rating} className="flex cursor-pointer items-center gap-2 text-xs font-medium text-slate-600">
                   <input type="radio" name="minimum-rating" checked={minimumRating === rating} onChange={() => { setMinimumRating(rating); setCurrentPage(1); }} className="accent-[#1a3c36]" />
                   <span className="flex items-center gap-1">{rating === 0 ? "Any rating" : <><Star className="h-3 w-3 fill-amber-400 text-amber-400" />{rating === 5 ? "5 stars" : `${rating}+ stars`}</>}</span>
