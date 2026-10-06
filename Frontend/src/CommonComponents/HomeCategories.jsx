@@ -38,12 +38,38 @@ function HomeCategories() {
     fetchCategories();
   }, [fetchCategories]);
 
-  const scrollCategories = (direction) => {
-    carouselRef.current?.scrollBy({
-      left: direction * carouselRef.current.clientWidth * 0.75,
-      behavior: 'smooth',
-    });
-  };
+  const scrollCategories = useCallback((direction = 1) => {
+    const carousel = carouselRef.current;
+    const firstCard = carousel?.firstElementChild;
+    if (!carousel || !firstCard) return;
+
+    const gap = Number.parseFloat(window.getComputedStyle(carousel).columnGap) || 0;
+    const cardWidth = firstCard.getBoundingClientRect().width + gap;
+    const maxScrollLeft = carousel.scrollWidth - carousel.clientWidth;
+    if (maxScrollLeft <= 1) return;
+
+    if (direction > 0 && carousel.scrollLeft >= maxScrollLeft - 1) {
+      carousel.scrollTo({ left: 0, behavior: 'smooth' });
+      return;
+    }
+
+    carousel.scrollBy({ left: direction * cardWidth, behavior: 'smooth' });
+  }, []);
+
+  useEffect(() => {
+    if (loading || error || categories.length < 2
+      || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return undefined;
+
+    const intervalId = window.setInterval(() => {
+      const carousel = carouselRef.current;
+      if (!carousel || carousel.matches(':hover')
+        || carousel.contains(document.activeElement)
+        || document.visibilityState !== 'visible') return;
+      scrollCategories();
+    }, 3000);
+
+    return () => window.clearInterval(intervalId);
+  }, [categories.length, error, loading, scrollCategories]);
 
   return (
     <section className="bg-white py-10 sm:py-12" aria-labelledby="home-categories-heading">
