@@ -1275,6 +1275,11 @@ function ReportsPage() {
 function KitchenRequestsPage() {
   const { products, loadData } = useInventoryContext();
   const [requests, setRequests] = useState([]);
+  const [requestSearch, setRequestSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState('All');
+  const [priorityFilter, setPriorityFilter] = useState('All');
+  const [requestSort, setRequestSort] = useState('latest');
+  const [requestView, setRequestView] = useState('table');
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [form, setForm] = useState({
     request_number: `KR-${Date.now()}`,
@@ -1418,6 +1423,17 @@ function KitchenRequestsPage() {
   const pendingCount = requests.filter(r => (r.status || 'Pending') === 'Pending').length;
   const approvedCount = requests.filter(r => r.status === 'Approved').length;
   const completedCount = requests.filter(r => r.status === 'Completed').length;
+  const filteredRequests = requests.filter((request) => {
+    const searchValue = requestSearch.trim().toLowerCase();
+    const matchesSearch = !searchValue || [request.request_number, request.requested_by, request.notes]
+      .some((value) => String(value || '').toLowerCase().includes(searchValue));
+    const matchesStatus = statusFilter === 'All' || (request.status || 'Pending') === statusFilter;
+    const matchesPriority = priorityFilter === 'All' || (request.priority || 'Normal') === priorityFilter;
+    return matchesSearch && matchesStatus && matchesPriority;
+  }).sort((first, second) => {
+    const dateDifference = String(first.request_date || '').localeCompare(String(second.request_date || ''));
+    return requestSort === 'latest' ? -dateDifference : dateDifference;
+  });
 
   const kitchenCards = [
     { title: "Total Requests", value: requests.length, icon: ClipboardList, bg: "bg-[#22c55e]", hint: "All kitchen requests" },
@@ -1428,7 +1444,7 @@ function KitchenRequestsPage() {
 
   return (
     <>
-      <InventoryCrudPage title="Kitchen Requests" subtitle="Send ingredient and production requests to the kitchen team and track stock usage." actions={<button className="rounded-xl bg-[#1a3c36] px-4 py-2 text-sm font-semibold text-white" onClick={() => setIsAddModalOpen(true)}>Add Kitchen Request</button>}>
+      <InventoryCrudPage title="Kitchen Requests" subtitle="Send ingredient and production requests to the kitchen team and track stock usage.">
 
         <div className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
           {kitchenCards.map(({ title, value, icon: Icon, bg, hint }, index) => (
@@ -1463,15 +1479,118 @@ function KitchenRequestsPage() {
         </div>
 
         <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-          <InventoryTable columns={[
-            { key: 'request_number', label: 'Request No.' },
-            { key: 'requested_by', label: 'Requested By' },
-            { key: 'request_date', label: 'Date' },
-            { key: 'priority', label: 'Priority' },
-            { key: 'status', label: 'Status', render: (row) => <StatusBadge value={row.status || 'Pending'} /> },
-            { key: 'notes', label: 'Notes', render: (row) => <span className="max-w-xs text-slate-600">{row.notes || '—'}</span> },
-            { key: 'actions', label: 'Action', render: (row) => getRequestActions(row) },
-          ]} rows={requests} emptyText="No kitchen requests created yet." />
+          <div className="mb-4 flex flex-col gap-3 xl:flex-row xl:items-center">
+            <label className="relative block min-w-0 flex-1">
+              <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+              <input
+                type="search"
+                value={requestSearch}
+                onChange={(event) => setRequestSearch(event.target.value)}
+                placeholder="Search request number, requester, or notes..."
+                aria-label="Search kitchen requests"
+                className="h-[52px] w-full rounded-xl border border-slate-200 bg-slate-50 pl-11 pr-3 text-sm outline-none focus:border-[#1a3c36]"
+              />
+            </label>
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:flex">
+              <select
+                value={priorityFilter}
+                onChange={(event) => setPriorityFilter(event.target.value)}
+                aria-label="Filter by priority"
+                className="h-[52px] min-w-0 rounded-xl border border-slate-200 bg-white px-4 text-sm text-slate-700 outline-none focus:border-[#1a3c36] xl:w-[170px]"
+              >
+                <option value="All">All Priorities</option>
+                <option value="Low">Low</option>
+                <option value="Normal">Normal</option>
+                <option value="High">High</option>
+                <option value="Urgent">Urgent</option>
+              </select>
+              <select
+                value={statusFilter}
+                onChange={(event) => setStatusFilter(event.target.value)}
+                aria-label="Filter by status"
+                className="h-[52px] min-w-0 rounded-xl border border-slate-200 bg-white px-4 text-sm text-slate-700 outline-none focus:border-[#1a3c36] xl:w-[170px]"
+              >
+                <option value="All">All Status</option>
+                <option value="Pending">Pending</option>
+                <option value="Approved">Approved</option>
+                <option value="Rejected">Rejected</option>
+                <option value="Issued">Issued</option>
+                <option value="Completed">Completed</option>
+              </select>
+              <select
+                value={requestSort}
+                onChange={(event) => setRequestSort(event.target.value)}
+                aria-label="Sort kitchen requests"
+                className="col-span-2 h-[52px] min-w-0 rounded-xl border border-slate-200 bg-white px-4 text-sm text-slate-700 outline-none focus:border-[#1a3c36] sm:col-span-1 xl:w-[180px]"
+              >
+                <option value="latest">Sort by: Latest</option>
+                <option value="oldest">Sort by: Oldest</option>
+              </select>
+            </div>
+            <div className="flex h-[52px] shrink-0 items-stretch overflow-hidden rounded-xl border border-slate-200" role="group" aria-label="Request display mode">
+              <button
+                type="button"
+                onClick={() => setRequestView('grid')}
+                aria-label="Grid view"
+                aria-pressed={requestView === 'grid'}
+                className={`flex w-14 items-center justify-center ${requestView === 'grid' ? 'bg-[#1a3c36] text-white' : 'bg-white text-slate-600 hover:bg-slate-50'}`}
+              >
+                <LayoutGrid size={19} />
+              </button>
+              <button
+                type="button"
+                onClick={() => setRequestView('table')}
+                aria-label="Table view"
+                aria-pressed={requestView === 'table'}
+                className={`flex w-14 items-center justify-center border-l border-slate-200 ${requestView === 'table' ? 'bg-[#1a3c36] text-white' : 'bg-white text-slate-600 hover:bg-slate-50'}`}
+              >
+                <Table2 size={19} />
+              </button>
+            </div>
+            <button
+              type="button"
+              onClick={() => setIsAddModalOpen(true)}
+              className="inline-flex h-[52px] shrink-0 items-center justify-center gap-2 rounded-xl bg-[#1a3c36] px-5 text-sm font-semibold text-white hover:bg-[#244e45]"
+            >
+              <Plus size={18} />
+              Add Kitchen Request
+            </button>
+          </div>
+          {requestView === 'table' ? (
+            <InventoryTable columns={[
+              { key: 'request_number', label: 'Request No.' },
+              { key: 'requested_by', label: 'Requested By' },
+              { key: 'request_date', label: 'Date' },
+              { key: 'priority', label: 'Priority' },
+              { key: 'status', label: 'Status', render: (row) => <StatusBadge value={row.status || 'Pending'} /> },
+              { key: 'notes', label: 'Notes', render: (row) => <span className="max-w-xs text-slate-600">{row.notes || '—'}</span> },
+              { key: 'actions', label: 'Action', render: (row) => getRequestActions(row) },
+            ]} rows={filteredRequests} emptyText={requests.length ? 'No requests match these filters.' : 'No kitchen requests created yet.'} />
+          ) : filteredRequests.length ? (
+            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+              {filteredRequests.map((request) => (
+                <article key={request.id} className="flex min-w-0 flex-col rounded-xl border border-slate-200 bg-white p-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <h2 className="truncate font-semibold text-slate-900">{request.request_number}</h2>
+                      <p className="mt-1 text-sm text-slate-500">{request.requested_by || 'Unknown requester'}</p>
+                    </div>
+                    <StatusBadge value={request.status || 'Pending'} />
+                  </div>
+                  <dl className="mt-4 grid grid-cols-2 gap-3 text-sm">
+                    <div><dt className="text-xs text-slate-500">Request date</dt><dd className="mt-1 text-slate-800">{String(request.request_date || '').slice(0, 10) || '—'}</dd></div>
+                    <div><dt className="text-xs text-slate-500">Priority</dt><dd className="mt-1 text-slate-800">{request.priority || 'Normal'}</dd></div>
+                  </dl>
+                  <p className="mt-3 min-h-10 text-sm text-slate-600">{request.notes || 'No notes'}</p>
+                  <div className="mt-4 border-t border-slate-100 pt-3">{getRequestActions(request)}</div>
+                </article>
+              ))}
+            </div>
+          ) : (
+            <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-8 text-center text-sm text-slate-500">
+              {requests.length ? 'No requests match these filters.' : 'No kitchen requests created yet.'}
+            </div>
+          )}
         </div>
       </InventoryCrudPage>
 
