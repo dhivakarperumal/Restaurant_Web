@@ -7,7 +7,7 @@ const revenueSourcesSql = `
     o.created_at AS order_date,
     o.customer_name,
     o.customer_phone,
-    CASE WHEN o.fulfillment_type = 'delivery' THEN 'Delivery' ELSE 'Pickup' END AS order_type,
+    CASE WHEN o.order_type = 'home_delivery' THEN 'Home Delivery' ELSE 'Pickup' END AS order_type,
     'delivery' AS source,
     COALESCE(items.item_summary, '') AS items,
     COALESCE(items.quantity, 0) AS quantity,
@@ -173,7 +173,7 @@ const buildFilters = (filters = {}) => {
     params.push(bounds.start, bounds.end);
   }
   if (filters.type === 'dining') clauses.push("revenue_order.source = 'dining'");
-  if (filters.type === 'delivery') clauses.push("revenue_order.source = 'delivery' AND revenue_order.order_type = 'Delivery'");
+  if (filters.type === 'delivery') clauses.push("revenue_order.source = 'delivery' AND revenue_order.order_type = 'Home Delivery'");
   if (filters.paymentMethod) {
     clauses.push('LOWER(revenue_order.payment_method) = LOWER(?)');
     params.push(filters.paymentMethod);

@@ -85,7 +85,7 @@ function Checkout() {
   const store = useContext(StoreContext) || {};
   const { cart = [], loadingCart, fetchCart } = store;
   const navigate = useNavigate();
-  const [fulfillmentType, setFulfillmentType] = useState('delivery');
+  const [fulfillmentType, setFulfillmentType] = useState('home_delivery');
   const [paymentMethod, setPaymentMethod] = useState('cod');
   const [customer, setCustomer] = useState({
     name: user?.name || user?.username || '',
@@ -178,8 +178,8 @@ function Checkout() {
     try {
       const { data } = await api.post('/orders', {
         customer,
-        fulfillment_type: fulfillmentType,
-        address: fulfillmentType === 'delivery' ? address : null,
+        order_type: fulfillmentType,
+        address: fulfillmentType === 'home_delivery' ? address : null,
         payment_method: paymentMethod,
       });
       if (!data?.success || !data?.data?.order_number) {
@@ -340,14 +340,14 @@ function Checkout() {
                 </div>
               </div>
               <label className="block text-sm font-semibold text-[#263830]">
-                Delivery or pickup
+                Home delivery or pickup
                 <select value={fulfillmentType} onChange={(event) => setFulfillmentType(event.target.value)} className="mt-2 w-full rounded-xl border border-[#ded5c9] bg-white px-4 py-3 outline-none focus:border-[#a34f32] focus:ring-2 focus:ring-[#a34f32]/10 sm:max-w-sm">
-                  <option value="delivery">Delivery</option>
+                  <option value="home_delivery">Home Delivery</option>
                   <option value="pickup">Pickup</option>
                 </select>
               </label>
 
-              {fulfillmentType === 'delivery' && (
+              {fulfillmentType === 'home_delivery' && (
                 <div className="mt-5 border-t border-[#f0e9df] pt-5">
                   {savedAddresses.length > 0 && (
                     <label className="mb-4 block text-sm font-semibold text-[#263830]">

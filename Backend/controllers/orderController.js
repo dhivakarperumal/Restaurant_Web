@@ -20,16 +20,17 @@ const validateCheckout = (body) => {
     email: String(body.customer?.email || '').trim(),
     phone: String(body.customer?.phone || '').trim(),
   };
-  const fulfillmentType = body.fulfillment_type;
+  const requestedOrderType = body.order_type ?? body.fulfillment_type;
+  const orderType = requestedOrderType === 'delivery' ? 'home_delivery' : requestedOrderType;
   const paymentMethod = body.payment_method;
   if (!customer.name || customer.name.length > 150) return 'Enter a valid customer name.';
   if (!/^[+()\d\s-]{7,32}$/.test(customer.phone)) return 'Enter a valid phone number.';
   if (customer.email && (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(customer.email) || customer.email.length > 255)) {
     return 'Enter a valid email address.';
   }
-  if (!['delivery', 'pickup'].includes(fulfillmentType)) return 'Choose delivery or pickup.';
+  if (!['home_delivery', 'pickup'].includes(orderType)) return 'Choose home delivery or pickup.';
   if (!['cod', 'online'].includes(paymentMethod)) return 'Choose cash on delivery or online payment.';
-  if (fulfillmentType === 'delivery') {
+  if (orderType === 'home_delivery') {
     const requiredAddressFields = ['address_line', 'area_locality', 'city', 'state', 'pincode'];
     if (requiredAddressFields.some((field) => !String(body.address?.[field] || '').trim())) {
       return 'Complete all required delivery address fields.';
@@ -73,11 +74,21 @@ const create = async (req, res) => {
 
   let createdOrder;
   try {
-    const { customer, fulfillment_type: fulfillmentType, address, payment_method: paymentMethod } = req.body;
+    const {
+      customer,
+      order_type: requestedOrderType,
+      fulfillment_type: legacyFulfillmentType,
+      address,
+      payment_method: paymentMethod,
+    } = req.body;
+    const requestedFulfillmentType = requestedOrderType ?? legacyFulfillmentType;
+    const orderType = requestedFulfillmentType === 'delivery' ? 'home_delivery' : requestedFulfillmentType;
+    const fulfillmentType = orderType === 'home_delivery' ? 'delivery' : orderType;
     createdOrder = await createOrderFromCart({
       userId: getUserId(req),
       customer,
       fulfillmentType,
+      orderType,
       address,
       paymentMethod,
     });
