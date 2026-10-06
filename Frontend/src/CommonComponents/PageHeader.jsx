@@ -15,7 +15,7 @@ const PageHeader = ({
       }}
     >
       {/* Dark overlay */}
-      <div className="absolute inset-0 bg-black/30"></div>
+      <div className="absolute inset-0 bg-black/20"></div>
 
       {/* Bottom gold line */}
       <div className="absolute inset-x-0 bottom-0 h-1 bg-[#d5a65a]"></div>
