@@ -253,64 +253,6 @@ const ManageDeliveryPartners = () => {
   return (
     <main className="min-h-screen bg-[#f2f3f0] p-4 md:p-6">
       <div className="mx-auto max-w-[1500px]">
-        {/* Navigation Tabs Header */}
-        <div className="mb-4 flex flex-wrap items-center gap-2 border-b border-[#e1ded8] pb-3 text-sm">
-          <Link
-            to="/admin/employees"
-            className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 font-medium text-[#68706a] hover:bg-[#e7e5e0] hover:text-[#1f2d24]"
-          >
-            <Users className="h-4 w-4" /> All Employees
-          </Link>
-          <Link
-            to="/admin/servers"
-            className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 font-medium text-[#68706a] hover:bg-[#e7e5e0] hover:text-[#1f2d24]"
-          >
-            <UtensilsCrossed className="h-4 w-4" /> Manage Servers
-          </Link>
-          <div className="flex items-center gap-1.5 rounded-lg bg-[#1a3c36] px-3 py-1.5 font-semibold text-white shadow-sm">
-            <Bike className="h-4 w-4 text-[#d4a843]" /> Manage Delivery Partners
-            <span className="ml-1 rounded-full bg-[#d4a843] px-2 py-0.2 text-[11px] font-bold text-[#1a3c36]">
-              {partners.length}
-            </span>
-          </div>
-          <Link
-            to="/admin/orders/delivery"
-            className="ml-auto flex items-center gap-1.5 rounded-lg border border-[#d5ded6] bg-white px-3 py-1.5 text-xs font-semibold text-[#1a3c36] shadow-sm hover:bg-[#fafafa]"
-          >
-            <Bike className="h-3.5 w-3.5 text-[#d4a843]" /> Delivery Orders
-          </Link>
-        </div>
-
-        {/* Page Title & Add Delivery Partner CTA */}
-        <div className="mb-5 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-          <div>
-            <h1 className="text-[2.1rem] font-bold tracking-[-0.05em] text-[#1f1d1b]">
-              Manage Delivery Partners
-            </h1>
-            <p className="mt-1 text-[13px] text-[#646464]">
-              Dashboard <span className="mx-2 text-[#9a9a9a]">&gt;</span>
-              Employees <span className="mx-2 text-[#9a9a9a]">&gt;</span>
-              <span className="font-medium text-[#2a2a2a]">Manage Delivery Partners</span>
-            </p>
-          </div>
-
-          <div className="flex flex-wrap items-center gap-3">
-            <button
-              type="button"
-              onClick={loadPartners}
-              title="Refresh delivery partners data"
-              className="flex h-[44px] w-[44px] items-center justify-center rounded-xl border border-[#dcd7d0] bg-white text-[#4d4d4d] shadow-sm transition hover:bg-[#f6f5f3]"
-            >
-              <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
-            </button>
-            <Link
-              to="/admin/employees/add/delivery-partner"
-              className="inline-flex h-[46px] items-center gap-2 rounded-xl bg-[#1a3c36] px-4 text-[15px] font-semibold text-white shadow-[0_6px_14px_rgba(26,60,54,0.18)] transition hover:bg-[#214a42]"
-            >
-              <Plus className="h-4 w-4 text-[#d4a843]" /> Add Delivery Partner
-            </Link>
-          </div>
-        </div>
 
         {/* Action alerts */}
         {actionSuccess && (
@@ -409,27 +351,12 @@ const ManageDeliveryPartners = () => {
                   <option value="Bicycle">Bicycle</option>
                 </select>
 
-                <select
-                  value={selectedSalaryType}
-                  onChange={(e) => setSelectedSalaryType(e.target.value)}
-                  className="h-[46px] min-w-36 rounded-xl border border-[#dfe2e5] bg-[#faf9f8] px-3 text-[14px] font-medium text-[#2d2d2d] outline-none focus:border-[#d2bc8a]"
-                >
-                  <option value="All Salaries">All Salary Types</option>
-                  <option value="Monthly Basis">Monthly Basis</option>
-                  <option value="Order Basis">Order Basis</option>
-                </select>
+                
               </div>
             </div>
 
             <div className="flex flex-wrap items-center gap-3">
-              <select
-                value={sortBy}
-                onChange={(e) => setSortBy(e.target.value)}
-                className="h-[46px] rounded-xl border border-[#dfe2e5] bg-[#faf9f8] px-3 text-[14px] font-medium text-[#2d2d2d] outline-none focus:border-[#d2bc8a]"
-              >
-                <option value="latest">Sort: Latest</option>
-                <option value="name">Name: A to Z</option>
-              </select>
+         
 
               <div className="flex h-[46px] items-center overflow-hidden rounded-xl border border-[#dfe2e5] bg-[#faf9f8]">
                 <button
@@ -453,6 +380,13 @@ const ManageDeliveryPartners = () => {
                   <LayoutGrid className="h-4 w-4" />
                 </button>
               </div>
+
+               <Link
+              to="/admin/employees/add/delivery-partner"
+              className="inline-flex h-[46px] items-center gap-2 rounded-xl bg-[#1a3c36] px-4 text-[15px] font-semibold text-white shadow-[0_6px_14px_rgba(26,60,54,0.18)] transition hover:bg-[#214a42]"
+            >
+              <Plus className="h-4 w-4 text-[#d4a843]" /> Add Delivery 
+            </Link>
             </div>
           </div>
 
@@ -462,10 +396,9 @@ const ManageDeliveryPartners = () => {
               <div className="overflow-x-auto">
                 <table className="min-w-full border-separate border-spacing-0 text-left">
                   <thead>
-                    <tr className="bg-[#f0e6d2] text-sm font-semibold text-[#3d3d3d]">
+                    <tr className="bg-[#d4a843] text-sm font-semibold text-white">
                       <th className="px-4 py-4">ID</th>
                       <th className="px-4 py-4">Delivery Partner</th>
-                      <th className="px-4 py-4">Partner ID</th>
                       <th className="px-4 py-4">Contact</th>
                       <th className="px-4 py-4">Vehicle Details</th>
                       <th className="px-4 py-4">Availability</th>
@@ -477,7 +410,7 @@ const ManageDeliveryPartners = () => {
                   <tbody>
                     {loading ? (
                       <tr>
-                        <td colSpan={9} className="px-5 py-14 text-center text-sm text-[#777]">
+                        <td colSpan={8} className="px-5 py-14 text-center text-sm text-[#777]">
                           <div className="flex items-center justify-center gap-2">
                             <RefreshCw className="h-4 w-4 animate-spin text-[#1a3c36]" />
                             <span>Loading delivery partners...</span>
@@ -486,7 +419,7 @@ const ManageDeliveryPartners = () => {
                       </tr>
                     ) : error ? (
                       <tr>
-                        <td colSpan={9} className="px-5 py-12 text-center text-sm text-[#a13e30]">
+                        <td colSpan={8} className="px-5 py-12 text-center text-sm text-[#a13e30]">
                           {error}
                         </td>
                       </tr>
@@ -520,9 +453,6 @@ const ManageDeliveryPartners = () => {
                                   </div>
                                 </div>
                               </div>
-                            </td>
-                            <td className="px-4 py-4 font-mono text-xs font-semibold text-[#1a3c36]">
-                              {partner.employee_id}
                             </td>
                             <td className="px-4 py-4">
                               <div className="text-xs font-medium text-[#2d2d2d]">
