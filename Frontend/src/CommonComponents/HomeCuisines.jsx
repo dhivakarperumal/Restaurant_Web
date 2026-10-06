@@ -98,13 +98,13 @@ function HomeCuisines() {
                     aria-label={`Browse ${cuisineName} cuisine`}
                     className="group relative w-[250px] shrink-0 snap-start overflow-hidden rounded-xl bg-[#17251e] shadow-sm transition hover:-translate-y-1 hover:shadow-lg sm:w-[300px]"
                   >
-                    <div className="aspect-[3/2] overflow-hidden">
+                    <div className="aspect-[3/2] overflow-hidden bg-[#17251e]">
                       {image ? (
                         <img
                           src={image}
                           alt={cuisineName}
                           loading="lazy"
-                          className="h-full w-full object-cover object-top transition duration-500 group-hover:scale-105"
+                          className="h-full w-full object-contain"
                         />
                       ) : (
                         <div className="flex h-full items-center justify-center bg-[#315d2d] text-white/80">
