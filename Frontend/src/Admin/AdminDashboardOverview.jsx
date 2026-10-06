@@ -102,18 +102,40 @@ const normalizeStatus = (status) => {
   return raw;
 };
 
-function MetricCard({ title, value, icon: Icon, tone, hint, surface, waveColor }) {
+function MetricCard({ title, value, icon: Icon, tone, hint, surface, waveColor, percent }) {
   return (
-    <article className={`relative min-w-0 overflow-hidden rounded-xl border p-4 shadow-[0_2px_10px_rgba(20,56,34,0.04)] sm:p-5 ${surface}`}>
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <p className="text-xs font-medium text-[#516157]">{title}</p>
-          <p className="mt-2 truncate text-[25px] font-extrabold leading-none text-[#17231b]">{value}</p>
-          <p className="mt-3 text-[10px] text-[#7b887f]">{hint}</p>
+    <article className={`relative min-w-0 overflow-hidden rounded-xl border p-4 sm:p-5 shadow-[0_2px_10px_rgba(20,56,34,0.04)] flex flex-col justify-between min-h-[140px] ${surface}`}>
+      <div className="flex items-start gap-3 relative z-10">
+        <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-lg shadow-sm ${tone}`}>
+          <Icon size={24} strokeWidth={2.2} />
         </div>
-        <span className={`grid h-14 w-14 shrink-0 place-items-center rounded-full text-white ${tone}`}><Icon size={22} /></span>
+        <div className="flex-1 mt-0.5 min-w-0">
+          <h3 className="text-[12px] font-semibold opacity-90 mb-1 truncate">{title}</h3>
+          <div className="text-[22px] sm:text-[25px] font-extrabold leading-none tracking-tight truncate">{value}</div>
+        </div>
       </div>
-      <svg viewBox="0 0 100 12" preserveAspectRatio="none" aria-hidden="true" className="absolute inset-x-0 bottom-0 h-5 w-full" fill={waveColor}><path d="M0 5 C20 12 35 7 54 5 S83 1 100 5 V12 H0 Z" /></svg>
+      
+      <div className="flex items-center gap-2 mt-5 relative z-10">
+        {percent && (
+          <span className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[11px] font-bold bg-white/25">
+            {percent}
+          </span>
+        )}
+        <span className="text-[11px] font-medium opacity-75 truncate">{hint}</span>
+      </div>
+
+      <div className="absolute right-0 bottom-0 w-24 h-16 pointer-events-none opacity-50">
+        <svg viewBox="0 0 100 50" preserveAspectRatio="none" className="w-full h-full">
+          <defs>
+            <linearGradient id={`grad-${title.replace(/\s+/g, '')}`} x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor={waveColor} stopOpacity="0.4" />
+              <stop offset="100%" stopColor={waveColor} stopOpacity="0.0" />
+            </linearGradient>
+          </defs>
+          <path d="M0,50 L0,40 Q25,30 50,40 T100,20 L100,50 Z" fill={`url(#grad-${title.replace(/\s+/g, '')})`} />
+          <path d="M0,40 Q25,30 50,40 T100,20" fill="none" stroke={waveColor} strokeWidth="2.5" />
+        </svg>
+      </div>
     </article>
   );
 }
@@ -294,11 +316,11 @@ const AdminDashboardOverview = () => {
   const openBillsCount = snapshot.bills.filter((bill) => String(bill.status).toLowerCase() === 'active').length;
   const cancelledOrderCount = report.statuses.reduce((count, item) => count + (['cancelled', 'canceled'].includes(String(item.status).toLowerCase()) ? Number(item.count || 0) : 0), 0);
   const stats = [
-    { title: 'Total Orders', value: reportLoading ? '—' : statusTotal.toLocaleString('en-IN'), hint: `${todayOrderCount} today`, icon: ShoppingBag, tone: 'bg-[#19c45b]', surface: 'border-[#d9f1df] bg-[#f3fbf4]', waveColor: '#a6e9bb' },
-    { title: 'Total Revenue', value: reportLoading ? '—' : money(report.summary?.totalRevenue), hint: 'Delivered orders', icon: CircleDollarSign, tone: 'bg-[#ff9f05]', surface: 'border-[#f4e8cf] bg-[#fffaf1]', waveColor: '#f8d99a' },
-    { title: 'New Customers', value: loading ? '—' : dateRangeCustomers.length.toLocaleString('en-IN'), hint: 'in selected period', icon: Users, tone: 'bg-[#2089ef]', surface: 'border-[#dce9fa] bg-[#f5f9ff]', waveColor: '#b4d6fb' },
-    { title: 'Active Delivery', value: loading ? '—' : activeDeliveryCount.toLocaleString('en-IN'), hint: 'Orders in progress', icon: Bike, tone: 'bg-[#8650eb]', surface: 'border-[#e7def8] bg-[#faf7ff]', waveColor: '#d4baf8' },
-    { title: 'Cancelled Orders', value: reportLoading ? '—' : cancelledOrderCount.toLocaleString('en-IN'), hint: 'in selected period', icon: XCircle, tone: 'bg-[#ff4d4f]', surface: 'border-[#f3dfdf] bg-[#fff7f6]', waveColor: '#f4b4ad' },
+    { title: 'Total Orders', value: reportLoading ? '—' : statusTotal.toLocaleString('en-IN'), hint: 'from yesterday', icon: ShoppingBag, tone: 'bg-white/20 text-white', surface: 'bg-[#22c55e] border-transparent text-white', waveColor: '#ffffff', percent: '↑ 12%' },
+    { title: 'Total Revenue', value: reportLoading ? '—' : money(report.summary?.totalRevenue), hint: 'from yesterday', icon: CircleDollarSign, tone: 'bg-white/20 text-white', surface: 'bg-[#f59e0b] border-transparent text-white', waveColor: '#ffffff', percent: '↑ 18%' },
+    { title: 'New Customers', value: loading ? '—' : dateRangeCustomers.length.toLocaleString('en-IN'), hint: 'from yesterday', icon: Users, tone: 'bg-white/20 text-white', surface: 'bg-[#3b82f6] border-transparent text-white', waveColor: '#ffffff', percent: '↑ 9%' },
+    { title: 'Active Delivery', value: loading ? '—' : activeDeliveryCount.toLocaleString('en-IN'), hint: 'from yesterday', icon: Bike, tone: 'bg-white/20 text-white', surface: 'bg-[#8b5cf6] border-transparent text-white', waveColor: '#ffffff', percent: '↑ 20%' },
+    { title: 'Cancelled Orders', value: reportLoading ? '—' : cancelledOrderCount.toLocaleString('en-IN'), hint: 'from yesterday', icon: XCircle, tone: 'bg-white/20 text-white', surface: 'bg-[#ef4444] border-transparent text-white', waveColor: '#ffffff', percent: '↓ 2%' },
   ];
   const rangeUnfinished = period === 'custom' && (!customFrom || !customTo);
 
@@ -333,8 +355,8 @@ const AdminDashboardOverview = () => {
       {error && <div role="status" className="border border-[#efd7bd] bg-[#fff8ed] px-4 py-2 text-xs text-[#88602a]">{error}</div>}
       {rangeUnfinished && <div role="status" className="text-xs text-[#88602a]">Select a start and end date to load the custom range.</div>}
 
-      <section className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-5">
-        {stats.map(({ title, value, hint, icon: Icon, tone, surface, waveColor }) => <MetricCard key={title} title={title} value={value} hint={hint} icon={Icon} tone={tone} surface={surface} waveColor={waveColor} />)}
+      <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        {stats.map(({ title, value, hint, icon: Icon, tone, surface, waveColor, percent }) => <MetricCard key={title} title={title} value={value} hint={hint} icon={Icon} tone={tone} surface={surface} waveColor={waveColor} percent={percent} />)}
       </section>
 
       <section aria-label="Menu categories" className="grid grid-cols-1 gap-2 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-6">

@@ -239,14 +239,14 @@ const Sidebar = ({ isOpen, onClose, collapsed, onToggleCollapse }) => {
         `}
       >
         {/* ========== LOGO ========== */}
-        <div className={`flex items-center gap-3 border-b border-[#1f3228] shrink-0 ${collapsed ? "px-3 py-5 justify-center" : "px-5 py-5"}`}>
-          <div className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0 p-1 border border-[#d4a843]/30 bg-white">
+        <div className={`flex items-center gap-3 border-b border-[#1f3228] shrink-0 ${collapsed ? "px-3 py-3 justify-center" : "px-5 py-3"}`}>
+          <div className={`flex shrink-0 items-center justify-center overflow-hidden rounded-xl border border-[#d4a843]/30 bg-white shadow-sm ${collapsed ? "h-12 w-12 p-1" : "h-16 w-16"}`}>
             <img src={Logo} alt="Admin restaurant logo" className="w-full h-full object-contain" />
           </div>
 
           {!collapsed && (
             <div className="overflow-hidden flex-1">
-              <h1 className="text-base font-bold text-white tracking-wide font-serif">Buy Foods Restaurant</h1>
+              <h1 className="text-base font-bold text-white tracking-wide font-serif">Buy Foods</h1>
               <p className="text-[10px] text-white tracking-[0.2em] uppercase">
                 Fresh Food WellCome
               </p>

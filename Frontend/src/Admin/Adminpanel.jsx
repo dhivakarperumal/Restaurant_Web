@@ -48,7 +48,7 @@ const AdminLayout = () => {
         className={`
           flex flex-col flex-1 min-w-0 min-h-screen
           transition-all duration-300 ease-in-out
-          bg-[#fafcff]
+          bg-white
           ${!isPrintPage && !isPosPage && isLargeScreen ? (sidebarCollapsed ? "lg:ml-[80px]" : "lg:ml-72") : ""}
           print:ml-0 print:min-h-0 print:block print:w-full
         `}
@@ -61,8 +61,8 @@ const AdminLayout = () => {
         )}
 
         {/* Page Content */}
-        <main className={`flex-1 ${isPrintPage || isPosPage ? 'p-0' : 'p-4 sm:p-5 lg:p-6'} ${isPosPage ? 'overflow-hidden' : 'overflow-y-auto'} bg-[#f3f4f6] print:p-0 print:m-0 print:overflow-visible`}>
-          <div className={isPrintPage || isPosPage ? '' : 'glass-container bg-[#f3f4f6] print:bg-transparent print:border-none print:p-0 print:m-0 print:shadow-none print:backdrop-filter-none'}>
+        <main className={`flex-1 ${isPrintPage || isPosPage ? 'p-0' : 'p-4 sm:p-5 lg:p-6'} ${isPosPage ? 'overflow-hidden' : 'overflow-y-auto'} bg-white print:p-0 print:m-0 print:overflow-visible`}>
+          <div className={isPrintPage || isPosPage ? '' : 'glass-container bg-white print:bg-transparent print:border-none print:p-0 print:m-0 print:shadow-none print:backdrop-filter-none'}>
             <Suspense fallback={
               <div className="flex flex-col items-center justify-center min-h-[50vh] gap-4 print:hidden">
                 <PacmanLoader color="#ef4444" size={20} />
