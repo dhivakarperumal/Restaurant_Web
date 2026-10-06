@@ -59,6 +59,7 @@ import { StoreProvider } from './PrivateRouter/StoreContext.jsx'
 import { AdminProvider } from './PrivateRouter/AdminContext';
 import RouteError from './CommonComponents/RouteError.jsx'
 import CustomerOrdersPage from './CommonComponents/CustomerOrdersPage.jsx'
+import FoodDetailsPage from './CommonComponents/FoodDetailsPage.jsx'
 
 
 
@@ -80,6 +81,10 @@ const router = createHashRouter([
       {
         path: 'menu',
         element: <Shop />,
+      },
+      {
+        path: 'food/:foodId',
+        element: <FoodDetailsPage />,
       },
       {
         path: 'checkout',

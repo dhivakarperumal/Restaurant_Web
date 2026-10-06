@@ -10,6 +10,7 @@ const resolveImageUrl = (image) => {
 function FoodProductCard({
   food,
   onSelect,
+  onImageClick,
   onAdd,
   cartQuantity = 0,
   isInWishlist = false,
@@ -32,7 +33,7 @@ function FoodProductCard({
       <div className="relative aspect-[4/3] overflow-hidden bg-slate-100">
         <button
           type="button"
-          onClick={onSelect}
+          onClick={onImageClick || onSelect}
           aria-label={`View ${food.food_name}`}
           className="absolute inset-0 z-0 h-full w-full"
         >

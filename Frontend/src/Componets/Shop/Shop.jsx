@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useContext, useCallback } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import {
   AlertCircle,
   ChevronLeft,
@@ -36,6 +36,7 @@ const resolveImageUrl = (img) => {
 };
 
 export default function Shop() {
+  const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const store = useContext(StoreContext) || {};
   const { cart = [], addToCart, wishlist = [], toggleWishlist } = store;
@@ -721,6 +722,7 @@ export default function Shop() {
                   key={food.food_id || food.id}
                   food={food}
                   onSelect={() => openCustomizer(food)}
+                  onImageClick={() => navigate(`/food/${encodeURIComponent(food.food_id || food.id)}`, { state: { food } })}
                   onAdd={() => openCustomizer(food)}
                   cartQuantity={getItemCartQty(food.food_id || food.id)}
                   isInWishlist={isItemInWishlist(food.food_id || food.id)}
