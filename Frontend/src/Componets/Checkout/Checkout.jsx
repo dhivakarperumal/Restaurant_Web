@@ -178,7 +178,7 @@ function Checkout() {
     try {
       const { data } = await api.post('/orders', {
         customer,
-        fulfillment_type: fulfillmentType,
+        order_type: fulfillmentType,
         address: fulfillmentType === 'delivery' ? address : null,
         payment_method: paymentMethod,
       });

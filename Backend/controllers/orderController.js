@@ -20,7 +20,7 @@ const validateCheckout = (body) => {
     email: String(body.customer?.email || '').trim(),
     phone: String(body.customer?.phone || '').trim(),
   };
-  const fulfillmentType = body.fulfillment_type;
+  const fulfillmentType = body.order_type ?? body.fulfillment_type;
   const paymentMethod = body.payment_method;
   if (!customer.name || customer.name.length > 150) return 'Enter a valid customer name.';
   if (!/^[+()\d\s-]{7,32}$/.test(customer.phone)) return 'Enter a valid phone number.';
@@ -73,7 +73,14 @@ const create = async (req, res) => {
 
   let createdOrder;
   try {
-    const { customer, fulfillment_type: fulfillmentType, address, payment_method: paymentMethod } = req.body;
+    const {
+      customer,
+      order_type: requestedOrderType,
+      fulfillment_type: legacyFulfillmentType,
+      address,
+      payment_method: paymentMethod,
+    } = req.body;
+    const fulfillmentType = requestedOrderType ?? legacyFulfillmentType;
     createdOrder = await createOrderFromCart({
       userId: getUserId(req),
       customer,

@@ -215,7 +215,7 @@ const AdminDashboardOverview = () => {
   const dateRangeOrders = snapshot.orders.filter((order) => inRange(order.created_at || order.order_date, period, customFrom, customTo));
   const dateRangeBills = snapshot.bills.filter((bill) => inRange(bill.created_at, period, customFrom, customTo));
   const dateRangeCustomers = snapshot.users.filter((user) => customerRole(user.role) && inRange(user.created_at, period, customFrom, customTo));
-  const activeDeliveryCount = dateRangeOrders.filter((order) => order.fulfillment_type === 'delivery' && !terminalOrder(order.order_status)).length;
+  const activeDeliveryCount = dateRangeOrders.filter((order) => order.order_type === 'delivery' && !terminalOrder(order.order_status)).length;
   const customerCount = snapshot.users.filter((user) => customerRole(user.role)).length;
   const statusTotal = report.statuses.reduce((sum, item) => sum + Number(item.count || 0), 0);
 
@@ -271,7 +271,7 @@ const AdminDashboardOverview = () => {
       id: order.order_number,
       customer: order.customer_name || 'Customer',
       items: `${(order.items || []).reduce((sum, item) => sum + Number(item.quantity || 0), 0)} items`,
-      type: order.fulfillment_type === 'delivery' ? 'Delivery' : 'Take Away',
+      type: order.order_type === 'delivery' ? 'Delivery' : 'Take Away',
       amount: Number(order.total_amount || 0),
       status: normalizeStatus(order.order_status),
       time: order.created_at,

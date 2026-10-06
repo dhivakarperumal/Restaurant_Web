@@ -40,7 +40,7 @@ const initializeOrderSchema = async () => {
       customer_name VARCHAR(150) NOT NULL,
       customer_email VARCHAR(255) NULL,
       customer_phone VARCHAR(32) NOT NULL,
-      fulfillment_type ENUM('delivery', 'pickup') NOT NULL,
+      order_type ENUM('delivery', 'pickup') NOT NULL,
       address_id BIGINT UNSIGNED NULL,
       subtotal DECIMAL(10,2) NOT NULL,
       total_amount DECIMAL(10,2) NOT NULL,
@@ -55,6 +55,23 @@ const initializeOrderSchema = async () => {
       INDEX orders_status_idx (order_status)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
   `);
+
+  const [orderTypeColumns] = await db.execute(
+    `SELECT COLUMN_NAME FROM information_schema.COLUMNS
+     WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'orders'
+       AND COLUMN_NAME IN ('fulfillment_type', 'order_type')`
+  );
+  const hasLegacyOrderType = orderTypeColumns.some((column) => column.COLUMN_NAME === 'fulfillment_type');
+  const hasOrderType = orderTypeColumns.some((column) => column.COLUMN_NAME === 'order_type');
+  if (hasLegacyOrderType && hasOrderType) {
+    throw new Error('The orders table contains both fulfillment_type and order_type columns.');
+  }
+  if (hasLegacyOrderType) {
+    await db.query(
+      `ALTER TABLE orders
+       CHANGE COLUMN fulfillment_type order_type ENUM('delivery', 'pickup') NOT NULL`
+    );
+  }
 
   await db.query(`
     CREATE TABLE IF NOT EXISTS order_items (
@@ -260,7 +277,7 @@ const createOrderFromCart = async ({ userId, customer, fulfillmentType, address,
     const [orderResult] = await connection.execute(
       `INSERT INTO orders
         (order_number, user_id, customer_name, customer_email, customer_phone,
-         fulfillment_type, address_id, subtotal, total_amount, payment_method,
+         order_type, address_id, subtotal, total_amount, payment_method,
          payment_status, order_status)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?)`,
       [

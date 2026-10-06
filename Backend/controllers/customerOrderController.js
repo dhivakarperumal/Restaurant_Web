@@ -11,8 +11,9 @@ const parseJson = (value, fallback) => {
 };
 
 const getOrders = async (req, res, customerOnly) => {
-  const { status, fulfillment } = req.query || {};
-  if ((status && !orderStatuses.includes(status)) || (fulfillment && !['delivery', 'pickup'].includes(fulfillment))) {
+  const { status } = req.query || {};
+  const orderType = req.query?.order_type ?? req.query?.fulfillment;
+  if ((status && !orderStatuses.includes(status)) || (orderType && !['delivery', 'pickup'].includes(orderType))) {
     return res.status(400).json({ success: false, message: 'Invalid order filter.' });
   }
 
@@ -28,9 +29,9 @@ const getOrders = async (req, res, customerOnly) => {
     conditions.push('o.order_status = ?');
     params.push(status);
   }
-  if (fulfillment) {
-    conditions.push('o.fulfillment_type = ?');
-    params.push(fulfillment);
+  if (orderType) {
+    conditions.push('o.order_type = ?');
+    params.push(orderType);
   }
   if (String(req.auth?.role || '').trim().toLowerCase() === 'chef') {
     conditions.push("(o.payment_method != 'online' OR o.payment_status = 'paid')");
@@ -40,7 +41,7 @@ const getOrders = async (req, res, customerOnly) => {
     const where = conditions.length ? `WHERE ${conditions.join(' AND ')}` : '';
     const [orders] = await db.execute(
       `SELECT o.id, o.order_number, o.user_id, o.customer_name, o.customer_email,
-              o.customer_phone, o.fulfillment_type, o.address_id, o.subtotal, o.total_amount,
+              o.customer_phone, o.order_type, o.address_id, o.subtotal, o.total_amount,
               o.payment_method, o.payment_status, o.order_status, o.created_at, o.updated_at,
               a.address_line, a.area_locality, a.city, a.state, a.pincode, a.landmark
        FROM orders o

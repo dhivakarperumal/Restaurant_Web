@@ -15,7 +15,7 @@ const STATUS_OPTIONS = [
 const FILTERS = {
   all: {},
   new: { status: 'placed' },
-  delivery: { fulfillment: 'delivery' },
+  delivery: { order_type: 'delivery' },
   cancelled: { status: 'cancelled' },
 };
 
@@ -44,14 +44,14 @@ function CustomerOrdersPage({ audience = 'admin', view = 'all' }) {
     ? 'My Orders'
     : audience === 'chef' ? 'Customer Kitchen Orders' : 'Customer Orders';
   const filterStatus = FILTERS[view]?.status;
-  const filterFulfillment = FILTERS[view]?.fulfillment;
+  const filterOrderType = FILTERS[view]?.order_type;
 
   const fetchOrders = useCallback(async (showSpinner = false) => {
     if (showSpinner) setRefreshing(true);
     try {
       const params = {
         ...(filterStatus ? { status: filterStatus } : {}),
-        ...(filterFulfillment ? { fulfillment: filterFulfillment } : {}),
+        ...(filterOrderType ? { order_type: filterOrderType } : {}),
       };
       const endpoint = isCustomer ? '/orders/mine' : '/orders/management';
       const { data } = await api.get(endpoint, { params: isCustomer ? undefined : params });
@@ -64,7 +64,7 @@ function CustomerOrdersPage({ audience = 'admin', view = 'all' }) {
       setLoading(false);
       setRefreshing(false);
     }
-  }, [filterStatus, filterFulfillment, isCustomer]);
+  }, [filterStatus, filterOrderType, isCustomer]);
 
   useEffect(() => {
     const initialFetch = window.setTimeout(() => fetchOrders(), 0);
@@ -168,7 +168,7 @@ function CustomerOrdersPage({ audience = 'admin', view = 'all' }) {
                   </div>
                   <div>
                     <p className="mb-2 flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-[#879088]">
-                      <MapPin size={14} /> {order.fulfillment_type === 'pickup' ? 'Pickup' : 'Delivery address'}
+                      <MapPin size={14} /> {order.order_type === 'pickup' ? 'Pickup' : 'Delivery address'}
                     </p>
                     {order.address ? (
                       <p className="text-sm leading-6 text-[#435047]">

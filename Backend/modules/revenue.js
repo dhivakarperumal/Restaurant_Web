@@ -7,7 +7,7 @@ const revenueSourcesSql = `
     o.created_at AS order_date,
     o.customer_name,
     o.customer_phone,
-    CASE WHEN o.fulfillment_type = 'delivery' THEN 'Delivery' ELSE 'Pickup' END AS order_type,
+    CASE WHEN o.order_type = 'delivery' THEN 'Delivery' ELSE 'Pickup' END AS order_type,
     'delivery' AS source,
     COALESCE(items.item_summary, '') AS items,
     COALESCE(items.quantity, 0) AS quantity,
