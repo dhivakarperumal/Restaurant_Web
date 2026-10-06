@@ -15,7 +15,7 @@ const STATUS_OPTIONS = [
 const FILTERS = {
   all: {},
   new: { status: 'placed' },
-  delivery: { order_type: 'delivery' },
+  delivery: { order_type: 'home_delivery' },
   cancelled: { status: 'cancelled' },
 };
 
@@ -168,7 +168,7 @@ function CustomerOrdersPage({ audience = 'admin', view = 'all' }) {
                   </div>
                   <div>
                     <p className="mb-2 flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-[#879088]">
-                      <MapPin size={14} /> {order.order_type === 'pickup' ? 'Pickup' : 'Delivery address'}
+                      <MapPin size={14} /> {order.order_type === 'pickup' ? 'Pickup' : 'Home Delivery address'}
                     </p>
                     {order.address ? (
                       <p className="text-sm leading-6 text-[#435047]">

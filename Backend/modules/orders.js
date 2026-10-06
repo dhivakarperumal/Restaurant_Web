@@ -40,7 +40,7 @@ const initializeOrderSchema = async () => {
       customer_name VARCHAR(150) NOT NULL,
       customer_email VARCHAR(255) NULL,
       customer_phone VARCHAR(32) NOT NULL,
-      order_type ENUM('delivery', 'pickup') NOT NULL,
+      order_type ENUM('home_delivery', 'pickup') NOT NULL,
       address_id BIGINT UNSIGNED NULL,
       subtotal DECIMAL(10,2) NOT NULL,
       total_amount DECIMAL(10,2) NOT NULL,
@@ -69,7 +69,19 @@ const initializeOrderSchema = async () => {
   if (hasLegacyOrderType) {
     await db.query(
       `ALTER TABLE orders
-       CHANGE COLUMN fulfillment_type order_type ENUM('delivery', 'pickup') NOT NULL`
+       CHANGE COLUMN fulfillment_type order_type VARCHAR(20) NOT NULL`
+    );
+  }
+
+  const [orderTypeDefinition] = await db.execute(
+    `SELECT COLUMN_TYPE FROM information_schema.COLUMNS
+     WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'orders' AND COLUMN_NAME = 'order_type'`
+  );
+  if (orderTypeDefinition[0]?.COLUMN_TYPE !== "enum('home_delivery','pickup')") {
+    await db.query('ALTER TABLE orders MODIFY COLUMN order_type VARCHAR(20) NOT NULL');
+    await db.query("UPDATE orders SET order_type = 'home_delivery' WHERE order_type = 'delivery'");
+    await db.query(
+      "ALTER TABLE orders MODIFY COLUMN order_type ENUM('home_delivery', 'pickup') NOT NULL"
     );
   }
 
@@ -131,7 +143,7 @@ const getUserAddresses = async (userId) => {
   return rows;
 };
 
-const createOrderFromCart = async ({ userId, customer, fulfillmentType, address, paymentMethod }) => {
+const createOrderFromCart = async ({ userId, customer, fulfillmentType, orderType, address, paymentMethod }) => {
   const connection = await db.getConnection();
   try {
     await connection.beginTransaction();
@@ -286,7 +298,7 @@ const createOrderFromCart = async ({ userId, customer, fulfillmentType, address,
         customer.name,
         customer.email || null,
         customer.phone,
-        fulfillmentType,
+        orderType || (fulfillmentType === 'delivery' ? 'home_delivery' : fulfillmentType),
         addressId,
         subtotal,
         subtotal,

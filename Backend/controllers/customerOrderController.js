@@ -12,8 +12,9 @@ const parseJson = (value, fallback) => {
 
 const getOrders = async (req, res, customerOnly) => {
   const { status } = req.query || {};
-  const orderType = req.query?.order_type ?? req.query?.fulfillment;
-  if ((status && !orderStatuses.includes(status)) || (orderType && !['delivery', 'pickup'].includes(orderType))) {
+  const requestedOrderType = req.query?.order_type ?? req.query?.fulfillment;
+  const orderType = requestedOrderType === 'delivery' ? 'home_delivery' : requestedOrderType;
+  if ((status && !orderStatuses.includes(status)) || (orderType && !['home_delivery', 'pickup'].includes(orderType))) {
     return res.status(400).json({ success: false, message: 'Invalid order filter.' });
   }
 
