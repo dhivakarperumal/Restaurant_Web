@@ -44,7 +44,9 @@ function CustomerOrdersPage({ audience = 'admin', view = 'all', showOrderFilters
   const [orderTypeFilter, setOrderTypeFilter] = useState(
     view === 'delivery' ? 'home_delivery' : view === 'pickup' ? 'pickup' : 'all'
   );
-  const [statusFilter, setStatusFilter] = useState(view === 'new' ? 'placed' : 'all');
+  const [statusFilter, setStatusFilter] = useState(
+    view === 'new' ? 'placed' : view === 'delivery' ? 'delivered' : 'all'
+  );
   const [searchTerm, setSearchTerm] = useState('');
   const [sortOrder, setSortOrder] = useState('latest');
   const [layout, setLayout] = useState('table');
@@ -56,7 +58,7 @@ function CustomerOrdersPage({ audience = 'admin', view = 'all', showOrderFilters
         : view === 'pickup' ? 'Pickup Orders'
       : view === 'delivery' ? (showOrderFilters ? 'Home Delivery Orders' : 'Delivery Orders')
         : 'Customer Orders';
-  const filterStatus = showOrderFilters && view === 'new'
+  const filterStatus = showOrderFilters && ['new', 'delivery'].includes(view)
     ? (statusFilter === 'all' ? undefined : statusFilter)
     : FILTERS[view]?.status;
   const filterOrderType = FILTERS[view]?.order_type;
@@ -235,30 +237,32 @@ function CustomerOrdersPage({ audience = 'admin', view = 'all', showOrderFilters
             <p className="mt-1 text-sm text-[#68766e]">New customer orders will appear here automatically.</p>
           </div>
         ) : showOrderFilters && layout === 'table' ? (
-          <div className="overflow-x-auto rounded-2xl border border-[#e3e7e1] bg-white shadow-sm">
-            <table className="w-full min-w-[900px] text-left text-sm">
-              <thead className="bg-[#d4a843] text-xs uppercase tracking-wide text-white">
-                <tr>{['Order', 'Customer', 'Items', 'Type', 'Status', 'Payment', 'Total', 'Placed'].map((heading) => <th key={heading} className="whitespace-nowrap px-4 py-4 font-bold">{heading}</th>)}</tr>
-              </thead>
-              <tbody className="divide-y divide-[#edf0eb]">
-                {visibleOrders.map((order) => (
-                  <tr key={order.order_number} className="hover:bg-[#fbfcfa]">
-                    <td className="whitespace-nowrap px-4 py-3 font-mono text-xs font-bold text-[#263830]">{order.order_number}</td>
-                    <td className="px-4 py-3"><p className="font-semibold text-[#263830]">{order.customer_name}</p><p className="text-xs text-[#68766e]">{order.customer_phone}</p></td>
-                    <td className="max-w-56 px-4 py-3 text-xs text-[#435047]">{order.items.map((item) => `${item.product_name} ×${item.quantity}`).join(', ')}</td>
-                    <td className="whitespace-nowrap px-4 py-3 text-[#435047]">{order.order_type === 'home_delivery' ? 'Home Delivery' : 'Pickup'}</td>
-                    <td className="px-4 py-3">
-                      <select value={order.order_status} disabled={updatingOrder === order.order_number || order.payment_status === 'failed'} onChange={(event) => changeStatus(order, event.target.value)} aria-label={`Update order ${order.order_number} status`} className="rounded-lg border border-[#d9ded8] bg-white px-2 py-1.5 text-xs font-semibold capitalize text-[#263830] disabled:opacity-50">
-                        {STATUS_OPTIONS.map((status) => <option key={status.value} value={status.value}>{status.label}</option>)}
-                      </select>
-                    </td>
-                    <td className="whitespace-nowrap px-4 py-3 text-xs capitalize text-[#435047]">{order.payment_method} · {order.payment_status}</td>
-                    <td className="whitespace-nowrap px-4 py-3 font-bold text-[#263830]">₹{Number(order.total_amount).toFixed(2)}</td>
-                    <td className="whitespace-nowrap px-4 py-3 text-xs text-[#68766e]">{formatDate(order.created_at)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          <div className="overflow-hidden rounded-2xl border border-[#e3e7e1] bg-white shadow-sm">
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[900px] text-left text-sm">
+                <thead className="bg-[#d4a843] text-xs uppercase tracking-wide text-white">
+                  <tr>{['Order', 'Customer', 'Items', 'Type', 'Status', 'Payment', 'Total', 'Placed'].map((heading) => <th key={heading} className="whitespace-nowrap px-4 py-4 font-bold">{heading}</th>)}</tr>
+                </thead>
+                <tbody className="divide-y divide-[#edf0eb]">
+                  {visibleOrders.map((order) => (
+                    <tr key={order.order_number} className="hover:bg-[#fbfcfa]">
+                      <td className="whitespace-nowrap px-4 py-3 font-mono text-xs font-bold text-[#263830]">{order.order_number}</td>
+                      <td className="px-4 py-3"><p className="font-semibold text-[#263830]">{order.customer_name}</p><p className="text-xs text-[#68766e]">{order.customer_phone}</p></td>
+                      <td className="max-w-56 px-4 py-3 text-xs text-[#435047]">{order.items.map((item) => `${item.product_name} ×${item.quantity}`).join(', ')}</td>
+                      <td className="whitespace-nowrap px-4 py-3 text-[#435047]">{order.order_type === 'home_delivery' ? 'Home Delivery' : 'Pickup'}</td>
+                      <td className="px-4 py-3">
+                        <select value={order.order_status} disabled={updatingOrder === order.order_number || order.payment_status === 'failed'} onChange={(event) => changeStatus(order, event.target.value)} aria-label={`Update order ${order.order_number} status`} className="rounded-lg border border-[#d9ded8] bg-white px-2 py-1.5 text-xs font-semibold capitalize text-[#263830] disabled:opacity-50">
+                          {STATUS_OPTIONS.map((status) => <option key={status.value} value={status.value}>{status.label}</option>)}
+                        </select>
+                      </td>
+                      <td className="whitespace-nowrap px-4 py-3 text-xs capitalize text-[#435047]">{order.payment_method} · {order.payment_status}</td>
+                      <td className="whitespace-nowrap px-4 py-3 font-bold text-[#263830]">₹{Number(order.total_amount).toFixed(2)}</td>
+                      <td className="whitespace-nowrap px-4 py-3 text-xs text-[#68766e]">{formatDate(order.created_at)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         ) : (
           <div className={`grid gap-5 ${showOrderFilters ? 'md:grid-cols-2' : 'xl:grid-cols-2'}`}>

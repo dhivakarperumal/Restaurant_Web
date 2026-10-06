@@ -169,7 +169,7 @@ const router = createHashRouter([
           },
           {
             path: 'orders/delivery',
-            element: <CustomerOrdersPage audience="admin" view="delivery" />,
+            element: <CustomerOrdersPage audience="admin" view="delivery" showOrderFilters />,
           },
           {
             path: 'orders/homedelivery',
