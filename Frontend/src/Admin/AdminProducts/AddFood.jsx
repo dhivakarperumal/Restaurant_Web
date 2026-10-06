@@ -544,7 +544,7 @@ const AddFood = ({ drawer = false, onClose, onSaved }) => {
 
         </div>
       </div>
-      <div className={`${drawer ? 'sticky bottom-[-25px] -mx-4  md:-mx-6' : 'fixed inset-x-0'} z-20 border-t border-gray-200 bg-white/95 px-4 py-3 backdrop-blur sm:px-6`}>
+      <div className={`${drawer ? 'sticky bottom-0 -mx-4 md:-mx-6' : 'fixed inset-x-0 bottom-0'} z-20 border-t border-gray-200 bg-white/95 px-4 py-3 backdrop-blur sm:px-6`}>
         <div className={`mx-auto flex flex-wrap justify-end gap-2 ${drawer ? '' : 'max-w-5xl'}`}>
           <button type="button" onClick={closeForm} className="inline-flex h-10 items-center gap-2 rounded-md border border-gray-300 px-4 text-sm font-medium text-gray-700 hover:bg-gray-50"><ArrowLeft className="h-4 w-4" /> Cancel</button>
           <button type="button" onClick={handleReset} disabled={saving || uploading} className="h-10 rounded-md border border-gray-300 px-4 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50">Reset</button>
