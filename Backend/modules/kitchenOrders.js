@@ -13,6 +13,7 @@ async function initializeKitchenOrderSchema() {
       order_id VARCHAR(36) NOT NULL UNIQUE,
       table_id VARCHAR(255) NOT NULL,
       table_number VARCHAR(100) NOT NULL,
+      order_type VARCHAR(30) NOT NULL DEFAULT 'dine-in',
       status VARCHAR(30) NOT NULL DEFAULT 'Pending',
       created_by VARCHAR(255) NOT NULL,
       user_id VARCHAR(255) NULL,
@@ -45,6 +46,13 @@ async function initializeKitchenOrderSchema() {
   if (!orderUserIdColumn.length) {
     await db.query('ALTER TABLE kitchen_orders ADD COLUMN user_id VARCHAR(255) NULL AFTER created_by');
     await db.query('UPDATE kitchen_orders SET user_id = created_by WHERE user_id IS NULL');
+  }
+
+  const [orderTypeColumn] = await db.query("SHOW COLUMNS FROM kitchen_orders LIKE 'order_type'");
+  if (!orderTypeColumn.length) {
+    await db.query(
+      "ALTER TABLE kitchen_orders ADD COLUMN order_type VARCHAR(30) NOT NULL DEFAULT 'dine-in' AFTER table_number"
+    );
   }
 
   const [selectedAddonsColumn] = await db.query("SHOW COLUMNS FROM kitchen_order_items LIKE 'selected_addons'");
@@ -228,8 +236,9 @@ async function createKitchenOrder({ tableId, userId, items }) {
     const roundNumber = Number(existingOrders[0]?.count || 0) + 1;
 
     await connection.execute(
-      `INSERT INTO kitchen_orders (order_id, bill_id, round_number, table_id, table_number, status, created_by, user_id)
-       VALUES (?, ?, ?, ?, ?, 'Pending', ?, ?)` ,
+      `INSERT INTO kitchen_orders
+         (order_id, bill_id, round_number, table_id, table_number, order_type, status, created_by, user_id)
+       VALUES (?, ?, ?, ?, ?, 'dine-in', 'Pending', ?, ?)` ,
       [orderId, activeBill.bill_id, roundNumber, table.table_id, table.table_number, userId, userId]
     );
 
