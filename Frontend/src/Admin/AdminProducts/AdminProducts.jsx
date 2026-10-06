@@ -35,6 +35,7 @@ const AdminProducts = () => {
   const location = useLocation();
   const [productsList, setProductsList] = useState([]);
   const [categoriesList, setCategoriesList] = useState([]);
+  const [cuisinesList, setCuisinesList] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState(
@@ -59,6 +60,7 @@ const AdminProducts = () => {
           code: food.food_id,
           category: food.category_name,
           cuisine: food.cuisine_name || '—',
+          cuisineId: String(food.cuisine_id || ''),
           price: `₹${Number(food.final_price || 0).toFixed(2)}`,
           oldPrice: `₹${Number(food.mrp || 0).toFixed(2)}`,
           stock: Number(food.preparation_time) || 0,
@@ -82,17 +84,20 @@ const AdminProducts = () => {
   };
 
   useEffect(() => {
-    const fetchCategories = async () => {
+    const fetchFilterOptions = async () => {
       try {
-        const res = await api.get('/categories');
-        const list = Array.isArray(res.data?.data) ? res.data.data : [];
-        setCategoriesList(list);
+        const [categoriesResponse, cuisinesResponse] = await Promise.all([
+          api.get('/categories'),
+          api.get('/cuisines'),
+        ]);
+        setCategoriesList(Array.isArray(categoriesResponse.data?.data) ? categoriesResponse.data.data : []);
+        setCuisinesList(Array.isArray(cuisinesResponse.data?.data) ? cuisinesResponse.data.data : []);
       } catch (err) {
-        console.warn('Could not fetch categories:', err);
+        console.warn('Could not fetch product filter options:', err);
       }
     };
 
-    fetchCategories();
+    fetchFilterOptions();
     fetchProducts();
   }, []);
 
@@ -122,7 +127,7 @@ const AdminProducts = () => {
           : p.category === selectedCategory);
 
       const matchesCuisine =
-        selectedCuisine === 'All Cuisines' || p.cuisine === selectedCuisine;
+        selectedCuisine === 'All Cuisines' || p.cuisineId === selectedCuisine;
 
       const matchesStatus =
         selectedStatus === 'All Status' ||
@@ -297,10 +302,13 @@ const AdminProducts = () => {
                 aria-label="Filter by cuisine"
               >
                 <option value="All Cuisines">All Cuisines</option>
-                {[...new Set(productsList.map((product) => product.cuisine).filter((cuisine) => cuisine !== '—'))]
-                  .sort((first, second) => first.localeCompare(second))
+                {[...cuisinesList]
+                  .filter((cuisine) => cuisine.cuisine_name && (cuisine.cuisine_id || cuisine.id))
+                  .sort((first, second) => first.cuisine_name.localeCompare(second.cuisine_name))
                   .map((cuisine) => (
-                    <option key={cuisine} value={cuisine}>{cuisine}</option>
+                    <option key={cuisine.cuisine_id || cuisine.id} value={String(cuisine.cuisine_id || cuisine.id)}>
+                      {cuisine.cuisine_name}
+                    </option>
                   ))}
               </select>
 
