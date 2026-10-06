@@ -642,7 +642,7 @@ export default function Shop() {
         </div>
         <div className="mt-4">
           {loading ? (
-            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-3">
+            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-4">
               {[1, 2, 3, 4, 5, 6, 7, 8].map((n) => (
                 <div key={n} className="rounded-3xl border border-slate-200/80 bg-white p-4 shadow-2xs animate-pulse">
                   <div className="h-48 w-full rounded-2xl bg-slate-200" />
@@ -689,7 +689,7 @@ export default function Shop() {
             </div>
           ) : viewMode === "grid" ? (
             /* Grid View */
-            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-3">
+            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-4">
               {paginatedFoods.map((food) => (
                 <FoodProductCard
                   key={food.food_id || food.id}
