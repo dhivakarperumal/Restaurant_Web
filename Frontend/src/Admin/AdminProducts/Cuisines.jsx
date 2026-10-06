@@ -295,34 +295,36 @@ const Cuisines = () => {
               ))}
             </div>
           ) : (
-            <div className="overflow-x-auto">
+            <div className="overflow-x-auto rounded-xl border border-gray-200">
               <table className="w-full min-w-[980px] text-left text-sm">
                 <thead className="border-b border-[#c39732] bg-[#d4a843] text-xs uppercase text-white">
                   <tr>
-                    <th className="px-3 py-3">Cuisine</th>
-                    <th className="px-3 py-3">Description</th>
-                    <th className="px-3 py-3">Featured</th>
-                    <th className="px-3 py-3">Status</th>
-                    <th className="px-3 py-3">Created</th>
-                    <th className="px-3 py-3">Updated</th>
-                    <th className="px-3 py-3 text-right">Actions</th>
+                    <th className="px-4 py-4">S No</th>
+                    <th className="px-4 py-4">Cuisine</th>
+                    <th className="px-4 py-4">Description</th>
+                    <th className="px-4 py-4">Featured</th>
+                    <th className="px-4 py-4">Status</th>
+                    <th className="px-4 py-4">Created</th>
+                    <th className="px-4 py-4">Updated</th>
+                    <th className="px-4 py-4 text-right">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {visibleCuisines.map((cuisine) => (
+                  {visibleCuisines.map((cuisine, index) => (
                     <tr key={cuisine.cuisine_id} className="border-b border-gray-100 text-gray-700 last:border-0">
-                      <td className="px-3 py-3">
+                      <td className="px-4 py-4 font-medium text-gray-500">{index + 1}</td>
+                      <td className="px-4 py-4">
                         <div className="flex items-center gap-3">
                           {cuisine.image ? <img src={imageUrl(cuisine.image)} alt="" className="h-10 w-10 rounded-md object-cover" /> : <span className="flex h-10 w-10 items-center justify-center rounded-md bg-emerald-50 text-emerald-800"><Utensils className="h-4 w-4" /></span>}
                           <span><span className="block font-medium text-gray-900">{cuisine.cuisine_name}</span><span className="text-xs text-gray-500">{cuisine.cuisine_id}</span></span>
                         </div>
                       </td>
-                      <td className="max-w-xs truncate px-3 py-3" title={cuisine.description || ''}>{cuisine.description || '—'}</td>
-                      <td className="px-3 py-3">{cuisine.featured ? <Star className="h-4 w-4 fill-amber-400 text-amber-500" aria-label="Featured" /> : '—'}</td>
-                      <td className="px-3 py-3"><span className={`inline-flex rounded-full px-2 py-1 text-xs font-medium ${cuisine.status === 'Active' ? 'bg-emerald-50 text-emerald-800' : 'bg-gray-100 text-gray-600'}`}>{cuisine.status}</span></td>
-                      <td className="whitespace-nowrap px-3 py-3">{formatDate(cuisine.created_at)}</td>
-                      <td className="whitespace-nowrap px-3 py-3">{formatDate(cuisine.updated_at)}</td>
-                      <td className="px-3 py-3">
+                      <td className="max-w-xs truncate px-4 py-4" title={cuisine.description || ''}>{cuisine.description || '—'}</td>
+                      <td className="px-4 py-4">{cuisine.featured ? <Star className="h-4 w-4 fill-amber-400 text-amber-500" aria-label="Featured" /> : '—'}</td>
+                      <td className="px-4 py-4"><span className={`inline-flex rounded-full px-2 py-1 text-xs font-medium ${cuisine.status === 'Active' ? 'bg-emerald-50 text-emerald-800' : 'bg-gray-100 text-gray-600'}`}>{cuisine.status}</span></td>
+                      <td className="whitespace-nowrap px-4 py-4">{formatDate(cuisine.created_at)}</td>
+                      <td className="whitespace-nowrap px-4 py-4">{formatDate(cuisine.updated_at)}</td>
+                      <td className="px-4 py-4">
                         <div className="flex justify-end gap-2">
                           <button type="button" onClick={() => openEdit(cuisine.cuisine_id)} className="rounded-md border border-gray-300 p-2 hover:bg-gray-50" aria-label={`Edit ${cuisine.cuisine_name}`}><Pencil className="h-4 w-4" /></button>
                           <button type="button" onClick={() => handleDelete(cuisine.cuisine_id)} className="rounded-md border border-red-200 p-2 text-red-700 hover:bg-red-50" aria-label={`Delete ${cuisine.cuisine_name}`}><Trash2 className="h-4 w-4" /></button>
