@@ -5,6 +5,7 @@ import './index.css'
 import App from './App.jsx'
 import Home from './Componets/Home/Home.jsx'
 import Shop from './Componets/Shop/Shop.jsx'
+import Offers from './Componets/Shop/Offers.jsx'
 import Checkout from './Componets/Checkout/Checkout.jsx'
 
 import Login from './Componets/Auth/Login.jsx'
@@ -80,7 +81,7 @@ const router = createHashRouter([
       },
       {
         path: 'offers',
-        element: <Shop offersOnly />,
+        element: <Offers />,
       },
       {
         path: 'menu',
