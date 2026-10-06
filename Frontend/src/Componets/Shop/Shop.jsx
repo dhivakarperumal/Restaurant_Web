@@ -63,6 +63,7 @@ export default function Shop() {
   const [viewMode, setViewMode] = useState("grid"); // 'grid' | 'list'
   const [currentPage, setCurrentPage] = useState(1);
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
+  const [desktopFiltersOpen, setDesktopFiltersOpen] = useState(true);
   const productsPerPage = 12;
 
   // Modal state for food detail & customizations
@@ -352,7 +353,7 @@ export default function Shop() {
 
       {/* Shop content and filters */}
       <PageContainer>
-        <div className="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-[260px_minmax(0,1fr)] lg:items-start">
+        <div className={`mt-8 grid grid-cols-1 gap-6 ${desktopFiltersOpen ? "lg:grid-cols-[260px_minmax(0,1fr)]" : "lg:grid-cols-1"} lg:items-start`}>
         <button
           type="button"
           onClick={() => setMobileFiltersOpen((open) => !open)}
@@ -362,7 +363,7 @@ export default function Shop() {
           <span className="flex items-center gap-2"><Filter className="h-4 w-4" /> Filters</span>
           <span>{mobileFiltersOpen ? "Hide" : "Show"}</span>
         </button>
-        <aside className={`${mobileFiltersOpen ? "block" : "hidden"} space-y-5 lg:sticky lg:top-4 lg:block`}>
+        <aside id="shop-filter-sidebar" className={`${mobileFiltersOpen ? "block" : "hidden"} space-y-5 lg:sticky lg:top-4 ${desktopFiltersOpen ? "lg:block" : "lg:hidden"}`}>
         {/* Category Pills Bar */}
         <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
           <div className="flex items-center justify-between pb-3">
@@ -605,6 +606,16 @@ export default function Shop() {
             <p className="mt-1 text-xs text-slate-500">Showing {filteredFoods.length ? (currentPage - 1) * productsPerPage + 1 : 0}–{Math.min(currentPage * productsPerPage, filteredFoods.length)} of {filteredFoods.length} dishes</p>
           </div>
           <div className="ml-auto flex flex-wrap items-center justify-end gap-2">
+            <button
+              type="button"
+              onClick={() => setDesktopFiltersOpen((open) => !open)}
+              aria-expanded={desktopFiltersOpen}
+              aria-controls="shop-filter-sidebar"
+              className="hidden h-10 items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-700 transition hover:bg-slate-50 lg:inline-flex"
+            >
+              <Filter className="h-4 w-4" />
+              {desktopFiltersOpen ? "Hide filters" : "Show filters"}
+            </button>
             <label className="sr-only" htmlFor="shop-sort">Sort menu</label>
             <select
               id="shop-sort"
@@ -642,7 +653,7 @@ export default function Shop() {
         </div>
         <div className="mt-4">
           {loading ? (
-            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-4">
+            <div className={`grid grid-cols-1 gap-6 sm:grid-cols-2 ${desktopFiltersOpen ? "xl:grid-cols-4" : "xl:grid-cols-5"}`}>
               {[1, 2, 3, 4, 5, 6, 7, 8].map((n) => (
                 <div key={n} className="rounded-3xl border border-slate-200/80 bg-white p-4 shadow-2xs animate-pulse">
                   <div className="h-48 w-full rounded-2xl bg-slate-200" />
@@ -689,7 +700,7 @@ export default function Shop() {
             </div>
           ) : viewMode === "grid" ? (
             /* Grid View */
-            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-4">
+            <div className={`grid grid-cols-1 gap-6 sm:grid-cols-2 ${desktopFiltersOpen ? "xl:grid-cols-4" : "xl:grid-cols-5"}`}>
               {paginatedFoods.map((food) => (
                 <FoodProductCard
                   key={food.food_id || food.id}
