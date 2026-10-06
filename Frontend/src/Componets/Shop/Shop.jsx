@@ -64,7 +64,7 @@ export default function Shop() {
   const [currentPage, setCurrentPage] = useState(1);
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
   const [desktopFiltersOpen, setDesktopFiltersOpen] = useState(true);
-  const productsPerPage = 12;
+  const productsPerPage = desktopFiltersOpen ? 12 : 15;
 
   // Modal state for food detail & customizations
   const [selectedFood, setSelectedFood] = useState(null);
@@ -608,7 +608,10 @@ export default function Shop() {
           <div className="ml-auto flex flex-wrap items-center justify-end gap-2">
             <button
               type="button"
-              onClick={() => setDesktopFiltersOpen((open) => !open)}
+              onClick={() => {
+                setDesktopFiltersOpen((open) => !open);
+                setCurrentPage(1);
+              }}
               aria-expanded={desktopFiltersOpen}
               aria-controls="shop-filter-sidebar"
               className="hidden h-10 items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-700 transition hover:bg-slate-50 lg:inline-flex"
