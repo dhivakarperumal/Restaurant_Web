@@ -110,7 +110,7 @@ function HomeBanner() {
 
   return (
     <section className="relative isolate overflow-hidden bg-[#fff8ed] text-[#102c22]">
-      <div className="relative mx-auto grid min-h-[620px] max-w-[1920px] md:min-h-[570px] lg:min-h-[620px] md:grid-cols-[46%_54%]">
+      <div className="relative mx-auto grid min-h-[620px] max-w-[1920px] md:h-[570px] md:min-h-0 lg:h-[620px] md:grid-cols-[46%_54%]">
         <div className="relative z-10 flex min-w-0 flex-col justify-center bg-[#fff8ed]">
           <div className="pointer-events-none absolute -left-12 -top-12 h-36 w-36 rounded-full bg-[#315d2d]/[0.06]" />
           <PageContainer className="relative flex h-full w-full flex-col justify-center !px-[13.04%] py-12 sm:!px-[10.87%] sm:py-14 lg:!px-[6.52%]">
@@ -169,7 +169,7 @@ function HomeBanner() {
           </PageContainer>
         </div>
 
-        <div className="relative z-10 min-h-[330px] overflow-hidden rounded-tl-[4rem] bg-[#243b2b] sm:min-h-[390px] md:min-h-0 md:rounded-tl-[6rem]">
+        <div className="relative z-10 h-[330px] overflow-hidden rounded-tl-[4rem] bg-[#243b2b] sm:h-[390px] md:h-full md:rounded-tl-[6rem]">
           {image ? (
             <picture key={banner?.id || image}>
               {mobileImage && <source media="(max-width: 767px)" srcSet={mobileImage} />}
