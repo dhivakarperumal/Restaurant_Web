@@ -1,8 +1,9 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { ChevronLeft, ChevronRight, ImageIcon } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import api, { BACKEND_BASE_URL } from '../api';
 import PageContainer from './PageContainer';
+import useInfiniteCarousel from './useInfiniteCarousel';
 
 const resolveImageUrl = (image) => {
   if (!image || typeof image !== 'string') return '';
@@ -11,10 +12,14 @@ const resolveImageUrl = (image) => {
 };
 
 function HomeCategories() {
-  const carouselRef = useRef(null);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const { carouselRef, copies, handleScroll, scroll: scrollCategories } = useInfiniteCarousel(
+    categories.length,
+    7,
+    !loading && !error,
+  );
 
   const fetchCategories = useCallback(async () => {
     setLoading(true);
@@ -37,39 +42,6 @@ function HomeCategories() {
   useEffect(() => {
     fetchCategories();
   }, [fetchCategories]);
-
-  const scrollCategories = useCallback((direction = 1) => {
-    const carousel = carouselRef.current;
-    const firstCard = carousel?.firstElementChild;
-    if (!carousel || !firstCard) return;
-
-    const gap = Number.parseFloat(window.getComputedStyle(carousel).columnGap) || 0;
-    const cardWidth = firstCard.getBoundingClientRect().width + gap;
-    const maxScrollLeft = carousel.scrollWidth - carousel.clientWidth;
-    if (maxScrollLeft <= 1) return;
-
-    if (direction > 0 && carousel.scrollLeft >= maxScrollLeft - 1) {
-      carousel.scrollTo({ left: 0, behavior: 'smooth' });
-      return;
-    }
-
-    carousel.scrollBy({ left: direction * cardWidth, behavior: 'smooth' });
-  }, []);
-
-  useEffect(() => {
-    if (loading || error || categories.length < 2
-      || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return undefined;
-
-    const intervalId = window.setInterval(() => {
-      const carousel = carouselRef.current;
-      if (!carousel || carousel.matches(':hover')
-        || carousel.contains(document.activeElement)
-        || document.visibilityState !== 'visible') return;
-      scrollCategories();
-    }, 3000);
-
-    return () => window.clearInterval(intervalId);
-  }, [categories.length, error, loading, scrollCategories]);
 
   return (
     <section className="bg-white py-10 sm:py-12" aria-labelledby="home-categories-heading">
@@ -111,16 +83,17 @@ function HomeCategories() {
             </button>
             <div
               ref={carouselRef}
+              onScroll={handleScroll}
               className="scrollbar-hide flex snap-x snap-mandatory gap-4 overflow-x-auto scroll-smooth px-2 pb-3 pt-1"
             >
-              {categories.map((category) => {
+              {copies.flatMap((copy) => categories.map((category) => {
                 const categoryId = category.category_id || category.id;
                 const categoryName = category.category_name || 'Category';
                 const categoryFilter = category.category_id || category.category_name || category.id;
                 const image = resolveImageUrl(category.category_image);
                 return (
                   <Link
-                    key={categoryId}
+                    key={`${copy}-${categoryId}`}
                     to={`/shop?category=${encodeURIComponent(categoryFilter)}`}
                     aria-label={`Browse ${categoryName}`}
                     className="group basis-[calc((100%-1rem)/2)] shrink-0 snap-start overflow-hidden rounded-2xl border-2 border-[#e5e5e5] bg-white p-2 shadow-sm transition hover:-translate-y-1 hover:border-[#d8c7a7] hover:shadow-lg sm:basis-[calc((100%-2rem)/3)] lg:basis-[calc((100%-3rem)/4)] xl:basis-[calc((100%-6rem)/7)]"
@@ -144,7 +117,7 @@ function HomeCategories() {
                     </h3>
                   </Link>
                 );
-              })}
+              }))}
             </div>
             <button
               type="button"

@@ -1,14 +1,14 @@
-import { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { ArrowLeft, ArrowRight, UtensilsCrossed } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import api from '../../api';
 import FoodProductCard from '../../CommonComponents/FoodProductCard';
 import FoodCustomizationModal from '../../CommonComponents/FoodCustomizationModal';
 import PageContainer from '../../CommonComponents/PageContainer';
+import useInfiniteCarousel from '../../CommonComponents/useInfiniteCarousel';
 import { StoreContext } from '../../PrivateRouter/StoreContext';
 
 function HomeProducts() {
-  const carouselRef = useRef(null);
   const [foods, setFoods] = useState([]);
   const [selectedFood, setSelectedFood] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -42,6 +42,11 @@ function HomeProducts() {
   const featuredFoods = useMemo(() => [...foods]
     .sort((first, second) => Number(Boolean(second.featured)) - Number(Boolean(first.featured)))
     .slice(0, 10), [foods]);
+  const { carouselRef, copies, handleScroll, scroll: scrollCarousel } = useInfiniteCarousel(
+    featuredFoods.length,
+    5,
+    !loading && !error,
+  );
 
   const addSelectedFoodToCart = async ({ quantity, selectedAddons, selectedCustomizations, unitPrice }) => {
     if (!selectedFood || !addToCart) return false;
@@ -65,39 +70,6 @@ function HomeProducts() {
       selectedCustomizations,
     });
   };
-
-  const scrollCarousel = useCallback((direction = 1) => {
-    const carousel = carouselRef.current;
-    const firstCard = carousel?.firstElementChild;
-    if (!carousel || !firstCard) return;
-
-    const gap = Number.parseFloat(window.getComputedStyle(carousel).columnGap) || 0;
-    const cardWidth = firstCard.getBoundingClientRect().width + gap;
-    const maxScrollLeft = carousel.scrollWidth - carousel.clientWidth;
-    if (maxScrollLeft <= 1) return;
-
-    if (direction > 0 && carousel.scrollLeft >= maxScrollLeft - 1) {
-      carousel.scrollTo({ left: 0, behavior: 'smooth' });
-      return;
-    }
-
-    carousel.scrollBy({ left: direction * cardWidth, behavior: 'smooth' });
-  }, []);
-
-  useEffect(() => {
-    if (loading || error || featuredFoods.length < 2
-      || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return undefined;
-
-    const intervalId = window.setInterval(() => {
-      const carousel = carouselRef.current;
-      if (!carousel || carousel.matches(':hover')
-        || carousel.contains(document.activeElement)
-        || document.visibilityState !== 'visible') return;
-      scrollCarousel();
-    }, 3000);
-
-    return () => window.clearInterval(intervalId);
-  }, [error, featuredFoods.length, loading, scrollCarousel]);
 
   return (
     <>
@@ -149,11 +121,12 @@ function HomeProducts() {
           ) : featuredFoods.length ? (
             <div
               ref={carouselRef}
+              onScroll={handleScroll}
               className="scrollbar-hide flex snap-x snap-mandatory gap-5 overflow-x-auto scroll-smooth pb-4"
             >
-              {featuredFoods.map((food) => (
+              {copies.flatMap((copy) => featuredFoods.map((food) => (
                 <FoodProductCard
-                  key={food.food_id || food.id}
+                  key={`${copy}-${food.food_id || food.id}`}
                   food={food}
                   className="basis-[calc((100%-1.25rem)/2)] shrink-0 snap-start sm:basis-[calc((100%-2.5rem)/3)] lg:basis-[calc((100%-3.75rem)/4)] xl:basis-[calc((100%-5rem)/5)]"
                   onSelect={() => setSelectedFood(food)}
@@ -164,7 +137,7 @@ function HomeProducts() {
                   ))}
                   onToggleWishlist={toggleWishlist}
                 />
-              ))}
+              )))}
             </div>
           ) : (
             <div className="rounded-2xl border border-dashed border-slate-300 bg-white px-6 py-12 text-center">
