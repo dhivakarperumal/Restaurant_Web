@@ -60,7 +60,7 @@ function HomeCategories() {
         {loading ? (
           <div className="scrollbar-hide flex gap-4 overflow-hidden px-2">
             {[1, 2, 3, 4, 5].map((item) => (
-              <div key={item} className="w-[180px] shrink-0 animate-pulse rounded-2xl border-2 border-slate-200 bg-white p-2 sm:w-[200px]">
+              <div key={item} className="basis-[calc((100%-1rem)/2)] shrink-0 animate-pulse rounded-2xl border-2 border-slate-200 bg-white p-2 sm:basis-[calc((100%-2rem)/3)] lg:basis-[calc((100%-3rem)/4)]">
                 <div className="aspect-[4/3] rounded-xl bg-slate-200" />
                 <div className="mx-auto mt-3 h-4 w-2/3 rounded bg-slate-200" />
               </div>
@@ -97,7 +97,7 @@ function HomeCategories() {
                     key={categoryId}
                     to={`/shop?category=${encodeURIComponent(categoryFilter)}`}
                     aria-label={`Browse ${categoryName}`}
-                    className="group w-[180px] shrink-0 snap-start overflow-hidden rounded-2xl border-2 border-[#e5e5e5] bg-white p-2 shadow-sm transition hover:-translate-y-1 hover:border-[#d8c7a7] hover:shadow-lg sm:w-[200px]"
+                    className="group basis-[calc((100%-1rem)/2)] shrink-0 snap-start overflow-hidden rounded-2xl border-2 border-[#e5e5e5] bg-white p-2 shadow-sm transition hover:-translate-y-1 hover:border-[#d8c7a7] hover:shadow-lg sm:basis-[calc((100%-2rem)/3)] lg:basis-[calc((100%-3rem)/4)]"
                   >
                     <div className="aspect-[4/3] overflow-hidden rounded-xl bg-[#f5efe5]">
                       {image ? (

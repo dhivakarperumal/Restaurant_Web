@@ -60,7 +60,7 @@ function HomeCuisines() {
         {loading ? (
           <div className="scrollbar-hide flex gap-4 overflow-hidden px-2">
             {[1, 2, 3, 4].map((item) => (
-              <div key={item} className="w-[250px] shrink-0 animate-pulse overflow-hidden rounded-xl bg-slate-200 sm:w-[300px]">
+              <div key={item} className="basis-[calc((100%-1rem)/2)] shrink-0 animate-pulse overflow-hidden rounded-xl bg-slate-200 sm:basis-[calc((100%-2rem)/3)] lg:basis-[calc((100%-3rem)/4)]">
                 <div className="aspect-[3/2] bg-slate-300" />
               </div>
             ))}
@@ -96,7 +96,7 @@ function HomeCuisines() {
                     key={cuisineId}
                     to={`/shop?cuisine=${encodeURIComponent(cuisineFilter)}`}
                     aria-label={`Browse ${cuisineName} cuisine`}
-                    className="group relative w-[250px] shrink-0 snap-start overflow-hidden rounded-xl bg-[#17251e] shadow-sm transition hover:-translate-y-1 hover:shadow-lg sm:w-[300px]"
+                    className="group relative basis-[calc((100%-1rem)/2)] shrink-0 snap-start overflow-hidden rounded-xl bg-[#17251e] shadow-sm transition hover:-translate-y-1 hover:shadow-lg sm:basis-[calc((100%-2rem)/3)] lg:basis-[calc((100%-3rem)/4)]"
                   >
                     <div className="relative aspect-[3/2] overflow-hidden bg-[#17251e]">
                       {image ? (
