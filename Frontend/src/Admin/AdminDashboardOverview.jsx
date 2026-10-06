@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import {
   AlertTriangle, ArrowRight, Bike, CalendarDays,
   Check, ChefHat, CircleDollarSign, Clock3, CreditCard, CookingPot, Package,
-  PackageCheck, Plus, Search, ShoppingBag, ShoppingCart, Sparkles, Table2,
+  PackageCheck, Search, ShoppingBag, ShoppingCart, Sparkles, Table2,
   TrendingUp, Users, UtensilsCrossed,
   XCircle,
 } from 'lucide-react';
@@ -26,7 +26,7 @@ const STATUS_COLORS = {
   cancelled: '#f24747', canceled: '#f24747', confirmed: '#8055e8',
   'out for delivery': '#8055e8', out_for_delivery: '#8055e8',
 };
-const HERO_IMAGE = '/uploads/foods/1790920301065-chatgpt-image-oct-1--2026--05_13_17-pm.png';
+const HERO_IMAGE = '/images/registre.png';
 const money = (amount) => `₹${Number(amount || 0).toLocaleString('en-IN', { maximumFractionDigits: 2 })}`;
 const getDateKey = (value) => {
   if (!value) return '';
@@ -334,25 +334,22 @@ const AdminDashboardOverview = () => {
 
   return (
     <main className="min-h-screen space-y-3 pb-8 text-[#17231b] sm:space-y-4">
-      <section className="relative isolate flex min-h-[152px] items-center overflow-hidden border border-[#e8eee4] bg-[#eff6e9] px-3 sm:min-h-[142px] sm:px-8">
-        <img src={imageUrl(HERO_IMAGE)} alt="Freshly prepared biryani" className="absolute inset-0 h-full w-full object-cover object-center" />
-        <div className="absolute inset-0 z-10 bg-gradient-to-r from-[#eff6e9] via-[#eff6e9]/90 to-[#eff6e9]/15" />
+      <section className="relative isolate flex min-h-[152px] items-center overflow-hidden rounded-2xl border border-[#24483b] bg-[#10271f] px-3 shadow-sm sm:min-h-[142px] sm:px-8">
+        <img src={HERO_IMAGE} alt="Restaurant food spread" className="absolute inset-0 h-full w-full object-cover object-center" />
+        <div className="absolute inset-0 z-10 bg-gradient-to-r from-[#071c18]/95 via-[#10271f]/80 to-[#10271f]/20" />
         <div className="relative z-20 w-[62%] pt-12 pb-4 sm:w-[58%] sm:py-9">
-          <p className="text-xl font-extrabold leading-tight sm:text-2xl">Welcome Back, <span className="text-[#25833e]">{name}!</span></p>
-          <p className="mt-1 text-xs text-[#4c6251] sm:text-sm">Manage your restaurant, orders, and grow your business.</p>
-          <p className="mt-2 text-xs font-semibold italic text-[#368044]">“Good Food Brings Great People Together”</p>
+          <p className="text-xl font-extrabold leading-tight text-white sm:text-2xl">Welcome Back, <span className="text-[#f4c45e]">{name}!</span></p>
+          <p className="mt-1 text-xs text-white/85 sm:text-sm">Manage your restaurant, orders, and grow your business.</p>
+          <p className="mt-2 text-xs font-semibold italic text-[#f4d991]">“Good Food Brings Great People Together”</p>
         </div>
         <div className="absolute right-3 top-3 z-30 flex flex-wrap justify-end gap-2 sm:right-4 sm:top-4">
-          <label className="flex h-9 items-center gap-2 border border-[#e4e9e3] bg-white/95 px-2.5 text-xs shadow-sm sm:px-3">
+          <label className="flex h-9 items-center gap-2 rounded-xl border border-[#e4e9e3] bg-white/95 px-2.5 text-xs shadow-sm sm:px-3">
             <CalendarDays size={15} className="text-[#536259]" />
             <span className="sr-only">Dashboard date range</span>
             <select value={period} onChange={(event) => setPeriod(event.target.value)} aria-label="Dashboard date range" className="max-w-[125px] bg-transparent font-semibold text-[#354239] outline-none sm:max-w-[165px]">
               {PERIODS.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
             </select>
           </label>
-          <button type="button" onClick={() => navigate('/admin/billing/new')} className="inline-flex h-9 items-center gap-1.5 bg-[#198b36] px-3 text-xs font-semibold text-white shadow-sm transition hover:bg-[#14742c] sm:px-4">
-            <Plus size={15} /> New Order
-          </button>
         </div>
         {period === 'custom' && <div className="absolute bottom-3 right-4 z-20 flex gap-2">
           <input type="date" aria-label="Start date" value={customFrom} onChange={(event) => setCustomFrom(event.target.value)} className="h-8 border border-[#dfe7dc] bg-white px-2 text-xs" />
