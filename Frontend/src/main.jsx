@@ -79,6 +79,10 @@ const router = createHashRouter([
         element: <Shop />,
       },
       {
+        path: 'offers',
+        element: <Shop offersOnly />,
+      },
+      {
         path: 'menu',
         element: <Shop />,
       },

@@ -35,7 +35,14 @@ const resolveImageUrl = (img) => {
   return `${BACKEND_BASE_URL}${cleanPath}`;
 };
 
-export default function Shop() {
+const getDiscountPercentage = (food) => {
+  const price = Number(food.final_price || food.mrp || 0);
+  const mrp = Number(food.mrp || 0);
+  if (mrp <= price || mrp <= 0) return 0;
+  return Number(food.discount || (((mrp - price) / mrp) * 100));
+};
+
+export default function Shop({ offersOnly = false }) {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const store = useContext(StoreContext) || {};
@@ -190,6 +197,7 @@ export default function Shop() {
         if (food.is_menu_visible === false) return false;
         // Status check
         if (food.status === "Inactive") return false;
+        if (offersOnly && getDiscountPercentage(food) <= 0) return false;
 
         // Search query
         if (searchQuery.trim()) {
@@ -229,8 +237,8 @@ export default function Shop() {
         if (minimumPrice !== "" && price < Number(minimumPrice)) return false;
         if (maximumPrice !== "" && price > Number(maximumPrice)) return false;
         if (selectedOfferRange) {
-          const discount = Number(food.discount || 0);
-          const hasDiscount = discount > 0 && Number(food.mrp || 0) > price;
+          const discount = getDiscountPercentage(food);
+          const hasDiscount = discount > 0;
           const [minimumDiscount, maximumDiscount] = selectedOfferRange.split("-").map(Number);
           const matchesOffer = selectedOfferRange === "30+"
             ? discount > 30
@@ -243,6 +251,9 @@ export default function Shop() {
         return true;
       })
       .sort((a, b) => {
+        if (offersOnly) {
+          return getDiscountPercentage(b) - getDiscountPercentage(a);
+        }
         if (sortBy === "price-low") {
           return Number(a.final_price || a.mrp || 0) - Number(b.final_price || b.mrp || 0);
         }
@@ -260,7 +271,7 @@ export default function Shop() {
         if (!a.featured && b.featured) return 1;
         return (b.id || 0) - (a.id || 0);
       });
-  }, [foods, searchQuery, selectedCategory, selectedCuisines, selectedFoodType, minimumPrice, maximumPrice, minimumRating, selectedOfferRange, sortBy]);
+  }, [foods, offersOnly, searchQuery, selectedCategory, selectedCuisines, selectedFoodType, minimumPrice, maximumPrice, minimumRating, selectedOfferRange, sortBy]);
 
   const totalPages = Math.max(1, Math.ceil(filteredFoods.length / productsPerPage));
   const paginatedFoods = filteredFoods.slice(
@@ -310,7 +321,7 @@ export default function Shop() {
 
   return (
     <div className="min-h-screen bg-[#fcfbf9] text-[#203129] pb-20">
-      <PageHeader title="Shop" />
+      <PageHeader title={offersOnly ? "Offers" : "Shop"} />
       <PageContainer>
         <div className="flex flex-col gap-4 pt-6 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex flex-wrap items-center gap-3 text-xs">
@@ -615,8 +626,8 @@ export default function Shop() {
         <section className="min-w-0">
         <div className="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
           <div>
-            <h2 className="text-lg font-bold text-[#1a3c36]">Our menu</h2>
-            <p className="mt-1 text-xs text-slate-500">Showing {filteredFoods.length ? (currentPage - 1) * productsPerPage + 1 : 0}–{Math.min(currentPage * productsPerPage, filteredFoods.length)} of {filteredFoods.length} dishes</p>
+            <h2 className="text-lg font-bold text-[#1a3c36]">{offersOnly ? "Best offers" : "Our menu"}</h2>
+            <p className="mt-1 text-xs text-slate-500">{offersOnly ? "Biggest savings first" : ""}{offersOnly ? " · " : ""}Showing {filteredFoods.length ? (currentPage - 1) * productsPerPage + 1 : 0}–{Math.min(currentPage * productsPerPage, filteredFoods.length)} of {filteredFoods.length} dishes</p>
           </div>
           <div className="ml-auto flex flex-wrap items-center justify-end gap-2">
             <button
@@ -639,11 +650,17 @@ export default function Shop() {
               onChange={(event) => { setSortBy(event.target.value); setCurrentPage(1); }}
               className="h-10 rounded-lg border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-700 outline-none focus:border-[#1a3c36]"
             >
-              <option value="recommended">Featured First</option>
-              <option value="price-low">Price: Low to High</option>
-              <option value="price-high">Price: High to Low</option>
-              <option value="rating">Top Rated</option>
-              <option value="prep-time">Fastest Preparation</option>
+              {offersOnly ? (
+                <option value="recommended">Highest Discount</option>
+              ) : (
+                <>
+                  <option value="recommended">Featured First</option>
+                  <option value="price-low">Price: Low to High</option>
+                  <option value="price-high">Price: High to Low</option>
+                  <option value="rating">Top Rated</option>
+                  <option value="prep-time">Fastest Preparation</option>
+                </>
+              )}
             </select>
             <div className="flex items-center rounded-lg border border-slate-200 bg-slate-50 p-1">
               <button
