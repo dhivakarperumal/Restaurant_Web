@@ -358,34 +358,11 @@ const Account = () => {
     <>
       <main className="min-h-screen bg-[#f7f7f3] pb-16 pt-2 sm:pt-4">
         <PageContainer className="max-w-[1500px]">
-          <section className={`relative mb-4 overflow-hidden rounded-[22px] bg-[#002d1c] text-white shadow-lg ${activeTab === "address" ? "min-h-[145px] sm:min-h-[160px]" : "min-h-[300px] sm:min-h-[322px]"}`}>
-            {activeTab === "address" && (
-              <>
-                <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_78%_50%,rgba(58,111,11,0.62),transparent_42%),linear-gradient(110deg,#002b1a_0%,#00351f_58%,#064329_100%)]" />
-                <div aria-hidden="true" className="absolute -right-8 -top-20 h-64 w-64 rounded-full border border-[#FEB914]/20 sm:right-[17%]">
-                  <div className="absolute inset-5 rounded-full border border-dashed border-white/20" />
-                  <div className="absolute inset-12 rounded-full border border-[#FEB914]/20" />
-                  <MapPin className="absolute left-1/2 top-5 h-12 w-12 -translate-x-1/2 text-[#FD5E02] drop-shadow-lg sm:h-14 sm:w-14" fill="currentColor" />
-                </div>
-                <div className="relative flex min-h-[145px] items-center px-5 py-6 sm:min-h-[160px] sm:px-10">
-                  <div className="max-w-xl">
-                    <p className="text-[10px] font-extrabold uppercase tracking-[0.22em] text-[#FEB914]">My account</p>
-                    <h1 className="mt-1 font-serif text-3xl font-extrabold leading-tight sm:text-4xl">
-                      Saved <span className="text-[#FEB914]">Addresses</span>
-                    </h1>
-                    <p className="mt-1 text-sm text-white/85">Delivering happiness right to your doorstep.</p>
-                    <p className="mt-2 hidden text-xs text-white/65 sm:block">Add and manage your delivery locations for a faster checkout experience.</p>
-                  </div>
-                  <div aria-hidden="true" className="absolute bottom-4 right-5 hidden -rotate-6 text-center font-serif text-lg font-bold italic leading-tight text-white/90 sm:block sm:right-10 sm:text-xl">
-                    Good food<br />reaches you<br /><span className="text-[#FEB914]">anywhere</span>
-                  </div>
-                </div>
-              </>
-            )}
-            <img src="/images/tab.png" alt="" aria-hidden="true" className={`absolute inset-y-0 right-0 h-full w-full object-cover object-center opacity-65 sm:w-[68%] sm:object-[center_44%] ${activeTab === "address" ? "hidden" : ""}`} />
-            <div className={`absolute inset-0 bg-gradient-to-r from-[#002b1a] via-[#00351f]/95 to-[#002b1a]/15 ${activeTab === "address" ? "hidden" : ""}`} />
-            <div className={`absolute inset-0 bg-gradient-to-t from-[#001d12]/90 via-transparent to-[#001d12]/10 ${activeTab === "address" ? "hidden" : ""}`} />
-            <div className={`${activeTab === "address" ? "hidden" : "relative flex min-h-[235px] flex-col justify-center gap-5 px-5 pb-6 pt-7 sm:min-h-[242px] sm:flex-row sm:items-center sm:gap-8 sm:px-10 sm:pb-10"}`}>
+          <section className="relative mb-4 min-h-[300px] overflow-hidden rounded-[26px] bg-[#002d1c] text-white shadow-lg sm:min-h-[322px]">
+            <img src="/images/tab.png" alt="" aria-hidden="true" className="absolute inset-y-0 right-0 h-full w-full object-cover object-center opacity-65 sm:w-[68%] sm:object-[center_44%]" />
+            <div className="absolute inset-0 bg-gradient-to-r from-[#002b1a] via-[#00351f]/95 to-[#002b1a]/15" />
+            <div className="absolute inset-0 bg-gradient-to-t from-[#001d12]/90 via-transparent to-[#001d12]/10" />
+            <div className="relative flex min-h-[235px] flex-col justify-center gap-5 px-5 pb-6 pt-7 sm:min-h-[242px] sm:flex-row sm:items-center sm:gap-8 sm:px-10 sm:pb-10">
               <div className="flex shrink-0 items-center gap-4 sm:gap-6">
                 <div className="relative flex h-[82px] w-[82px] shrink-0 items-center justify-center rounded-full border-[4px] border-[#FEB914] bg-[#146b3a] text-4xl font-bold text-white shadow-xl sm:h-[112px] sm:w-[112px] sm:text-5xl">
                   {userInitial}
@@ -416,7 +393,7 @@ const Account = () => {
                 <LogOut size={15} /> Sign out
               </button>
             </div>
-            <div className={`${activeTab === "address" ? "hidden" : "relative grid grid-cols-2 gap-2 px-4 pb-4 sm:grid-cols-2 sm:gap-3 lg:absolute lg:inset-x-7 lg:bottom-2 lg:grid-cols-4 lg:pb-0"}`}>
+            <div className="relative grid grid-cols-2 gap-2 px-4 pb-4 sm:grid-cols-2 sm:gap-3 lg:absolute lg:inset-x-7 lg:bottom-2 lg:grid-cols-4 lg:pb-0">
               {[
                 { id: "orders", icon: Package, value: orders.length, title: "Total Orders", detail: "Your food journey", tone: "text-[#FD5E02]", wash: "bg-[#fff0e6]" },
                 { id: "address", icon: MapPin, value: addresses.length, title: "Saved Addresses", detail: "Faster checkout", tone: "text-[#396F0B]", wash: "bg-[#edf5e9]" },
@@ -444,29 +421,13 @@ const Account = () => {
           </section>
 
           <div className={`grid items-stretch gap-3 ${activeTab === "address" ? "lg:grid-cols-[220px_minmax(0,1fr)]" : "lg:grid-cols-[minmax(225px,0.78fr)_minmax(0,1.55fr)_minmax(205px,0.64fr)]"}`}>
-            <aside className={`relative overflow-hidden rounded-[22px] shadow-md ${activeTab === "address" ? "border border-[#ecece5] bg-white text-[#10221a]" : "bg-[#00351f] text-white"}`}>
-              {activeTab !== "address" && (
-                <>
-                  <img src="/images/tab.png" alt="" aria-hidden="true" className="absolute inset-0 h-full w-full object-cover opacity-35" />
-                  <div className="absolute inset-0 bg-gradient-to-b from-[#00351f]/95 via-[#00351f]/80 to-[#001f14]/95" />
-                </>
-              )}
-              <div className={`relative flex h-full flex-col p-4 sm:p-5 ${activeTab === "address" ? "min-h-[390px]" : ""}`}>
-                {activeTab === "address" ? (
-                  <div className="mb-4 flex flex-col items-center border-b border-[#edf0eb] pb-4 text-center">
-                    <div className="flex h-14 w-14 items-center justify-center rounded-full border-2 border-[#FEB914] bg-[#07502d] text-2xl font-extrabold text-white shadow-sm">
-                      {userInitial}
-                    </div>
-                    <h2 className="mt-2 text-sm font-extrabold text-[#111827]">{displayName}</h2>
-                    <p className="mt-1 text-[10px] font-semibold text-[#FD5E02]">Food Lover · Premium Member</p>
-                  </div>
-                ) : (
-                  <>
-                    <p className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-[#FEB914]">Account</p>
-                    <h2 className="mt-1 font-serif text-2xl font-bold leading-tight">Your Foodie Space</h2>
-                    <p className="mt-1 text-xs leading-5 text-white/70">Manage everything in one place</p>
-                  </>
-                )}
+            <aside className="relative overflow-hidden rounded-[22px] bg-[#00351f] text-white shadow-md">
+              <img src="/images/tab.png" alt="" aria-hidden="true" className="absolute inset-0 h-full w-full object-cover opacity-35" />
+              <div className="absolute inset-0 bg-gradient-to-b from-[#00351f]/95 via-[#00351f]/80 to-[#001f14]/95" />
+              <div className="relative flex h-full flex-col p-4 sm:p-5">
+                <p className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-[#FEB914]">Account</p>
+                <h2 className="mt-1 font-serif text-2xl font-bold leading-tight">Your Foodie Space</h2>
+                <p className="mt-1 text-xs leading-5 text-white/70">Manage everything in one place</p>
                 <nav className="mt-5 space-y-1.5" aria-label="Account sections">
                   {TAB_CONFIG.map((tab) => {
                     const Icon = tab.icon;
@@ -479,23 +440,21 @@ const Account = () => {
                         onClick={() => handleTabSelect(tab.id)}
                         aria-current={isActive ? "page" : undefined}
                         className={`group flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left transition ${
-                          activeTab === "address"
-                            ? isActive ? "bg-[#004522] text-white shadow-sm" : "text-[#111827] hover:bg-[#f3f7f1]"
-                            : isActive ? "bg-[#eff5e9] text-[#07321f] shadow-sm" : "text-white hover:bg-white/10"
+                          isActive ? "bg-[#eff5e9] text-[#07321f] shadow-sm" : "text-white hover:bg-white/10"
                         }`}
                       >
-                        <Icon size={19} className={`shrink-0 ${activeTab === "address" ? (isActive ? "text-white" : "text-[#396F0B]") : (isActive ? "text-[#396F0B]" : "text-[#FEB914]")}`} />
+                        <Icon size={19} className={`shrink-0 ${isActive ? "text-[#396F0B]" : "text-[#FEB914]"}`} />
                         <span className="min-w-0 flex-1">
                           <span className="block text-xs font-bold">{label}</span>
-                          <span className={`mt-0.5 block truncate text-[10px] ${activeTab === "address" ? (isActive ? "text-white/70" : "text-slate-500") : (isActive ? "text-slate-500" : "text-white/55")}`}>{tab.desc}</span>
+                          <span className={`mt-0.5 block truncate text-[10px] ${isActive ? "text-slate-500" : "text-white/55"}`}>{tab.desc}</span>
                         </span>
-                        <ChevronRight size={15} className={`shrink-0 transition group-hover:translate-x-0.5 ${activeTab === "address" ? (isActive ? "text-white" : "text-slate-400") : (isActive ? "text-[#396F0B]" : "text-white/45")}`} />
+                        <ChevronRight size={15} className={`shrink-0 transition group-hover:translate-x-0.5 ${isActive ? "text-[#396F0B]" : "text-white/45"}`} />
                       </button>
                     );
                   })}
                 </nav>
-                <button type="button" onClick={() => setShowLogoutConfirm(true)} className={`mt-auto flex items-center gap-3 rounded-xl border-t px-3 pt-4 text-sm font-semibold transition ${activeTab === "address" ? "border-[#edf0eb] text-[#dc2626] hover:text-[#991b1b]" : "border-white/15 text-[#ffb5a9] hover:text-white"}`}>
-                  <LogOut size={18} /> Sign out <span className={`ml-auto text-[10px] ${activeTab === "address" ? "text-slate-500" : "text-white/50"}`}>Leave your account</span>
+                <button type="button" onClick={() => setShowLogoutConfirm(true)} className="mt-auto flex items-center gap-3 rounded-xl border-t border-white/15 px-3 pt-4 text-sm font-semibold text-[#ffb5a9] transition hover:text-white">
+                  <LogOut size={18} /> Sign out <span className="ml-auto text-[10px] text-white/50">Leave your account</span>
                 </button>
               </div>
             </aside>
