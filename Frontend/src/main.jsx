@@ -161,7 +161,7 @@ const router = createHashRouter([
           },
           {
             path: 'kitchen-orders',
-            element: <ChefKitchenOrders />,
+            element: <ChefKitchenOrders defaultViewMode="table" />,
           },
           {
             path: 'orders/new',

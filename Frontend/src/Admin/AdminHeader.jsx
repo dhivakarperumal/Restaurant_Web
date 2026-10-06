@@ -32,7 +32,7 @@ const pageInfo = {
   "/admin/products/stock-details":  { title: "Stock Details",           icon: Package },
   "/admin/products":                { title: "Products",               icon: Package },
   "/admin/inventory":               { title: "Inventory Dashboard",     icon: Boxes },
-  "/admin/inventory/products":      { title: "Inventory Products",      icon: Package },
+  "/admin/inventory/products":      { title: "Groceries",               icon: Package },
   "/admin/inventory/categories":    { title: "Inventory Categories",    icon: Package },
   "/admin/inventory/reports":       { title: "Inventory Reports",       icon: BarChart3 },
   "/admin/gifts":                   { title: "Gifts",                  icon: Package },

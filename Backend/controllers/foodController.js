@@ -55,6 +55,7 @@ const normalizeFood = (body = {}, actor = '') => {
     serving_size: String(getField(body, 'serving_size', 'servingSize', '') || '').trim(),
     portion_size: String(getField(body, 'portion_size', 'portionSize', 'Full')).trim(),
     preparation_time: Math.floor(nonNegativeNumber(getField(body, 'preparation_time', 'preparationTime', 0))),
+    available_time: String(getField(body, 'available_time', 'availableTime', '10:00 AM - 1:00 PM') || '').trim(),
     food_type: String(getField(body, 'food_type', 'foodType', 'Veg')).trim(),
     is_spicy: asBoolean(getField(body, 'is_spicy', 'isSpicy', false)),
     is_available: asBoolean(getField(body, 'is_available', 'isAvailable', true), true),
@@ -80,6 +81,7 @@ const validateFood = (food) => {
   if (!Number.isFinite(food.rating) || food.rating < 0 || food.rating > 5) return 'Food rating must be between 0 and 5.';
   if (!Number.isInteger(food.stock_quantity) || food.stock_quantity < 0) return 'Stock quantity cannot be negative.';
   if (!['Half', 'Full', 'Your Choice'].includes(food.portion_size)) return 'Choose a valid portion size.';
+  if (food.available_time.length > 100) return 'Available time must be 100 characters or fewer.';
   if (!['Veg', 'Non-Veg'].includes(food.food_type)) return 'Choose a valid food type.';
   if (food.addons.some((item) => item.price < 0)) return 'Add-on prices cannot be negative.';
   if (food.customizations.some((group) => group.options.some((option) => option.price < 0))) return 'Option prices cannot be negative.';

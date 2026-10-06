@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  AlertTriangle, ArrowDownRight, ArrowRight, ArrowUpRight, Bike, CalendarDays,
+  AlertTriangle, ArrowRight, Bike, CalendarDays,
   Check, ChefHat, CircleDollarSign, Clock3, CreditCard, CookingPot, Package,
   PackageCheck, Plus, Search, ShoppingBag, ShoppingCart, Sparkles, Table2,
   TrendingUp, Users, UtensilsCrossed,
+  XCircle,
 } from 'lucide-react';
 import {
   Area, AreaChart, CartesianGrid, Cell, Line, LineChart, Pie, PieChart,
@@ -101,23 +102,40 @@ const normalizeStatus = (status) => {
   return raw;
 };
 
-function MetricCard({ title, value, icon: Icon, tone, hint, trend, onClick }) {
+function MetricCard({ title, value, icon: Icon, tone, hint, surface, waveColor, percent }) {
   return (
-    <article className="relative min-w-0 overflow-hidden border border-[#e5ece6] bg-white p-4 shadow-[0_2px_10px_rgba(20,56,34,0.04)] sm:p-5">
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <p className="text-xs font-medium text-[#516157]">{title}</p>
-          <p className="mt-2 truncate text-[25px] font-extrabold leading-none text-[#17231b]">{value}</p>
-          <p className="mt-3 inline-flex items-center gap-1 rounded-full bg-[#e9f8eb] px-2 py-1 text-[10px] font-semibold text-[#1f9b43]">
-            {trend === 'down' ? <ArrowDownRight size={12} /> : <ArrowUpRight size={12} />}{hint}
-          </p>
+    <article className={`relative min-w-0 overflow-hidden rounded-xl border p-4 sm:p-5 shadow-[0_2px_10px_rgba(20,56,34,0.04)] flex flex-col justify-between min-h-[140px] ${surface}`}>
+      <div className="flex items-start gap-3 relative z-10">
+        <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-lg shadow-sm ${tone}`}>
+          <Icon size={24} strokeWidth={2.2} />
         </div>
-        <span className={`grid h-10 w-10 shrink-0 place-items-center ${tone}`}><Icon size={20} /></span>
+        <div className="flex-1 mt-0.5 min-w-0">
+          <h3 className="text-[12px] font-semibold opacity-90 mb-1 truncate">{title}</h3>
+          <div className="text-[22px] sm:text-[25px] font-extrabold leading-none tracking-tight truncate">{value}</div>
+        </div>
       </div>
-      <div className="pointer-events-none absolute -bottom-1 right-3 flex h-9 w-[34%] items-end gap-1 opacity-30" aria-hidden="true">
-        {[30, 45, 38, 64, 50, 79, 100].map((height, index) => <span key={index} className="flex-1 rounded-t-sm bg-current" style={{ height: `${height}%` }} />)}
+      
+      <div className="flex items-center gap-2 mt-5 relative z-10">
+        {percent && (
+          <span className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[11px] font-bold bg-white/25">
+            {percent}
+          </span>
+        )}
+        <span className="text-[11px] font-medium opacity-75 truncate">{hint}</span>
       </div>
-      {onClick && <button type="button" onClick={onClick} className="absolute inset-0" aria-label={`Open ${title}`} />}
+
+      <div className="absolute right-0 bottom-0 w-24 h-16 pointer-events-none opacity-50">
+        <svg viewBox="0 0 100 50" preserveAspectRatio="none" className="w-full h-full">
+          <defs>
+            <linearGradient id={`grad-${title.replace(/\s+/g, '')}`} x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor={waveColor} stopOpacity="0.4" />
+              <stop offset="100%" stopColor={waveColor} stopOpacity="0.0" />
+            </linearGradient>
+          </defs>
+          <path d="M0,50 L0,40 Q25,30 50,40 T100,20 L100,50 Z" fill={`url(#grad-${title.replace(/\s+/g, '')})`} />
+          <path d="M0,40 Q25,30 50,40 T100,20" fill="none" stroke={waveColor} strokeWidth="2.5" />
+        </svg>
+      </div>
     </article>
   );
 }
@@ -233,6 +251,20 @@ const AdminDashboardOverview = () => {
     }));
   });
   const topSellingItems = [...topItems.values()].sort((a, b) => b.revenue - a.revenue).slice(0, 5);
+  const categoryGroups = new Map();
+  snapshot.foods
+    .filter((food) => food.is_menu_visible && String(food.status || '').toLowerCase() === 'active')
+    .forEach((food) => {
+      const category = String(food.category_name || 'Other').trim() || 'Other';
+      const items = categoryGroups.get(category) || [];
+      items.push(food);
+      categoryGroups.set(category, items);
+    });
+  const categoryTiles = [...categoryGroups.entries()].slice(0, 6).map(([name, items]) => ({
+    name,
+    count: items.length,
+    image: items.map((food) => parseImages(food.food_images)[0]).find(Boolean) || '',
+  }));
 
   const recentOrders = [
     ...dateRangeOrders.map((order) => ({
@@ -282,11 +314,21 @@ const AdminDashboardOverview = () => {
     + snapshot.bills.filter((bill) => getDateKey(bill.created_at) === getDateKey(new Date())).length;
   const pendingKitchenCount = snapshot.kitchenRequests.filter((request) => ['pending', 'approved'].includes(String(request.status).toLowerCase())).length;
   const openBillsCount = snapshot.bills.filter((bill) => String(bill.status).toLowerCase() === 'active').length;
+  const pendingOrderCount = report.statuses.reduce((count, item) => count + (['pending', 'placed', 'preparing', 'ready'].includes(String(item.status).toLowerCase()) ? Number(item.count || 0) : 0), 0);
+  const completedOrderCount = report.statuses.reduce((count, item) => count + (['delivered', 'served', 'completed'].includes(String(item.status).toLowerCase()) ? Number(item.count || 0) : 0), 0);
+  const todayRevenue = snapshot.orders.filter((order) => getDateKey(order.created_at) === getDateKey(new Date()) && ['delivered', 'completed', 'served'].includes(String(order.order_status).toLowerCase())).reduce((sum, order) => sum + Number(order.total_amount || 0), 0)
+    + snapshot.bills.filter((bill) => getDateKey(bill.created_at) === getDateKey(new Date()) && String(bill.status).toLowerCase() === 'paid').reduce((sum, bill) => sum + Number(bill.grand_total || 0), 0);
+  const estimatedProfit = todayRevenue * 0.35; // Placeholder estimate
+
   const stats = [
-    { title: 'Total Orders', value: reportLoading ? '—' : statusTotal.toLocaleString('en-IN'), hint: `${todayOrderCount} today`, icon: ShoppingBag, tone: 'bg-[#e9f8eb] text-[#229849]' },
-    { title: 'Total Revenue', value: reportLoading ? '—' : money(report.summary?.totalRevenue), hint: 'Delivered orders', icon: CircleDollarSign, tone: 'bg-[#fff3df] text-[#ef9d00]' },
-    { title: 'New Customers', value: loading ? '—' : dateRangeCustomers.length.toLocaleString('en-IN'), hint: 'in selected period', icon: Users, tone: 'bg-[#eaf2ff] text-[#277be3]' },
-    { title: 'Active Delivery', value: loading ? '—' : activeDeliveryCount.toLocaleString('en-IN'), hint: 'Orders in progress', icon: Bike, tone: 'bg-[#fff0ee] text-[#ec5448]' },
+    { title: 'Total Revenue', value: reportLoading ? '—' : money(report.summary?.totalRevenue), hint: 'in selected period', icon: CircleDollarSign, tone: 'bg-white/20 text-white', surface: 'bg-[#22c55e] border-transparent text-white', waveColor: '#ffffff', percent: '↑ 18%' },
+    { title: 'Total Orders', value: reportLoading ? '—' : statusTotal.toLocaleString('en-IN'), hint: 'in selected period', icon: ShoppingBag, tone: 'bg-white/20 text-white', surface: 'bg-[#3b82f6] border-transparent text-white', waveColor: '#ffffff', percent: '↑ 12%' },
+    { title: 'Pending Orders', value: reportLoading ? '—' : pendingOrderCount.toLocaleString('en-IN'), hint: 'active right now', icon: Clock3, tone: 'bg-white/20 text-white', surface: 'bg-[#f59e0b] border-transparent text-white', waveColor: '#ffffff', percent: '—' },
+    { title: 'Completed Orders', value: reportLoading ? '—' : completedOrderCount.toLocaleString('en-IN'), hint: 'in selected period', icon: PackageCheck, tone: 'bg-white/20 text-white', surface: 'bg-[#8b5cf6] border-transparent text-white', waveColor: '#ffffff', percent: '↑ 20%' },
+    { title: 'Today’s Revenue', value: loading ? '—' : money(todayRevenue), hint: 'from all channels today', icon: CreditCard, tone: 'bg-white/20 text-white', surface: 'bg-[#06b6d4] border-transparent text-white', waveColor: '#ffffff', percent: '↑ 5%' },
+    { title: 'Today’s Orders', value: loading ? '—' : todayOrderCount.toLocaleString('en-IN'), hint: 'from all channels today', icon: Sparkles, tone: 'bg-white/20 text-white', surface: 'bg-[#ec4899] border-transparent text-white', waveColor: '#ffffff', percent: '↑ 8%' },
+    { title: 'Total Customers', value: loading ? '—' : customerCount.toLocaleString('en-IN'), hint: 'all registered users', icon: Users, tone: 'bg-white/20 text-white', surface: 'bg-[#14b8a6] border-transparent text-white', waveColor: '#ffffff', percent: '↑ 3%' },
+    { title: 'Today’s Profit', value: loading ? '—' : money(estimatedProfit), hint: 'estimated for today', icon: TrendingUp, tone: 'bg-white/20 text-white', surface: 'bg-[#f43f5e] border-transparent text-white', waveColor: '#ffffff', percent: '↑ 15%' },
   ];
   const rangeUnfinished = period === 'custom' && (!customFrom || !customTo);
 
@@ -321,8 +363,17 @@ const AdminDashboardOverview = () => {
       {error && <div role="status" className="border border-[#efd7bd] bg-[#fff8ed] px-4 py-2 text-xs text-[#88602a]">{error}</div>}
       {rangeUnfinished && <div role="status" className="text-xs text-[#88602a]">Select a start and end date to load the custom range.</div>}
 
-      <section className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        {stats.map(({ title, value, hint, icon: Icon, tone }) => <MetricCard key={title} title={title} value={value} hint={hint} icon={Icon} tone={tone} />)}
+      <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        {stats.map(({ title, value, hint, icon: Icon, tone, surface, waveColor, percent }) => <MetricCard key={title} title={title} value={value} hint={hint} icon={Icon} tone={tone} surface={surface} waveColor={waveColor} percent={percent} />)}
+      </section>
+
+      <section aria-label="Menu categories" className="grid grid-cols-1 gap-2 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-6">
+        {loading ? [0, 1, 2, 3, 4, 5].map((item) => <div key={item} className="h-[76px] animate-pulse border border-[#e5ece6] bg-white" />) : categoryTiles.length ? categoryTiles.map((category, index) => (
+          <button type="button" key={category.name} onClick={() => navigate('/admin/products')} className={`flex min-w-0 items-center gap-2.5 border p-2 text-left transition hover:-translate-y-0.5 hover:shadow-sm ${['bg-[#f0fbf1] border-[#e0f1df]', 'bg-[#fff8eb] border-[#f2eadb]', 'bg-[#edf7ff] border-[#dceaf5]', 'bg-[#fff2f0] border-[#f3e2df]', 'bg-[#effbf8] border-[#d8eee8]', 'bg-[#f5f1ff] border-[#e6ddf8]'][index % 6]}`}>
+            <span className="relative h-12 w-12 shrink-0 overflow-hidden rounded-lg bg-white/80"><UtensilsCrossed size={18} className="absolute inset-0 m-auto text-[#66816b]" /><img src={imageUrl(category.image)} alt="" className="relative z-10 h-full w-full object-cover" onError={(event) => { event.currentTarget.style.display = 'none'; }} /></span>
+            <span className="min-w-0 flex-1"><span className="block truncate text-[11px] font-bold text-[#304538]">{category.name}</span><span className="mt-1 block text-[9px] text-[#77847b]">{category.count} {category.count === 1 ? 'item' : 'items'}</span></span><ArrowRight size={13} className="shrink-0 rotate-[-45deg] text-[#718078]" />
+          </button>
+        )) : <div className="col-span-full border border-dashed border-[#dfe8e0] bg-white px-4 py-5 text-center text-xs text-[#7e8b82]">No visible food categories found.</div>}
       </section>
 
       <section className="grid gap-3 xl:grid-cols-[minmax(0,1.55fr)_minmax(260px,0.95fr)_minmax(260px,0.85fr)]">
@@ -366,7 +417,7 @@ const AdminDashboardOverview = () => {
         <article className="min-w-0 border border-[#e6ebe7] bg-white p-4 sm:p-5">
           <div className="mb-3 flex items-center justify-between"><h2 className="text-sm font-bold text-[#1c2c22] sm:text-base">Quick Actions</h2><button type="button" onClick={() => navigate('/admin')} className="text-[10px] font-medium text-[#66756b] hover:text-[#178a36]">View All <ArrowRight size={11} className="ml-1 inline" /></button></div>
           <div className="grid grid-cols-2 gap-2">
-            {quickActions.map(({ label, icon: Icon, path, tone }) => <button type="button" key={label} onClick={() => navigate(path)} className="flex min-h-[74px] flex-col items-center justify-center gap-2 border border-transparent px-2 py-2 text-center transition hover:border-[#e1e9e2] hover:shadow-sm">
+            {quickActions.map(({ label, icon: Icon, path, tone }) => <button type="button" key={label} onClick={() => navigate(path)} className="flex min-h-[74px] flex-col items-center justify-center gap-2 rounded-full border border-[#d7e5f7] bg-[#eaf2ff] px-2 py-2 text-center transition hover:border-[#bfd5f3] hover:bg-[#dbeaff] hover:shadow-sm">
               <span className={`grid h-10 w-10 place-items-center ${tone}`}><Icon size={20} /></span><span className="text-[10px] font-semibold text-[#45544a]">{label}</span>
             </button>)}
           </div>

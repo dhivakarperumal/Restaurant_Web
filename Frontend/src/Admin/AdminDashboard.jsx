@@ -363,6 +363,62 @@ const AdminDashboard = () => {
     fetchDashboardCounts();
   }, []);
 
+  /* ─── stat cards config ─────────────────────────────────── */
+  const statCards = [
+    {
+      title: 'Total Sales',
+      value: `₹${filteredOrderCounts.revenue.toLocaleString('en-IN')}`,
+      sub: `${filteredOrderCounts.orders} orders placed`,
+      inc: '+22.4%',
+      incLabel: 'from last month',
+      icon: <IndianRupee size={20} />,
+      accent: '#10b981',
+      iconBg: 'bg-emerald-50',
+      iconColor: 'text-emerald-600',
+      sparkColor: '#10b981',
+      sparkHeights: [28, 45, 38, 62, 50, 74, 90, 68, 82, 95],
+    },
+    {
+      title: 'Total Orders',
+      value: filteredOrderCounts.orders.toLocaleString(),
+      sub: `${filteredOrderCounts.todayOrders} new today`,
+      inc: '+18.6%',
+      incLabel: 'from last month',
+      icon: <ShoppingCart size={20} />,
+      accent: '#6366f1',
+      iconBg: 'bg-indigo-50',
+      iconColor: 'text-indigo-600',
+      sparkColor: '#6366f1',
+      sparkHeights: [40, 55, 35, 70, 45, 80, 60, 75, 88, 95],
+    },
+    {
+      title: 'Total Customers',
+      value: dashboardCounts.customers.toLocaleString(),
+      sub: 'registered users',
+      inc: '+15.3%',
+      incLabel: 'from last month',
+      icon: <Users size={20} />,
+      accent: '#ec4899',
+      iconBg: 'bg-pink-50',
+      iconColor: 'text-pink-600',
+      sparkColor: '#ec4899',
+      sparkHeights: [32, 48, 55, 42, 68, 52, 72, 65, 80, 85],
+    },
+    {
+      title: 'Total Products',
+      value: dashboardCounts.products.toLocaleString(),
+      sub: `${dashboardCounts.lowStock} low stock alerts`,
+      inc: '+10.7%',
+      incLabel: 'from last month',
+      icon: <Package size={20} />,
+      accent: '#f59e0b',
+      iconBg: 'bg-amber-50',
+      iconColor: 'text-amber-600',
+      sparkColor: '#f59e0b',
+      sparkHeights: [22, 40, 60, 35, 55, 48, 70, 62, 78, 88],
+    },
+  ];
+
   return (
     <div className="p-2  min-h-screen text-gray-800 font-sans">
       {/* Header */}
@@ -405,38 +461,64 @@ const AdminDashboard = () => {
         </div>
       </div>
 
-      {/* Top Stats Cards */}
-      <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        {[
-          { title: 'Total Sales', value: `₹${filteredOrderCounts.revenue.toLocaleString('en-IN')}`, inc: '22.4%', icon: <ShoppingBag size={22} />, background: 'linear-gradient(120deg, #13a98e, #31dc82)', text: 'text-white', pill: 'bg-white/20 text-white border-white/30' },
-          { title: 'Total Orders', value: filteredOrderCounts.orders.toLocaleString(), inc: '18.6%', icon: <ShoppingBag size={22} />, background: 'linear-gradient(120deg, #4778e8, #8850df)', text: 'text-white', pill: 'bg-white/20 text-white border-white/30' },
-          { title: 'Total Customers', value: dashboardCounts.customers.toLocaleString(), inc: '15.3%', icon: <Users size={22} />, background: 'linear-gradient(120deg, #ed45b7, #c3227c)', text: 'text-white', pill: 'bg-white/20 text-white border-white/30' },
-          { title: 'Total Products', value: dashboardCounts.products.toLocaleString(), inc: '10.7%', icon: <Package size={22} />, background: 'linear-gradient(120deg, #ff9915, #ffc400)', text: 'text-[#493500]', pill: 'bg-black/10 text-[#493500] border-black/10' },
-        ].map((stat, i) => (
+      {/* ── Top Stats Cards ── 4 cards always in one row ──────────────── */}
+      <div className="mb-6 grid grid-cols-2 gap-4 lg:grid-cols-4">
+        {statCards.map((stat, i) => (
           <div
             key={i}
-            className={`relative isolate flex min-h-[220px] flex-col overflow-hidden rounded-[22px] p-6 shadow-[0_10px_22px_rgba(16,24,40,0.16)] ${stat.text}`}
-            style={{ background: stat.background }}
+            className="group relative flex flex-col overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm transition-all duration-200 hover:shadow-md hover:-translate-y-0.5"
+            style={{ borderLeft: `4px solid ${stat.accent}` }}
           >
-            <div className="pointer-events-none absolute -right-8 -top-10 h-36 w-36 rounded-full bg-white/15" />
-            <div className="relative z-10 flex items-start justify-between gap-3">
-              <div>
-                <p className="text-[13px] font-bold uppercase">{stat.title}</p>
-                <h3 className="mt-4 text-[34px] font-extrabold leading-none">{stat.value}</h3>
+            {/* Subtle tinted top strip */}
+            <div className="h-1 w-full" style={{ backgroundColor: stat.accent, opacity: 0.15 }} />
+
+            <div className="flex flex-col px-5 pt-4 pb-0">
+              {/* Icon + label row */}
+              <div className="flex items-center justify-between mb-3">
+                <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400">{stat.title}</p>
+                <div className={`flex h-9 w-9 items-center justify-center rounded-xl ${stat.iconBg} ${stat.iconColor}`}>
+                  {stat.icon}
+                </div>
               </div>
-              <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-[18px] border border-white/30 bg-white/15">
-                {stat.icon}
+
+              {/* Big value */}
+              <h3 className="text-[26px] font-extrabold leading-none text-gray-900 tracking-tight">
+                {stat.value}
+              </h3>
+
+              {/* Subtitle */}
+              <p className="mt-1.5 text-[11px] text-gray-400">{stat.sub}</p>
+
+              {/* Trend line */}
+              <div className="mt-3 flex items-center gap-1.5">
+                <div
+                  className="flex h-5 w-5 items-center justify-center rounded-full"
+                  style={{ backgroundColor: `${stat.accent}20` }}
+                >
+                  <TrendingUp size={11} style={{ color: stat.accent }} />
+                </div>
+                <span className="text-[12px] font-bold" style={{ color: stat.accent }}>{stat.inc}</span>
+                <span className="text-[11px] text-gray-400">{stat.incLabel}</span>
               </div>
             </div>
-            <div className="pointer-events-none absolute bottom-[62px] left-6 right-6 flex h-9 items-end gap-1 opacity-30" aria-hidden="true">
-              {[34, 58, 42, 72, 51, 65, 88].map((height, index) => (
-                <span key={index} className="flex-1 rounded-t-[3px] bg-white" style={{ height: `${height}%` }} />
+
+            {/* Sparkline bars pinned to bottom */}
+            <div className="mt-4 flex h-10 items-end gap-[2px] px-5 pb-0" aria-hidden="true">
+              {stat.sparkHeights.map((h, idx) => (
+                <span
+                  key={idx}
+                  className="flex-1 rounded-t-[2px] transition-all duration-300"
+                  style={{
+                    height: `${h}%`,
+                    backgroundColor: stat.sparkColor,
+                    opacity: 0.15 + (idx / stat.sparkHeights.length) * 0.35,
+                  }}
+                />
               ))}
             </div>
-            <div className={`relative z-10 mt-auto inline-flex w-fit items-center gap-1.5 rounded-full border px-3 py-1.5 text-[11px] font-bold ${stat.pill}`}>
-              <TrendingUp size={12} />
-              <span>+{stat.inc} vs previous</span>
-            </div>
+
+            {/* Colored bottom rule */}
+            <div className="mt-3 h-[3px] w-full rounded-b-2xl" style={{ backgroundColor: stat.accent, opacity: 0.25 }} />
           </div>
         ))}
       </div>
