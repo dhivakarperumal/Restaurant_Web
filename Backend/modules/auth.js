@@ -241,6 +241,22 @@ async function updateUserProfile(identifier, { username, mobile_number }) {
   return findUserProfile(value);
 }
 
+async function changeUserPassword(userId, currentPassword, newPassword) {
+  const [rows] = await db.execute(
+    'SELECT password_hash FROM users WHERE user_id = ? LIMIT 1',
+    [userId]
+  );
+  const storedHash = rows[0]?.password_hash;
+  if (!await verifyPassword(currentPassword, storedHash)) return false;
+
+  const passwordHash = await hashPassword(newPassword);
+  const [result] = await db.execute(
+    'UPDATE users SET password_hash = ? WHERE user_id = ?',
+    [passwordHash, userId]
+  );
+  return result.affectedRows > 0;
+}
+
 async function findUserByIdentifier(identifier) {
   const [rows] = await db.execute(
     `SELECT users.id, users.user_id, users.username, users.email, users.mobile_number, users.password_hash, users.role, users.status,
@@ -306,6 +322,7 @@ async function findUserByToken(token) {
 module.exports = {
   createSession,
   createUser,
+  changeUserPassword,
   deleteUser,
   findUserByIdentifier,
   findUserProfile,

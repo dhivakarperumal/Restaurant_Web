@@ -14,6 +14,7 @@ import Reservation from './Componets/Reservation.jsx'
 
 import Login from './Componets/Auth/Login.jsx'
 import Register from './Componets/Auth/Register.jsx'
+import Account from './Componets/Auth/Account.jsx'
 
 import PrivateRoute from './PrivateRouter/PrivateRouter.jsx'
 
@@ -120,6 +121,14 @@ const router = createHashRouter([
         element: (
           <PrivateRoute allowedRoles={["user", "customer"]}>
             <CustomerOrdersPage audience="customer" />
+          </PrivateRoute>
+        ),
+      },
+      {
+        path: 'account',
+        element: (
+          <PrivateRoute allowedRoles={["user", "customer"]}>
+            <Account />
           </PrivateRoute>
         ),
       },

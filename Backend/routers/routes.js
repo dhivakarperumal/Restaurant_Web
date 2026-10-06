@@ -3,7 +3,7 @@ const { randomUUID } = require('crypto');
 const fs = require('fs');
 const multer = require('multer');
 const path = require('path');
-const { getProfile, googleLogin, listUsers, login, register, removeUser, updateProfile, updateUser } = require('../controllers/authController');
+const { changePassword, getProfile, googleLogin, listUsers, login, register, removeUser, updateProfile, updateUser } = require('../controllers/authController');
 const {
   checkEmployeeFieldUniqueness,
   createEmployee,
@@ -212,6 +212,7 @@ router.post('/users/login', login);
 router.post('/users/google-login', googleLogin);
 router.get('/users/profile/:profileId', requireAuthenticatedUser, getProfile);
 router.put('/users/profile/:profileId', requireAuthenticatedUser, updateProfile);
+router.put('/users/password', requireAuthenticatedUser, changePassword);
 router.get('/users', requireAdmin, listUsers);
 router.put('/users/:userId', requireAdmin, updateUser);
 router.delete('/users/:userId', requireAdmin, removeUser);

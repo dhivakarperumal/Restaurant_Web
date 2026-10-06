@@ -13,8 +13,8 @@ import {
   Save,
   Search,
   ShoppingBag,
+  Trash2,
   UserRound,
-  X,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import api from "../../api";
@@ -40,13 +40,21 @@ const emptyAddress = {
 const normalizeAddress = (value = {}) => ({
   ...emptyAddress,
   ...value,
-  address_line1: value.address_line1 || value.door_number || "",
-  address_line2: value.address_line2 || value.street_name || "",
+  id: value.id || value.address_id || "",
+  address_line1: value.address_line1 || value.address_line || value.door_number || "",
+  address_line2: value.address_line2 || value.area_locality || value.street_name || "",
   country: value.country || "India",
   state: value.state || "Tamil Nadu",
 });
 
 const statusClass = {
+  placed: "bg-[#fef3c7] text-[#92400e] border border-[#fde68a]",
+  preparing: "bg-[#fef3c7] text-[#92400e] border border-[#fde68a]",
+  ready: "bg-[#e1f2e8] text-[#28724a] border border-[#c3e6d1]",
+  completed: "bg-[#e1f2e8] text-[#28724a] border border-[#c3e6d1]",
+  delivered: "bg-[#e1f2e8] text-[#28724a] border border-[#c3e6d1]",
+  cancelled: "bg-[#fae5e2] text-[#a43e32] border border-[#f5c6cb]",
+  payment_failed: "bg-[#fae5e2] text-[#a43e32] border border-[#f5c6cb]",
   Delivered: "bg-[#e1f2e8] text-[#28724a] border border-[#c3e6d1]",
   Cancelled: "bg-[#fae5e2] text-[#a43e32] border border-[#f5c6cb]",
   Shipped: "bg-[#e3edf7] text-[#35688e] border border-[#b8daff]",
@@ -88,8 +96,10 @@ const Account = () => {
   const userId = user?.user_id || user?.id;
   const [profile, setProfile] = useState({ username: "", mobile_number: "" });
   const [address, setAddress] = useState(emptyAddress);
+  const [addresses, setAddresses] = useState([]);
   const [orders, setOrders] = useState([]);
   const [editingAddress, setEditingAddress] = useState(false);
+  const [editingAddressId, setEditingAddressId] = useState(null);
   const [password, setPassword] = useState({
     currentPassword: "",
     newPassword: "",
@@ -186,8 +196,8 @@ const Account = () => {
 
     Promise.all([
       api.get(`/users/profile/${userId}`),
-      api.get(`/users/address/${userId}`),
-      api.get(`/orders/user/${userId}`),
+      api.get("/orders/addresses"),
+      api.get("/orders/mine"),
     ])
       .then(([profileResponse, addressResponse, ordersResponse]) => {
         const nextProfile = profileResponse.data?.data || user;
@@ -196,11 +206,33 @@ const Account = () => {
           mobile_number:
             nextProfile?.mobile_number || nextProfile?.phone || "",
         });
-        setAddress(normalizeAddress(addressResponse.data?.data || {}));
-        setOrders(ordersResponse.data?.data || []);
+        const savedAddresses = Array.isArray(addressResponse.data?.data)
+          ? addressResponse.data.data.map(normalizeAddress)
+          : [];
+        setAddresses(savedAddresses);
+        const orderRecords = Array.isArray(ordersResponse.data?.data)
+          ? ordersResponse.data.data
+          : [];
+        const uniqueOrders = new Map();
+        for (const order of orderRecords) {
+          const orderNumber = String(order.order_number || order.order_id || order.id || "");
+          if (!orderNumber || uniqueOrders.has(orderNumber)) continue;
+          uniqueOrders.set(orderNumber, {
+            ...order,
+            order_id: orderNumber,
+            item_count: order.item_count || order.items?.reduce(
+              (count, item) => count + Number(item.quantity || 1),
+              0,
+            ) || 0,
+          });
+        }
+        setOrders([...uniqueOrders.values()]);
       })
-      .catch(() => toast.error("We could not load your account details"));
-  }, [userId]);
+      .catch((error) => {
+        console.error("Could not load customer account:", error);
+        toast.error(error.response?.data?.message || "We could not load your account details");
+      });
+  }, [userId, user]);
 
   const updateProfile = async (event) => {
     event.preventDefault();
@@ -229,12 +261,48 @@ const Account = () => {
     event.preventDefault();
     setSaving(true);
     try {
-      const response = await api.put(`/users/address/${userId}`, address);
-      setAddress(normalizeAddress(response.data?.data || address));
+      const payload = {
+        address_line: address.address_line1,
+        area_locality: address.address_line2,
+        city: address.city,
+        state: address.state,
+        pincode: address.pincode,
+        landmark: address.landmark,
+      };
+      const response = editingAddressId
+        ? await api.put(`/orders/addresses/${editingAddressId}`, payload)
+        : await api.post("/orders/addresses", payload);
+      const savedAddress = normalizeAddress(response.data?.data || payload);
+      setAddresses((current) => {
+        const withoutEdited = current.filter((item) => String(item.id) !== String(savedAddress.id));
+        return [savedAddress, ...withoutEdited];
+      });
+      setAddress(emptyAddress);
       setEditingAddress(false);
-      toast.success("Address saved successfully");
+      setEditingAddressId(null);
+      toast.success(response.data?.created === false ? "This address is already saved" : "Address saved successfully");
     } catch (error) {
       toast.error(error.response?.data?.message || "Could not save address");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const editAddress = (savedAddress) => {
+    setAddress(normalizeAddress(savedAddress));
+    setEditingAddressId(savedAddress.id);
+    setEditingAddress(true);
+  };
+
+  const deleteAddress = async (addressId) => {
+    if (!window.confirm("Delete this saved address?")) return;
+    setSaving(true);
+    try {
+      await api.delete(`/orders/addresses/${addressId}`);
+      setAddresses((current) => current.filter((item) => String(item.id) !== String(addressId)));
+      toast.success("Address deleted successfully");
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Could not delete address");
     } finally {
       setSaving(false);
     }
@@ -250,7 +318,10 @@ const Account = () => {
     }
     setSaving(true);
     try {
-      await api.put(`/users/password/${userId}`, password);
+      await api.put("/users/password", {
+        currentPassword: password.currentPassword,
+        newPassword: password.newPassword,
+      });
       setPassword({ currentPassword: "", newPassword: "", confirmPassword: "" });
       toast.success("Password changed successfully");
     } catch (error) {
@@ -270,9 +341,7 @@ const Account = () => {
     setAddress((current) => ({ ...current, [field]: value }));
   };
 
-  const hasSavedAddress = Boolean(
-    address.customer_name || address.address_line1 || address.city
-  );
+  const hasSavedAddress = addresses.length > 0;
 
   const displayName =
     profile.username ||
@@ -301,7 +370,7 @@ const Account = () => {
                 My Account
               </h1>
               <p className="mt-2 text-sm text-[#68736e]">
-                Keep your details close. Follow every frame from order to doorstep.
+                Keep your details updated and follow every order from checkout to delivery.
               </p>
             </div>
 
@@ -452,6 +521,7 @@ const Account = () => {
                             required
                             type="text"
                             placeholder="Your full name"
+                            maxLength={100}
                             value={profile.username}
                             onChange={(e) =>
                               setProfile({ ...profile, username: e.target.value })
@@ -465,6 +535,7 @@ const Account = () => {
                           <input
                             type="tel"
                             placeholder="e.g. 9876543210"
+                            maxLength={32}
                             value={profile.mobile_number}
                             onChange={(e) =>
                               setProfile({
@@ -513,31 +584,25 @@ const Account = () => {
                         </span>
                         <div>
                           <h2 className="text-xl font-serif font-semibold text-[#1b2925]">
-                            Saved Address
+                            Saved Addresses
                           </h2>
                           <p className="text-xs text-[#7b8580]">
-                            Your default shipping destination for orders and deliveries.
+                            Manage delivery addresses saved to your customer account.
                           </p>
                         </div>
                       </div>
 
-                      {!editingAddress ? (
+                      {!editingAddress && (
                         <button
                           type="button"
-                          onClick={() => setEditingAddress(true)}
-                          className="inline-flex items-center gap-2 self-start rounded-lg border border-[#b87840] px-4 py-2 text-xs font-bold uppercase tracking-wider text-[#b87840] hover:bg-[#b87840] hover:text-white transition cursor-pointer"
+                          onClick={() => {
+                            setAddress(emptyAddress);
+                            setEditingAddressId(null);
+                            setEditingAddress(true);
+                          }}
+                          className="inline-flex items-center gap-2 self-start rounded-lg border border-[#b87840] px-4 py-2 text-xs font-bold uppercase tracking-wider text-[#b87840] transition hover:bg-[#b87840] hover:text-white"
                         >
-                          <Pencil size={14} />
-                          {hasSavedAddress ? "Edit Address" : "Add Address"}
-                        </button>
-                      ) : (
-                        <button
-                          type="button"
-                          onClick={() => setEditingAddress(false)}
-                          className="inline-flex items-center gap-1.5 self-start rounded-lg border border-[#dfd6ca] px-4 py-2 text-xs font-bold uppercase tracking-wider text-[#68736e] hover:bg-[#f8f6f1] transition cursor-pointer"
-                        >
-                          <X size={14} />
-                          Cancel
+                          <MapPin size={14} /> Add Address
                         </button>
                       )}
                     </div>
@@ -545,151 +610,29 @@ const Account = () => {
                     {editingAddress ? (
                       <form onSubmit={saveAddress} className="space-y-5">
                         <div className="grid gap-4 sm:grid-cols-2">
-                          <div>
-                            <label className="block text-xs font-bold uppercase tracking-wider text-[#68736e]">
-                              Full Name <span className="text-[#b87840]">*</span>
+                          {[
+                            ["address_line1", "Door / street address", "House number, street, building", true],
+                            ["address_line2", "Area / locality", "Area or neighbourhood", true],
+                            ["city", "City", "City", true],
+                            ["state", "State", "State", true],
+                            ["pincode", "Pincode", "6-digit pincode", true],
+                            ["landmark", "Landmark", "Nearby landmark (optional)", false],
+                          ].map(([field, label, placeholder, required]) => (
+                            <label key={field} className="block text-xs font-bold uppercase tracking-wider text-[#68736e]">
+                              {label}{required && <span className="text-[#b87840]"> *</span>}
+                              <input
+                                required={required}
+                                type={field === "pincode" ? "text" : "text"}
+                                inputMode={field === "pincode" ? "numeric" : undefined}
+                                pattern={field === "pincode" ? "\\d{6}" : undefined}
+                                maxLength={field === "address_line1" ? 255 : field === "address_line2" || field === "landmark" ? 180 : 120}
+                                placeholder={placeholder}
+                                value={address[field] || ""}
+                                onChange={(event) => setAddressField(field, event.target.value)}
+                                className="mt-1.5 h-11 w-full rounded-lg border border-[#ddd6ce] bg-[#fcfbf8] px-3.5 text-sm font-normal normal-case tracking-normal outline-none transition focus:border-[#b87840] focus:ring-1 focus:ring-[#b87840]"
+                              />
                             </label>
-                            <input
-                              required
-                              placeholder="Recipient's Name"
-                              value={address.customer_name || ""}
-                              onChange={(e) =>
-                                setAddressField("customer_name", e.target.value)
-                              }
-                              className="mt-1.5 h-11 w-full rounded-lg border border-[#ddd6ce] bg-[#fcfbf8] px-3.5 text-sm outline-none transition focus:border-[#b87840] focus:ring-1 focus:ring-[#b87840]"
-                            />
-                          </div>
-
-                          <div>
-                            <label className="block text-xs font-bold uppercase tracking-wider text-[#68736e]">
-                              Phone Number <span className="text-[#b87840]">*</span>
-                            </label>
-                            <input
-                              required
-                              type="tel"
-                              placeholder="Mobile Number"
-                              value={address.mobile_number || ""}
-                              onChange={(e) =>
-                                setAddressField("mobile_number", e.target.value)
-                              }
-                              className="mt-1.5 h-11 w-full rounded-lg border border-[#ddd6ce] bg-[#fcfbf8] px-3.5 text-sm outline-none transition focus:border-[#b87840] focus:ring-1 focus:ring-[#b87840]"
-                            />
-                          </div>
-
-                          <div className="sm:col-span-2">
-                            <label className="block text-xs font-bold uppercase tracking-wider text-[#68736e]">
-                              Address Line 1 <span className="text-[#b87840]">*</span>
-                            </label>
-                            <input
-                              required
-                              placeholder="House / Flat / Block No, Building Name"
-                              value={address.address_line1 || ""}
-                              onChange={(e) =>
-                                setAddressField("address_line1", e.target.value)
-                              }
-                              className="mt-1.5 h-11 w-full rounded-lg border border-[#ddd6ce] bg-[#fcfbf8] px-3.5 text-sm outline-none transition focus:border-[#b87840] focus:ring-1 focus:ring-[#b87840]"
-                            />
-                          </div>
-
-                          <div className="sm:col-span-2">
-                            <label className="block text-xs font-bold uppercase tracking-wider text-[#68736e]">
-                              Address Line 2
-                            </label>
-                            <input
-                              placeholder="Street, Area, Sector, Colony"
-                              value={address.address_line2 || ""}
-                              onChange={(e) =>
-                                setAddressField("address_line2", e.target.value)
-                              }
-                              className="mt-1.5 h-11 w-full rounded-lg border border-[#ddd6ce] bg-[#fcfbf8] px-3.5 text-sm outline-none transition focus:border-[#b87840] focus:ring-1 focus:ring-[#b87840]"
-                            />
-                          </div>
-
-                          <div>
-                            <label className="block text-xs font-bold uppercase tracking-wider text-[#68736e]">
-                              City <span className="text-[#b87840]">*</span>
-                            </label>
-                            <input
-                              required
-                              placeholder="City"
-                              value={address.city || ""}
-                              onChange={(e) =>
-                                setAddressField("city", e.target.value)
-                              }
-                              className="mt-1.5 h-11 w-full rounded-lg border border-[#ddd6ce] bg-[#fcfbf8] px-3.5 text-sm outline-none transition focus:border-[#b87840] focus:ring-1 focus:ring-[#b87840]"
-                            />
-                          </div>
-
-                          <div>
-                            <label className="block text-xs font-bold uppercase tracking-wider text-[#68736e]">
-                              District
-                            </label>
-                            <input
-                              placeholder="District"
-                              value={address.district || ""}
-                              onChange={(e) =>
-                                setAddressField("district", e.target.value)
-                              }
-                              className="mt-1.5 h-11 w-full rounded-lg border border-[#ddd6ce] bg-[#fcfbf8] px-3.5 text-sm outline-none transition focus:border-[#b87840] focus:ring-1 focus:ring-[#b87840]"
-                            />
-                          </div>
-
-                          <div>
-                            <label className="block text-xs font-bold uppercase tracking-wider text-[#68736e]">
-                              State
-                            </label>
-                            <input
-                              placeholder="State"
-                              value={address.state || "Tamil Nadu"}
-                              onChange={(e) =>
-                                setAddressField("state", e.target.value)
-                              }
-                              className="mt-1.5 h-11 w-full rounded-lg border border-[#ddd6ce] bg-[#fcfbf8] px-3.5 text-sm outline-none transition focus:border-[#b87840] focus:ring-1 focus:ring-[#b87840]"
-                            />
-                          </div>
-
-                          <div>
-                            <label className="block text-xs font-bold uppercase tracking-wider text-[#68736e]">
-                              Country
-                            </label>
-                            <input
-                              placeholder="Country"
-                              value={address.country || "India"}
-                              onChange={(e) =>
-                                setAddressField("country", e.target.value)
-                              }
-                              className="mt-1.5 h-11 w-full rounded-lg border border-[#ddd6ce] bg-[#fcfbf8] px-3.5 text-sm outline-none transition focus:border-[#b87840] focus:ring-1 focus:ring-[#b87840]"
-                            />
-                          </div>
-
-                          <div>
-                            <label className="block text-xs font-bold uppercase tracking-wider text-[#68736e]">
-                              Pincode <span className="text-[#b87840]">*</span>
-                            </label>
-                            <input
-                              required
-                              placeholder="6-digit Pincode"
-                              value={address.pincode || ""}
-                              onChange={(e) =>
-                                setAddressField("pincode", e.target.value)
-                              }
-                              className="mt-1.5 h-11 w-full rounded-lg border border-[#ddd6ce] bg-[#fcfbf8] px-3.5 text-sm outline-none transition focus:border-[#b87840] focus:ring-1 focus:ring-[#b87840]"
-                            />
-                          </div>
-
-                          <div>
-                            <label className="block text-xs font-bold uppercase tracking-wider text-[#68736e]">
-                              Landmark
-                            </label>
-                            <input
-                              placeholder="Nearby landmark (e.g. Near Bus Stand)"
-                              value={address.landmark || ""}
-                              onChange={(e) =>
-                                setAddressField("landmark", e.target.value)
-                              }
-                              className="mt-1.5 h-11 w-full rounded-lg border border-[#ddd6ce] bg-[#fcfbf8] px-3.5 text-sm outline-none transition focus:border-[#b87840] focus:ring-1 focus:ring-[#b87840]"
-                            />
-                          </div>
+                          ))}
                         </div>
 
                         <div className="flex flex-wrap items-center gap-3 pt-3">
@@ -698,11 +641,15 @@ const Account = () => {
                             disabled={saving}
                             className="h-11 rounded-lg bg-[#1b2925] px-7 text-sm font-semibold text-white transition hover:bg-[#b87840] disabled:opacity-60 cursor-pointer shadow-xs"
                           >
-                            {saving ? "Saving..." : "Save Address"}
+                            {saving ? "Saving..." : editingAddressId ? "Update Address" : "Save Address"}
                           </button>
                           <button
                             type="button"
-                            onClick={() => setEditingAddress(false)}
+                            onClick={() => {
+                              setEditingAddress(false);
+                              setEditingAddressId(null);
+                              setAddress(emptyAddress);
+                            }}
                             className="h-11 rounded-lg border border-[#dfd6ca] px-6 text-sm font-semibold text-[#68736e] hover:bg-[#f8f6f1] transition cursor-pointer"
                           >
                             Cancel
@@ -710,41 +657,31 @@ const Account = () => {
                         </div>
                       </form>
                     ) : hasSavedAddress ? (
-                      <div className="rounded-xl border border-[#dfd6ca] bg-[#fcfbf9] p-6 sm:p-7">
-                        <div className="flex items-center justify-between">
-                          <span className="inline-flex items-center gap-1.5 rounded-full bg-[#f4eee6] px-3 py-1 text-xs font-semibold text-[#b87840]">
-                            <Check size={13} />
-                            Default Delivery Address
-                          </span>
-                        </div>
-
-                        <div className="mt-4 space-y-2 text-sm text-[#4a5550]">
-                          <h4 className="text-lg font-semibold text-[#1b2925]">
-                            {address.customer_name}
-                          </h4>
-                          <p className="font-medium text-[#1b2925]">
-                            {address.mobile_number}
-                          </p>
-                          <p className="leading-relaxed">
-                            {[address.address_line1, address.address_line2]
-                              .filter(Boolean)
-                              .join(", ")}
-                          </p>
-                          <p className="leading-relaxed">
-                            {[address.city, address.district, address.state]
-                              .filter(Boolean)
-                              .join(", ")}
-                            {address.pincode ? ` - ${address.pincode}` : ""}
-                          </p>
-                          <p className="text-xs text-[#7b8580]">
-                            {address.country || "India"}
-                          </p>
-                          {address.landmark && (
-                            <p className="mt-2 text-xs italic text-[#7b8580]">
-                              Landmark: {address.landmark}
-                            </p>
-                          )}
-                        </div>
+                      <div className="grid gap-4 md:grid-cols-2">
+                        {addresses.map((savedAddress, index) => (
+                          <article key={savedAddress.id || `${savedAddress.address_line1}-${index}`} className="rounded-xl border border-[#dfd6ca] bg-[#fcfbf9] p-5">
+                            <div className="flex items-start justify-between gap-3">
+                              <span className="inline-flex items-center gap-1.5 rounded-full bg-[#f4eee6] px-3 py-1 text-xs font-semibold text-[#b87840]">
+                                <Check size={13} /> Saved address
+                              </span>
+                              <div className="flex gap-1">
+                                <button type="button" onClick={() => editAddress(savedAddress)} aria-label="Edit address" className="rounded-lg p-2 text-[#68736e] transition hover:bg-[#f4eee6] hover:text-[#1b2925]">
+                                  <Pencil size={15} />
+                                </button>
+                                <button type="button" disabled={saving} onClick={() => deleteAddress(savedAddress.id)} aria-label="Delete address" className="rounded-lg p-2 text-[#c24130] transition hover:bg-[#fae5e2] disabled:opacity-50">
+                                  <Trash2 size={15} />
+                                </button>
+                              </div>
+                            </div>
+                            <div className="mt-4 space-y-1.5 text-sm text-[#4a5550]">
+                              <h4 className="font-semibold text-[#1b2925]">{profile.username || displayName}</h4>
+                              {profile.mobile_number && <p className="text-xs">{profile.mobile_number}</p>}
+                              <p className="leading-relaxed">{[savedAddress.address_line1, savedAddress.address_line2].filter(Boolean).join(", ")}</p>
+                              <p className="leading-relaxed">{[savedAddress.city, savedAddress.state].filter(Boolean).join(", ")}{savedAddress.pincode ? ` - ${savedAddress.pincode}` : ""}</p>
+                              {savedAddress.landmark && <p className="pt-1 text-xs italic text-[#7b8580]">Landmark: {savedAddress.landmark}</p>}
+                            </div>
+                          </article>
+                        ))}
                       </div>
                     ) : (
                       <div className="py-12 text-center">
@@ -755,11 +692,15 @@ const Account = () => {
                           No saved address yet
                         </h4>
                         <p className="mx-auto mt-1 max-w-sm text-xs text-[#7b8580]">
-                          Add your shipping address to speed up checkout and manage your deliveries seamlessly.
+                          Save an address to make delivery checkout faster.
                         </p>
                         <button
                           type="button"
-                          onClick={() => setEditingAddress(true)}
+                          onClick={() => {
+                            setAddress(emptyAddress);
+                            setEditingAddressId(null);
+                            setEditingAddress(true);
+                          }}
                           className="mt-5 inline-flex items-center gap-2 rounded-lg bg-[#1b2925] px-6 py-2.5 text-xs font-bold uppercase tracking-wider text-white hover:bg-[#b87840] transition cursor-pointer"
                         >
                           <Pencil size={14} />
@@ -783,7 +724,7 @@ const Account = () => {
                             Your Orders
                           </h2>
                           <p className="text-xs text-[#7b8580]">
-                            A quiet record of everything you have framed.
+                            Review your recent restaurant orders and delivery status.
                           </p>
                         </div>
                       </div>
@@ -830,6 +771,7 @@ const Account = () => {
                             : "Recent";
 
                           const status = order.order_status || "Processing";
+                          const displayStatus = String(status).replaceAll("_", " ");
 
                           return (
                             <div
@@ -867,11 +809,11 @@ const Account = () => {
                               <div className="flex items-center justify-between sm:justify-end gap-3.5">
                                 <span
                                   className={`rounded-md px-3 py-1 text-xs font-bold uppercase tracking-wide ${
-                                    statusClass[status] ||
+                                    statusClass[String(status).toLowerCase()] || statusClass[displayStatus] ||
                                     "bg-[#f3eee7] text-[#7b6a58] border border-[#dfd6ca]"
                                   }`}
                                 >
-                                  {status}
+                                  {displayStatus}
                                 </span>
                                 <strong className="text-base font-bold text-[#1b2925]">
                                   ₹
@@ -894,13 +836,13 @@ const Account = () => {
                           No orders yet
                         </h4>
                         <p className="mx-auto mt-1 max-w-sm text-xs text-[#7b8580]">
-                          Your next beautiful frame will show up here once you make your first purchase.
+                          Your orders will appear here after your first purchase.
                         </p>
                         <Link
                           to="/shop"
                           className="mt-5 inline-flex items-center gap-2 rounded-lg bg-[#1b2925] px-6 py-2.5 text-xs font-bold uppercase tracking-wider text-white hover:bg-[#b87840] transition"
                         >
-                          Explore Collections
+                          Browse the menu
                         </Link>
                       </div>
                     )}
