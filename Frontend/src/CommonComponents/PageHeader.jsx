@@ -2,7 +2,7 @@ import { Link } from "react-router-dom";
 
 const PageHeader = ({
   title,
-  background = "/images/pageheader.png",
+  background = "/images/header.png",
 }) => {
   return (
     <div
