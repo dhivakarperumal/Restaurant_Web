@@ -302,7 +302,7 @@ const Navbar = () => {
                 </NavLink>
 
                 <NavLink
-                  to="/contact?type=reservation"
+                  to="/reservation"
                   className={({ isActive }) =>
                     desktopLinkClass({ isActive })
                   }
@@ -475,7 +475,7 @@ const Navbar = () => {
                 <NavLink to="/gallery" onClick={() => setMobileMenu(false)} className={mobileLinkClass}>
                   Gallery
                 </NavLink>
-                <NavLink to="/contact?type=reservation" onClick={() => setMobileMenu(false)} className={mobileLinkClass}>
+                <NavLink to="/reservation" onClick={() => setMobileMenu(false)} className={mobileLinkClass}>
                   Reservation
                 </NavLink>
                 <NavLink to="/offers" onClick={() => setMobileMenu(false)} className={mobileLinkClass}>
