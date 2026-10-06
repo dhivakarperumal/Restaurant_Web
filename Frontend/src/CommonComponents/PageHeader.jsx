@@ -2,7 +2,7 @@ import { Link } from "react-router-dom";
 
 const PageHeader = ({
   title,
-  background = "/images/pageheader.png",
+  background = "/images/header.png",
 }) => {
   return (
     <div
@@ -10,12 +10,12 @@ const PageHeader = ({
       style={{
         backgroundImage: `url(${background})`,
         backgroundSize: "cover",
-        backgroundPosition: "bottom",
+        backgroundPosition: "center",
         backgroundRepeat: "no-repeat",
       }}
     >
       {/* Dark overlay */}
-      <div className="absolute inset-0 bg-black/40"></div>
+      <div className="absolute inset-0 bg-black/20"></div>
 
       {/* Bottom gold line */}
       <div className="absolute inset-x-0 bottom-0 h-1 bg-[#d5a65a]"></div>
