@@ -2,7 +2,10 @@ import React, { useState, useEffect, useMemo, useContext, useCallback } from "re
 import { useSearchParams } from "react-router-dom";
 import {
   AlertCircle,
+  ChevronLeft,
+  ChevronRight,
   Flame,
+  Filter,
   Layers,
   LayoutGrid,
   List,
@@ -50,10 +53,17 @@ export default function Shop() {
   const [selectedCategory, setSelectedCategory] = useState(searchParams.get("category") || "all");
   const [selectedCuisine, setSelectedCuisine] = useState(searchParams.get("cuisine") || "all");
   const [selectedFoodType, setSelectedFoodType] = useState("all"); // 'all' | 'Veg' | 'Non-Veg'
+  const [minimumPrice, setMinimumPrice] = useState("");
+  const [maximumPrice, setMaximumPrice] = useState("");
+  const [minimumRating, setMinimumRating] = useState(0);
+  const [onlyOffers, setOnlyOffers] = useState(false);
   const [onlySpicy, setOnlySpicy] = useState(false);
   const [onlyAvailable, setOnlyAvailable] = useState(false);
   const [sortBy, setSortBy] = useState("recommended"); // 'recommended' | 'price-low' | 'price-high' | 'rating' | 'prep-time'
   const [viewMode, setViewMode] = useState("grid"); // 'grid' | 'list'
+  const [currentPage, setCurrentPage] = useState(1);
+  const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
+  const productsPerPage = 12;
 
   // Modal state for food detail & customizations
   const [selectedFood, setSelectedFood] = useState(null);
@@ -98,7 +108,10 @@ export default function Shop() {
   // Sync category param with URL
   useEffect(() => {
     const cat = searchParams.get("category");
-    if (cat) setSelectedCategory(cat);
+    if (cat) {
+      setSelectedCategory(cat);
+      setCurrentPage(1);
+    }
   }, [searchParams]);
 
   // Open customization modal
@@ -191,10 +204,8 @@ export default function Shop() {
 
         // Category filter
         if (selectedCategory !== "all") {
-          if (
-            food.category_id !== selectedCategory &&
-            food.category_name?.toLowerCase() !== selectedCategory.toLowerCase()
-          ) {
+          if (String(food.category_id) !== String(selectedCategory)
+            && food.category_name?.toLowerCase() !== selectedCategory.toLowerCase()) {
             return false;
           }
         }
@@ -202,7 +213,7 @@ export default function Shop() {
         // Cuisine filter
         if (selectedCuisine !== "all") {
           if (
-            food.cuisine_id !== selectedCuisine &&
+              String(food.cuisine_id) !== String(selectedCuisine) &&
             food.cuisine_name?.toLowerCase() !== selectedCuisine.toLowerCase()
           ) {
             return false;
@@ -216,11 +227,17 @@ export default function Shop() {
           }
         }
 
+        const price = Number(food.final_price || food.mrp || 0);
+        if (minimumPrice !== "" && price < Number(minimumPrice)) return false;
+        if (maximumPrice !== "" && price > Number(maximumPrice)) return false;
+        if (onlyOffers && !(Number(food.discount || 0) > 0 && Number(food.mrp || 0) > price)) return false;
+        if (minimumRating > 0 && Number(food.rating || 0) < minimumRating) return false;
+
         // Spicy filter
         if (onlySpicy && !food.is_spicy) return false;
 
         // Availability filter
-        if (onlyAvailable && !food.is_available) return false;
+        if (onlyAvailable && food.is_available === false) return false;
 
         return true;
       })
@@ -242,7 +259,35 @@ export default function Shop() {
         if (!a.featured && b.featured) return 1;
         return (b.id || 0) - (a.id || 0);
       });
-  }, [foods, searchQuery, selectedCategory, selectedCuisine, selectedFoodType, onlySpicy, onlyAvailable, sortBy]);
+  }, [foods, searchQuery, selectedCategory, selectedCuisine, selectedFoodType, minimumPrice, maximumPrice, minimumRating, onlyOffers, onlySpicy, onlyAvailable, sortBy]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredFoods.length / productsPerPage));
+  const paginatedFoods = filteredFoods.slice(
+    (currentPage - 1) * productsPerPage,
+    currentPage * productsPerPage,
+  );
+  const pageNumbers = Array.from(
+    { length: totalPages },
+    (_, index) => index + 1,
+  ).filter((page) => page === 1 || page === totalPages || Math.abs(page - currentPage) <= 1);
+  const maxMenuPrice = Math.ceil(Math.max(
+    0,
+    foods.reduce((maxPrice, food) => Math.max(maxPrice, Number(food.final_price || food.mrp || 0)), 0),
+  ));
+
+  const resetFilters = () => {
+    setSearchQuery("");
+    setSelectedCategory("all");
+    setSelectedCuisine("all");
+    setSelectedFoodType("all");
+    setMinimumPrice("");
+    setMaximumPrice("");
+    setMinimumRating(0);
+    setOnlyOffers(false);
+    setOnlySpicy(false);
+    setOnlyAvailable(false);
+    setCurrentPage(1);
+  };
 
   // Count items in category
   const getCategoryCount = (catName) => {
@@ -289,14 +334,14 @@ export default function Shop() {
               <input
                 type="text"
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1); }}
                 placeholder="Search food, dish, cuisine..."
                 className="w-full rounded-xl border border-slate-200 bg-white py-3 pl-10 pr-9 text-xs text-slate-800 outline-none transition focus:border-[#1a3c36] focus:ring-2 focus:ring-[#1a3c36]/15"
               />
               {searchQuery && (
                 <button
                   type="button"
-                  onClick={() => setSearchQuery("")}
+                  onClick={() => { setSearchQuery(""); setCurrentPage(1); }}
                   aria-label="Clear search"
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700"
                 >
@@ -310,93 +355,98 @@ export default function Shop() {
 
       {/* Shop content and filters */}
       <PageContainer>
+        <div className="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-[260px_minmax(0,1fr)] lg:items-start">
+        <button
+          type="button"
+          onClick={() => setMobileFiltersOpen((open) => !open)}
+          className="flex items-center justify-between rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-bold text-[#1a3c36] shadow-sm lg:hidden"
+          aria-expanded={mobileFiltersOpen}
+        >
+          <span className="flex items-center gap-2"><Filter className="h-4 w-4" /> Filters</span>
+          <span>{mobileFiltersOpen ? "Hide" : "Show"}</span>
+        </button>
+        <aside className={`${mobileFiltersOpen ? "block" : "hidden"} space-y-5 lg:sticky lg:top-4 lg:block`}>
         {/* Category Pills Bar */}
-        <div className="mt-8">
+        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
           <div className="flex items-center justify-between pb-3">
-            <h2 className="text-xs font-bold uppercase tracking-wider text-slate-400">
-              Browse by Category
-            </h2>
-            <span className="text-xs font-semibold text-[#1a3c36]">
-              Showing {filteredFoods.length} of {foods.length} items
-            </span>
+            <h2 className="text-xs font-bold uppercase tracking-wider text-slate-500">Categories</h2>
+            <span className="text-[11px] font-semibold text-slate-400">{categories.length}</span>
           </div>
 
-          <div className="flex gap-2.5 overflow-x-auto pb-2 scrollbar-none">
+          <div className="flex max-h-56 flex-col gap-1 overflow-y-auto pr-1">
             <button
               type="button"
-              onClick={() => setSelectedCategory("all")}
-              className={`flex shrink-0 items-center gap-2 rounded-2xl px-4 py-2.5 text-xs font-bold transition ${
+              onClick={() => { setSelectedCategory("all"); setCurrentPage(1); }}
+              className={`flex items-center justify-between rounded-lg px-3 py-2.5 text-left text-xs font-semibold transition ${
                 selectedCategory === "all"
-                  ? "bg-[#1a3c36] text-white shadow-md ring-2 ring-[#1a3c36]/20"
-                  : "border border-slate-200/80 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50"
+                  ? "bg-[#eef5f3] text-[#1a3c36]"
+                  : "text-slate-600 hover:bg-slate-50"
               }`}
             >
-              <Utensils className="h-3.5 w-3.5" />
-              <span>All Dishes</span>
-              <span
-                className={`ml-1 rounded-full px-1.5 py-0.2 text-[10px] ${
-                  selectedCategory === "all" ? "bg-white/20 text-white" : "bg-slate-100 text-slate-600"
-                }`}
-              >
-                {foods.length}
-              </span>
+              <span className="flex items-center gap-2"><Utensils className="h-3.5 w-3.5" />All Dishes</span>
+              <span className="text-[10px] text-slate-400">{foods.length}</span>
             </button>
 
             {categories.map((cat) => {
-              const isSelected =
-                selectedCategory === cat.category_id ||
-                selectedCategory.toLowerCase() === cat.category_name?.toLowerCase();
+              const isSelected = String(selectedCategory) === String(cat.category_id || cat.id)
+                || selectedCategory.toLowerCase() === cat.category_name?.toLowerCase();
               const count = getCategoryCount(cat.category_name);
               return (
                 <button
                   key={cat.category_id || cat.id}
                   type="button"
-                  onClick={() => setSelectedCategory(cat.category_name)}
-                  className={`flex shrink-0 items-center gap-2.5 rounded-2xl px-4 py-2.5 text-xs font-bold transition ${
+                  onClick={() => { setSelectedCategory(cat.category_name); setCurrentPage(1); }}
+                  className={`flex items-center justify-between rounded-lg px-3 py-2.5 text-left text-xs font-semibold transition ${
                     isSelected
-                      ? "bg-[#1a3c36] text-white shadow-md ring-2 ring-[#1a3c36]/20"
-                      : "border border-slate-200/80 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50"
+                      ? "bg-[#eef5f3] text-[#1a3c36]"
+                      : "text-slate-600 hover:bg-slate-50"
                   }`}
                 >
-                  {cat.category_image ? (
-                    <img
-                      src={resolveImageUrl(cat.category_image)}
-                      alt=""
-                      className="h-5 w-5 rounded-full object-cover"
-                      onError={(e) => {
-                        e.target.style.display = "none";
-                      }}
-                    />
-                  ) : (
-                    <Tag className="h-3.5 w-3.5 opacity-70" />
-                  )}
-                  <span>{cat.category_name}</span>
-                  {count > 0 && (
-                    <span
-                      className={`ml-0.5 rounded-full px-1.5 py-0.2 text-[10px] ${
-                        isSelected ? "bg-white/20 text-white" : "bg-slate-100 text-slate-500"
-                      }`}
-                    >
-                      {count}
-                    </span>
-                  )}
+                  <span className="flex min-w-0 items-center gap-2">
+                    {cat.category_image
+                      ? <img src={resolveImageUrl(cat.category_image)} alt="" className="h-5 w-5 shrink-0 rounded-full object-cover" onError={(e) => { e.target.style.display = "none"; }} />
+                      : <Tag className="h-3.5 w-3.5 shrink-0 opacity-70" />}
+                    <span className="truncate">{cat.category_name}</span>
+                  </span>
+                  <span className="ml-2 text-[10px] text-slate-400">{count}</span>
                 </button>
               );
             })}
           </div>
         </div>
 
+        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+          <div className="mb-4 flex items-center justify-between">
+            <h2 className="text-xs font-bold uppercase tracking-wider text-slate-500">Price range</h2>
+            <span className="text-[10px] text-slate-400">₹0 – ₹{maxMenuPrice}</span>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <label className="text-[11px] font-semibold text-slate-500">
+              Minimum
+              <span className="mt-1 flex items-center rounded-lg border border-slate-200 px-2 text-sm text-slate-700 focus-within:border-[#1a3c36]">
+                <span className="text-slate-400">₹</span>
+                <input type="number" min="0" max={maxMenuPrice || undefined} value={minimumPrice} onChange={(event) => { setMinimumPrice(event.target.value); setCurrentPage(1); }} placeholder="0" className="w-full min-w-0 bg-transparent py-2 pl-1 outline-none" aria-label="Minimum price" />
+              </span>
+            </label>
+            <label className="text-[11px] font-semibold text-slate-500">
+              Maximum
+              <span className="mt-1 flex items-center rounded-lg border border-slate-200 px-2 text-sm text-slate-700 focus-within:border-[#1a3c36]">
+                <span className="text-slate-400">₹</span>
+                <input type="number" min="0" max={maxMenuPrice || undefined} value={maximumPrice} onChange={(event) => { setMaximumPrice(event.target.value); setCurrentPage(1); }} placeholder={String(maxMenuPrice)} className="w-full min-w-0 bg-transparent py-2 pl-1 outline-none" aria-label="Maximum price" />
+              </span>
+            </label>
+          </div>
+        </div>
+
         {/* Secondary Filter Controls */}
-        <div className="mt-4 rounded-2xl border border-slate-200/80 bg-white p-3.5 shadow-2xs">
-          <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+          <div className="flex flex-col items-stretch gap-5">
             {/* Dietary Type Filter */}
             <div className="flex flex-wrap items-center gap-1.5">
-              <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 mr-1 hidden sm:inline">
-                Dietary:
-              </span>
+              <span className="w-full text-xs font-bold uppercase tracking-wider text-slate-500">Dietary</span>
               <button
                 type="button"
-                onClick={() => setSelectedFoodType("all")}
+                onClick={() => { setSelectedFoodType("all"); setCurrentPage(1); }}
                 className={`rounded-xl px-3 py-1.5 text-xs font-bold transition ${
                   selectedFoodType === "all"
                     ? "bg-[#1a3c36] text-white shadow-2xs"
@@ -407,7 +457,7 @@ export default function Shop() {
               </button>
               <button
                 type="button"
-                onClick={() => setSelectedFoodType("Veg")}
+                onClick={() => { setSelectedFoodType("Veg"); setCurrentPage(1); }}
                 className={`inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-bold transition ${
                   selectedFoodType === "Veg"
                     ? "bg-emerald-700 text-white shadow-2xs"
@@ -419,7 +469,7 @@ export default function Shop() {
               </button>
               <button
                 type="button"
-                onClick={() => setSelectedFoodType("Non-Veg")}
+                onClick={() => { setSelectedFoodType("Non-Veg"); setCurrentPage(1); }}
                 className={`inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-bold transition ${
                   selectedFoodType === "Non-Veg"
                     ? "bg-rose-700 text-white shadow-2xs"
@@ -432,14 +482,16 @@ export default function Shop() {
             </div>
 
             {/* Quick toggles & Cuisine selector */}
-            <div className="flex flex-wrap items-center gap-2.5">
+            <div className="flex flex-col items-stretch gap-3">
               {/* Cuisine selector */}
               {cuisines.length > 0 && (
                 <div className="relative">
+                  <label htmlFor="shop-cuisine-filter" className="mb-2 block text-xs font-bold uppercase tracking-wider text-slate-500">Cuisine</label>
                   <select
+                    id="shop-cuisine-filter"
                     value={selectedCuisine}
-                    onChange={(e) => setSelectedCuisine(e.target.value)}
-                    className="h-9 rounded-xl border border-slate-200 bg-slate-50/70 px-3 pr-8 text-xs font-semibold text-slate-700 outline-none transition focus:border-emerald-600 focus:bg-white"
+                    onChange={(e) => { setSelectedCuisine(e.target.value); setCurrentPage(1); }}
+                    className="h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-700 outline-none transition focus:border-[#1a3c36] focus:ring-2 focus:ring-[#1a3c36]/10"
                   >
                     <option value="all">All Cuisines</option>
                     {cuisines.map((c) => (
@@ -454,7 +506,7 @@ export default function Shop() {
               {/* Spicy toggle */}
               <button
                 type="button"
-                onClick={() => setOnlySpicy(!onlySpicy)}
+                onClick={() => { setOnlySpicy(!onlySpicy); setCurrentPage(1); }}
                 className={`inline-flex h-9 items-center gap-1 rounded-xl px-3 text-xs font-bold transition ${
                   onlySpicy
                     ? "bg-amber-500 text-white shadow-2xs"
@@ -468,7 +520,7 @@ export default function Shop() {
               {/* In Stock toggle */}
               <button
                 type="button"
-                onClick={() => setOnlyAvailable(!onlyAvailable)}
+                onClick={() => { setOnlyAvailable(!onlyAvailable); setCurrentPage(1); }}
                 className={`inline-flex h-9 items-center gap-1 rounded-xl px-3 text-xs font-bold transition ${
                   onlyAvailable
                     ? "bg-[#1a3c36] text-white shadow-2xs"
@@ -482,8 +534,8 @@ export default function Shop() {
               <div className="relative">
                 <select
                   value={sortBy}
-                  onChange={(e) => setSortBy(e.target.value)}
-                  className="h-9 rounded-xl border border-slate-200 bg-slate-50/70 px-3 pr-8 text-xs font-semibold text-slate-700 outline-none transition focus:border-emerald-600 focus:bg-white"
+                  onChange={(e) => { setSortBy(e.target.value); setCurrentPage(1); }}
+                  className="h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-700 outline-none transition focus:border-[#1a3c36]"
                 >
                   <option value="recommended">Featured First</option>
                   <option value="price-low">Price: Low to High</option>
@@ -494,7 +546,7 @@ export default function Shop() {
               </div>
 
               {/* View Mode Toggle */}
-              <div className="hidden sm:flex items-center rounded-xl border border-slate-200 bg-slate-50 p-0.5">
+              <div className="flex items-center rounded-xl border border-slate-200 bg-slate-50 p-0.5">
                 <button
                   type="button"
                   onClick={() => setViewMode("grid")}
@@ -519,11 +571,32 @@ export default function Shop() {
             </div>
           </div>
 
+          <div className="mt-5 space-y-3 border-t border-slate-100 pt-4">
+            <h2 className="text-xs font-bold uppercase tracking-wider text-slate-500">More filters</h2>
+            <label className="flex cursor-pointer items-center justify-between gap-3 text-xs font-semibold text-slate-600">
+              <span className="flex items-center gap-2"><Tag className="h-4 w-4 text-[#d4a843]" />On offer</span>
+              <input type="checkbox" checked={onlyOffers} onChange={(event) => { setOnlyOffers(event.target.checked); setCurrentPage(1); }} className="h-4 w-4 accent-[#1a3c36]" />
+            </label>
+            <div className="space-y-2 border-t border-slate-100 pt-3">
+              <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Rating</p>
+              {[4, 3, 0].map((rating) => (
+                <label key={rating} className="flex cursor-pointer items-center gap-2 text-xs font-medium text-slate-600">
+                  <input type="radio" name="minimum-rating" checked={minimumRating === rating} onChange={() => { setMinimumRating(rating); setCurrentPage(1); }} className="accent-[#1a3c36]" />
+                  <span className="flex items-center gap-1">{rating === 0 ? "Any rating" : <><Star className="h-3 w-3 fill-amber-400 text-amber-400" />{rating}+ stars</>}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+
           {/* Active filters pill display */}
           {(searchQuery ||
             selectedCategory !== "all" ||
             selectedCuisine !== "all" ||
             selectedFoodType !== "all" ||
+            minimumPrice !== "" ||
+            maximumPrice !== "" ||
+            minimumRating > 0 ||
+            onlyOffers ||
             onlySpicy ||
             onlyAvailable) && (
             <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-slate-100 pt-2.5 text-xs">
@@ -531,49 +604,50 @@ export default function Shop() {
               {searchQuery && (
                 <span className="inline-flex items-center gap-1 rounded-lg bg-slate-100 px-2.5 py-1 text-slate-700 font-medium">
                   Search: "{searchQuery}"
-                  <X className="h-3 w-3 cursor-pointer" onClick={() => setSearchQuery("")} />
+                  <button type="button" aria-label="Clear search filter" onClick={() => { setSearchQuery(""); setCurrentPage(1); }}><X className="h-3 w-3" /></button>
                 </span>
               )}
               {selectedCategory !== "all" && (
                 <span className="inline-flex items-center gap-1 rounded-lg bg-emerald-50 px-2.5 py-1 text-emerald-800 font-medium border border-emerald-200/60">
                   Category: {selectedCategory}
-                  <X className="h-3 w-3 cursor-pointer" onClick={() => setSelectedCategory("all")} />
+                  <button type="button" aria-label="Clear category filter" onClick={() => { setSelectedCategory("all"); setCurrentPage(1); }}><X className="h-3 w-3" /></button>
                 </span>
               )}
               {selectedCuisine !== "all" && (
                 <span className="inline-flex items-center gap-1 rounded-lg bg-emerald-50 px-2.5 py-1 text-emerald-800 font-medium border border-emerald-200/60">
-                  Cuisine: {selectedCuisine}
-                  <X className="h-3 w-3 cursor-pointer" onClick={() => setSelectedCuisine("all")} />
+                  Cuisine: {cuisines.find((cuisine) => String(cuisine.cuisine_id || cuisine.id) === String(selectedCuisine) || cuisine.cuisine_name === selectedCuisine)?.cuisine_name || selectedCuisine}
+                  <button type="button" aria-label="Clear cuisine filter" onClick={() => { setSelectedCuisine("all"); setCurrentPage(1); }}><X className="h-3 w-3" /></button>
                 </span>
               )}
               {selectedFoodType !== "all" && (
                 <span className="inline-flex items-center gap-1 rounded-lg bg-slate-100 px-2.5 py-1 text-slate-700 font-medium">
                   Type: {selectedFoodType}
-                  <X className="h-3 w-3 cursor-pointer" onClick={() => setSelectedFoodType("all")} />
+                  <button type="button" aria-label="Clear dietary filter" onClick={() => { setSelectedFoodType("all"); setCurrentPage(1); }}><X className="h-3 w-3" /></button>
                 </span>
               )}
               {onlySpicy && (
                 <span className="inline-flex items-center gap-1 rounded-lg bg-amber-50 px-2.5 py-1 text-amber-800 font-medium border border-amber-200/60">
                   Spicy Only
-                  <X className="h-3 w-3 cursor-pointer" onClick={() => setOnlySpicy(false)} />
+                  <button type="button" aria-label="Clear spicy filter" onClick={() => { setOnlySpicy(false); setCurrentPage(1); }}><X className="h-3 w-3" /></button>
                 </span>
               )}
               {onlyAvailable && (
                 <span className="inline-flex items-center gap-1 rounded-lg bg-slate-100 px-2.5 py-1 text-slate-700 font-medium">
                   Available Only
-                  <X className="h-3 w-3 cursor-pointer" onClick={() => setOnlyAvailable(false)} />
+                  <button type="button" aria-label="Clear availability filter" onClick={() => { setOnlyAvailable(false); setCurrentPage(1); }}><X className="h-3 w-3" /></button>
                 </span>
               )}
+              {(minimumPrice !== "" || maximumPrice !== "") && (
+                <span className="inline-flex items-center gap-1 rounded-lg bg-slate-100 px-2.5 py-1 text-slate-700 font-medium">
+                  Price: ₹{minimumPrice || "0"}–₹{maximumPrice || maxMenuPrice}
+                  <button type="button" aria-label="Clear price filter" onClick={() => { setMinimumPrice(""); setMaximumPrice(""); setCurrentPage(1); }}><X className="h-3 w-3" /></button>
+                </span>
+              )}
+              {onlyOffers && <span className="inline-flex items-center gap-1 rounded-lg bg-amber-50 px-2.5 py-1 font-medium text-amber-800">On offer <button type="button" aria-label="Clear offer filter" onClick={() => { setOnlyOffers(false); setCurrentPage(1); }}><X className="h-3 w-3" /></button></span>}
+              {minimumRating > 0 && <span className="inline-flex items-center gap-1 rounded-lg bg-amber-50 px-2.5 py-1 font-medium text-amber-800">{minimumRating}+ stars <button type="button" aria-label="Clear rating filter" onClick={() => { setMinimumRating(0); setCurrentPage(1); }}><X className="h-3 w-3" /></button></span>}
               <button
                 type="button"
-                onClick={() => {
-                  setSearchQuery("");
-                  setSelectedCategory("all");
-                  setSelectedCuisine("all");
-                  setSelectedFoodType("all");
-                  setOnlySpicy(false);
-                  setOnlyAvailable(false);
-                }}
+                onClick={resetFilters}
                 className="text-xs font-bold text-rose-600 hover:text-rose-800 underline ml-2"
               >
                 Reset All Filters
@@ -581,9 +655,17 @@ export default function Shop() {
             </div>
           )}
         </div>
+        </aside>
 
         {/* 3. Foods Listing */}
-        <div className="mt-8">
+        <section className="min-w-0">
+        <div className="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+          <div>
+            <h2 className="text-lg font-bold text-[#1a3c36]">Our menu</h2>
+            <p className="mt-1 text-xs text-slate-500">Showing {filteredFoods.length ? (currentPage - 1) * productsPerPage + 1 : 0}–{Math.min(currentPage * productsPerPage, filteredFoods.length)} of {filteredFoods.length} dishes</p>
+          </div>
+        </div>
+        <div className="mt-4">
           {loading ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
               {[1, 2, 3, 4, 5, 6, 7, 8].map((n) => (
@@ -623,14 +705,7 @@ export default function Shop() {
               </p>
               <button
                 type="button"
-                onClick={() => {
-                  setSearchQuery("");
-                  setSelectedCategory("all");
-                  setSelectedCuisine("all");
-                  setSelectedFoodType("all");
-                  setOnlySpicy(false);
-                  setOnlyAvailable(false);
-                }}
+                onClick={resetFilters}
                 className="mt-5 inline-flex items-center gap-2 rounded-xl bg-[#1a3c36] px-5 py-2.5 text-xs font-bold text-white shadow-sm hover:bg-[#234e46] transition"
               >
                 <RefreshCw className="h-3.5 w-3.5" />
@@ -640,7 +715,7 @@ export default function Shop() {
           ) : viewMode === "grid" ? (
             /* Grid View */
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-              {filteredFoods.map((food) => (
+              {paginatedFoods.map((food) => (
                 <FoodProductCard
                   key={food.food_id || food.id}
                   food={food}
@@ -655,7 +730,7 @@ export default function Shop() {
           ) : (
             /* List View */
             <div className="space-y-4">
-              {filteredFoods.map((food) => {
+              {paginatedFoods.map((food) => {
                 const isVeg = food.food_type?.toLowerCase() === "veg";
                 const discount = Number(food.discount || 0);
                 const finalPrice = Number(food.final_price || food.mrp || 0);
@@ -755,6 +830,29 @@ export default function Shop() {
               })}
             </div>
           )}
+        </div>
+        {filteredFoods.length > 0 && (
+          <nav className="mt-8 flex flex-wrap items-center justify-between gap-3 border-t border-slate-200 pt-5" aria-label="Menu pagination">
+            <p className="text-xs text-slate-500">Page {currentPage} of {totalPages}</p>
+            <div className="flex items-center gap-1.5">
+              <button type="button" onClick={() => setCurrentPage((page) => Math.max(1, page - 1))} disabled={currentPage === 1} className="inline-flex h-9 items-center gap-1 rounded-lg border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-600 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40">
+                <ChevronLeft className="h-4 w-4" /> Previous
+              </button>
+              {pageNumbers.map((page, index) => (
+                <React.Fragment key={page}>
+                  {index > 0 && page - pageNumbers[index - 1] > 1 && <span className="px-1 text-slate-400">…</span>}
+                  <button type="button" onClick={() => setCurrentPage(page)} aria-current={page === currentPage ? "page" : undefined} className={`h-9 min-w-9 rounded-lg px-2 text-xs font-bold ${page === currentPage ? "bg-[#1a3c36] text-white" : "border border-slate-200 bg-white text-slate-600 hover:bg-slate-50"}`}>
+                    {page}
+                  </button>
+                </React.Fragment>
+              ))}
+              <button type="button" onClick={() => setCurrentPage((page) => Math.min(totalPages, page + 1))} disabled={currentPage === totalPages} className="inline-flex h-9 items-center gap-1 rounded-lg border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-600 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40">
+                Next <ChevronRight className="h-4 w-4" />
+              </button>
+            </div>
+          </nav>
+        )}
+        </section>
         </div>
       </PageContainer>
 
