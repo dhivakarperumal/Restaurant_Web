@@ -106,7 +106,7 @@ function HomeCuisines() {
                             alt=""
                             aria-hidden="true"
                             loading="lazy"
-                            className="absolute inset-0 h-full w-full scale-110 object-cover opacity-30 blur-lg"
+                            className="absolute inset-0 h-full w-full scale-110 object-cover opacity-70 blur-sm"
                           />
                           <img
                             src={image}
