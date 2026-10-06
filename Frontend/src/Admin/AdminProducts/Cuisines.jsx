@@ -1,5 +1,6 @@
+import React from 'react';
 import { useEffect, useMemo, useState } from 'react';
-import { ImagePlus, Pencil, Plus, Search, Star, Trash2, Utensils, X } from 'lucide-react';
+import { ChefHat, ImagePlus, LayoutGrid, Pencil, Plus, Search, Star, Table2, Trash2, TrendingUp, Utensils, X } from 'lucide-react';
 import api from '../../api';
 import { useAuth } from '../../PrivateRouter/AuthContext';
 
@@ -28,6 +29,8 @@ const Cuisines = () => {
   const [cuisines, setCuisines] = useState([]);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('All statuses');
+  const [sortBy, setSortBy] = useState('latest');
+  const [viewMode, setViewMode] = useState('table');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [modalOpen, setModalOpen] = useState(false);
@@ -63,8 +66,12 @@ const Cuisines = () => {
     const query = search.trim().toLowerCase();
     return cuisines.filter((cuisine) => [cuisine.cuisine_id, cuisine.cuisine_name, cuisine.description]
       .some((value) => String(value || '').toLowerCase().includes(query))
-      && (statusFilter === 'All statuses' || cuisine.status === statusFilter));
-  }, [cuisines, search, statusFilter]);
+      && (statusFilter === 'All statuses' || cuisine.status === statusFilter))
+      .sort((first, second) => {
+        if (sortBy === 'name') return String(first.cuisine_name || '').localeCompare(String(second.cuisine_name || ''));
+        return new Date(second.created_at || 0).getTime() - new Date(first.created_at || 0).getTime();
+      });
+  }, [cuisines, search, statusFilter, sortBy]);
 
   const activeCount = cuisines.filter((cuisine) => cuisine.status === 'Active').length;
   const featuredCount = cuisines.filter((cuisine) => cuisine.featured).length;
@@ -177,39 +184,83 @@ const Cuisines = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#f3f4f1] p-4 md:p-6">
+    <div className="min-h-screen  p-4 md:p-2">
       <div className="mx-auto max-w-[1500px]">
-        <header className="mb-5 border-b border-gray-200 pb-4">
-          <div className="flex flex-wrap items-center justify-between gap-4">
-            <div>
-              <p className="mb-1 text-xs font-semibold uppercase tracking-[0.12em] text-emerald-800">Menu catalog</p>
-              <h1 className="text-2xl font-semibold text-gray-900">Cuisines</h1>
-              <p className="mt-1 text-sm text-gray-600">Manage cuisine names, images, and website visibility.</p>
+        
+
+        {/* ================= STAT CARDS ================= */}
+        {(() => {
+          const inactiveCount = cuisines.length - activeCount;
+          const statCards = [
+            { title: 'Total Cuisines', value: String(cuisines.length), inc: '18.6%', icon: <ChefHat />, bg: 'bg-[#22c55e]' },
+            { title: 'Active Cuisines', value: String(activeCount), inc: '12.4%', icon: <Utensils />, bg: 'bg-[#3b82f6]' },
+            { title: 'Featured Cuisines', value: String(featuredCount), inc: '10.7%', icon: <Star />, bg: 'bg-[#f59e0b]' },
+            { title: 'Inactive Cuisines', value: String(inactiveCount), inc: '—', icon: <TrendingUp />, bg: 'bg-[#8b5cf6]' },
+          ];
+          return (
+            <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+              {statCards.map((stat, index) => (
+                <article
+                  key={index}
+                  className={`relative min-w-0 overflow-hidden rounded-xl border border-transparent p-4 sm:p-5 shadow-[0_2px_10px_rgba(20,56,34,0.04)] flex flex-col justify-between min-h-[140px] ${stat.bg} text-white`}
+                >
+                  <div className="flex items-start gap-3 relative z-10">
+                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg shadow-sm bg-white/20">
+                      {React.cloneElement(stat.icon, { size: 24, strokeWidth: 2.2, className: 'text-white' })}
+                    </div>
+                    <div className="flex-1 mt-0.5 min-w-0">
+                      <h3 className="text-[12px] font-semibold opacity-90 mb-1 truncate">{stat.title}</h3>
+                      <div className="text-[22px] sm:text-[25px] font-extrabold leading-none tracking-tight truncate">{stat.value}</div>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 mt-5 relative z-10">
+                    <span className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[11px] font-bold bg-white/25">
+                      {stat.inc !== '—' ? `↑ ${stat.inc}` : stat.inc}
+                    </span>
+                    <span className="text-[11px] font-medium opacity-75 truncate">from last month</span>
+                  </div>
+                  <div className="absolute right-0 bottom-0 w-24 h-16 pointer-events-none opacity-50">
+                    <svg viewBox="0 0 100 50" preserveAspectRatio="none" className="w-full h-full">
+                      <defs>
+                        <linearGradient id={`cuisgrad-${index}`} x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="0%" stopColor="#ffffff" stopOpacity="0.4" />
+                          <stop offset="100%" stopColor="#ffffff" stopOpacity="0.0" />
+                        </linearGradient>
+                      </defs>
+                      <path d="M0,50 L0,40 Q25,30 50,40 T100,20 L100,50 Z" fill={`url(#cuisgrad-${index})`} />
+                      <path d="M0,40 Q25,30 50,40 T100,20" fill="none" stroke="#ffffff" strokeWidth="2.5" />
+                    </svg>
+                  </div>
+                </article>
+              ))}
             </div>
-            <button type="button" onClick={openCreate} className="inline-flex h-10 items-center gap-2 rounded-md bg-[#1a3c36] px-4 text-sm font-semibold text-white hover:bg-[#214a42]">
-            <Plus className="h-4 w-4" /> Add cuisine
-            </button>
-          </div>
-          <dl className="mt-5 flex flex-wrap gap-x-8 gap-y-2 text-sm">
-            <div className="flex items-baseline gap-2"><dt className="text-gray-500">Total</dt><dd className="font-semibold text-gray-900">{cuisines.length}</dd></div>
-            <div className="flex items-baseline gap-2"><dt className="text-gray-500">Active</dt><dd className="font-semibold text-emerald-800">{activeCount}</dd></div>
-            <div className="flex items-baseline gap-2"><dt className="text-gray-500">Featured</dt><dd className="font-semibold text-amber-700">{featuredCount}</dd></div>
-          </dl>
-        </header>
+          );
+        })()}
 
         <section className="overflow-hidden rounded-lg border border-gray-200 bg-white">
-          <div className="flex flex-col gap-3 border-b border-gray-200 p-3 sm:flex-row sm:items-center sm:justify-between">
-            <div className="relative w-full sm:max-w-sm">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-              <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search by name, ID, or description" className="h-10 w-full rounded-md border border-gray-300 pl-9 pr-3 text-sm outline-none focus:border-emerald-700" />
+          <div className="flex flex-col gap-3 border-b border-gray-200 p-3 lg:flex-row lg:items-center lg:justify-between">
+            <div className="relative w-full lg:max-w-md lg:flex-1">
+              <Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+              <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search cuisines..." className="h-[46px] w-full rounded-xl border border-gray-300 bg-gray-50 pl-11 pr-3 text-sm outline-none focus:border-emerald-700" />
             </div>
-            <div className="flex items-center justify-between gap-3 sm:justify-end">
-              <span className="text-xs text-gray-500">{visibleCuisines.length} of {cuisines.length}</span>
-              <select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)} aria-label="Filter cuisines by status" className="h-10 rounded-md border border-gray-300 bg-white px-3 text-sm text-gray-700 outline-none focus:border-emerald-700">
+            <div className="flex flex-wrap items-center gap-2 lg:justify-end">
+              <span className="mr-1 text-xs text-gray-500">{visibleCuisines.length} of {cuisines.length}</span>
+              <select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)} aria-label="Filter cuisines by status" className="h-[46px] rounded-xl border border-gray-300 bg-white px-3 text-sm text-gray-700 outline-none focus:border-emerald-700">
                 <option>All statuses</option>
                 <option>Active</option>
                 <option>Inactive</option>
               </select>
+              <select value={sortBy} onChange={(event) => setSortBy(event.target.value)} aria-label="Sort cuisines" className="h-[46px] rounded-xl border border-gray-300 bg-white px-3 text-sm text-gray-700 outline-none focus:border-emerald-700">
+                <option value="latest">Sort by: Latest</option>
+                <option value="name">Name: A to Z</option>
+              </select>
+              <div className="flex h-[46px] overflow-hidden rounded-xl border border-gray-300">
+                <button type="button" onClick={() => setViewMode('table')} aria-label="Table view" aria-pressed={viewMode === 'table'} className={`flex w-11 items-center justify-center border-r border-gray-300 ${viewMode === 'table' ? 'bg-[#1a3c36] text-white' : 'text-gray-600 hover:bg-gray-50'}`}><Table2 className="h-4 w-4" /></button>
+                <button type="button" onClick={() => setViewMode('card')} aria-label="Card view" aria-pressed={viewMode === 'card'} className={`flex w-11 items-center justify-center ${viewMode === 'card' ? 'bg-[#1a3c36] text-white' : 'text-gray-600 hover:bg-gray-50'}`}><LayoutGrid className="h-4 w-4" /></button>
+              </div>
+              <button type="button" onClick={openCreate} className="inline-flex h-[46px] items-center gap-2 rounded-xl bg-[#1a3c36] px-4 text-sm font-semibold text-white transition hover:bg-[#214a42]">
+                <Plus className="h-4 w-4" /> Add New Cuisine
+              </button>
             </div>
           </div>
           {error && <p role="alert" className="m-4 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}
@@ -220,10 +271,33 @@ const Cuisines = () => {
               <p className="mt-1 max-w-sm text-sm text-gray-500">{search || statusFilter !== 'All statuses' ? 'Try another search or status filter.' : 'Add your first cuisine to start organizing menu items.'}</p>
               {!search && statusFilter === 'All statuses' && <button type="button" onClick={openCreate} className="mt-4 inline-flex h-9 items-center gap-2 rounded-md border border-gray-300 px-3 text-sm font-medium text-gray-700 hover:bg-gray-50"><Plus className="h-4 w-4" /> Add cuisine</button>}
             </div>
+          ) : viewMode === 'card' ? (
+            <div className="grid gap-4 p-4 sm:grid-cols-2 xl:grid-cols-4">
+              {visibleCuisines.map((cuisine) => (
+                <article key={cuisine.cuisine_id} className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm transition hover:shadow-md">
+                  <div className="mb-3 flex items-start justify-between gap-3">
+                    {cuisine.image
+                      ? <img src={imageUrl(cuisine.image)} alt="" className="h-12 w-12 rounded-lg object-cover" />
+                      : <span className="flex h-12 w-12 items-center justify-center rounded-lg bg-emerald-50 text-emerald-800"><Utensils className="h-5 w-5" /></span>}
+                    <div className="flex gap-2">
+                      <button type="button" onClick={() => openEdit(cuisine.cuisine_id)} className="rounded-md border border-gray-300 p-2 hover:bg-gray-50" aria-label={`Edit ${cuisine.cuisine_name}`}><Pencil className="h-4 w-4" /></button>
+                      <button type="button" onClick={() => handleDelete(cuisine.cuisine_id)} className="rounded-md border border-red-200 p-2 text-red-700 hover:bg-red-50" aria-label={`Delete ${cuisine.cuisine_name}`}><Trash2 className="h-4 w-4" /></button>
+                    </div>
+                  </div>
+                  <h3 className="font-semibold text-gray-900">{cuisine.cuisine_name}</h3>
+                  <p className="mt-0.5 text-xs text-gray-500">{cuisine.cuisine_id}</p>
+                  <p className="mt-3 min-h-10 text-sm text-gray-600">{cuisine.description || 'No description'}</p>
+                  <div className="mt-3 flex items-center justify-between">
+                    <span className={`inline-flex rounded-full px-2 py-1 text-xs font-medium ${cuisine.status === 'Active' ? 'bg-emerald-50 text-emerald-800' : 'bg-gray-100 text-gray-600'}`}>{cuisine.status}</span>
+                    {cuisine.featured && <span className="inline-flex items-center gap-1 text-xs font-medium text-amber-700"><Star className="h-3.5 w-3.5 fill-amber-400 text-amber-500" /> Featured</span>}
+                  </div>
+                </article>
+              ))}
+            </div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full min-w-[980px] text-left text-sm">
-                <thead className="border-b border-gray-200 bg-gray-50 text-xs uppercase text-gray-600">
+                <thead className="border-b border-[#c39732] bg-[#d4a843] text-xs uppercase text-white">
                   <tr>
                     <th className="px-3 py-3">Cuisine</th>
                     <th className="px-3 py-3">Description</th>
