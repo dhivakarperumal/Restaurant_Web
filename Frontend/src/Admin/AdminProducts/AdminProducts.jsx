@@ -40,6 +40,7 @@ const AdminProducts = () => {
   const [selectedCategory, setSelectedCategory] = useState(
     location.pathname === '/admin/gifts' ? 'Gift' : 'All Categories'
   );
+  const [selectedCuisine, setSelectedCuisine] = useState('All Cuisines');
   const [selectedStatus, setSelectedStatus] = useState('All Status');
   const [sortBy, setSortBy] = useState('latest');
   const [viewMode, setViewMode] = useState('table');
@@ -120,12 +121,15 @@ const AdminProducts = () => {
           ? p.category.toLowerCase().includes('gift')
           : p.category === selectedCategory);
 
+      const matchesCuisine =
+        selectedCuisine === 'All Cuisines' || p.cuisine === selectedCuisine;
+
       const matchesStatus =
         selectedStatus === 'All Status' ||
         (selectedStatus === 'Active' && p.status === 'Active') ||
         (selectedStatus === 'Inactive' && p.status !== 'Active');
 
-      return matchesSearch && matchesCategory && matchesStatus;
+      return matchesSearch && matchesCategory && matchesCuisine && matchesStatus;
     })
     .sort((a, b) => {
       if (sortBy === 'latest') {
@@ -284,6 +288,20 @@ const AdminProducts = () => {
                     {cat.category_name}
                   </option>
                 ))}
+              </select>
+
+              <select
+                value={selectedCuisine}
+                onChange={(e) => setSelectedCuisine(e.target.value)}
+                className="h-[46px] rounded-xl border border-[#dfe2e5] bg-[#faf9f8] px-3 text-[14px] font-medium text-[#2d2d2d] outline-none focus:border-[#d2bc8a]"
+                aria-label="Filter by cuisine"
+              >
+                <option value="All Cuisines">All Cuisines</option>
+                {[...new Set(productsList.map((product) => product.cuisine).filter((cuisine) => cuisine !== '—'))]
+                  .sort((first, second) => first.localeCompare(second))
+                  .map((cuisine) => (
+                    <option key={cuisine} value={cuisine}>{cuisine}</option>
+                  ))}
               </select>
 
               <select
