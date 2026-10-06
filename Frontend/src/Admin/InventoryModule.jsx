@@ -784,7 +784,7 @@ function SuppliersPage() {
 
   return (
     <>
-      <InventoryCrudPage title="Suppliers" subtitle="Track supplier contacts, balances and purchase history.">
+      <div>
 
         <div className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
           {supplierCards.map(({ title, value, icon: Icon, bg, hint }, index) => (
@@ -933,7 +933,7 @@ function SuppliersPage() {
             </div>
           )}
         </div>
-      </InventoryCrudPage>
+      </div>
 
       {isAddModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/45 p-4">
@@ -1017,7 +1017,7 @@ function PurchasesPage() {
   };
 
   return (
-    <InventoryCrudPage title="Purchases" subtitle="Record new purchases and update stock automatically.">
+    <div>
       <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
         <form className="space-y-4" onSubmit={handleSubmit}>
           <div className="grid gap-3 md:grid-cols-3">
@@ -1074,7 +1074,7 @@ function PurchasesPage() {
           <button type="submit" className="rounded-xl bg-[#1a3c36] px-5 py-2.5 text-sm font-semibold text-white">Save Purchase</button>
         </form>
       </div>
-    </InventoryCrudPage>
+    </div>
   );
 }
 
@@ -1444,7 +1444,7 @@ function KitchenRequestsPage() {
 
   return (
     <>
-      <InventoryCrudPage title="Kitchen Requests" subtitle="Send ingredient and production requests to the kitchen team and track stock usage.">
+      <div>
 
         <div className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
           {kitchenCards.map(({ title, value, icon: Icon, bg, hint }, index) => (
@@ -1592,7 +1592,7 @@ function KitchenRequestsPage() {
             </div>
           )}
         </div>
-      </InventoryCrudPage>
+      </div>
 
       {isAddModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/45 p-4">
