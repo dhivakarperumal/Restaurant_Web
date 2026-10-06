@@ -44,7 +44,7 @@ function CustomerOrdersPage({ audience = 'admin', view = 'all', showOrderFilters
   const [orderTypeFilter, setOrderTypeFilter] = useState(
     view === 'delivery' ? 'home_delivery' : view === 'pickup' ? 'pickup' : 'all'
   );
-  const [statusFilter, setStatusFilter] = useState('all');
+  const [statusFilter, setStatusFilter] = useState(view === 'new' ? 'placed' : 'all');
   const [searchTerm, setSearchTerm] = useState('');
   const [sortOrder, setSortOrder] = useState('latest');
   const [layout, setLayout] = useState('table');
@@ -52,10 +52,13 @@ function CustomerOrdersPage({ audience = 'admin', view = 'all', showOrderFilters
   const title = isCustomer
     ? 'My Orders'
     : audience === 'chef' ? 'Customer Kitchen Orders'
-      : view === 'pickup' ? 'Pickup Orders'
-        : view === 'delivery' ? (showOrderFilters ? 'Home Delivery Orders' : 'Delivery Orders')
-          : 'Customer Orders';
-  const filterStatus = FILTERS[view]?.status;
+      : view === 'new' ? 'New Orders'
+        : view === 'pickup' ? 'Pickup Orders'
+      : view === 'delivery' ? (showOrderFilters ? 'Home Delivery Orders' : 'Delivery Orders')
+        : 'Customer Orders';
+  const filterStatus = showOrderFilters && view === 'new'
+    ? (statusFilter === 'all' ? undefined : statusFilter)
+    : FILTERS[view]?.status;
   const filterOrderType = FILTERS[view]?.order_type;
   const visibleOrders = useMemo(() => {
     const query = searchTerm.trim().toLowerCase();
@@ -137,36 +140,9 @@ function CustomerOrdersPage({ audience = 'admin', view = 'all', showOrderFilters
   return (
     <>
       {isCustomer && <PageHeader title={title} />}
-      <main className="min-h-screen bg-[#f5f6f3] p-4 sm:p-6 lg:p-8">
+      <main className="min-h-screen  p-2 sm:p-2 lg:p-2">
       <div className="mx-auto max-w-[1500px] space-y-6">
-        <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-          {isCustomer ? (
-            <p className="text-sm text-[#68766e]">
-              Your order history and current order status.
-            </p>
-          ) : (
-            <div>
-              <p className="text-xs font-bold uppercase tracking-[0.2em] text-[#a34f32]">
-                {audience === 'chef' ? 'Kitchen' : 'Administration'}
-              </p>
-              <h1 className="mt-1 text-3xl font-bold tracking-tight text-[#263830]">{title}</h1>
-              <p className="mt-2 text-sm text-[#68766e]">
-                {audience === 'chef'
-                  ? 'Review customer orders and update their kitchen progress.'
-                  : 'Review customer orders, fulfilment details, and payment status.'}
-              </p>
-            </div>
-          )}
-          <button
-            type="button"
-            onClick={() => fetchOrders(true)}
-            disabled={refreshing}
-            className="inline-flex items-center justify-center gap-2 self-start rounded-xl border border-[#d9ded8] bg-white px-4 py-2.5 text-sm font-semibold text-[#263830] hover:bg-[#f9faf8] disabled:opacity-60 sm:self-auto"
-          >
-            <RefreshCw size={16} className={refreshing ? 'animate-spin' : ''} />
-            Refresh
-          </button>
-        </header>
+       
 
         {!isCustomer && audience === 'admin' && (
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
