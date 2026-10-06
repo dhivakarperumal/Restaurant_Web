@@ -193,20 +193,20 @@ const Navbar = () => {
 
   const desktopLinkClass = ({ isActive }) =>
     `relative py-2 text-sm font-semibold transition-colors after:absolute after:inset-x-0 after:-bottom-0.5 after:h-0.5 after:origin-left after:scale-x-0 after:bg-gold after:transition-transform ${
-      isActive ? "text-gold after:scale-x-100" : "text-brand-text hover:text-gold"
+      isActive ? "text-gold after:scale-x-100" : "text-[#203129] hover:text-gold"
     }`;
 
   const mobileLinkClass = ({ isActive }) =>
     `flex items-center justify-between rounded-xl px-3 py-3 text-base font-medium transition ${
       isActive
-        ? "bg-primary/20 text-gold"
-        : "text-brand-text/85 hover:bg-brand-surface/70 hover:text-brand-text"
+        ? "bg-primary/10 text-primary"
+        : "text-[#203129] hover:bg-slate-100 hover:text-primary"
     }`;
 
   return (
     <>
       <header
-        className={`fixed left-0 top-0 z-50 w-full bg-brand-bg transition-transform duration-300 ease-in-out ${
+        className={`fixed left-0 top-0 z-50 w-full bg-white transition-transform duration-300 ease-in-out ${
           isScrolled ? "md:-translate-y-[42px]" : "translate-y-0"
         }`}
       >
@@ -251,14 +251,14 @@ const Navbar = () => {
         </div>
 
         <div
-          className={`border-b border-brand-border bg-brand-bg transition-shadow duration-300 ${
+          className={`border-b border-brand-border bg-white transition-shadow duration-300 ${
             isScrolled
               ? "shadow-[0_8px_24px_rgba(0,0,0,0.1)]"
               : "shadow-[0_4px_18px_rgba(0,0,0,0.08)]"
           }`}
         >
           <PageContainer>
-            <div className="flex h-[72px] items-center justify-between gap-2 bg-brand-bg sm:gap-4 lg:h-[88px]">
+            <div className="flex h-[72px] items-center justify-between gap-2 bg-white sm:gap-4 lg:h-[88px]">
               <Link to="/" className="flex min-w-0 items-center gap-2.5 sm:gap-3">
                 {/* <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-[#d79d4a]/50 bg-white shadow-inner sm:h-14 sm:w-14">
                   <img
@@ -268,7 +268,7 @@ const Navbar = () => {
                   />
                 </div> */}
                 <div className="min-w-0 leading-none">
-                  <div className="text-[22px] font-black tracking-[-0.06em] text-brand-text sm:text-[26px]">
+                  <div className="text-[22px] font-black tracking-[-0.06em] text-[#102c22] sm:text-[26px]">
                     Buy Food
                   </div>
                   <div className="mt-1 hidden text-[9px] font-semibold tracking-[0.28em] text-gold sm:block">
@@ -285,7 +285,7 @@ const Navbar = () => {
                 >
                   Home
                 </NavLink>
-                <div className="flex items-center gap-1 text-sm font-semibold text-brand-text">
+                <div className="flex items-center gap-1 text-sm font-semibold text-[#203129]">
                   <NavLink
                     to="/shop"
                     className={() => desktopLinkClass({ isActive: isShopPage })}
@@ -294,7 +294,7 @@ const Navbar = () => {
                   </NavLink>
                 </div>
 
-                <div className="flex items-center gap-1 text-sm font-semibold text-brand-text">
+                <div className="flex items-center gap-1 text-sm font-semibold text-[#203129]">
                   <NavLink
                     to="/about"
                     className={desktopLinkClass}
@@ -325,7 +325,7 @@ const Navbar = () => {
                     onClick={() => toggleMenu("pages")}
                     aria-expanded={openMenu === "pages"}
                     aria-haspopup="menu"
-                    className={`flex items-center gap-1 text-sm font-semibold transition ${openMenu === "pages" || isPagesRoute ? "text-gold" : "text-brand-text hover:text-gold"}`}
+                    className={`flex items-center gap-1 text-sm font-semibold transition ${openMenu === "pages" || isPagesRoute ? "text-gold" : "text-[#203129] hover:text-gold"}`}
                   >
                     Offers
                     <FiChevronDown
@@ -517,7 +517,7 @@ const Navbar = () => {
         </div>
 
         {mobileMenu && (
-          <div className="border-t border-brand-border bg-brand-bg shadow-lg xl:hidden">
+          <div className="border-t border-brand-border bg-white shadow-lg xl:hidden">
             <PageContainer>
               <nav className="max-h-[calc(100vh-72px)] overflow-y-auto py-3 sm:max-h-[calc(100vh-130px)]" aria-label="Mobile navigation">
                 <NavLink to="/" end onClick={() => setMobileMenu(false)} className={mobileLinkClass}>
