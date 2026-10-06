@@ -57,6 +57,7 @@ const AdminProducts = () => {
           name: food.food_name,
           code: food.food_id,
           category: food.category_name,
+          cuisine: food.cuisine_name || '—',
           price: `₹${Number(food.final_price || 0).toFixed(2)}`,
           oldPrice: `₹${Number(food.mrp || 0).toFixed(2)}`,
           stock: Number(food.preparation_time) || 0,
@@ -371,6 +372,9 @@ const AdminProducts = () => {
                       </div>
                       <h3 className="truncate text-base font-semibold text-[#1f1f1f]">{product.name}</h3>
                       <p className="mt-1 font-mono text-xs text-[#7a7a7a]">{product.code}</p>
+                      <p className="mt-2 truncate text-sm text-[#666]">
+                        <span className="font-medium text-[#444]">Cuisine:</span> {product.cuisine}
+                      </p>
                       <div className="mt-3 flex items-center justify-between text-sm">
                         <span className="font-bold text-[#1e1e1e]">{product.price}</span>
                         <span className="text-[#666]">{product.stock} min</span>
@@ -397,6 +401,7 @@ const AdminProducts = () => {
                       <th className="px-4 py-4">S.No</th>
                       <th className="px-4 py-4">Product</th>
                       <th className="px-4 py-4">Category</th>
+                      <th className="px-4 py-4">Cuisine</th>
                       <th className="px-4 py-4">Price</th>
                       <th className="px-4 py-4">Prep time</th>
                       <th className="px-4 py-4">Status</th>
@@ -434,6 +439,8 @@ const AdminProducts = () => {
                           </td>
 
                           <td className="px-4 py-4 text-sm text-[#4d4d4d]">{product.category}</td>
+
+                          <td className="px-4 py-4 text-sm text-[#4d4d4d]">{product.cuisine}</td>
 
                           <td className="px-4 py-4">
                             <div className="text-lg font-bold text-[#1e1e1e]">{product.price}</div>
