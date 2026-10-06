@@ -12,6 +12,7 @@ const { initializeSettingsSchema } = require('./settings');
 const { initializeKitchenOrderSchema } = require('./kitchenOrders');
 const { initializeInventorySchema } = require('./inventory');
 const { initializeOrderSchema } = require('./orders');
+const { initializeWishlistSchema } = require('./wishlist');
 const {
   initializeServerTableSchema,
   createServerTable,
@@ -30,6 +31,7 @@ module.exports = {
   initializeFoodSchema,
   initializeKitchenOrderSchema,
   initializeOrderSchema,
+  initializeWishlistSchema,
   initializeBannerSchema,
   initializeCouponSchema,
   initializeReviewSchema,

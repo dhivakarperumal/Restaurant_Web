@@ -1,7 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
-const { initializeAuthSchema, initializeBannerSchema, initializeCategorySchema, initializeCouponSchema, initializeCuisineSchema, initializeFoodSchema, initializeInventorySchema, initializeKitchenOrderSchema, initializeReviewSchema, initializeVideoSchema, initializeEmployeeSchema, initializeServerTableSchema, initializeSettingsSchema, initializeOrderSchema, testConnection } = require('./modules/modules');
+const { initializeAuthSchema, initializeBannerSchema, initializeCategorySchema, initializeCouponSchema, initializeCuisineSchema, initializeFoodSchema, initializeInventorySchema, initializeKitchenOrderSchema, initializeReviewSchema, initializeVideoSchema, initializeEmployeeSchema, initializeServerTableSchema, initializeSettingsSchema, initializeOrderSchema, initializeWishlistSchema, testConnection } = require('./modules/modules');
 const apiRouter = require('./routers/routes');
 const { initializeRevenueIndexes } = require('./modules/revenue');
 
@@ -59,6 +59,8 @@ async function startServer() {
     console.log('Kitchen order tables ready');
     await initializeOrderSchema();
     console.log('Customer order tables ready');
+    await initializeWishlistSchema();
+    console.log('Wishlist table ready');
     await initializeBannerSchema();
     console.log('Banner tables ready');
     await initializeInventorySchema();

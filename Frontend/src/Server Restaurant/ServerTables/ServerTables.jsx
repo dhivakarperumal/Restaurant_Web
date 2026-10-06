@@ -69,6 +69,34 @@ export default function ServerTables() {
   const [settlingBill, setSettlingBill] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState("Cash");
   const [settleDiscount, setSettleDiscount] = useState(0);
+  const billItems = useMemo(() => {
+    if (!viewingBill) return [];
+    const roundItems = Array.isArray(viewingBill.rounds)
+      ? viewingBill.rounds.flatMap((round) => round.items || [])
+      : [];
+    const sourceItems = roundItems.length
+      ? roundItems
+      : viewingBill.consolidated_items || viewingBill.items || [];
+    const itemsByFood = new Map();
+    sourceItems.forEach((item) => {
+      const key = String(item.food_id || item.food_name);
+      const existing = itemsByFood.get(key);
+      const quantity = Number(item.quantity || 0);
+      const totalPrice = Number(item.total_price ?? Number(item.unit_price || 0) * quantity);
+      if (existing) {
+        existing.quantity += quantity;
+        existing.total_price += totalPrice;
+      } else {
+        itemsByFood.set(key, {
+          food_id: key,
+          food_name: item.food_name,
+          quantity,
+          total_price: totalPrice,
+        });
+      }
+    });
+    return Array.from(itemsByFood.values());
+  }, [viewingBill]);
 
   // Modal states
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -380,6 +408,10 @@ export default function ServerTables() {
   const currentUserName = userProfile?.name || userProfile?.displayName || userProfile?.full_name || userProfile?.username;
 
   const selectTableForOrder = (table) => {
+    if (String(table.status || "").trim().toLowerCase() !== "occupied") {
+      toast.error("Mark the table as Occupied before starting an order.");
+      return;
+    }
     navigate("/server/foods", {
       state: {
         selectedTable: {
@@ -712,6 +744,7 @@ export default function ServerTables() {
             const activeOrder = getTableActiveOrder(table);
             const activeBill = getTableActiveBill(table);
             const isReady = activeOrder?.status === "Ready to Serve";
+            const canOrder = String(table.status || "").trim().toLowerCase() === "occupied";
             return (
               <div
                 key={table.table_id || table.id}
@@ -934,8 +967,10 @@ export default function ServerTables() {
                       )}
                       <button
                         type="button"
+                        disabled={!canOrder}
                         onClick={() => selectTableForOrder(table)}
-                        className="inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-[#1a3c36] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#214a42]"
+                        title={canOrder ? "Select table and create an order" : "Mark the table as Occupied before ordering"}
+                        className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#1a3c36] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#214a42] enabled:cursor-pointer disabled:cursor-not-allowed disabled:opacity-45 disabled:hover:bg-[#1a3c36]"
                       >
                         {activeBill ? "+ Add Round / Items" : "Select Table & Order"} <ArrowRight className="h-4 w-4" />
                       </button>
@@ -1115,6 +1150,7 @@ export default function ServerTables() {
                             <div className="flex items-center justify-end gap-2">
                               {(() => {
                                 const activeBill = getTableActiveBill(table);
+                                const canOrder = String(table.status || "").trim().toLowerCase() === "occupied";
                                 return (
                                   <>
                                     {activeBill && (
@@ -1128,8 +1164,10 @@ export default function ServerTables() {
                                     )}
                                     <button
                                       type="button"
+                                      disabled={!canOrder}
                                       onClick={() => selectTableForOrder(table)}
-                                      className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg bg-[#1a3c36] px-3 py-2 text-xs font-semibold text-white transition hover:bg-[#214a42]"
+                                      title={canOrder ? "Select table and create an order" : "Mark the table as Occupied before ordering"}
+                                      className="inline-flex items-center gap-1.5 rounded-lg bg-[#1a3c36] px-3 py-2 text-xs font-semibold text-white transition hover:bg-[#214a42] enabled:cursor-pointer disabled:cursor-not-allowed disabled:opacity-45 disabled:hover:bg-[#1a3c36]"
                                     >
                                       {activeBill ? "+ Add Round" : "Select Table"} <ArrowRight className="h-3.5 w-3.5" />
                                     </button>
@@ -1228,7 +1266,7 @@ export default function ServerTables() {
               </div>
 
               {/* Status Select Field */}
-              <div>
+              {/* <div>
                 <label className="block text-xs font-semibold text-gray-700 mb-1">
                   Table Status
                 </label>
@@ -1244,7 +1282,7 @@ export default function ServerTables() {
                   <option value="Reserved">Reserved (Booked)</option>
                   <option value="Maintenance">Maintenance (Out of service)</option>
                 </select>
-              </div>
+              </div> */}
 
               {editingTable && (
                 <div className="p-3 bg-gray-50 rounded-xl border border-gray-100 text-xs space-y-1 text-gray-500">
@@ -1327,30 +1365,16 @@ export default function ServerTables() {
               </div>
             </div>
 
-            {/* Rounds & Items Breakdown */}
-            <div className="max-h-64 overflow-y-auto space-y-3 mb-4 pr-1">
-              {viewingBill.rounds && viewingBill.rounds.length > 0 ? (
-                viewingBill.rounds.map((round) => (
-                  <div key={round.order_id} className="border border-gray-100 rounded-xl p-3 bg-gray-50/50">
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-xs font-bold text-purple-900 bg-purple-100 px-2 py-0.5 rounded">
-                        Round {round.round_number} {round.round_number > 1 ? "(Add-on)" : "(Initial Order)"}
-                      </span>
-                      <span className="text-[11px] text-gray-500 font-medium">
-                        {round.status}
-                      </span>
+            {/* Consolidated bill items */}
+            <div className="max-h-64 overflow-y-auto divide-y divide-gray-100 mb-4 pr-1">
+              {billItems.length > 0 ? (
+                billItems.map((item) => (
+                  <div key={item.food_id} className="py-2.5 flex justify-between items-center text-xs">
+                    <div>
+                      <span className="font-semibold text-gray-800">{item.food_name}</span>
+                      <span className="text-gray-500 ml-2">× {item.quantity}</span>
                     </div>
-                    <div className="divide-y divide-gray-100">
-                      {round.items.map((item) => (
-                        <div key={item.id} className="py-1.5 flex justify-between items-center text-xs">
-                          <div>
-                            <span className="font-semibold text-gray-800">{item.food_name}</span>
-                            <span className="text-gray-500 ml-2">× {item.quantity}</span>
-                          </div>
-                          <span className="font-mono text-gray-700">₹{item.total_price.toFixed(2)}</span>
-                        </div>
-                      ))}
-                    </div>
+                    <span className="font-mono text-gray-700">₹{item.total_price.toFixed(2)}</span>
                   </div>
                 ))
               ) : (

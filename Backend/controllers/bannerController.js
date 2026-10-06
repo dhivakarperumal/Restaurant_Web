@@ -2,6 +2,7 @@ const {
   createBanner,
   deleteBanner,
   findBannerById,
+  listActiveHeroBanners,
   listBanners,
   updateBanner,
 } = require('../modules/banners');
@@ -34,6 +35,15 @@ const list = async (_req, res) => {
   } catch (error) {
     console.error('Failed to list banners:', error.message);
     return res.status(500).json({ success: false, message: 'Unable to load banners.' });
+  }
+};
+
+const publicList = async (_req, res) => {
+  try {
+    return res.json({ success: true, data: await listActiveHeroBanners() });
+  } catch (error) {
+    console.error('Failed to list active home banners:', error.message);
+    return res.status(500).json({ success: false, message: 'Unable to load home banners.' });
   }
 };
 
@@ -86,4 +96,4 @@ const remove = async (req, res) => {
   }
 };
 
-module.exports = { create, getById, list, remove, update };
+module.exports = { create, getById, list, publicList, remove, update };

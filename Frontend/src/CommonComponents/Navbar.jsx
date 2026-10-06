@@ -210,9 +210,9 @@ const Navbar = () => {
           isScrolled ? "md:-translate-y-[42px]" : "translate-y-0"
         }`}
       >
-        <div className="hidden bg-brand-bg text-brand-text md:block">
+        <div className="hidden bg-[#fff8ed] text-[#203129] md:block">
           <PageContainer>
-            <div className="flex h-[42px] items-center justify-between gap-4 text-[11px] font-medium tracking-wide text-brand-text">
+            <div className="flex h-[42px] items-center justify-between gap-4 text-[11px] font-medium tracking-wide text-[#203129]">
               <div className="flex min-w-0 items-center gap-5">
                 <span className="flex items-center gap-2">
                   <FiMapPin className="text-gold" />

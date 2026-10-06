@@ -104,7 +104,7 @@ export const StoreProvider = ({ children }) => {
         if (!user?.user_id) { setWishlist([]); return; }
         try {
             setLoadingWishlist(true);
-            const res = await api.get(`/wishlist/${user.user_id}`);
+            const res = await api.get("/wishlist");
             const wishlistData = Array.isArray(res.data)
                 ? res.data
                 : Array.isArray(res.data?.data)
@@ -114,11 +114,8 @@ export const StoreProvider = ({ children }) => {
                 : [];
             setWishlist(wishlistData);
         } catch (err) {
-            if (err?.response?.status === 404 || err?.response?.status === 405) {
-                setWishlist([]);
-            } else {
-                console.error("Fetch wishlist error:", err);
-            }
+            console.error("Fetch wishlist error:", err);
+            toast.error(err?.response?.data?.message || "Unable to load your favorites.");
         } finally {
             setLoadingWishlist(false);
         }
@@ -238,20 +235,20 @@ export const StoreProvider = ({ children }) => {
 
     const removeFromWishlist = async (wishlistItemId) => {
         if (!user?.user_id) {
-            toast.error("Please login to manage wishlist");
+            requireLogin("Please login to manage favorites");
             return;
         }
 
-        const targetItem = wishlist.find((item) => String(item.id || item._id || item.product_id) === String(wishlistItemId));
-        const productId = targetItem?.product_id || wishlistItemId;
+        const targetItem = wishlist.find((item) => String(item.id || item._id || item.food_id || item.product_id) === String(wishlistItemId));
+        const foodId = targetItem?.food_id || targetItem?.product_id || wishlistItemId;
 
         try {
-            await api.delete(`/wishlist/${user.user_id}/${productId}`);
+            await api.delete(`/wishlist/${encodeURIComponent(foodId)}`);
             toast.success("Removed from favorites");
             await fetchWishlist();
         } catch (err) {
             console.error("Remove wishlist error:", err);
-            toast.error("Failed to remove item");
+            toast.error(err?.response?.data?.message || "Failed to remove favorite");
         }
     };
 
@@ -332,64 +329,35 @@ export const StoreProvider = ({ children }) => {
 
     // ─── WISHLIST ACTIONS ────────────────────────────────────────
 
-    const toggleWishlist = async (product, variant = null, size = null) => {
+    const toggleWishlist = async (product) => {
         if (!user?.user_id) {
             requireLogin("Please login before adding favorites");
-            return;
+            return false;
         }
 
-        const productId = product.id || product.product_id;
-        const itemType = product.__wishlistType || (product.gift_box_id ? "gift" : product.product_name && (product.product_images || product.total_pages) ? "album" : "product");
-        const isAlready = wishlist.some((item) => String(item.product_id || item.id || item._id) === String(productId));
+        const foodId = product.food_id || product.id || product.product_id;
+        if (!foodId) {
+            toast.error("This menu item could not be identified.");
+            return false;
+        }
+        const isAlready = wishlist.some((item) => String(item.food_id || item.product_id || item.id || item._id) === String(foodId));
 
         try {
             if (isAlready) {
-                await api.delete(`/wishlist/${user.user_id}/${productId}`);
+                await api.delete(`/wishlist/${encodeURIComponent(foodId)}`);
                 toast.success("Removed from favorites");
             } else {
-                const selectedVariant = variant || product.variants?.[0] || null;
-                const groceryVariantInfo = (selectedVariant?.quantity && selectedVariant?.unit) ? `${selectedVariant.quantity} ${selectedVariant.unit}` : null;
-                const selectedSize = size || groceryVariantInfo || selectedVariant?.selectedSizes?.[0] || "";
-                const variantColor = selectedVariant?.colorName || selectedVariant?.color || "";
-                
-                // Correctly parse images if they are stored as JSON strings
-                let productImages = product.images || [];
-                if (typeof productImages === "string") {
-                    try {
-                        productImages = JSON.parse(productImages);
-                    } catch {
-                        productImages = [];
-                    }
-                }
-                const variantImage = selectedVariant?.images?.[0] || productImages[0] || product.product_images?.[0] || null;
-                const price = parseFloat(
-                    selectedVariant?.offer_price ||
-                    selectedVariant?.sellingPrice ||
-                    selectedVariant?.selling_price ||
-                    selectedVariant?.mrp ||
-                    product.offer_price ||
-                    product.price ||
-                    0,
-                );
-
                 await api.post("/wishlist", {
-                    user_id: user.user_id,
-                    product_id: productId,
-                    variant_color: variantColor,
-                    variant_size: selectedSize,
-                    image: variantImage,
-                    email: user.email || "",
-                    price: price,
-                    total_price: price,
-                    item_type: itemType,
-                    item_name: product.name || product.product_name || "",
+                    food_id: foodId,
                 });
                 toast.success("Added to favorites!");
             }
             await fetchWishlist();
+            return true;
         } catch (err) {
             console.error("Toggle wishlist error:", err);
-            toast.error("Failed to update wishlist");
+            toast.error(err?.response?.data?.message || "Failed to update favorites");
+            return false;
         }
     };
 

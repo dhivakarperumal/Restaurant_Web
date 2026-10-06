@@ -397,19 +397,34 @@ const ChefKitchenOrders = () => {
                         Items Ordered ({totalItems})
                       </p>
                       <ul className="space-y-2 max-h-48 overflow-y-auto pr-1">
-                        {order.items.map((item) => (
+                        {order.items.map((item, itemIndex) => (
                           <li
-                            key={`${order.order_id}-${item.food_id}`}
-                            className="flex items-center justify-between rounded-lg bg-[#f8faf8] px-3 py-2 text-xs"
+                            key={`${order.order_id}-${item.food_id}-${itemIndex}`}
+                            className="flex items-start justify-between gap-3 rounded-lg bg-[#f8faf8] px-3 py-2 text-xs"
                           >
-                            <span className="font-semibold text-gray-800">
-                              <span className="inline-block min-w-5 font-mono text-emerald-800 font-bold">
-                                {item.quantity}×
-                              </span>{" "}
-                              {item.food_name}
-                            </span>
+                            <div className="min-w-0">
+                              <p className="font-semibold text-gray-800">
+                                <span className="inline-block min-w-5 font-mono font-bold text-emerald-800">
+                                  {item.quantity}×
+                                </span>{" "}
+                                {item.food_name}
+                              </p>
+                              {item.selected_addons?.length > 0 && (
+                                <p className="mt-1 text-[11px] text-gray-600">
+                                  Add-ons: {item.selected_addons.join(", ")}
+                                </p>
+                              )}
+                              {Object.entries(item.selected_customizations || {}).flatMap(([group, selection]) => {
+                                const options = Array.isArray(selection) ? selection : selection ? [selection] : [];
+                                return options.map((option) => (
+                                  <p key={`${group}-${option}`} className="mt-1 text-[11px] text-gray-600">
+                                    {group === "__custom_request__" ? "Custom request" : group}: {option}
+                                  </p>
+                                ));
+                              })}
+                            </div>
                             <span className="font-mono text-gray-500">
-                              ₹{(Number(item.unit_price) * item.quantity).toFixed(0)}
+                              ₹{(Number(item.unit_price) * item.quantity).toFixed(2)}
                             </span>
                           </li>
                         ))}

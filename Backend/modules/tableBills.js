@@ -169,6 +169,7 @@ async function getTableBillDetails(billId) {
   const placeholders = orderIds.map(() => '?').join(', ');
   const [items] = await db.execute(
     `SELECT koi.id, koi.order_id, koi.food_id, koi.food_name, koi.quantity, koi.unit_price, koi.created_at,
+            koi.selected_addons, koi.selected_customizations,
             f.food_type, f.food_images
      FROM kitchen_order_items koi
      LEFT JOIN foods f ON koi.food_id = f.food_id
@@ -190,6 +191,8 @@ async function getTableBillDetails(billId) {
       quantity: Number(item.quantity),
       unit_price: Number(item.unit_price),
       total_price: Number((Number(item.quantity) * Number(item.unit_price)).toFixed(2)),
+      selected_addons: parseStoredJson(item.selected_addons, []),
+      selected_customizations: parseStoredJson(item.selected_customizations, {}),
       food_type: item.food_type || 'Veg',
       created_at: item.created_at,
     };
@@ -199,12 +202,13 @@ async function getTableBillDetails(billId) {
     totalItemsCount += Number(item.quantity);
 
     // Consolidate for a unified invoice view
-    if (consolidatedMap.has(item.food_id)) {
-      const existing = consolidatedMap.get(item.food_id);
+    const variantKey = `${item.food_id}:${JSON.stringify([itemData.selected_addons, itemData.selected_customizations])}`;
+    if (consolidatedMap.has(variantKey)) {
+      const existing = consolidatedMap.get(variantKey);
       existing.quantity += Number(item.quantity);
       existing.total_price = Number((existing.quantity * existing.unit_price).toFixed(2));
     } else {
-      consolidatedMap.set(item.food_id, { ...itemData });
+      consolidatedMap.set(variantKey, { ...itemData });
     }
   }
 
@@ -228,6 +232,16 @@ async function getTableBillDetails(billId) {
     rounds,
     consolidated_items: Array.from(consolidatedMap.values()),
   };
+}
+
+function parseStoredJson(value, fallback) {
+  if (!value) return fallback;
+  if (typeof value === 'object') return value;
+  try {
+    return JSON.parse(value);
+  } catch {
+    return fallback;
+  }
 }
 
 /**

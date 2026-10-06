@@ -13,15 +13,23 @@ async function submitKitchenOrder(req, res) {
   }
 
   const items = [];
-  const itemIds = new Set();
   for (const rawItem of rawItems) {
     const foodId = String(rawItem?.food_id || '').trim();
     const quantity = Number(rawItem?.quantity);
-    if (!foodId || !Number.isInteger(quantity) || quantity < 1 || quantity > 99 || itemIds.has(foodId)) {
-      return res.status(400).json({ success: false, message: 'Each menu item must have a unique food ID and a quantity from 1 to 99.' });
+    const selectedAddons = rawItem?.selected_addons ?? [];
+    const selectedCustomizations = rawItem?.selected_customizations ?? {};
+    if (!foodId || !Number.isInteger(quantity) || quantity < 1 || quantity > 99
+      || !Array.isArray(selectedAddons) || selectedAddons.length > 50
+      || !selectedCustomizations || typeof selectedCustomizations !== 'object'
+      || Array.isArray(selectedCustomizations)) {
+      return res.status(400).json({ success: false, message: 'Each menu item must have a valid food ID, quantity, and option selection.' });
     }
-    itemIds.add(foodId);
-    items.push({ food_id: foodId, quantity });
+    items.push({
+      food_id: foodId,
+      quantity,
+      selected_addons: selectedAddons,
+      selected_customizations: selectedCustomizations,
+    });
   }
 
   try {
@@ -80,4 +88,3 @@ async function changeKitchenOrderStatus(req, res) {
 }
 
 module.exports = { changeKitchenOrderStatus, getKitchenOrders, submitKitchenOrder };
-
