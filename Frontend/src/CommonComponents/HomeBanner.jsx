@@ -113,7 +113,7 @@ function HomeBanner() {
       <div className="relative mx-auto grid min-h-[620px] max-w-[1920px] md:h-[570px] md:min-h-0 lg:h-[620px] md:grid-cols-[46%_54%]">
         <div className="relative z-10 flex min-w-0 flex-col justify-center bg-[#fff8ed]">
           <div className="pointer-events-none absolute -left-12 -top-12 h-36 w-36 rounded-full bg-[#315d2d]/[0.06]" />
-          <PageContainer className="relative flex h-full w-full flex-col justify-center !px-[13.04%] py-12 sm:!px-[10.87%] sm:py-14 lg:!px-[6.52%]">
+          <PageContainer className="relative flex h-full w-full flex-col justify-center py-12 sm:py-14">
           <div className="max-w-[590px]">
             <p className="flex flex-wrap items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] text-[#e86d16] sm:text-xs">
               <Sparkles className="h-3.5 w-3.5" />
