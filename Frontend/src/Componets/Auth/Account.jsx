@@ -356,154 +356,91 @@ const Account = () => {
   return (
     <>
       <PageHeader title="Account" />
-      <main className="min-h-screen bg-[#f8f6f1] pb-20 pt-10 sm:pt-14">
-
-        <PageContainer>
-
-          {/* Header Section */}
-          <div className="mb-10 flex flex-col justify-between gap-5 border-b border-[#dfd6ca] pb-8 md:flex-row md:items-end">
-            <div>
-              <p className="mb-2 text-xs font-bold uppercase tracking-[0.25em] text-[#b87840]">
-                Personal Space
-              </p>
-              <h1 className="font-serif text-3xl sm:text-5xl font-medium text-[#1b2925]">
-                My Account
-              </h1>
-              <p className="mt-2 text-sm text-[#68736e]">
-                Keep your details updated and follow every order from checkout to delivery.
-              </p>
-            </div>
-
-            <div className="flex items-center gap-3.5 rounded-lg border border-[#dfd6ca] bg-white px-4 py-3 shadow-xs">
-              <span className="flex h-11 w-11 items-center justify-center rounded-full bg-[#1b2925] text-base font-bold text-white shadow-inner">
-                {userInitial}
-              </span>
-              <div>
-                <p className="text-sm font-semibold text-[#1b2925]">
-                  {displayName}
-                </p>
-                <p className="text-xs text-[#7b8580]">{user?.email || ""}</p>
-              </div>
-            </div>
-          </div>
-
-          {/* Account Layout: Left Tabs Sidebar & Right Active Content */}
-          <div className="flex flex-col lg:flex-row items-start gap-8">
-            {/* LEFT SIDEBAR: TAB NAVIGATION */}
-            <aside className="w-full lg:w-80 flex-shrink-0">
-              <div className="overflow-hidden rounded-xl border border-[#dfd6ca] bg-white shadow-xs">
-                {/* User profile mini banner */}
-                <div className="border-b border-[#dfd6ca] bg-[#fcfbf9] p-5">
-                  <div className="flex items-center gap-3.5">
-                    <span className="flex h-12 w-12 items-center justify-center rounded-full bg-[#1b2925] text-lg font-bold text-white shadow-sm">
-                      {userInitial}
-                    </span>
-                    <div className="min-w-0 flex-1">
-                      <h3 className="truncate font-semibold text-[#1b2925] text-base">
-                        {displayName}
-                      </h3>
-                      <p className="truncate text-xs text-[#7b8580]">
-                        {user?.email}
-                      </p>
-                      <span className="mt-1.5 inline-block rounded bg-[#f4eee6] px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-[#b87840]">
-                        Member Account
-                      </span>
-                    </div>
-                  </div>
+      <main className="min-h-screen bg-[#f5f7f3] pb-20 pt-8 sm:pt-12">
+        <PageContainer className="max-w-[1440px]">
+          <section className="relative mb-7 overflow-hidden rounded-[28px] bg-[#071C18] px-6 py-7 text-white shadow-xl shadow-[#071C18]/10 sm:px-9 sm:py-9">
+            <div aria-hidden="true" className="pointer-events-none absolute -right-10 -top-24 h-72 w-72 rounded-full border-[36px] border-white/[0.035]" />
+            <div aria-hidden="true" className="pointer-events-none absolute -bottom-28 right-32 h-56 w-56 rounded-full bg-[#FD5E02]/10 blur-2xl" />
+            <div className="relative flex flex-col gap-7 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex items-center gap-4 sm:gap-5">
+                <span className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl border border-white/15 bg-white/10 font-serif text-2xl font-bold text-[#FEB914] sm:h-[76px] sm:w-[76px] sm:text-3xl">
+                  {userInitial}
+                </span>
+                <div className="min-w-0">
+                  <p className="text-xs font-bold uppercase tracking-[0.2em] text-[#FEB914]">Your Foodie account</p>
+                  <h1 className="mt-1 truncate font-serif text-3xl font-bold sm:text-4xl">Welcome, {displayName}</h1>
+                  <p className="mt-1 truncate text-sm text-white/65">{user?.email || "Manage your personal details and orders"}</p>
                 </div>
-
-                {/* Tab navigation buttons */}
-                <nav className="p-2 sm:p-3 space-y-1.5" aria-label="Account Tabs">
-                  {TAB_CONFIG.map((tab) => {
-                    const Icon = tab.icon;
-                    const isActive = activeTab === tab.id;
-                    const count = tab.id === "orders" ? orders.length : null;
-
-                    return (
-                      <button
-                        key={tab.id}
-                        type="button"
-                        onClick={() => handleTabSelect(tab.id)}
-                        className={`group flex w-full items-center justify-between rounded-lg px-3.5 py-3.5 text-left transition-all cursor-pointer ${isActive
-                            ? "bg-[#1b2925] text-white shadow-xs"
-                            : "text-[#4a5550] hover:bg-[#f8f6f1] hover:text-[#1b2925]"
-                          }`}
-                      >
-                        <div className="flex items-center gap-3.5 min-w-0">
-                          <span
-                            className={`flex h-9 w-9 items-center justify-center rounded-md transition-colors ${isActive
-                                ? "bg-white/10 text-[#edcca3]"
-                                : "bg-[#f4eee6] text-[#b87840] group-hover:bg-[#ebe2d6]"
-                              }`}
-                          >
-                            <Icon size={18} />
-                          </span>
-                          <div className="min-w-0">
-                            <p className="text-sm font-semibold leading-tight">
-                              {tab.label}
-                            </p>
-                            <p
-                              className={`text-xs mt-0.5 truncate ${isActive ? "text-white/70" : "text-[#7b8580]"
-                                }`}
-                            >
-                              {tab.desc}
-                            </p>
-                          </div>
-                        </div>
-
-                        <div className="flex items-center gap-2 ml-2">
-                          {count !== null && count > 0 && (
-                            <span
-                              className={`rounded-full px-2 py-0.5 text-xs font-bold ${isActive
-                                  ? "bg-[#b87840] text-white"
-                                  : "bg-[#eee7de] text-[#7b6a58]"
-                                }`}
-                            >
-                              {count}
-                            </span>
-                          )}
-                          <ChevronRight
-                            size={16}
-                            className={`transition-transform duration-200 ${isActive
-                                ? "text-[#edcca3] translate-x-0.5"
-                                : "text-transparent group-hover:text-[#dfd6ca]"
-                              }`}
-                          />
-                        </div>
-                      </button>
-                    );
-                  })}
-
-                  {/* Sign Out Option */}
-                  <div className="pt-2 mt-2 border-t border-[#dfd6ca]">
-                    <button
-                      type="button"
-                      onClick={() => setShowLogoutConfirm(true)}
-                      className="flex w-full items-center gap-3.5 rounded-lg px-3.5 py-3 text-left text-sm font-semibold text-[#c24130] hover:bg-[#fae5e2]/60 transition cursor-pointer"
-                    >
-                      <span className="flex h-9 w-9 items-center justify-center rounded-md bg-[#fae5e2] text-[#c24130]">
-                        <LogOut size={16} />
-                      </span>
-                      <span>Sign Out</span>
-                    </button>
-                  </div>
-                </nav>
               </div>
-            </aside>
+              <button
+                type="button"
+                onClick={() => setShowLogoutConfirm(true)}
+                className="inline-flex w-fit items-center gap-2 rounded-xl border border-white/20 bg-white/[0.07] px-4 py-2.5 text-sm font-semibold text-white transition hover:border-[#FD5E02] hover:bg-[#FD5E02] sm:self-center"
+              >
+                <LogOut size={16} /> Sign out
+              </button>
+            </div>
+            <div className="relative mt-7 grid grid-cols-2 gap-3 border-t border-white/10 pt-5 sm:grid-cols-3">
+              <div className="rounded-xl bg-white/[0.06] px-4 py-3">
+                <p className="text-2xl font-bold text-white">{orders.length}</p>
+                <p className="mt-0.5 text-xs text-white/60">Your orders</p>
+              </div>
+              <div className="rounded-xl bg-white/[0.06] px-4 py-3">
+                <p className="text-2xl font-bold text-white">{addresses.length}</p>
+                <p className="mt-0.5 text-xs text-white/60">Saved addresses</p>
+              </div>
+              <div className="col-span-2 rounded-xl bg-white/[0.06] px-4 py-3 sm:col-span-1">
+                <p className="truncate text-sm font-semibold text-white">{profile.mobile_number || "Add a phone number"}</p>
+                <p className="mt-1 text-xs text-white/60">Contact number</p>
+              </div>
+            </div>
+          </section>
 
-            {/* RIGHT CONTENT PANEL: ONLY THE SELECTED TAB IS SHOWN */}
-            <section className="flex-1 w-full min-w-0">
-              <div className="rounded-xl border border-[#dfd6ca] bg-white p-6 sm:p-9 shadow-xs min-h-[460px]">
+          <nav className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4" aria-label="Account sections">
+            {TAB_CONFIG.map((tab) => {
+              const Icon = tab.icon;
+              const isActive = activeTab === tab.id;
+              const count = tab.id === "orders" ? orders.length : null;
+              return (
+                <button
+                  key={tab.id}
+                  type="button"
+                  onClick={() => handleTabSelect(tab.id)}
+                  aria-current={isActive ? "page" : undefined}
+                  className={`group flex min-h-[78px] items-center gap-3 rounded-2xl border p-3 text-left transition duration-200 sm:min-h-[88px] sm:p-4 ${
+                    isActive
+                      ? "border-[#396F0B] bg-[#396F0B] text-white shadow-lg shadow-[#396F0B]/15"
+                      : "border-[#e2e8df] bg-white text-[#071C18] hover:-translate-y-0.5 hover:border-[#396F0B]/40 hover:shadow-md"
+                  }`}
+                >
+                  <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${isActive ? "bg-white/15 text-[#FEB914]" : "bg-[#eff5e9] text-[#396F0B]"}`}>
+                    <Icon size={19} />
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="flex items-center gap-2 text-sm font-bold leading-tight">
+                      {tab.id === "profile" ? "Personal info" : tab.id === "address" ? "Addresses" : tab.id === "orders" ? "Orders" : "Password"}
+                      {count !== null && <span className={`rounded-full px-1.5 py-0.5 text-[10px] ${isActive ? "bg-white/15 text-white" : "bg-[#eff5e9] text-[#396F0B]"}`}>{count}</span>}
+                    </span>
+                    <span className={`mt-1 hidden truncate text-xs sm:block ${isActive ? "text-white/65" : "text-slate-500"}`}>{tab.desc}</span>
+                  </span>
+                  <ChevronRight size={16} className={`hidden shrink-0 sm:block ${isActive ? "text-[#FEB914]" : "text-slate-300 group-hover:text-[#396F0B]"}`} />
+                </button>
+              );
+            })}
+          </nav>
+
+          <section className="min-w-0">
+            <div className="account-content min-h-[460px] rounded-[24px] border border-[#e2e8df] bg-white p-5 shadow-sm sm:p-8 lg:p-10">
                 {/* TAB 1: PROFILE DETAILS */}
                 {activeTab === "profile" && (
                   <div>
-                    <div className="mb-7 flex items-center justify-between border-b border-[#eee9e3] pb-5">
+                    <div className="mb-7 flex items-center justify-between border-b border-[#E8EDE6] pb-5">
                       <div className="flex items-center gap-3">
-                        <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-[#f4eee6] text-[#b87840]">
+                        <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-[#EFF5E9] text-[#FD5E02]">
                           <UserRound size={20} />
                         </span>
                         <div>
-                          <h2 className="text-xl font-serif font-semibold text-[#1b2925]">
+                          <h2 className="text-xl font-serif font-semibold text-[#071C18]">
                             Profile Details
                           </h2>
                           <p className="text-xs text-[#7b8580]">
@@ -516,7 +453,7 @@ const Account = () => {
                     <form onSubmit={updateProfile} className="space-y-6">
                       <div className="grid gap-5 sm:grid-cols-2">
                         <label className="block text-xs font-bold uppercase tracking-wider text-[#68736e]">
-                          Full Name <span className="text-[#b87840]">*</span>
+                          Full Name <span className="text-[#FD5E02]">*</span>
                           <input
                             required
                             type="text"
@@ -526,7 +463,7 @@ const Account = () => {
                             onChange={(e) =>
                               setProfile({ ...profile, username: e.target.value })
                             }
-                            className="mt-2 h-12 w-full rounded-lg border border-[#ddd6ce] bg-[#fcfbf8] px-4 text-sm outline-none transition focus:border-[#b87840] focus:ring-1 focus:ring-[#b87840]"
+                            className="mt-2 h-12 w-full rounded-lg border border-[#E2E8DF] bg-[#F8FAF7] px-4 text-sm outline-none transition focus:border-[#FD5E02] focus:ring-1 focus:ring-[#FD5E02]"
                           />
                         </label>
 
@@ -543,7 +480,7 @@ const Account = () => {
                                 mobile_number: e.target.value,
                               })
                             }
-                            className="mt-2 h-12 w-full rounded-lg border border-[#ddd6ce] bg-[#fcfbf8] px-4 text-sm outline-none transition focus:border-[#b87840] focus:ring-1 focus:ring-[#b87840]"
+                            className="mt-2 h-12 w-full rounded-lg border border-[#E2E8DF] bg-[#F8FAF7] px-4 text-sm outline-none transition focus:border-[#FD5E02] focus:ring-1 focus:ring-[#FD5E02]"
                           />
                         </label>
 
@@ -552,7 +489,7 @@ const Account = () => {
                           <input
                             disabled
                             value={user?.email || ""}
-                            className="mt-2 h-12 w-full rounded-lg border border-[#ddd6ce] bg-[#f2f0eb] px-4 text-sm text-[#87908b] cursor-not-allowed"
+                            className="mt-2 h-12 w-full rounded-lg border border-[#E2E8DF] bg-[#f2f0eb] px-4 text-sm text-[#87908b] cursor-not-allowed"
                           />
                           <span className="mt-1.5 block text-[11px] text-[#87908b]">
                             Email address is tied to your account login and cannot be modified.
@@ -564,7 +501,7 @@ const Account = () => {
                         <button
                           type="submit"
                           disabled={saving}
-                          className="flex h-12 items-center justify-center gap-2.5 rounded-lg bg-[#1b2925] px-8 text-sm font-semibold text-white transition hover:bg-[#b87840] disabled:opacity-60 cursor-pointer shadow-xs"
+                          className="flex h-12 items-center justify-center gap-2.5 rounded-lg bg-[#071C18] px-8 text-sm font-semibold text-white transition hover:bg-[#FD5E02] disabled:opacity-60 cursor-pointer shadow-xs"
                         >
                           <Save size={16} />
                           {saving ? "Saving Changes..." : "Save Details"}
@@ -577,13 +514,13 @@ const Account = () => {
                 {/* TAB 2: SAVED ADDRESS */}
                 {activeTab === "address" && (
                   <div>
-                    <div className="mb-7 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between border-b border-[#eee9e3] pb-5">
+                    <div className="mb-7 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between border-b border-[#E8EDE6] pb-5">
                       <div className="flex items-center gap-3">
-                        <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-[#f4eee6] text-[#b87840]">
+                        <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-[#EFF5E9] text-[#FD5E02]">
                           <MapPin size={20} />
                         </span>
                         <div>
-                          <h2 className="text-xl font-serif font-semibold text-[#1b2925]">
+                          <h2 className="text-xl font-serif font-semibold text-[#071C18]">
                             Saved Addresses
                           </h2>
                           <p className="text-xs text-[#7b8580]">
@@ -600,7 +537,7 @@ const Account = () => {
                             setEditingAddressId(null);
                             setEditingAddress(true);
                           }}
-                          className="inline-flex items-center gap-2 self-start rounded-lg border border-[#b87840] px-4 py-2 text-xs font-bold uppercase tracking-wider text-[#b87840] transition hover:bg-[#b87840] hover:text-white"
+                          className="inline-flex items-center gap-2 self-start rounded-lg border border-[#FD5E02] px-4 py-2 text-xs font-bold uppercase tracking-wider text-[#FD5E02] transition hover:bg-[#FD5E02] hover:text-white"
                         >
                           <MapPin size={14} /> Add Address
                         </button>
@@ -619,7 +556,7 @@ const Account = () => {
                             ["landmark", "Landmark", "Nearby landmark (optional)", false],
                           ].map(([field, label, placeholder, required]) => (
                             <label key={field} className="block text-xs font-bold uppercase tracking-wider text-[#68736e]">
-                              {label}{required && <span className="text-[#b87840]"> *</span>}
+                              {label}{required && <span className="text-[#FD5E02]"> *</span>}
                               <input
                                 required={required}
                                 type={field === "pincode" ? "text" : "text"}
@@ -629,7 +566,7 @@ const Account = () => {
                                 placeholder={placeholder}
                                 value={address[field] || ""}
                                 onChange={(event) => setAddressField(field, event.target.value)}
-                                className="mt-1.5 h-11 w-full rounded-lg border border-[#ddd6ce] bg-[#fcfbf8] px-3.5 text-sm font-normal normal-case tracking-normal outline-none transition focus:border-[#b87840] focus:ring-1 focus:ring-[#b87840]"
+                                className="mt-1.5 h-11 w-full rounded-lg border border-[#E2E8DF] bg-[#F8FAF7] px-3.5 text-sm font-normal normal-case tracking-normal outline-none transition focus:border-[#FD5E02] focus:ring-1 focus:ring-[#FD5E02]"
                               />
                             </label>
                           ))}
@@ -639,7 +576,7 @@ const Account = () => {
                           <button
                             type="submit"
                             disabled={saving}
-                            className="h-11 rounded-lg bg-[#1b2925] px-7 text-sm font-semibold text-white transition hover:bg-[#b87840] disabled:opacity-60 cursor-pointer shadow-xs"
+                            className="h-11 rounded-lg bg-[#071C18] px-7 text-sm font-semibold text-white transition hover:bg-[#FD5E02] disabled:opacity-60 cursor-pointer shadow-xs"
                           >
                             {saving ? "Saving..." : editingAddressId ? "Update Address" : "Save Address"}
                           </button>
@@ -650,7 +587,7 @@ const Account = () => {
                               setEditingAddressId(null);
                               setAddress(emptyAddress);
                             }}
-                            className="h-11 rounded-lg border border-[#dfd6ca] px-6 text-sm font-semibold text-[#68736e] hover:bg-[#f8f6f1] transition cursor-pointer"
+                            className="h-11 rounded-lg border border-[#E2E8DF] px-6 text-sm font-semibold text-[#68736e] hover:bg-[#F5F7F3] transition cursor-pointer"
                           >
                             Cancel
                           </button>
@@ -659,13 +596,13 @@ const Account = () => {
                     ) : hasSavedAddress ? (
                       <div className="grid gap-4 md:grid-cols-2">
                         {addresses.map((savedAddress, index) => (
-                          <article key={savedAddress.id || `${savedAddress.address_line1}-${index}`} className="rounded-xl border border-[#dfd6ca] bg-[#fcfbf9] p-5">
+                          <article key={savedAddress.id || `${savedAddress.address_line1}-${index}`} className="rounded-xl border border-[#E2E8DF] bg-[#F1F5ED] p-5">
                             <div className="flex items-start justify-between gap-3">
-                              <span className="inline-flex items-center gap-1.5 rounded-full bg-[#f4eee6] px-3 py-1 text-xs font-semibold text-[#b87840]">
+                              <span className="inline-flex items-center gap-1.5 rounded-full bg-[#EFF5E9] px-3 py-1 text-xs font-semibold text-[#FD5E02]">
                                 <Check size={13} /> Saved address
                               </span>
                               <div className="flex gap-1">
-                                <button type="button" onClick={() => editAddress(savedAddress)} aria-label="Edit address" className="rounded-lg p-2 text-[#68736e] transition hover:bg-[#f4eee6] hover:text-[#1b2925]">
+                                <button type="button" onClick={() => editAddress(savedAddress)} aria-label="Edit address" className="rounded-lg p-2 text-[#68736e] transition hover:bg-[#EFF5E9] hover:text-[#071C18]">
                                   <Pencil size={15} />
                                 </button>
                                 <button type="button" disabled={saving} onClick={() => deleteAddress(savedAddress.id)} aria-label="Delete address" className="rounded-lg p-2 text-[#c24130] transition hover:bg-[#fae5e2] disabled:opacity-50">
@@ -674,7 +611,7 @@ const Account = () => {
                               </div>
                             </div>
                             <div className="mt-4 space-y-1.5 text-sm text-[#4a5550]">
-                              <h4 className="font-semibold text-[#1b2925]">{profile.username || displayName}</h4>
+                              <h4 className="font-semibold text-[#071C18]">{profile.username || displayName}</h4>
                               {profile.mobile_number && <p className="text-xs">{profile.mobile_number}</p>}
                               <p className="leading-relaxed">{[savedAddress.address_line1, savedAddress.address_line2].filter(Boolean).join(", ")}</p>
                               <p className="leading-relaxed">{[savedAddress.city, savedAddress.state].filter(Boolean).join(", ")}{savedAddress.pincode ? ` - ${savedAddress.pincode}` : ""}</p>
@@ -685,10 +622,10 @@ const Account = () => {
                       </div>
                     ) : (
                       <div className="py-12 text-center">
-                        <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-[#f4eee6] text-[#b87840]">
+                        <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-[#EFF5E9] text-[#FD5E02]">
                           <MapPin size={26} />
                         </div>
-                        <h4 className="mt-4 text-base font-semibold text-[#1b2925]">
+                        <h4 className="mt-4 text-base font-semibold text-[#071C18]">
                           No saved address yet
                         </h4>
                         <p className="mx-auto mt-1 max-w-sm text-xs text-[#7b8580]">
@@ -701,7 +638,7 @@ const Account = () => {
                             setEditingAddressId(null);
                             setEditingAddress(true);
                           }}
-                          className="mt-5 inline-flex items-center gap-2 rounded-lg bg-[#1b2925] px-6 py-2.5 text-xs font-bold uppercase tracking-wider text-white hover:bg-[#b87840] transition cursor-pointer"
+                          className="mt-5 inline-flex items-center gap-2 rounded-lg bg-[#071C18] px-6 py-2.5 text-xs font-bold uppercase tracking-wider text-white hover:bg-[#FD5E02] transition cursor-pointer"
                         >
                           <Pencil size={14} />
                           Add Address
@@ -714,13 +651,13 @@ const Account = () => {
                 {/* TAB 3: YOUR ORDERS */}
                 {activeTab === "orders" && (
                   <div>
-                    <div className="mb-7 flex items-center justify-between border-b border-[#eee9e3] pb-5">
+                    <div className="mb-7 flex items-center justify-between border-b border-[#E8EDE6] pb-5">
                       <div className="flex items-center gap-3">
-                        <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-[#f4eee6] text-[#b87840]">
+                        <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-[#EFF5E9] text-[#FD5E02]">
                           <Package size={20} />
                         </span>
                         <div>
-                          <h2 className="text-xl font-serif font-semibold text-[#1b2925]">
+                          <h2 className="text-xl font-serif font-semibold text-[#071C18]">
                             Your Orders
                           </h2>
                           <p className="text-xs text-[#7b8580]">
@@ -728,17 +665,17 @@ const Account = () => {
                           </p>
                         </div>
                       </div>
-                      <span className="rounded-full bg-[#f4eee6] px-3 py-1 text-xs font-bold uppercase tracking-wider text-[#b87840]">
+                      <span className="rounded-full bg-[#EFF5E9] px-3 py-1 text-xs font-bold uppercase tracking-wider text-[#FD5E02]">
                         {orders.length} {orders.length === 1 ? "order" : "orders"}
                       </span>
                     </div>
 
                     <form
                       onSubmit={handleTrackOrder}
-                      className="mb-6 flex flex-col gap-2 rounded-xl border border-[#dfd6ca] bg-[#faf8f5] p-4 sm:flex-row sm:items-end"
+                      className="mb-6 flex flex-col gap-2 rounded-xl border border-[#E2E8DF] bg-[#F5F7F3] p-4 sm:flex-row sm:items-end"
                     >
                       <label className="min-w-0 flex-1">
-                        <span className="mb-1.5 block text-xs font-semibold text-[#1b2925]">
+                        <span className="mb-1.5 block text-xs font-semibold text-[#071C18]">
                           Track an order
                         </span>
                         <input
@@ -746,12 +683,12 @@ const Account = () => {
                           value={trackingOrderId}
                           onChange={(event) => setTrackingOrderId(event.target.value)}
                           placeholder="Enter order ID, e.g. ORD-20260909-A6FY"
-                          className="h-11 w-full rounded-lg border border-[#dfd6ca] bg-white px-3 text-sm text-[#1b2925] outline-none transition placeholder:text-[#a39a90] focus:border-[#b87840] focus:ring-2 focus:ring-[#b87840]/15"
+                          className="h-11 w-full rounded-lg border border-[#E2E8DF] bg-white px-3 text-sm text-[#071C18] outline-none transition placeholder:text-[#a39a90] focus:border-[#FD5E02] focus:ring-2 focus:ring-[#FD5E02]/15"
                         />
                       </label>
                       <button
                         type="submit"
-                        className="inline-flex h-11 items-center justify-center gap-2 rounded-lg bg-[#1b2925] px-5 text-xs font-bold text-white transition hover:bg-[#b87840]"
+                        className="inline-flex h-11 items-center justify-center gap-2 rounded-lg bg-[#071C18] px-5 text-xs font-bold text-white transition hover:bg-[#FD5E02]"
                       >
                         <Search size={15} />
                         Track Order
@@ -759,7 +696,7 @@ const Account = () => {
                     </form>
 
                     {orders.length > 0 ? (
-                      <div className="divide-y divide-[#eee9e3]">
+                      <div className="divide-y divide-[#E8EDE6]">
                         {orders.map((order) => {
                           const dateStr = order.created_at || order.order_date;
                           const formattedDate = dateStr
@@ -777,14 +714,14 @@ const Account = () => {
                             <div
                               key={order.order_id}
                               onClick={() => handleOpenOrder(order)}
-                              className="group flex flex-col gap-4 py-5 sm:flex-row sm:items-center sm:justify-between hover:bg-[#faf8f5] px-3.5 rounded-xl transition-all cursor-pointer border border-transparent hover:border-[#dfd6ca] hover:shadow-xs"
+                              className="group flex flex-col gap-4 py-5 sm:flex-row sm:items-center sm:justify-between hover:bg-[#F5F7F3] px-3.5 rounded-xl transition-all cursor-pointer border border-transparent hover:border-[#E2E8DF] hover:shadow-xs"
                             >
                               <div className="space-y-1.5 min-w-0">
                                 <div className="flex items-center gap-2">
-                                  <p className="font-semibold text-[#1b2925] text-base tracking-wide group-hover:text-[#b87840] transition-colors">
+                                  <p className="font-semibold text-[#071C18] text-base tracking-wide group-hover:text-[#FD5E02] transition-colors">
                                     #{order.order_id}
                                   </p>
-                                  <span className="text-[11px] font-medium text-[#b87840] bg-[#f4eee6] px-2 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity hidden sm:inline-block">
+                                  <span className="text-[11px] font-medium text-[#FD5E02] bg-[#EFF5E9] px-2 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity hidden sm:inline-block">
                                     Click to view details
                                   </span>
                                 </div>
@@ -810,12 +747,12 @@ const Account = () => {
                                 <span
                                   className={`rounded-md px-3 py-1 text-xs font-bold uppercase tracking-wide ${
                                     statusClass[String(status).toLowerCase()] || statusClass[displayStatus] ||
-                                    "bg-[#f3eee7] text-[#7b6a58] border border-[#dfd6ca]"
+                                    "bg-[#f3eee7] text-[#396F0B] border border-[#E2E8DF]"
                                   }`}
                                 >
                                   {displayStatus}
                                 </span>
-                                <strong className="text-base font-bold text-[#1b2925]">
+                                <strong className="text-base font-bold text-[#071C18]">
                                   ₹
                                   {Number(
                                     order.total_amount || 0
@@ -829,10 +766,10 @@ const Account = () => {
                       </div>
                     ) : (
                       <div className="py-14 text-center">
-                        <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-[#f4eee6] text-[#b87840]">
+                        <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-[#EFF5E9] text-[#FD5E02]">
                           <ShoppingBag size={26} />
                         </div>
-                        <h4 className="mt-4 text-base font-semibold text-[#1b2925]">
+                        <h4 className="mt-4 text-base font-semibold text-[#071C18]">
                           No orders yet
                         </h4>
                         <p className="mx-auto mt-1 max-w-sm text-xs text-[#7b8580]">
@@ -840,7 +777,7 @@ const Account = () => {
                         </p>
                         <Link
                           to="/shop"
-                          className="mt-5 inline-flex items-center gap-2 rounded-lg bg-[#1b2925] px-6 py-2.5 text-xs font-bold uppercase tracking-wider text-white hover:bg-[#b87840] transition"
+                          className="mt-5 inline-flex items-center gap-2 rounded-lg bg-[#071C18] px-6 py-2.5 text-xs font-bold uppercase tracking-wider text-white hover:bg-[#FD5E02] transition"
                         >
                           Browse the menu
                         </Link>
@@ -852,13 +789,13 @@ const Account = () => {
                 {/* TAB 4: CHANGE PASSWORD */}
                 {activeTab === "password" && (
                   <div>
-                    <div className="mb-7 flex items-center justify-between border-b border-[#eee9e3] pb-5">
+                    <div className="mb-7 flex items-center justify-between border-b border-[#E8EDE6] pb-5">
                       <div className="flex items-center gap-3">
-                        <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-[#f4eee6] text-[#b87840]">
+                        <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-[#EFF5E9] text-[#FD5E02]">
                           <LockKeyhole size={20} />
                         </span>
                         <div>
-                          <h2 className="text-xl font-serif font-semibold text-[#1b2925]">
+                          <h2 className="text-xl font-serif font-semibold text-[#071C18]">
                             Change Password
                           </h2>
                           <p className="text-xs text-[#7b8580]">
@@ -871,7 +808,7 @@ const Account = () => {
                     <form onSubmit={changePassword} className="max-w-lg space-y-5">
                       <div>
                         <label className="block text-xs font-bold uppercase tracking-wider text-[#68736e]">
-                          Current Password <span className="text-[#b87840]">*</span>
+                          Current Password <span className="text-[#FD5E02]">*</span>
                         </label>
                         <div className="relative mt-1.5">
                           <input
@@ -885,7 +822,7 @@ const Account = () => {
                                 currentPassword: e.target.value,
                               })
                             }
-                            className="h-12 w-full rounded-lg border border-[#ddd6ce] bg-[#fcfbf8] px-4 pr-11 text-sm outline-none transition focus:border-[#b87840] focus:ring-1 focus:ring-[#b87840]"
+                            className="h-12 w-full rounded-lg border border-[#E2E8DF] bg-[#F8FAF7] px-4 pr-11 text-sm outline-none transition focus:border-[#FD5E02] focus:ring-1 focus:ring-[#FD5E02]"
                           />
                           <button
                             type="button"
@@ -895,7 +832,7 @@ const Account = () => {
                                 current: !prev.current,
                               }))
                             }
-                            className="absolute right-3 top-1/2 -translate-y-1/2 text-[#7b8580] hover:text-[#1b2925] transition cursor-pointer"
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-[#7b8580] hover:text-[#071C18] transition cursor-pointer"
                           >
                             {showPassword.current ? (
                               <EyeOff size={18} />
@@ -908,7 +845,7 @@ const Account = () => {
 
                       <div>
                         <label className="block text-xs font-bold uppercase tracking-wider text-[#68736e]">
-                          New Password <span className="text-[#b87840]">*</span>
+                          New Password <span className="text-[#FD5E02]">*</span>
                         </label>
                         <div className="relative mt-1.5">
                           <input
@@ -923,7 +860,7 @@ const Account = () => {
                                 newPassword: e.target.value,
                               })
                             }
-                            className="h-12 w-full rounded-lg border border-[#ddd6ce] bg-[#fcfbf8] px-4 pr-11 text-sm outline-none transition focus:border-[#b87840] focus:ring-1 focus:ring-[#b87840]"
+                            className="h-12 w-full rounded-lg border border-[#E2E8DF] bg-[#F8FAF7] px-4 pr-11 text-sm outline-none transition focus:border-[#FD5E02] focus:ring-1 focus:ring-[#FD5E02]"
                           />
                           <button
                             type="button"
@@ -933,7 +870,7 @@ const Account = () => {
                                 new: !prev.new,
                               }))
                             }
-                            className="absolute right-3 top-1/2 -translate-y-1/2 text-[#7b8580] hover:text-[#1b2925] transition cursor-pointer"
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-[#7b8580] hover:text-[#071C18] transition cursor-pointer"
                           >
                             {showPassword.new ? (
                               <EyeOff size={18} />
@@ -946,7 +883,7 @@ const Account = () => {
 
                       <div>
                         <label className="block text-xs font-bold uppercase tracking-wider text-[#68736e]">
-                          Confirm New Password <span className="text-[#b87840]">*</span>
+                          Confirm New Password <span className="text-[#FD5E02]">*</span>
                         </label>
                         <div className="relative mt-1.5">
                           <input
@@ -961,7 +898,7 @@ const Account = () => {
                                 confirmPassword: e.target.value,
                               })
                             }
-                            className="h-12 w-full rounded-lg border border-[#ddd6ce] bg-[#fcfbf8] px-4 pr-11 text-sm outline-none transition focus:border-[#b87840] focus:ring-1 focus:ring-[#b87840]"
+                            className="h-12 w-full rounded-lg border border-[#E2E8DF] bg-[#F8FAF7] px-4 pr-11 text-sm outline-none transition focus:border-[#FD5E02] focus:ring-1 focus:ring-[#FD5E02]"
                           />
                           <button
                             type="button"
@@ -971,7 +908,7 @@ const Account = () => {
                                 confirm: !prev.confirm,
                               }))
                             }
-                            className="absolute right-3 top-1/2 -translate-y-1/2 text-[#7b8580] hover:text-[#1b2925] transition cursor-pointer"
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-[#7b8580] hover:text-[#071C18] transition cursor-pointer"
                           >
                             {showPassword.confirm ? (
                               <EyeOff size={18} />
@@ -986,7 +923,7 @@ const Account = () => {
                         <button
                           type="submit"
                           disabled={saving}
-                          className="flex h-12 items-center justify-center rounded-lg bg-[#1b2925] px-8 text-sm font-semibold text-white transition hover:bg-[#b87840] disabled:opacity-60 cursor-pointer shadow-xs"
+                          className="flex h-12 items-center justify-center rounded-lg bg-[#071C18] px-8 text-sm font-semibold text-white transition hover:bg-[#FD5E02] disabled:opacity-60 cursor-pointer shadow-xs"
                         >
                           {saving ? "Updating Password..." : "Update Password"}
                         </button>
@@ -994,9 +931,8 @@ const Account = () => {
                     </form>
                   </div>
                 )}
-              </div>
-            </section>
-          </div>
+            </div>
+          </section>
         </PageContainer>
       </main>
 
