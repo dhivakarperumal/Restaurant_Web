@@ -95,14 +95,15 @@ const AdminReviews = () => {
     userProfile?.id ||
     user?.user_id ||
     user?.id ||
-    "45e2dff5-104d-43ce-aed1-fb118b2e2ca9";
+    user?.username ||
+    user?.name ||
+    "Admin";
 
   // ==========================================
   // DATA STATE
   // ==========================================
   const [reviewsList, setReviewsList] = useState([]);
   const [productsList, setProductsList] = useState([]);
-  const [usersList, setUsersList] = useState([]);
   const [selectedProductId, setSelectedProductId] = useState("all");
   const [stats, setStats] = useState({
     total_reviews: 0,
@@ -112,6 +113,7 @@ const AdminReviews = () => {
     published_count: 0,
   });
   const [loading, setLoading] = useState(true);
+  const [reviewsError, setReviewsError] = useState("");
 
   // Filters & Search
   const [searchTerm, setSearchTerm] = useState("");
@@ -168,20 +170,10 @@ const AdminReviews = () => {
     }
   };
 
-  const fetchUsers = async () => {
-    try {
-      const res = await api.get("/users");
-      if (res.data?.data && Array.isArray(res.data.data)) {
-        setUsersList(res.data.data);
-      }
-    } catch (err) {
-      console.warn("Could not fetch users list:", err);
-    }
-  };
-
   const fetchReviewsAndStats = async () => {
     try {
       setLoading(true);
+      setReviewsError("");
       const url =
         selectedProductId === "all"
           ? "/reviews"
@@ -192,12 +184,13 @@ const AdminReviews = () => {
         api.get("/reviews/stats"),
       ]);
 
-      setReviewsList(reviewsRes.data?.data || []);
+      setReviewsList(Array.isArray(reviewsRes.data?.data) ? reviewsRes.data.data : []);
       if (statsRes.data?.data) {
         setStats(statsRes.data.data);
       }
     } catch (err) {
       console.error("Failed to load reviews:", err);
+      setReviewsError(err.response?.data?.message || "Reviews could not be loaded. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -205,7 +198,6 @@ const AdminReviews = () => {
 
   useEffect(() => {
     fetchProducts();
-    fetchUsers();
   }, []);
 
   useEffect(() => {
@@ -312,17 +304,23 @@ const AdminReviews = () => {
   const handlePhotoUpload = async (file) => {
     if (!file) return;
 
-    if (!file.type.startsWith("image/")) {
+    if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
       toast.error("Please upload an image file (JPG, PNG, WEBP).");
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("Review photos must be 5 MB or smaller.");
       return;
     }
 
     const preview = URL.createObjectURL(file);
+    if (formPhoto?.preview?.startsWith("blob:")) URL.revokeObjectURL(formPhoto.preview);
     setFormPhoto({
       file,
       preview,
       url: "",
     });
+    setIsUploadingPhoto(true);
 
     // Upload to server under separate folder 'review'
     const formData = new FormData();
@@ -333,21 +331,23 @@ const AdminReviews = () => {
     try {
       const response = await api.post("/upload", formData);
       const serverUrl = response?.data?.url || response?.data?.urls?.[0] || "";
+      if (!serverUrl) throw new Error("Photo upload returned no image URL.");
       setFormPhoto((prev) => ({
         ...prev,
         url: serverUrl,
       }));
-      toast.success("Review photo uploaded to review folder!");
+      toast.success("Review photo uploaded.");
     } catch (err) {
       console.error("Review photo upload error:", err);
-      toast.error("Photo upload failed, preview will be used.");
+      setFormPhoto((prev) => prev?.preview === preview ? { ...prev, url: "" } : prev);
+      toast.error(err.response?.data?.message || err.message || "Photo upload failed. Please retry or remove the photo.");
     } finally {
       setIsUploadingPhoto(false);
     }
   };
 
   const removePhoto = () => {
-    if (formPhoto?.preview) {
+    if (formPhoto?.preview?.startsWith("blob:")) {
       URL.revokeObjectURL(formPhoto.preview);
     }
     setFormPhoto(null);
@@ -376,6 +376,14 @@ const AdminReviews = () => {
       toast.error("Please enter the review comment.");
       return;
     }
+    if (isUploadingPhoto) {
+      toast.error("Wait for the review photo upload to finish.");
+      return;
+    }
+    if (formPhoto && !formPhoto.url) {
+      toast.error("The review photo was not uploaded. Please retry or remove it.");
+      return;
+    }
 
     setSubmitting(true);
     try {
@@ -392,7 +400,7 @@ const AdminReviews = () => {
         rating: Number(formRating),
         title: formTitle.trim() || null,
         comment: formComment.trim(),
-        review_photo: formPhoto?.url || formPhoto?.preview || null,
+        review_photo: formPhoto?.url || null,
         status: formStatus,
         created_by: formCreatedBy || currentUserId,
         updated_by: formUpdatedBy || currentUserId,
@@ -566,9 +574,9 @@ const AdminReviews = () => {
         <div className="rounded-[22px] border border-[#e7e0d8] bg-white p-4 shadow-sm md:p-5">
           {/* SEARCH AND FILTER BAR */}
           <div className="mb-5 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-            <div className="flex items-center">
+            <div className="flex w-full items-center lg:max-w-md lg:flex-1">
               {/* SEARCH */}
-              <div className="relative w-full max-w-[340px]">
+              <div className="relative w-full">
                 <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#7a7a7a]" />
                 <input
                   type="text"
@@ -582,6 +590,22 @@ const AdminReviews = () => {
             </div>
 
             <div className="flex flex-wrap items-center justify-end gap-3">
+              <div className="relative">
+                <select
+                  value={selectedProductId}
+                  onChange={(event) => setSelectedProductId(event.target.value)}
+                  aria-label="Filter reviews by food"
+                  className="h-11 max-w-56 appearance-none rounded-xl border border-[#dfe2e5] bg-[#faf9f8] pl-3 pr-8 text-xs font-medium text-[#2d2d2d] outline-none focus:border-[#d2bc8a]"
+                >
+                  <option value="all">All Foods</option>
+                  {productsList.map((product) => (
+                    <option key={getCatalogKey(product)} value={String(product.id)}>
+                      {getCatalogLabel(product)}
+                    </option>
+                  ))}
+                </select>
+                <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[#777]" />
+              </div>
               {/* RATING FILTER */}
               <div className="relative">
                 <select
@@ -632,7 +656,12 @@ const AdminReviews = () => {
           </div>
 
           {/* REVIEWS TABLE */}
-          {loading ? (
+          {reviewsError ? (
+            <div role="alert" className="rounded-xl border border-red-200 bg-red-50 p-6 text-center text-sm text-red-800">
+              <p>{reviewsError}</p>
+              <button type="button" onClick={fetchReviewsAndStats} className="mt-3 font-semibold underline">Retry</button>
+            </div>
+          ) : loading ? (
             <div className="py-16 text-center text-sm text-[#777]">
               Loading product reviews...
             </div>
@@ -668,10 +697,10 @@ const AdminReviews = () => {
               ))}
             </div>
           ) : (
-            <div className="overflow-x-auto">
+            <div className="overflow-x-auto rounded-xl border border-[#e8e4df]">
               <table className="min-w-full border-separate border-spacing-0">
-                <thead>
-                  <tr className="bg-[#f0e6d2] text-left text-xs font-bold capitalize tracking-wider text-[#3d3d3d]">
+                <thead className="bg-[#d4a843] text-white">
+                  <tr className="text-left text-xs font-bold capitalize tracking-wider">
                     <th className="rounded-tl-md px-4 py-4">S.No</th>
                     <th className="px-4 py-4">ID & Product</th>
                     <th className="px-4 py-4">Reviewer</th>
@@ -690,10 +719,10 @@ const AdminReviews = () => {
                         key={rev.id}
                         className="border-t border-[#f0ebe6] transition hover:bg-[#fffdfa]"
                       >
-                        <td className="px-4 py-3.5 align-middle text-[#777]">{index + 1}</td>
+                        <td className="px-4 py-4 align-middle text-[#777]">{index + 1}</td>
 
                         {/* ID & PRODUCT */}
-                        <td className="px-4 py-3.5 align-middle">
+                        <td className="px-4 py-4 align-middle">
                           <div className="flex items-center gap-3">
                             <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-[#e8dfd2] bg-white p-0.5 shadow-xs">
                               {rev.product_image ? (
@@ -721,7 +750,7 @@ const AdminReviews = () => {
                         </td>
 
                         {/* REVIEWER */}
-                        <td className="px-4 py-3.5 align-middle">
+                        <td className="px-4 py-4 align-middle">
                           <div className="flex items-center gap-2">
                             <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#d4a843] text-xs font-bold text-white shadow-xs">
                               {(rev.reviewer_name?.[0] || "U").toUpperCase()}
@@ -740,7 +769,7 @@ const AdminReviews = () => {
                         </td>
 
                         {/* RATING */}
-                        <td className="px-4 py-3.5 align-middle">
+                        <td className="px-4 py-4 align-middle">
                           <div className="flex items-center gap-1">
                             {[1, 2, 3, 4, 5].map((star) => (
                               <Star
@@ -759,7 +788,7 @@ const AdminReviews = () => {
                         </td>
 
                         {/* COMMENT */}
-                        <td className="px-4 py-3.5 align-middle max-w-xs">
+                        <td className="px-4 py-4 align-middle max-w-xs">
                           {rev.title && (
                             <p className="text-xs font-bold text-[#1f1f1f]">
                               {rev.title}
@@ -771,7 +800,7 @@ const AdminReviews = () => {
                         </td>
 
                         {/* CUSTOMER PHOTO */}
-                        <td className="px-4 py-3.5 align-middle">
+                        <td className="px-4 py-4 align-middle">
                           {rev.review_photo ? (
                             <button
                               type="button"
@@ -793,7 +822,7 @@ const AdminReviews = () => {
                         </td>
 
                         {/* STATUS */}
-                        <td className="px-4 py-3.5 align-middle">
+                        <td className="px-4 py-4 align-middle">
                           <span
                             className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-bold ${
                               rev.status === "Published"
@@ -813,7 +842,7 @@ const AdminReviews = () => {
                         </td>
 
                         {/* ACTIONS */}
-                        <td className="px-4 py-3.5 align-middle">
+                        <td className="px-4 py-4 align-middle">
                           <div className="flex items-center gap-1.5">
                             <button
                               type="button"
@@ -888,7 +917,7 @@ const AdminReviews = () => {
                       Review Id
                     </label>
                     <input
-                      type="text"
+                      type="email"
                       value={formReviewId}
                       readOnly
                       className="h-10 w-full rounded-xl border border-[#e8e1d9] bg-[#f8f7f5] px-3 font-mono text-xs font-bold text-[#1a3c36] outline-none"
@@ -1028,7 +1057,7 @@ const AdminReviews = () => {
                   <input
                     ref={fileInputRef}
                     type="file"
-                    accept="image/*"
+                    accept="image/jpeg,image/png,image/webp"
                     className="hidden"
                     onChange={(e) => handlePhotoUpload(e.target.files?.[0])}
                   />
@@ -1103,7 +1132,7 @@ const AdminReviews = () => {
 
                   <button
                     type="submit"
-                    disabled={submitting}
+                    disabled={submitting || isUploadingPhoto || Boolean(formPhoto && !formPhoto.url)}
                     className="rounded-xl bg-[#1a3c36] px-6 py-2 text-xs font-bold text-white shadow-xs hover:bg-[#235048] disabled:opacity-60"
                   >
                     {submitting

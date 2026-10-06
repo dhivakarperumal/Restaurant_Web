@@ -236,38 +236,10 @@ const ManageServers = () => {
   ).length;
 
   const statCards = [
-    {
-      title: "Total Servers",
-      value: servers.length,
-      icon: UtensilsCrossed,
-      iconBg: "bg-[#1a3c36]",
-      description: "Registered waitstaff",
-      waveColor: "#1a3c36",
-    },
-    {
-      title: "Active Servers",
-      value: activeCount,
-      icon: UserCheck,
-      iconBg: "bg-[#22c55e]",
-      description: "Currently on duty",
-      waveColor: "#22c55e",
-    },
-    {
-      title: "Tables Assigned",
-      value: totalAssignedTablesCount,
-      icon: Table2,
-      iconBg: "bg-[#d4a843]",
-      description: `Across ${tables.length} total tables`,
-      waveColor: "#d4a843",
-    },
-    {
-      title: "Unassigned Servers",
-      value: unassignedServersCount,
-      icon: Armchair,
-      iconBg: unassignedServersCount > 0 ? "bg-[#f97316]" : "bg-[#64748b]",
-      description: "Servers without tables",
-      waveColor: unassignedServersCount > 0 ? "#f97316" : "#64748b",
-    },
+    { title: "Total Servers", value: servers.length, icon: UtensilsCrossed, bg: "bg-[#22c55e]", hint: "Registered waitstaff" },
+    { title: "Active Servers", value: activeCount, icon: UserCheck, bg: "bg-[#3b82f6]", hint: "Currently on duty" },
+    { title: "Tables Assigned", value: totalAssignedTablesCount, icon: Table2, bg: "bg-[#f59e0b]", hint: `Across ${tables.length} total tables` },
+    { title: "Unassigned Servers", value: unassignedServersCount, icon: Armchair, bg: unassignedServersCount > 0 ? "bg-[#ef4444]" : "bg-[#8b5cf6]", hint: "Servers without tables" },
   ];
 
   return (

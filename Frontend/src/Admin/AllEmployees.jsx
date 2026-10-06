@@ -127,111 +127,76 @@ const AllEmployees = () => {
     });
 
   const statCards = [
-    { title: "Total Employees", value: employees.length, icon: Users, iconBg: "bg-[#22c55e]", description: "Employee records", waveColor: "#22c55e" },
-    { title: "Active Employees", value: activeEmployeeCount, icon: UserCheck, iconBg: "bg-[#f59e0b]", description: "Currently active", waveColor: "#f59e0b" },
-    { title: "Inactive Employees", value: inactiveEmployeeCount, icon: UserRound, iconBg: "bg-[#06b6d4]", description: "Not currently active", waveColor: "#06b6d4" },
-    { title: "Employee Types", value: employeeTypes.length, icon: BriefcaseBusiness, iconBg: "bg-[#a855f7]", description: "Roles represented", waveColor: "#a855f7" },
+    { title: "Total Employees", value: employees.length, icon: Users, bg: "bg-[#22c55e]", hint: "All employee records" },
+    { title: "Active Employees", value: activeEmployeeCount, icon: UserCheck, bg: "bg-[#3b82f6]", hint: "Currently active" },
+    { title: "Inactive Employees", value: inactiveEmployeeCount, icon: UserRound, bg: "bg-[#f59e0b]", hint: "Not currently active" },
+    { title: "Employee Types", value: employeeTypes.length, icon: BriefcaseBusiness, bg: "bg-[#8b5cf6]", hint: "Roles represented" },
   ];
 
   const serverCount = employees.filter((e) => e.employee_type === "Server").length;
   const deliveryCount = employees.filter((e) => e.employee_type === "Delivery Partner").length;
 
   return (
-  <main className="min-h-screen bg-[#f2f3f0] p-4 md:p-6">
+  <main className="min-h-screen  p-4 md:p-2">
     <div className="mx-auto max-w-[1500px]">
-      {/* Navigation Tabs Header */}
-      <div className="mb-4 flex flex-wrap items-center gap-2 border-b border-[#e1ded8] pb-3 text-sm">
-        <div className="flex items-center gap-1.5 rounded-lg bg-[#1a3c36] px-3 py-1.5 font-semibold text-white shadow-sm">
-          <Users className="h-4 w-4" /> All Employees
-          <span className="ml-1 rounded-full bg-[#d4a843] px-2 py-0.2 text-[11px] font-bold text-[#1a3c36]">
-            {employees.length}
-          </span>
-        </div>
-        <Link
-          to="/admin/servers"
-          className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 font-medium text-[#68706a] hover:bg-[#e7e5e0] hover:text-[#1f2d24]"
-        >
-          <UtensilsCrossed className="h-4 w-4 text-[#1a3c36]" /> Manage Servers
-          {serverCount > 0 && (
-            <span className="ml-1 rounded-full bg-gray-200 px-2 py-0.2 text-[11px] font-bold text-gray-700">
-              {serverCount}
-            </span>
-          )}
-        </Link>
-        <Link
-          to="/admin/delivery-partners"
-          className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 font-medium text-[#68706a] hover:bg-[#e7e5e0] hover:text-[#1f2d24]"
-        >
-          <Bike className="h-4 w-4 text-[#1a3c36]" /> Manage Delivery Partners
-          {deliveryCount > 0 && (
-            <span className="ml-1 rounded-full bg-gray-200 px-2 py-0.2 text-[11px] font-bold text-gray-700">
-              {deliveryCount}
-            </span>
-          )}
-        </Link>
-      </div>
+    
 
-      <div className="mb-5 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-        <div>
-          <h1 className="text-[2.1rem] font-bold tracking-[-0.05em] text-[#1f1d1b]">Employees</h1>
-          <p className="mt-2 text-[13px] text-[#646464]">
-            Dashboard <span className="mx-2 text-[#9a9a9a]">&gt;</span> <span className="font-medium text-[#2a2a2a]">Employees</span>
-          </p>
-        </div>
-        <Link to="/admin/employees/add" className="inline-flex h-[46px] items-center gap-2 rounded-xl bg-[#1a3c36] px-4 text-[15px] font-semibold text-white shadow-[0_6px_14px_rgba(26,60,54,0.18)] transition hover:bg-[#214a42]">
-          <UserRoundPlus className="h-4 w-4" /> Add Employee
-        </Link>
-      </div>
-
+    
       <div className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
-        {statCards.map(({ title, value, icon: Icon, iconBg, description, waveColor }) => (
-          <div key={title} className="relative flex h-full min-h-[170px] flex-col overflow-hidden rounded-xl border border-gray-100 bg-white p-5 shadow-sm">
-            <div className="flex flex-1 items-start gap-4">
-              <div className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-full ${iconBg}`}>
-                <Icon className="h-7 w-7 text-white" />
+        {statCards.map(({ title, value, icon: Icon, bg, hint }, index) => (
+          <article key={title} className={`relative min-w-0 overflow-hidden rounded-xl border border-transparent p-4 sm:p-5 shadow-[0_2px_10px_rgba(20,56,34,0.08)] flex flex-col justify-between min-h-[140px] ${bg} text-white`}>
+            <div className="flex items-start gap-3 relative z-10">
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg shadow-sm bg-white/20">
+                <Icon size={24} strokeWidth={2.2} className="text-white" />
               </div>
-              <div>
-                <p className="mb-1 text-xs font-medium text-gray-600">{title}</p>
-                <h2 className="text-2xl font-bold text-gray-900">{value}</h2>
-                <p className="mt-2 text-[10px] text-gray-400">{description}</p>
+              <div className="flex-1 mt-0.5 min-w-0">
+                <h3 className="text-[12px] font-semibold opacity-90 mb-1 truncate">{title}</h3>
+                <div className="text-[26px] font-extrabold leading-none tracking-tight">{value}</div>
               </div>
             </div>
-            <div className="pointer-events-none absolute bottom-0 left-0 h-8 w-full overflow-hidden">
-              <svg viewBox="0 0 100 20" preserveAspectRatio="none" className="h-full w-full opacity-40" style={{ color: waveColor }} fill="currentColor">
-                <path d="M0,10 C30,25 70,0 100,10 L100,20 L0,20 Z" />
+            <div className="flex items-center gap-2 mt-5 relative z-10">
+              <span className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[11px] font-bold bg-white/25">↑ 12%</span>
+              <span className="text-[11px] font-medium opacity-75 truncate">{hint}</span>
+            </div>
+            <div className="absolute right-0 bottom-0 w-24 h-16 pointer-events-none opacity-50">
+              <svg viewBox="0 0 100 50" preserveAspectRatio="none" className="w-full h-full">
+                <defs>
+                  <linearGradient id={`empgrad-${index}`} x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#ffffff" stopOpacity="0.4" />
+                    <stop offset="100%" stopColor="#ffffff" stopOpacity="0.0" />
+                  </linearGradient>
+                </defs>
+                <path d="M0,50 L0,40 Q25,30 50,40 T100,20 L100,50 Z" fill={`url(#empgrad-${index})`} />
+                <path d="M0,40 Q25,30 50,40 T100,20" fill="none" stroke="#ffffff" strokeWidth="2.5" />
               </svg>
             </div>
-          </div>
+          </article>
         ))}
       </div>
 
       <section className="rounded-[18px] border border-[#e7e0d8] bg-white p-4 shadow-[0_1px_0_rgba(16,24,40,0.02)]">
-        <div className="mb-4 flex flex-col gap-3 lg:flex-row lg:items-center">
-          <div className="flex flex-1 flex-wrap items-center gap-3">
-            <label className="relative w-full max-w-[340px]">
-              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#7a7a7a]" />
-              <input
-                type="search"
-                value={search}
-                onChange={(event) => setSearch(event.target.value)}
-                placeholder="Search employees by name or ID..."
-                className="h-[46px] w-full rounded-xl border border-[#dfe2e5] bg-[#faf9f8] pl-10 pr-3 text-[14px] text-[#2d2d2d] outline-none placeholder:text-[#8a8a8a] focus:border-[#d2bc8a]"
-              />
-            </label>
-            <div className="flex w-full flex-wrap gap-3 lg:ml-auto lg:w-auto">
-              <select value={selectedEmployeeType} onChange={(event) => setSelectedEmployeeType(event.target.value)} className="h-[46px] min-w-36 rounded-xl border border-[#dfe2e5] bg-[#faf9f8] px-3 text-[14px] font-medium text-[#2d2d2d] outline-none focus:border-[#d2bc8a]">
-                <option value="All Types">All Types</option>
-                {employeeTypes.map((type) => <option key={type} value={type}>{type}</option>)}
-              </select>
-              <select value={selectedStatus} onChange={(event) => setSelectedStatus(event.target.value)} className="h-[46px] min-w-36 rounded-xl border border-[#dfe2e5] bg-[#faf9f8] px-3 text-[14px] font-medium text-[#2d2d2d] outline-none focus:border-[#d2bc8a]">
-                <option value="All Status">All Status</option>
-                <option value="Active">Active</option>
-                <option value="Inactive">Inactive</option>
-              </select>
-            </div>
-          </div>
-          <div className="flex flex-wrap items-center gap-3">
-            <select value={sortBy} onChange={(event) => setSortBy(event.target.value)} className="h-[46px] rounded-xl border border-[#dfe2e5] bg-[#faf9f8] px-3 text-[14px] font-medium text-[#2d2d2d] outline-none focus:border-[#d2bc8a]">
+        <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <label className="relative block w-full sm:max-w-[340px] sm:flex-1">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#7a7a7a]" />
+            <input
+              type="search"
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              placeholder="Search employees by name or ID..."
+              className="h-[46px] w-full rounded-xl border border-[#dfe2e5] bg-[#faf9f8] pl-10 pr-3 text-[14px] text-[#2d2d2d] outline-none placeholder:text-[#8a8a8a] focus:border-[#d2bc8a]"
+            />
+          </label>
+          <div className="flex flex-wrap items-center gap-3 sm:justify-end">
+            <select aria-label="Filter by employee type" value={selectedEmployeeType} onChange={(event) => setSelectedEmployeeType(event.target.value)} className="h-[46px] min-w-36 rounded-xl border border-[#dfe2e5] bg-[#faf9f8] px-3 text-[14px] font-medium text-[#2d2d2d] outline-none focus:border-[#d2bc8a]">
+              <option value="All Types">All Types</option>
+              {employeeTypes.map((type) => <option key={type} value={type}>{type}</option>)}
+            </select>
+            <select aria-label="Filter by employee status" value={selectedStatus} onChange={(event) => setSelectedStatus(event.target.value)} className="h-[46px] min-w-36 rounded-xl border border-[#dfe2e5] bg-[#faf9f8] px-3 text-[14px] font-medium text-[#2d2d2d] outline-none focus:border-[#d2bc8a]">
+              <option value="All Status">All Status</option>
+              <option value="Active">Active</option>
+              <option value="Inactive">Inactive</option>
+            </select>
+            <select aria-label="Sort employees" value={sortBy} onChange={(event) => setSortBy(event.target.value)} className="h-[46px] rounded-xl border border-[#dfe2e5] bg-[#faf9f8] px-3 text-[14px] font-medium text-[#2d2d2d] outline-none focus:border-[#d2bc8a]">
               <option value="latest">Sort by: Latest</option>
               <option value="name">Name: A to Z</option>
               <option value="id">ID: Low to High</option>
@@ -258,6 +223,9 @@ const AllEmployees = () => {
                 <Table2 className="h-4 w-4" />
               </button>
             </div>
+             <Link to="/admin/employees/add" className="inline-flex h-[46px] items-center gap-2 rounded-xl bg-[#1a3c36] px-4 text-[15px] font-semibold text-white shadow-[0_6px_14px_rgba(26,60,54,0.18)] transition hover:bg-[#214a42]">
+          <UserRoundPlus className="h-4 w-4" /> Add Employee
+        </Link>
           </div>
         </div>
 
@@ -267,10 +235,9 @@ const AllEmployees = () => {
           <div className="overflow-x-auto">
             <table className="min-w-full border-separate border-spacing-0 text-left">
               <thead>
-                <tr className="bg-[#f0e6d2] text-sm font-semibold text-[#3d3d3d]">
-                  <th className="px-4 py-4">ID</th>
+                <tr className="bg-[#d4a843] text-sm font-semibold text-white">
+                  <th className="px-4 py-4">S No</th>
                   <th className="px-4 py-4">Employee</th>
-                  <th className="px-4 py-4">Employee ID</th>
                   <th className="px-4 py-4">Employee Type</th>
                   <th className="px-4 py-4">Phone Number</th>
                   <th className="px-4 py-4">Status</th>
@@ -279,17 +246,16 @@ const AllEmployees = () => {
               </thead>
               <tbody>
                 {loading ? (
-                  <tr><td colSpan={7} className="px-5 py-12 text-center text-sm text-[#777]">Loading employees...</td></tr>
+                  <tr><td colSpan={6} className="px-5 py-12 text-center text-sm text-[#777]">Loading employees...</td></tr>
                 ) : error ? (
-                  <tr><td colSpan={7} role="alert" className="px-5 py-12 text-center text-sm text-[#a13e30]">{error}</td></tr>
-                ) : visibleEmployees.length > 0 ? visibleEmployees.map((employee) => (
+                  <tr><td colSpan={6} role="alert" className="px-5 py-12 text-center text-sm text-[#a13e30]">{error}</td></tr>
+                ) : visibleEmployees.length > 0 ? visibleEmployees.map((employee, index) => (
                   <tr key={employee.employee_id} className="border-t border-[#f0ebe6] align-middle text-sm text-[#4d4d4d]">
-                    <td className="px-4 py-4 font-mono text-xs">{employee.id ?? "—"}</td>
+                    <td className="px-4 py-4 font-medium text-xs">{index + 1}</td>
                     <td className="px-4 py-4">
                       <div className="font-semibold text-[#1f1f1f]">{employee.full_name}</div>
                       <div className="text-xs text-[#7a7a7a]">{employee.email}</div>
                     </td>
-                    <td className="px-4 py-4 font-mono text-xs text-[#7a7a7a]">{employee.employee_id}</td>
                     <td className="px-4 py-4">
                       <div className="flex items-center gap-2">
                         <span>{employee.employee_type}</span>
