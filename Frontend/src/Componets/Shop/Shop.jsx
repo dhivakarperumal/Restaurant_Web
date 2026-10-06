@@ -371,7 +371,7 @@ export default function Shop() {
             <span className="text-[11px] font-semibold text-slate-400">{categories.length}</span>
           </div>
 
-          <div className="flex max-h-56 flex-col gap-1 overflow-y-auto pr-1">
+          <div className="scrollbar-hide flex max-h-56 flex-col gap-1 overflow-y-auto pr-1">
             <button
               type="button"
               onClick={() => { setSelectedCategory("all"); setCurrentPage(1); }}
@@ -484,7 +484,19 @@ export default function Shop() {
               {cuisines.length > 0 && (
                 <fieldset className="space-y-2">
                   <legend className="mb-2 text-xs font-bold uppercase tracking-wider text-slate-500">Cuisine</legend>
-                  <div className="max-h-40 space-y-2 overflow-y-auto pr-1">
+                  <div className="scrollbar-hide max-h-40 space-y-2 overflow-y-auto pr-1">
+                    <label className="flex cursor-pointer items-center gap-2.5 text-xs font-semibold text-slate-700">
+                      <input
+                        type="checkbox"
+                        checked={selectedCuisines.length === 0}
+                        onChange={() => {
+                          setSelectedCuisines([]);
+                          setCurrentPage(1);
+                        }}
+                        className="h-4 w-4 rounded accent-[#1a3c36]"
+                      />
+                      <span>All Cuisines</span>
+                    </label>
                     {cuisines.map((c) => (
                       <label key={c.cuisine_id || c.id} className="flex cursor-pointer items-center gap-2.5 text-xs font-medium text-slate-600">
                         <input
