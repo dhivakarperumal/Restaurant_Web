@@ -20,6 +20,7 @@ import toast from "react-hot-toast";
 import api, { BACKEND_BASE_URL } from "../../api";
 import { StoreContext } from "../../PrivateRouter/StoreContext";
 import PageContainer from "../../CommonComponents/PageContainer";
+import PageHeader from "../../CommonComponents/PageHeader";
 import FoodProductCard from "../../CommonComponents/FoodProductCard";
 import FoodCustomizationModal from "../../CommonComponents/FoodCustomizationModal";
 
@@ -265,71 +266,49 @@ export default function Shop() {
 
   return (
     <div className="min-h-screen bg-[#fcfbf9] text-[#203129] pb-20">
-      {/* 1. Hero Banner */}
-      <section className="relative overflow-hidden bg-gradient-to-r from-[#0d221d] via-[#16382f] to-[#20493e] py-12 text-white">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(212,168,67,0.15),transparent_50%)] pointer-events-none" />
-        <div className="absolute -left-12 -bottom-12 h-44 w-44 rounded-full bg-emerald-500/10 blur-2xl pointer-events-none" />
-
-        <PageContainer>
-          <div className="relative z-10 flex flex-col md:flex-row md:items-end md:justify-between gap-6">
-            <div className="max-w-2xl">
-              <div className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-xs font-semibold text-[#d4a843] backdrop-blur-xs border border-white/10 mb-3">
-                <UtensilsCrossed className="h-3.5 w-3.5" />
-                <span>Chef-Crafted Restaurant Menu</span>
-              </div>
-              <h1 className="font-serif text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight text-white">
-                Explore Our Food Menu
-              </h1>
-              <p className="mt-2 text-sm text-emerald-100/80 leading-relaxed max-w-xl">
-                Freshly prepared with authentic recipes, seasonal ingredients, and culinary perfection.
-                Order for home delivery or table service dining.
-              </p>
-
-              {/* Quick Info Badges */}
-              <div className="mt-4 flex flex-wrap items-center gap-3 text-xs">
-                <span className="flex items-center gap-1.5 rounded-lg bg-white/10 px-3 py-1 font-semibold text-white">
-                  <Utensils className="h-3.5 w-3.5 text-[#d4a843]" />
-                  <span>{foods.length} Dishes</span>
-                </span>
-                <span className="flex items-center gap-1.5 rounded-lg bg-white/10 px-3 py-1 font-semibold text-white">
-                  <Layers className="h-3.5 w-3.5 text-[#d4a843]" />
-                  <span>{categories.length} Categories</span>
-                </span>
-                <span className="flex items-center gap-1.5 rounded-lg bg-white/10 px-3 py-1 font-semibold text-white">
-                  <Sparkles className="h-3.5 w-3.5 text-[#d4a843]" />
-                  <span>{cuisines.length} Cuisines</span>
-                </span>
-              </div>
-            </div>
-
-            {/* Quick Search in Hero */}
-            <div className="w-full md:w-80">
-              <div className="relative">
-                <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-emerald-200/70" />
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Search food, dish, cuisine..."
-                  className="w-full rounded-2xl border border-white/20 bg-white/15 py-3 pl-10 pr-9 text-xs text-white placeholder:text-emerald-200/60 backdrop-blur-md outline-none transition focus:border-[#d4a843] focus:bg-white/25 focus:ring-2 focus:ring-[#d4a843]/30"
-                />
-                {searchQuery && (
-                  <button
-                    type="button"
-                    onClick={() => setSearchQuery("")}
-                    aria-label="Clear search"
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-white/60 hover:text-white"
-                  >
-                    <X className="h-4 w-4" />
-                  </button>
-                )}
-              </div>
+      <PageHeader title="Shop" />
+      <PageContainer>
+        <div className="flex flex-col gap-4 pt-6 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex flex-wrap items-center gap-3 text-xs">
+            <span className="flex items-center gap-1.5 rounded-lg bg-white px-3 py-2 font-semibold text-[#1a3c36] shadow-sm">
+              <Utensils className="h-3.5 w-3.5 text-[#d4a843]" />
+              <span>{foods.length} Dishes</span>
+            </span>
+            <span className="flex items-center gap-1.5 rounded-lg bg-white px-3 py-2 font-semibold text-[#1a3c36] shadow-sm">
+              <Layers className="h-3.5 w-3.5 text-[#d4a843]" />
+              <span>{categories.length} Categories</span>
+            </span>
+            <span className="flex items-center gap-1.5 rounded-lg bg-white px-3 py-2 font-semibold text-[#1a3c36] shadow-sm">
+              <Sparkles className="h-3.5 w-3.5 text-[#d4a843]" />
+              <span>{cuisines.length} Cuisines</span>
+            </span>
+          </div>
+          <div className="w-full sm:max-w-sm">
+            <div className="relative">
+              <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search food, dish, cuisine..."
+                className="w-full rounded-xl border border-slate-200 bg-white py-3 pl-10 pr-9 text-xs text-slate-800 outline-none transition focus:border-[#1a3c36] focus:ring-2 focus:ring-[#1a3c36]/15"
+              />
+              {searchQuery && (
+                <button
+                  type="button"
+                  onClick={() => setSearchQuery("")}
+                  aria-label="Clear search"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              )}
             </div>
           </div>
-        </PageContainer>
-      </section>
+        </div>
+      </PageContainer>
 
-      {/* 2. Main Content & Filters */}
+      {/* Shop content and filters */}
       <PageContainer>
         {/* Category Pills Bar */}
         <div className="mt-8">

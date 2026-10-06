@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { Clock3, MapPin, PackageCheck, RefreshCw, UserRound, UtensilsCrossed } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import api, { BACKEND_BASE_URL } from '../api';
+import PageHeader from './PageHeader';
 
 const STATUS_OPTIONS = [
   { value: 'placed', label: 'New' },
@@ -97,22 +98,28 @@ function CustomerOrdersPage({ audience = 'admin', view = 'all' }) {
   };
 
   return (
-    <main className="min-h-screen bg-[#f5f6f3] p-4 sm:p-6 lg:p-8">
+    <>
+      {isCustomer && <PageHeader title={title} />}
+      <main className="min-h-screen bg-[#f5f6f3] p-4 sm:p-6 lg:p-8">
       <div className="mx-auto max-w-[1500px] space-y-6">
         <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-          <div>
-            <p className="text-xs font-bold uppercase tracking-[0.2em] text-[#a34f32]">
-              {audience === 'chef' ? 'Kitchen' : 'Administration'}
+          {isCustomer ? (
+            <p className="text-sm text-[#68766e]">
+              Your order history and current order status.
             </p>
-            <h1 className="mt-1 text-3xl font-bold tracking-tight text-[#263830]">{title}</h1>
-            <p className="mt-2 text-sm text-[#68766e]">
-              {isCustomer
-                ? 'Your order history and current order status.'
-                : audience === 'chef'
-                ? 'Review customer orders and update their kitchen progress.'
-                : 'Review customer orders, fulfilment details, and payment status.'}
-            </p>
-          </div>
+          ) : (
+            <div>
+              <p className="text-xs font-bold uppercase tracking-[0.2em] text-[#a34f32]">
+                {audience === 'chef' ? 'Kitchen' : 'Administration'}
+              </p>
+              <h1 className="mt-1 text-3xl font-bold tracking-tight text-[#263830]">{title}</h1>
+              <p className="mt-2 text-sm text-[#68766e]">
+                {audience === 'chef'
+                  ? 'Review customer orders and update their kitchen progress.'
+                  : 'Review customer orders, fulfilment details, and payment status.'}
+              </p>
+            </div>
+          )}
           <button
             type="button"
             onClick={() => fetchOrders(true)}
@@ -240,7 +247,8 @@ function CustomerOrdersPage({ audience = 'admin', view = 'all' }) {
           </div>
         )}
       </div>
-    </main>
+      </main>
+    </>
   );
 }
 
