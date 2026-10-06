@@ -4,7 +4,6 @@ import {
   AlertCircle,
   ChevronLeft,
   ChevronRight,
-  Flame,
   Filter,
   Layers,
   LayoutGrid,
@@ -59,9 +58,7 @@ export default function Shop() {
   const [minimumPrice, setMinimumPrice] = useState("");
   const [maximumPrice, setMaximumPrice] = useState("");
   const [minimumRating, setMinimumRating] = useState(0);
-  const [onlyOffers, setOnlyOffers] = useState(false);
-  const [onlySpicy, setOnlySpicy] = useState(false);
-  const [onlyAvailable, setOnlyAvailable] = useState(false);
+  const [selectedOfferRange, setSelectedOfferRange] = useState("");
   const [sortBy, setSortBy] = useState("recommended"); // 'recommended' | 'price-low' | 'price-high' | 'rating' | 'prep-time'
   const [viewMode, setViewMode] = useState("grid"); // 'grid' | 'list'
   const [currentPage, setCurrentPage] = useState(1);
@@ -229,14 +226,17 @@ export default function Shop() {
         const price = Number(food.final_price || food.mrp || 0);
         if (minimumPrice !== "" && price < Number(minimumPrice)) return false;
         if (maximumPrice !== "" && price > Number(maximumPrice)) return false;
-        if (onlyOffers && !(Number(food.discount || 0) > 0 && Number(food.mrp || 0) > price)) return false;
+        if (selectedOfferRange) {
+          const discount = Number(food.discount || 0);
+          const hasDiscount = discount > 0 && Number(food.mrp || 0) > price;
+          const [minimumDiscount, maximumDiscount] = selectedOfferRange.split("-").map(Number);
+          const matchesOffer = selectedOfferRange === "30+"
+            ? discount > 30
+            : discount >= minimumDiscount
+              && (selectedOfferRange === "20-30" ? discount <= maximumDiscount : discount < maximumDiscount);
+          if (!hasDiscount || !matchesOffer) return false;
+        }
         if (minimumRating > 0 && Number(food.rating || 0) < minimumRating) return false;
-
-        // Spicy filter
-        if (onlySpicy && !food.is_spicy) return false;
-
-        // Availability filter
-        if (onlyAvailable && food.is_available === false) return false;
 
         return true;
       })
@@ -258,7 +258,7 @@ export default function Shop() {
         if (!a.featured && b.featured) return 1;
         return (b.id || 0) - (a.id || 0);
       });
-  }, [foods, searchQuery, selectedCategory, selectedCuisines, selectedFoodType, minimumPrice, maximumPrice, minimumRating, onlyOffers, onlySpicy, onlyAvailable, sortBy]);
+  }, [foods, searchQuery, selectedCategory, selectedCuisines, selectedFoodType, minimumPrice, maximumPrice, minimumRating, selectedOfferRange, sortBy]);
 
   const totalPages = Math.max(1, Math.ceil(filteredFoods.length / productsPerPage));
   const paginatedFoods = filteredFoods.slice(
@@ -282,9 +282,7 @@ export default function Shop() {
     setMinimumPrice("");
     setMaximumPrice("");
     setMinimumRating(0);
-    setOnlyOffers(false);
-    setOnlySpicy(false);
-    setOnlyAvailable(false);
+    setSelectedOfferRange("");
     setCurrentPage(1);
   };
 
@@ -576,16 +574,34 @@ export default function Shop() {
 
           <div className="mt-5 space-y-3 border-t border-slate-100 pt-4">
             <h2 className="text-xs font-bold uppercase tracking-wider text-slate-500">More filters</h2>
-            <label className="flex cursor-pointer items-center justify-between gap-3 text-xs font-semibold text-slate-600">
-              <span className="flex items-center gap-2"><Tag className="h-4 w-4 text-[#d4a843]" />On offer</span>
-              <input type="checkbox" checked={onlyOffers} onChange={(event) => { setOnlyOffers(event.target.checked); setCurrentPage(1); }} className="h-4 w-4 accent-[#1a3c36]" />
-            </label>
+            <div className="space-y-2 border-t border-slate-100 pt-3">
+              <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Offers</p>
+              {[
+                { value: "", label: "Any offer" },
+                { value: "5-10", label: "5–10% off" },
+                { value: "10-20", label: "10–20% off" },
+                { value: "20-30", label: "20–30% off" },
+                { value: "30+", label: "More than 30% off" },
+              ].map((offer) => (
+                <label key={offer.value || "any-offer"} className="flex cursor-pointer items-center gap-2 text-xs font-medium text-slate-600">
+                  <input
+                    type="radio"
+                    name="offer-range"
+                    value={offer.value}
+                    checked={selectedOfferRange === offer.value}
+                    onChange={() => { setSelectedOfferRange(offer.value); setCurrentPage(1); }}
+                    className="accent-[#1a3c36]"
+                  />
+                  {offer.label}
+                </label>
+              ))}
+            </div>
             <div className="space-y-2 border-t border-slate-100 pt-3">
               <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Rating</p>
-              {[4, 3, 0].map((rating) => (
+              {[5, 4, 3, 2, 1, 0].map((rating) => (
                 <label key={rating} className="flex cursor-pointer items-center gap-2 text-xs font-medium text-slate-600">
                   <input type="radio" name="minimum-rating" checked={minimumRating === rating} onChange={() => { setMinimumRating(rating); setCurrentPage(1); }} className="accent-[#1a3c36]" />
-                  <span className="flex items-center gap-1">{rating === 0 ? "Any rating" : <><Star className="h-3 w-3 fill-amber-400 text-amber-400" />{rating}+ stars</>}</span>
+                  <span className="flex items-center gap-1">{rating === 0 ? "Any rating" : <><Star className="h-3 w-3 fill-amber-400 text-amber-400" />{rating === 5 ? "5 stars" : `${rating}+ stars`}</>}</span>
                 </label>
               ))}
             </div>
@@ -599,7 +615,7 @@ export default function Shop() {
             minimumPrice !== "" ||
             maximumPrice !== "" ||
             minimumRating > 0 ||
-            onlyOffers ||
+            selectedOfferRange ||
             onlySpicy ||
             onlyAvailable) && (
             <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-slate-100 pt-2.5 text-xs">
@@ -646,7 +662,7 @@ export default function Shop() {
                   <button type="button" aria-label="Clear price filter" onClick={() => { setMinimumPrice(""); setMaximumPrice(""); setCurrentPage(1); }}><X className="h-3 w-3" /></button>
                 </span>
               )}
-              {onlyOffers && <span className="inline-flex items-center gap-1 rounded-lg bg-amber-50 px-2.5 py-1 font-medium text-amber-800">On offer <button type="button" aria-label="Clear offer filter" onClick={() => { setOnlyOffers(false); setCurrentPage(1); }}><X className="h-3 w-3" /></button></span>}
+              {selectedOfferRange && <span className="inline-flex items-center gap-1 rounded-lg bg-amber-50 px-2.5 py-1 font-medium text-amber-800">{selectedOfferRange === "30+" ? "More than 30% off" : `${selectedOfferRange.replace("-", "–")}% off`} <button type="button" aria-label="Clear offer filter" onClick={() => { setSelectedOfferRange(""); setCurrentPage(1); }}><X className="h-3 w-3" /></button></span>}
               {minimumRating > 0 && <span className="inline-flex items-center gap-1 rounded-lg bg-amber-50 px-2.5 py-1 font-medium text-amber-800">{minimumRating}+ stars <button type="button" aria-label="Clear rating filter" onClick={() => { setMinimumRating(0); setCurrentPage(1); }}><X className="h-3 w-3" /></button></span>}
               <button
                 type="button"
