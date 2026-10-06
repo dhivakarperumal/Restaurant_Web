@@ -133,7 +133,7 @@ const requireInventoryAccess = async (req, res, next) => {
     req.auth = user;
     return next();
   } catch (error) {
-    console.error('Failed to authorize inventory request:', error.message);
+    console.error('Failed to authorize inventory request:', error);
     return res.status(500).json({ success: false, message: 'Unable to verify inventory access.' });
   }
 };
@@ -147,7 +147,7 @@ const requireAuthenticatedUser = async (req, res, next) => {
     req.auth = user;
     return next();
   } catch (error) {
-    console.error('Failed to authorize profile request:', error.message);
+    console.error('Failed to authorize profile request:', error);
     return res.status(500).json({ success: false, message: 'Unable to verify your session.' });
   }
 };

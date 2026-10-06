@@ -74,7 +74,8 @@ async function startServer() {
     await initializeRevenueIndexes();
     console.log('Revenue indexes ready');
   } catch (error) {
-    console.error(`Database initialization failed: ${error.message}`);
+    console.error('Database initialization failed:', error);
+    process.exit(1);
   }
 
   app.listen(PORT, () => {
