@@ -51,7 +51,10 @@ export default function Shop() {
   // Filter states
   const [searchQuery, setSearchQuery] = useState(searchParams.get("search") || "");
   const [selectedCategory, setSelectedCategory] = useState(searchParams.get("category") || "all");
-  const [selectedCuisine, setSelectedCuisine] = useState(searchParams.get("cuisine") || "all");
+  const [selectedCuisines, setSelectedCuisines] = useState(() => {
+    const cuisine = searchParams.get("cuisine");
+    return cuisine && cuisine !== "all" ? [cuisine] : [];
+  });
   const [selectedFoodType, setSelectedFoodType] = useState("all"); // 'all' | 'Veg' | 'Non-Veg'
   const [minimumPrice, setMinimumPrice] = useState("");
   const [maximumPrice, setMaximumPrice] = useState("");
@@ -211,14 +214,10 @@ export default function Shop() {
         }
 
         // Cuisine filter
-        if (selectedCuisine !== "all") {
-          if (
-              String(food.cuisine_id) !== String(selectedCuisine) &&
-            food.cuisine_name?.toLowerCase() !== selectedCuisine.toLowerCase()
-          ) {
-            return false;
-          }
-        }
+        if (selectedCuisines.length > 0 && !selectedCuisines.some((cuisine) => (
+          String(food.cuisine_id) === String(cuisine)
+          || food.cuisine_name?.toLowerCase() === cuisine.toLowerCase()
+        ))) return false;
 
         // Food type filter (Veg / Non-Veg)
         if (selectedFoodType !== "all") {
@@ -259,7 +258,7 @@ export default function Shop() {
         if (!a.featured && b.featured) return 1;
         return (b.id || 0) - (a.id || 0);
       });
-  }, [foods, searchQuery, selectedCategory, selectedCuisine, selectedFoodType, minimumPrice, maximumPrice, minimumRating, onlyOffers, onlySpicy, onlyAvailable, sortBy]);
+  }, [foods, searchQuery, selectedCategory, selectedCuisines, selectedFoodType, minimumPrice, maximumPrice, minimumRating, onlyOffers, onlySpicy, onlyAvailable, sortBy]);
 
   const totalPages = Math.max(1, Math.ceil(filteredFoods.length / productsPerPage));
   const paginatedFoods = filteredFoods.slice(
@@ -278,7 +277,7 @@ export default function Shop() {
   const resetFilters = () => {
     setSearchQuery("");
     setSelectedCategory("all");
-    setSelectedCuisine("all");
+    setSelectedCuisines([]);
     setSelectedFoodType("all");
     setMinimumPrice("");
     setMaximumPrice("");
@@ -481,26 +480,30 @@ export default function Shop() {
               </button>
             </div>
 
-            {/* Quick toggles & Cuisine selector */}
+            {/* Quick toggles */}
             <div className="flex flex-col items-stretch gap-3">
-              {/* Cuisine selector */}
               {cuisines.length > 0 && (
-                <div className="relative">
-                  <label htmlFor="shop-cuisine-filter" className="mb-2 block text-xs font-bold uppercase tracking-wider text-slate-500">Cuisine</label>
-                  <select
-                    id="shop-cuisine-filter"
-                    value={selectedCuisine}
-                    onChange={(e) => { setSelectedCuisine(e.target.value); setCurrentPage(1); }}
-                    className="h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-700 outline-none transition focus:border-[#1a3c36] focus:ring-2 focus:ring-[#1a3c36]/10"
-                  >
-                    <option value="all">All Cuisines</option>
+                <fieldset className="space-y-2">
+                  <legend className="mb-2 text-xs font-bold uppercase tracking-wider text-slate-500">Cuisine</legend>
+                  <div className="max-h-40 space-y-2 overflow-y-auto pr-1">
                     {cuisines.map((c) => (
-                      <option key={c.cuisine_id || c.id} value={c.cuisine_name}>
-                        {c.cuisine_name}
-                      </option>
+                      <label key={c.cuisine_id || c.id} className="flex cursor-pointer items-center gap-2.5 text-xs font-medium text-slate-600">
+                        <input
+                          type="checkbox"
+                          checked={selectedCuisines.includes(c.cuisine_name)}
+                          onChange={(event) => {
+                            setSelectedCuisines((current) => event.target.checked
+                              ? [...current, c.cuisine_name]
+                              : current.filter((name) => name !== c.cuisine_name));
+                            setCurrentPage(1);
+                          }}
+                          className="h-4 w-4 rounded accent-[#1a3c36]"
+                        />
+                        <span>{c.cuisine_name}</span>
+                      </label>
                     ))}
-                  </select>
-                </div>
+                  </div>
+                </fieldset>
               )}
 
               {/* Spicy toggle */}
@@ -591,7 +594,7 @@ export default function Shop() {
           {/* Active filters pill display */}
           {(searchQuery ||
             selectedCategory !== "all" ||
-            selectedCuisine !== "all" ||
+            selectedCuisines.length > 0 ||
             selectedFoodType !== "all" ||
             minimumPrice !== "" ||
             maximumPrice !== "" ||
@@ -613,12 +616,12 @@ export default function Shop() {
                   <button type="button" aria-label="Clear category filter" onClick={() => { setSelectedCategory("all"); setCurrentPage(1); }}><X className="h-3 w-3" /></button>
                 </span>
               )}
-              {selectedCuisine !== "all" && (
-                <span className="inline-flex items-center gap-1 rounded-lg bg-emerald-50 px-2.5 py-1 text-emerald-800 font-medium border border-emerald-200/60">
-                  Cuisine: {cuisines.find((cuisine) => String(cuisine.cuisine_id || cuisine.id) === String(selectedCuisine) || cuisine.cuisine_name === selectedCuisine)?.cuisine_name || selectedCuisine}
-                  <button type="button" aria-label="Clear cuisine filter" onClick={() => { setSelectedCuisine("all"); setCurrentPage(1); }}><X className="h-3 w-3" /></button>
+              {selectedCuisines.map((cuisine) => (
+                <span key={cuisine} className="inline-flex items-center gap-1 rounded-lg border border-emerald-200/60 bg-emerald-50 px-2.5 py-1 font-medium text-emerald-800">
+                  Cuisine: {cuisine}
+                  <button type="button" aria-label={`Clear ${cuisine} cuisine filter`} onClick={() => { setSelectedCuisines((current) => current.filter((name) => name !== cuisine)); setCurrentPage(1); }}><X className="h-3 w-3" /></button>
                 </span>
-              )}
+              ))}
               {selectedFoodType !== "all" && (
                 <span className="inline-flex items-center gap-1 rounded-lg bg-slate-100 px-2.5 py-1 text-slate-700 font-medium">
                   Type: {selectedFoodType}
