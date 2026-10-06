@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import {
-  Check,
   ChevronRight,
   Eye,
   EyeOff,
@@ -359,11 +358,34 @@ const Account = () => {
     <>
       <main className="min-h-screen bg-[#f7f7f3] pb-16 pt-2 sm:pt-4">
         <PageContainer className="max-w-[1500px]">
-          <section className="relative mb-4 min-h-[300px] overflow-hidden rounded-[26px] bg-[#002d1c] text-white shadow-lg sm:min-h-[322px]">
-            <img src="/images/tab.png" alt="" aria-hidden="true" className="absolute inset-y-0 right-0 h-full w-full object-cover object-center opacity-65 sm:w-[68%] sm:object-[center_44%]" />
-            <div className="absolute inset-0 bg-gradient-to-r from-[#002b1a] via-[#00351f]/95 to-[#002b1a]/15" />
-            <div className="absolute inset-0 bg-gradient-to-t from-[#001d12]/90 via-transparent to-[#001d12]/10" />
-            <div className="relative flex min-h-[235px] flex-col justify-center gap-5 px-5 pb-6 pt-7 sm:min-h-[242px] sm:flex-row sm:items-center sm:gap-8 sm:px-10 sm:pb-10">
+          <section className={`relative mb-4 overflow-hidden rounded-[22px] bg-[#002d1c] text-white shadow-lg ${activeTab === "address" ? "min-h-[145px] sm:min-h-[160px]" : "min-h-[300px] sm:min-h-[322px]"}`}>
+            {activeTab === "address" && (
+              <>
+                <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_78%_50%,rgba(58,111,11,0.62),transparent_42%),linear-gradient(110deg,#002b1a_0%,#00351f_58%,#064329_100%)]" />
+                <div aria-hidden="true" className="absolute -right-8 -top-20 h-64 w-64 rounded-full border border-[#FEB914]/20 sm:right-[17%]">
+                  <div className="absolute inset-5 rounded-full border border-dashed border-white/20" />
+                  <div className="absolute inset-12 rounded-full border border-[#FEB914]/20" />
+                  <MapPin className="absolute left-1/2 top-5 h-12 w-12 -translate-x-1/2 text-[#FD5E02] drop-shadow-lg sm:h-14 sm:w-14" fill="currentColor" />
+                </div>
+                <div className="relative flex min-h-[145px] items-center px-5 py-6 sm:min-h-[160px] sm:px-10">
+                  <div className="max-w-xl">
+                    <p className="text-[10px] font-extrabold uppercase tracking-[0.22em] text-[#FEB914]">My account</p>
+                    <h1 className="mt-1 font-serif text-3xl font-extrabold leading-tight sm:text-4xl">
+                      Saved <span className="text-[#FEB914]">Addresses</span>
+                    </h1>
+                    <p className="mt-1 text-sm text-white/85">Delivering happiness right to your doorstep.</p>
+                    <p className="mt-2 hidden text-xs text-white/65 sm:block">Add and manage your delivery locations for a faster checkout experience.</p>
+                  </div>
+                  <div aria-hidden="true" className="absolute bottom-4 right-5 hidden -rotate-6 text-center font-serif text-lg font-bold italic leading-tight text-white/90 sm:block sm:right-10 sm:text-xl">
+                    Good food<br />reaches you<br /><span className="text-[#FEB914]">anywhere</span>
+                  </div>
+                </div>
+              </>
+            )}
+            <img src="/images/tab.png" alt="" aria-hidden="true" className={`absolute inset-y-0 right-0 h-full w-full object-cover object-center opacity-65 sm:w-[68%] sm:object-[center_44%] ${activeTab === "address" ? "hidden" : ""}`} />
+            <div className={`absolute inset-0 bg-gradient-to-r from-[#002b1a] via-[#00351f]/95 to-[#002b1a]/15 ${activeTab === "address" ? "hidden" : ""}`} />
+            <div className={`absolute inset-0 bg-gradient-to-t from-[#001d12]/90 via-transparent to-[#001d12]/10 ${activeTab === "address" ? "hidden" : ""}`} />
+            <div className={`${activeTab === "address" ? "hidden" : "relative flex min-h-[235px] flex-col justify-center gap-5 px-5 pb-6 pt-7 sm:min-h-[242px] sm:flex-row sm:items-center sm:gap-8 sm:px-10 sm:pb-10"}`}>
               <div className="flex shrink-0 items-center gap-4 sm:gap-6">
                 <div className="relative flex h-[82px] w-[82px] shrink-0 items-center justify-center rounded-full border-[4px] border-[#FEB914] bg-[#146b3a] text-4xl font-bold text-white shadow-xl sm:h-[112px] sm:w-[112px] sm:text-5xl">
                   {userInitial}
@@ -394,7 +416,7 @@ const Account = () => {
                 <LogOut size={15} /> Sign out
               </button>
             </div>
-            <div className="relative grid grid-cols-2 gap-2 px-4 pb-4 sm:grid-cols-2 sm:gap-3 lg:absolute lg:inset-x-7 lg:bottom-2 lg:grid-cols-4 lg:pb-0">
+            <div className={`${activeTab === "address" ? "hidden" : "relative grid grid-cols-2 gap-2 px-4 pb-4 sm:grid-cols-2 sm:gap-3 lg:absolute lg:inset-x-7 lg:bottom-2 lg:grid-cols-4 lg:pb-0"}`}>
               {[
                 { id: "orders", icon: Package, value: orders.length, title: "Total Orders", detail: "Your food journey", tone: "text-[#FD5E02]", wash: "bg-[#fff0e6]" },
                 { id: "address", icon: MapPin, value: addresses.length, title: "Saved Addresses", detail: "Faster checkout", tone: "text-[#396F0B]", wash: "bg-[#edf5e9]" },
@@ -421,14 +443,30 @@ const Account = () => {
             </div>
           </section>
 
-          <div className="grid items-stretch gap-3 lg:grid-cols-[minmax(225px,0.78fr)_minmax(0,1.55fr)_minmax(205px,0.64fr)]">
-            <aside className="relative overflow-hidden rounded-[22px] bg-[#00351f] text-white shadow-md">
-              <img src="/images/tab.png" alt="" aria-hidden="true" className="absolute inset-0 h-full w-full object-cover opacity-35" />
-              <div className="absolute inset-0 bg-gradient-to-b from-[#00351f]/95 via-[#00351f]/80 to-[#001f14]/95" />
-              <div className="relative flex h-full flex-col p-4 sm:p-5">
-                <p className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-[#FEB914]">Account</p>
-                <h2 className="mt-1 font-serif text-2xl font-bold leading-tight">Your Foodie Space</h2>
-                <p className="mt-1 text-xs leading-5 text-white/70">Manage everything in one place</p>
+          <div className={`grid items-stretch gap-3 ${activeTab === "address" ? "lg:grid-cols-[220px_minmax(0,1fr)]" : "lg:grid-cols-[minmax(225px,0.78fr)_minmax(0,1.55fr)_minmax(205px,0.64fr)]"}`}>
+            <aside className={`relative overflow-hidden rounded-[22px] shadow-md ${activeTab === "address" ? "border border-[#ecece5] bg-white text-[#10221a]" : "bg-[#00351f] text-white"}`}>
+              {activeTab !== "address" && (
+                <>
+                  <img src="/images/tab.png" alt="" aria-hidden="true" className="absolute inset-0 h-full w-full object-cover opacity-35" />
+                  <div className="absolute inset-0 bg-gradient-to-b from-[#00351f]/95 via-[#00351f]/80 to-[#001f14]/95" />
+                </>
+              )}
+              <div className={`relative flex h-full flex-col p-4 sm:p-5 ${activeTab === "address" ? "min-h-[390px]" : ""}`}>
+                {activeTab === "address" ? (
+                  <div className="mb-4 flex flex-col items-center border-b border-[#edf0eb] pb-4 text-center">
+                    <div className="flex h-14 w-14 items-center justify-center rounded-full border-2 border-[#FEB914] bg-[#07502d] text-2xl font-extrabold text-white shadow-sm">
+                      {userInitial}
+                    </div>
+                    <h2 className="mt-2 text-sm font-extrabold text-[#111827]">{displayName}</h2>
+                    <p className="mt-1 text-[10px] font-semibold text-[#FD5E02]">Food Lover · Premium Member</p>
+                  </div>
+                ) : (
+                  <>
+                    <p className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-[#FEB914]">Account</p>
+                    <h2 className="mt-1 font-serif text-2xl font-bold leading-tight">Your Foodie Space</h2>
+                    <p className="mt-1 text-xs leading-5 text-white/70">Manage everything in one place</p>
+                  </>
+                )}
                 <nav className="mt-5 space-y-1.5" aria-label="Account sections">
                   {TAB_CONFIG.map((tab) => {
                     const Icon = tab.icon;
@@ -441,27 +479,29 @@ const Account = () => {
                         onClick={() => handleTabSelect(tab.id)}
                         aria-current={isActive ? "page" : undefined}
                         className={`group flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left transition ${
-                          isActive ? "bg-[#eff5e9] text-[#07321f] shadow-sm" : "text-white hover:bg-white/10"
+                          activeTab === "address"
+                            ? isActive ? "bg-[#004522] text-white shadow-sm" : "text-[#111827] hover:bg-[#f3f7f1]"
+                            : isActive ? "bg-[#eff5e9] text-[#07321f] shadow-sm" : "text-white hover:bg-white/10"
                         }`}
                       >
-                        <Icon size={19} className={`shrink-0 ${isActive ? "text-[#396F0B]" : "text-[#FEB914]"}`} />
+                        <Icon size={19} className={`shrink-0 ${activeTab === "address" ? (isActive ? "text-white" : "text-[#396F0B]") : (isActive ? "text-[#396F0B]" : "text-[#FEB914]")}`} />
                         <span className="min-w-0 flex-1">
                           <span className="block text-xs font-bold">{label}</span>
-                          <span className={`mt-0.5 block truncate text-[10px] ${isActive ? "text-slate-500" : "text-white/55"}`}>{tab.desc}</span>
+                          <span className={`mt-0.5 block truncate text-[10px] ${activeTab === "address" ? (isActive ? "text-white/70" : "text-slate-500") : (isActive ? "text-slate-500" : "text-white/55")}`}>{tab.desc}</span>
                         </span>
-                        <ChevronRight size={15} className={`shrink-0 transition group-hover:translate-x-0.5 ${isActive ? "text-[#396F0B]" : "text-white/45"}`} />
+                        <ChevronRight size={15} className={`shrink-0 transition group-hover:translate-x-0.5 ${activeTab === "address" ? (isActive ? "text-white" : "text-slate-400") : (isActive ? "text-[#396F0B]" : "text-white/45")}`} />
                       </button>
                     );
                   })}
                 </nav>
-                <button type="button" onClick={() => setShowLogoutConfirm(true)} className="mt-auto flex items-center gap-3 rounded-xl border-t border-white/15 px-3 pt-4 text-sm font-semibold text-[#ffb5a9] transition hover:text-white">
-                  <LogOut size={18} /> Sign out <span className="ml-auto text-[10px] text-white/50">Leave your account</span>
+                <button type="button" onClick={() => setShowLogoutConfirm(true)} className={`mt-auto flex items-center gap-3 rounded-xl border-t px-3 pt-4 text-sm font-semibold transition ${activeTab === "address" ? "border-[#edf0eb] text-[#dc2626] hover:text-[#991b1b]" : "border-white/15 text-[#ffb5a9] hover:text-white"}`}>
+                  <LogOut size={18} /> Sign out <span className={`ml-auto text-[10px] ${activeTab === "address" ? "text-slate-500" : "text-white/50"}`}>Leave your account</span>
                 </button>
               </div>
             </aside>
 
             <section className="min-w-0">
-              <div className="account-content min-h-[460px] h-full rounded-[22px] border border-[#ecece5] bg-white p-5 shadow-sm sm:p-7 lg:p-8">
+              <div className={`account-content h-full ${activeTab === "address" ? "min-h-0" : "min-h-[460px] rounded-[22px] border border-[#ecece5] bg-white p-5 shadow-sm sm:p-7 lg:p-8"}`}>
                 {/* TAB 1: PROFILE DETAILS */}
                 {activeTab === "profile" && (
                   <div>
@@ -544,138 +584,115 @@ const Account = () => {
 
                 {/* TAB 2: SAVED ADDRESS */}
                 {activeTab === "address" && (
-                  <div>
-                    <div className="mb-7 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between border-b border-[#E8EDE6] pb-5">
-                      <div className="flex items-center gap-3">
-                        <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-[#EFF5E9] text-[#FD5E02]">
-                          <MapPin size={20} />
-                        </span>
-                        <div>
-                          <h2 className="text-xl font-serif font-semibold text-[#071C18]">
-                            Saved Addresses
-                          </h2>
-                          <p className="text-xs text-[#7b8580]">
-                            Manage delivery addresses saved to your customer account.
-                          </p>
-                        </div>
+                  <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,1.55fr)_minmax(290px,0.95fr)]">
+                    <section className="min-w-0">
+                      <div className="mb-4">
+                        <span className="mb-1 block h-0.5 w-8 rounded-full bg-[#FD5E02]" />
+                        <h2 className="font-serif text-2xl font-extrabold text-[#071C18]">
+                          Your <span className="italic text-[#07502d]">Addresses</span>
+                        </h2>
+                        <p className="mt-1 text-xs text-[#69716e]">Manage your delivery addresses. You can add, edit or remove addresses anytime.</p>
                       </div>
 
-                      {!editingAddress && (
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setAddress(emptyAddress);
-                            setEditingAddressId(null);
-                            setEditingAddress(true);
-                          }}
-                          className="inline-flex items-center gap-2 self-start rounded-lg border border-[#FD5E02] px-4 py-2 text-xs font-bold uppercase tracking-wider text-[#FD5E02] transition hover:bg-[#FD5E02] hover:text-white"
-                        >
-                          <MapPin size={14} /> Add Address
-                        </button>
+                      {hasSavedAddress ? (
+                        <div className="space-y-3">
+                          {addresses.map((savedAddress, index) => (
+                            <article key={savedAddress.id || `${savedAddress.address_line1}-${index}`} className={`relative overflow-hidden rounded-xl border bg-white p-4 shadow-[0_5px_18px_rgba(22,47,31,0.06)] transition ${index === 0 ? "border-[#8dbb8d]" : "border-[#edf0eb]"}`}>
+                              <div className="flex items-start gap-3">
+                                <span className={`mt-2 flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-white ${index === 0 ? "bg-[#FD5E02]" : "bg-[#07502d]"}`}>
+                                  <MapPin size={21} />
+                                </span>
+                                <div className="min-w-0 flex-1">
+                                  <span className={`rounded-md px-2 py-1 text-[10px] font-bold ${index === 0 ? "bg-[#07502d] text-white" : "bg-[#f1f3f2] text-[#59615e]"}`}>
+                                    {index === 0 ? "Default address" : "Saved address"}
+                                  </span>
+                                  <h3 className="mt-1.5 text-sm font-extrabold text-[#171d1a]">{profile.username || displayName}</h3>
+                                  {profile.mobile_number && <p className="text-xs text-[#606a65]">{profile.mobile_number}</p>}
+                                  <p className="mt-1.5 text-xs leading-relaxed text-[#4a5550]">{[savedAddress.address_line1, savedAddress.address_line2].filter(Boolean).join(", ")}</p>
+                                  <p className="text-xs leading-relaxed text-[#4a5550]">{[savedAddress.city, savedAddress.state].filter(Boolean).join(", ")}{savedAddress.pincode ? ` - ${savedAddress.pincode}` : ""}</p>
+                                  {savedAddress.landmark && <p className="mt-1 text-[11px] font-semibold text-[#07502d]">Landmark: {savedAddress.landmark}</p>}
+                                </div>
+                                <div className="flex shrink-0 gap-1">
+                                  <button type="button" onClick={() => editAddress(savedAddress)} aria-label="Edit address" className="rounded-lg border border-[#edf0eb] p-2 text-[#53605a] transition hover:border-[#07502d] hover:text-[#07502d]">
+                                    <Pencil size={15} />
+                                  </button>
+                                  <button type="button" disabled={saving} onClick={() => deleteAddress(savedAddress.id)} aria-label="Delete address" className="rounded-lg border border-[#edf0eb] p-2 text-[#FD5E02] transition hover:border-[#FD5E02] hover:bg-[#fff4ed] disabled:opacity-50">
+                                    <Trash2 size={15} />
+                                  </button>
+                                </div>
+                              </div>
+                            </article>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="rounded-xl border border-dashed border-[#cbd8cb] bg-white px-5 py-10 text-center">
+                          <MapPin className="mx-auto text-[#07502d]" size={26} />
+                          <h3 className="mt-3 text-sm font-bold text-[#17231c]">No saved address yet</h3>
+                          <p className="mt-1 text-xs text-[#78817c]">Add a delivery location using the form to make checkout faster.</p>
+                        </div>
                       )}
-                    </div>
+                    </section>
 
-                    {editingAddress ? (
-                      <form onSubmit={saveAddress} className="space-y-5">
-                        <div className="grid gap-4 sm:grid-cols-2">
+                    <section className="rounded-2xl border border-[#f0eee9] bg-white p-4 shadow-[0_7px_24px_rgba(22,47,31,0.07)] sm:p-5">
+                      <div className="mb-4 flex items-center justify-between border-b border-[#f0eee9] pb-3">
+                        <div>
+                          <h2 className="font-serif text-xl font-extrabold text-[#101713]">
+                            {editingAddressId ? "Edit" : "Add New"} <span className="italic text-[#07502d]">Address</span>
+                          </h2>
+                          <p className="mt-0.5 text-[11px] text-[#69716e]">Save a delivery location for faster checkout.</p>
+                        </div>
+                        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#eff5e9] text-[#FD5E02]">
+                          <MapPin size={21} />
+                        </span>
+                      </div>
+
+                      <form onSubmit={saveAddress} className="space-y-3">
+                        <div className="grid gap-3 sm:grid-cols-2">
                           {[
-                            ["address_line1", "Door / street address", "House number, street, building", true],
-                            ["address_line2", "Area / locality", "Area or neighbourhood", true],
-                            ["city", "City", "City", true],
-                            ["state", "State", "State", true],
-                            ["pincode", "Pincode", "6-digit pincode", true],
-                            ["landmark", "Landmark", "Nearby landmark (optional)", false],
-                          ].map(([field, label, placeholder, required]) => (
-                            <label key={field} className="block text-xs font-bold uppercase tracking-wider text-[#68736e]">
-                              {label}{required && <span className="text-[#FD5E02]"> *</span>}
+                            ["address_line1", "Door / Street Address", "House number, street, building", true, "sm:col-span-2"],
+                            ["address_line2", "Area / Locality", "Area or neighbourhood", true, "sm:col-span-2"],
+                            ["city", "City", "City", true, ""],
+                            ["state", "State", "State", true, ""],
+                            ["pincode", "Pincode", "6-digit pincode", true, ""],
+                            ["landmark", "Landmark (Optional)", "Nearby landmark", false, ""],
+                          ].map(([field, label, placeholder, required, span]) => (
+                            <label key={field} className={`block text-[11px] font-bold text-[#505954] ${span}`}>
+                              {label}{required && <span className="ml-1 text-[#FD5E02]">*</span>}
                               <input
                                 required={required}
-                                type={field === "pincode" ? "text" : "text"}
+                                type="text"
                                 inputMode={field === "pincode" ? "numeric" : undefined}
                                 pattern={field === "pincode" ? "\\d{6}" : undefined}
                                 maxLength={field === "address_line1" ? 255 : field === "address_line2" || field === "landmark" ? 180 : 120}
                                 placeholder={placeholder}
                                 value={address[field] || ""}
                                 onChange={(event) => setAddressField(field, event.target.value)}
-                                className="mt-1.5 h-11 w-full rounded-lg border border-[#E2E8DF] bg-[#F8FAF7] px-3.5 text-sm font-normal normal-case tracking-normal outline-none transition focus:border-[#FD5E02] focus:ring-1 focus:ring-[#FD5E02]"
+                                className="mt-1.5 h-10 w-full rounded-lg border border-[#e3e6e4] bg-[#f8f8f8] px-3 text-xs font-normal text-[#222a25] outline-none transition placeholder:text-[#9ba19e] focus:border-[#07502d] focus:ring-1 focus:ring-[#07502d]/20"
                               />
                             </label>
                           ))}
                         </div>
 
-                        <div className="flex flex-wrap items-center gap-3 pt-3">
-                          <button
-                            type="submit"
-                            disabled={saving}
-                            className="h-11 rounded-lg bg-[#071C18] px-7 text-sm font-semibold text-white transition hover:bg-[#FD5E02] disabled:opacity-60 cursor-pointer shadow-xs"
-                          >
-                            {saving ? "Saving..." : editingAddressId ? "Update Address" : "Save Address"}
+                        <div className="flex gap-2 pt-1">
+                          <button type="submit" disabled={saving} className="flex h-11 flex-1 items-center justify-center gap-2 rounded-lg bg-[#00351f] px-4 text-xs font-bold text-white shadow-[0_2px_0_#f6a400] transition hover:bg-[#07502d] disabled:opacity-60">
+                            <Save size={15} />{saving ? "Saving..." : editingAddressId ? "Update Address" : "Save Address"}
                           </button>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setEditingAddress(false);
-                              setEditingAddressId(null);
-                              setAddress(emptyAddress);
-                            }}
-                            className="h-11 rounded-lg border border-[#E2E8DF] px-6 text-sm font-semibold text-[#68736e] hover:bg-[#F5F7F3] transition cursor-pointer"
-                          >
-                            Cancel
-                          </button>
+                          {(editingAddress || editingAddressId) && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setEditingAddress(false);
+                                setEditingAddressId(null);
+                                setAddress(emptyAddress);
+                              }}
+                              className="h-11 rounded-lg border border-[#e3e6e4] px-4 text-xs font-semibold text-[#68736e] transition hover:bg-[#f5f7f3]"
+                            >
+                              Cancel
+                            </button>
+                          )}
                         </div>
                       </form>
-                    ) : hasSavedAddress ? (
-                      <div className="grid gap-4 md:grid-cols-2">
-                        {addresses.map((savedAddress, index) => (
-                          <article key={savedAddress.id || `${savedAddress.address_line1}-${index}`} className="rounded-xl border border-[#E2E8DF] bg-[#F1F5ED] p-5">
-                            <div className="flex items-start justify-between gap-3">
-                              <span className="inline-flex items-center gap-1.5 rounded-full bg-[#EFF5E9] px-3 py-1 text-xs font-semibold text-[#FD5E02]">
-                                <Check size={13} /> Saved address
-                              </span>
-                              <div className="flex gap-1">
-                                <button type="button" onClick={() => editAddress(savedAddress)} aria-label="Edit address" className="rounded-lg p-2 text-[#68736e] transition hover:bg-[#EFF5E9] hover:text-[#071C18]">
-                                  <Pencil size={15} />
-                                </button>
-                                <button type="button" disabled={saving} onClick={() => deleteAddress(savedAddress.id)} aria-label="Delete address" className="rounded-lg p-2 text-[#c24130] transition hover:bg-[#fae5e2] disabled:opacity-50">
-                                  <Trash2 size={15} />
-                                </button>
-                              </div>
-                            </div>
-                            <div className="mt-4 space-y-1.5 text-sm text-[#4a5550]">
-                              <h4 className="font-semibold text-[#071C18]">{profile.username || displayName}</h4>
-                              {profile.mobile_number && <p className="text-xs">{profile.mobile_number}</p>}
-                              <p className="leading-relaxed">{[savedAddress.address_line1, savedAddress.address_line2].filter(Boolean).join(", ")}</p>
-                              <p className="leading-relaxed">{[savedAddress.city, savedAddress.state].filter(Boolean).join(", ")}{savedAddress.pincode ? ` - ${savedAddress.pincode}` : ""}</p>
-                              {savedAddress.landmark && <p className="pt-1 text-xs italic text-[#7b8580]">Landmark: {savedAddress.landmark}</p>}
-                            </div>
-                          </article>
-                        ))}
-                      </div>
-                    ) : (
-                      <div className="py-12 text-center">
-                        <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-[#EFF5E9] text-[#FD5E02]">
-                          <MapPin size={26} />
-                        </div>
-                        <h4 className="mt-4 text-base font-semibold text-[#071C18]">
-                          No saved address yet
-                        </h4>
-                        <p className="mx-auto mt-1 max-w-sm text-xs text-[#7b8580]">
-                          Save an address to make delivery checkout faster.
-                        </p>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setAddress(emptyAddress);
-                            setEditingAddressId(null);
-                            setEditingAddress(true);
-                          }}
-                          className="mt-5 inline-flex items-center gap-2 rounded-lg bg-[#071C18] px-6 py-2.5 text-xs font-bold uppercase tracking-wider text-white hover:bg-[#FD5E02] transition cursor-pointer"
-                        >
-                          <Pencil size={14} />
-                          Add Address
-                        </button>
-                      </div>
-                    )}
+                    </section>
                   </div>
                 )}
 
@@ -964,7 +981,7 @@ const Account = () => {
                 )}
             </div>
           </section>
-          <aside className="rounded-[22px] border border-[#eeeae0] bg-white p-4 shadow-sm sm:p-5">
+          <aside className={`${activeTab === "address" ? "hidden" : "rounded-[22px] border border-[#eeeae0] bg-white p-4 shadow-sm sm:p-5"}`}>
             <div className="relative h-40 overflow-hidden rounded-[18px] bg-[#00351f]">
               <img src="/images/tab.png" alt="A selection of restaurant dishes" className="h-full w-full object-cover object-[center_38%]" />
               <div className="absolute inset-0 bg-gradient-to-t from-[#002817]/60 via-transparent to-transparent" />
