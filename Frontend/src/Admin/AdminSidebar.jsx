@@ -58,7 +58,7 @@ import {
 } from "lucide-react";
 
 import { useAuth } from "../PrivateRouter/AuthContext";
-const Logo = "/images/logo.png";
+const Logo = "/images/adminlogo.png";
 
 /* ================= NAV ITEMS ================= */
 const navItems = [
@@ -241,14 +241,14 @@ const Sidebar = ({ isOpen, onClose, collapsed, onToggleCollapse }) => {
         {/* ========== LOGO ========== */}
         <div className={`flex items-center gap-3 border-b border-[#1f3228] shrink-0 ${collapsed ? "px-3 py-5 justify-center" : "px-5 py-5"}`}>
           <div className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0 p-1 border border-[#d4a843]/30 bg-white">
-            <img src={Logo} alt="Buy Food logo" className="w-full h-full object-contain" />
+            <img src={Logo} alt="Admin restaurant logo" className="w-full h-full object-contain" />
           </div>
 
           {!collapsed && (
             <div className="overflow-hidden flex-1">
-              <h1 className="text-base font-bold text-white tracking-wide font-serif">Foodie Restaurant</h1>
+              <h1 className="text-base font-bold text-white tracking-wide font-serif">Buy Foods Restaurant</h1>
               <p className="text-[10px] text-white tracking-[0.2em] uppercase">
-                Fresh Food, Warm Welcome
+                Fresh Food WellCome
               </p>
             </div>
           )}
@@ -329,14 +329,14 @@ const Sidebar = ({ isOpen, onClose, collapsed, onToggleCollapse }) => {
                               flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-xs
                               transition-all duration-200
                               ${isActive
-                                ? "bg-[#14532d] text-white font-semibold"
+                                ? "bg-[#d4a843] text-[#162420] font-semibold"
                                 : "text-white hover:text-white hover:bg-[#1f3228]"
                               }
                             `}
                             title={collapsed && sub.badge ? `${sub.label} (${pendingCount})` : ''}
                           >
-                            <SubIcon className={`w-3.5 h-3.5 shrink-0 ${isActive ? "text-white" : "text-white"}`} />
-                            <span className="truncate flex-1 text-white">{sub.label}</span>
+                            <SubIcon className={`w-3.5 h-3.5 shrink-0 ${isActive ? "text-[#162420]" : "text-white"}`} />
+                            <span className={`truncate flex-1 ${isActive ? "text-[#162420]" : "text-white"}`}>{sub.label}</span>
                             {sub.badge === 'pending' && pendingCount > 0 && !collapsed && (
                               <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/20 text-amber-400 border border-amber-500/30 ml-2 shrink-0">
                                 {pendingCount}
@@ -364,14 +364,14 @@ const Sidebar = ({ isOpen, onClose, collapsed, onToggleCollapse }) => {
                   flex items-center gap-3 px-3 py-3 rounded-lg text-sm
                   transition-all duration-200
                   ${isActive
-                    ? "bg-[#14532d] text-white font-semibold shadow-md shadow-[#14532d]/20"
+                    ? "bg-[#d4a843] text-[#162420] font-semibold shadow-md"
                     : "text-white hover:text-white hover:bg-[#1f3228]/70"
                   }
                   ${collapsed ? "justify-center" : ""}
                 `}
               >
-                <Icon className="w-[17px] h-[17px] shrink-0 text-white" />
-                {!collapsed && <span className="font-medium truncate text-white">{item.label}</span>}
+                <Icon className={`w-[17px] h-[17px] shrink-0 ${isActive ? "text-[#162420]" : "text-white"}`} />
+                {!collapsed && <span className={`font-medium truncate ${isActive ? "text-[#162420]" : "text-white"}`}>{item.label}</span>}
               </NavLink>
             );
           })}
@@ -386,14 +386,14 @@ const Sidebar = ({ isOpen, onClose, collapsed, onToggleCollapse }) => {
             mx-3 mb-3 flex items-center gap-3 px-3 py-3 rounded-lg text-sm
             transition-all duration-200
             ${isRouteActive("/")
-              ? "bg-[#14532d] text-white font-semibold shadow-md shadow-[#14532d]/20"
+              ? "bg-[#d4a843] text-[#162420] font-semibold shadow-md"
               : "text-white hover:text-white hover:bg-[#1f3228]/70"
             }
             ${collapsed ? "justify-center" : ""}
           `}
         >
-          <Home className="w-[17px] h-[17px] shrink-0 text-white" />
-          {!collapsed && <span className="font-medium truncate text-white">Back Home</span>}
+          <Home className={`w-[17px] h-[17px] shrink-0 ${isRouteActive("/") ? "text-[#162420]" : "text-white"}`} />
+          {!collapsed && <span className={`font-medium truncate ${isRouteActive("/") ? "text-[#162420]" : "text-white"}`}>Back Home</span>}
         </NavLink>
 
         {/* ========== COLLAPSE BUTTON ========== */}
