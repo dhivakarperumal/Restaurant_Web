@@ -104,7 +104,7 @@ function HomeCuisines() {
                           src={image}
                           alt={cuisineName}
                           loading="lazy"
-                          className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
+                          className="h-full w-full object-cover object-top transition duration-500 group-hover:scale-105"
                         />
                       ) : (
                         <div className="flex h-full items-center justify-center bg-[#315d2d] text-white/80">
