@@ -80,7 +80,7 @@ const navItems = [
       { path: "/admin/products", label: "All Products", icon: Package },
       { path: "/admin/products/categories", label: "Category", icon: Layers },
       { path: "/admin/products/cuisines", label: "Cuisine", icon: Utensils },
-      { path: "/admin/products/stock-details", label: "Stock Details", icon: ClipboardList },
+     
     ],
   },
 
@@ -113,6 +113,12 @@ const navItems = [
       { path: "/admin/orders/delivery", label: "Delivery Orders", icon: Package },
       { path: "/admin/orders/cancelled", label: "Cancelled Orders", icon: XCircle },
     ],
+  },
+
+  {
+    path: "/admin/kitchen-orders",
+    label: "Kitchen Orders",
+    icon: UtensilsCrossed,
   },
 
  

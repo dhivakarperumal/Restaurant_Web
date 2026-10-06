@@ -13,7 +13,7 @@ import Register from './Componets/Auth/Register.jsx'
 import PrivateRoute from './PrivateRouter/PrivateRouter.jsx'
 
 
-import AdminDashboard from './Admin/AdminDashboard.jsx'
+import AdminDashboard from './Admin/AdminDashboardOverview.jsx'
 import AdminSettings from './Admin/AdminSettings.jsx'
 import AdminProfile from './Admin/AdminProfile.jsx'
 import ChefSettings from './Chef Restaurant/ChefSettings.jsx'
@@ -158,6 +158,10 @@ const router = createHashRouter([
           {
             path: 'orders',
             element: <CustomerOrdersPage audience="admin" view="all" />,
+          },
+          {
+            path: 'kitchen-orders',
+            element: <ChefKitchenOrders />,
           },
           {
             path: 'orders/new',

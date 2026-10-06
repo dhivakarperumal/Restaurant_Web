@@ -7,7 +7,7 @@ import {
   CalendarCheck, Receipt, ShoppingCart, BarChart3, Dumbbell, Send,
   Boxes, Plus, PhoneCall, HeartPulse, FolderKanban, CheckSquare,
   DollarSign, CalendarOff, BookOpen, GraduationCap, CalendarDays,
-  CalendarClock, TrendingUp, Tag,
+  CalendarClock, TrendingUp, Tag, UtensilsCrossed,
 } from "lucide-react";
 import api from "../api";
 import { useAuth } from "../PrivateRouter/AuthContext";
@@ -23,6 +23,7 @@ const pageInfo = {
   "/admin/orders/delivery":          { title: "Delivery Orders",          icon: ShoppingCart },
   "/admin/orders/cancelled":         { title: "Cancelled Orders",         icon: ShoppingCart },
   "/admin/orders":                  { title: "All Orders",                icon: ShoppingCart },
+  "/admin/kitchen-orders":          { title: "Kitchen Orders",            icon: UtensilsCrossed },
   "/admin/getorders":               { title: "Get Orders",             icon: ShoppingCart },
   "/admin/frames":                  { title: "Frames",                 icon: Boxes },
   "/admin/frames/add":              { title: "Add Frame",              icon: Plus },
