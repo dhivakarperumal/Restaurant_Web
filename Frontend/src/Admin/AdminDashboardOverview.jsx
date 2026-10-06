@@ -336,7 +336,7 @@ const AdminDashboardOverview = () => {
     <main className="min-h-screen space-y-3 pb-8 text-[#17231b] sm:space-y-4">
       <section className="relative isolate flex min-h-[152px] items-center overflow-hidden rounded-2xl border border-[#24483b] bg-[#10271f] px-3 shadow-sm sm:min-h-[142px] sm:px-8">
         <img src={HERO_IMAGE} alt="Restaurant food spread" className="absolute inset-0 h-full w-full object-cover object-center" />
-        <div className="absolute inset-0 z-10 bg-gradient-to-r from-[#071c18]/95 via-[#10271f]/80 to-[#10271f]/20" />
+        <div className="absolute inset-0 z-10 bg-gradient-to-r from-[#071c18]/75 via-[#10271f]/50 to-[#10271f]/5" />
         <div className="relative z-20 w-[62%] pt-12 pb-4 sm:w-[58%] sm:py-9">
           <p className="text-xl font-extrabold leading-tight text-white sm:text-2xl">Welcome Back, <span className="text-[#f4c45e]">{name}!</span></p>
           <p className="mt-1 text-xs text-white/85 sm:text-sm">Manage your restaurant, orders, and grow your business.</p>
