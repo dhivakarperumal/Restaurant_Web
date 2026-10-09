@@ -411,7 +411,7 @@ export default function ServerFood() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className={`space-y-6 ${selectedTable ? "pb-[45vh]" : ""}`}>
       {/* Top Banner / Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-white p-5 rounded-2xl border border-gray-100 shadow-sm">
         <div className="flex items-center gap-3">
@@ -1073,8 +1073,8 @@ export default function ServerFood() {
       )}
 
       {selectedTable && (
-        <section className="rounded-2xl border border-[#e7e0d8] bg-white p-5 shadow-sm">
-          <div className="mb-4 flex flex-col gap-3 border-b border-gray-100 pb-4 sm:flex-row sm:items-center sm:justify-between">
+        <section aria-label="Current table order" className="fixed bottom-3 right-3 z-50 flex max-h-[45vh] w-[calc(100vw-1.5rem)] max-w-2xl flex-col overflow-hidden rounded-2xl border border-[#b8cbbd] bg-white p-4 shadow-[0_12px_40px_rgba(16,40,24,0.24)] sm:bottom-5 sm:right-5 sm:p-5">
+          <div className="mb-3 flex shrink-0 flex-col gap-3 border-b border-gray-100 pb-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-center gap-3">
               <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#1a3c36] text-white">
                 <ShoppingCart className="h-5 w-5" />
@@ -1119,7 +1119,7 @@ export default function ServerFood() {
             </div>
           </div>
           {cartItems.length ? (
-            <div className="space-y-3">
+            <div className="min-h-0 space-y-3 overflow-y-auto overscroll-contain pr-1">
               {cartItems.map(([cartKey, item]) => (
                 <div key={cartKey} className="flex flex-wrap items-center justify-between gap-3">
                   <div className="min-w-0">
