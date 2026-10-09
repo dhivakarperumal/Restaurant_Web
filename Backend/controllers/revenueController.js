@@ -31,7 +31,11 @@ const summary = handle(async (req, res) => res.json({
 
 const trend = handle(async (req, res) => res.json({
   success: true,
-  data: await getTrend({ ...filtersFromQuery(req.query), trend: req.query.trend || 'month' }),
+  data: await getTrend({
+    ...filtersFromQuery(req.query),
+    trend: req.query.trend || 'month',
+    dateBasis: req.query.dateBasis === 'delivered' ? 'delivered' : 'order',
+  }),
 }));
 
 const status = handle(async (req, res) => res.json({
