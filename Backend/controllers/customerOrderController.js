@@ -154,13 +154,22 @@ const updateCustomerOrderStatus = async (req, res) => {
         `SELECT e.employee_id, e.full_name
          FROM employees e
          INNER JOIN users u ON u.user_id = e.user_id
+         INNER JOIN employee_attendance a ON a.employee_id = e.employee_id 
+           AND a.date = CURDATE() 
+           AND a.check_in IS NOT NULL 
+           AND a.check_out IS NULL
          WHERE e.employee_id = ? AND e.employee_type = 'Delivery Partner'
            AND e.status = 'Active' AND u.status = 'Active'
+           AND COALESCE(e.available_for_delivery, 'Yes') != 'No'
+           AND COALESCE(e.current_status, 'Available') != 'Offline'
          LIMIT 1`,
         [partnerId]
       );
       if (!partners.length) {
-        return res.status(400).json({ success: false, message: 'The selected delivery partner is not active.' });
+        return res.status(400).json({
+          success: false,
+          message: 'The selected delivery partner is not currently logged in or available for deliveries.',
+        });
       }
       const [updateResult] = await db.execute(
         `UPDATE orders
@@ -207,16 +216,41 @@ const updateCustomerOrderStatus = async (req, res) => {
   }
 };
 
-const listDeliveryPartners = async (_req, res) => {
+const listDeliveryPartners = async (req, res) => {
   try {
-    const [partners] = await db.execute(
-      `SELECT e.employee_id, e.full_name, e.phone_number, e.current_status
-       FROM employees e
-       INNER JOIN users u ON u.user_id = e.user_id
-       WHERE e.employee_type = 'Delivery Partner'
-         AND e.status = 'Active' AND u.status = 'Active'
-       ORDER BY e.full_name`
-    );
+    const includeAll = String(req.query?.all || '').toLowerCase() === 'true';
+
+    let query = `
+      SELECT e.employee_id, e.full_name, e.phone_number, e.current_status,
+             e.available_for_delivery,
+             a.check_in, a.check_out, a.status AS attendance_status
+      FROM employees e
+      INNER JOIN users u ON u.user_id = e.user_id
+    `;
+
+    if (includeAll) {
+      query += `
+        LEFT JOIN employee_attendance a ON a.employee_id = e.employee_id AND a.date = CURDATE()
+        WHERE e.employee_type = 'Delivery Partner'
+          AND e.status = 'Active' AND u.status = 'Active'
+        ORDER BY e.full_name
+      `;
+    } else {
+      query += `
+        INNER JOIN employee_attendance a ON a.employee_id = e.employee_id 
+          AND a.date = CURDATE() 
+          AND a.check_in IS NOT NULL 
+          AND a.check_out IS NULL
+        WHERE e.employee_type = 'Delivery Partner'
+          AND e.status = 'Active' 
+          AND u.status = 'Active'
+          AND COALESCE(e.available_for_delivery, 'Yes') != 'No'
+          AND COALESCE(e.current_status, 'Available') != 'Offline'
+        ORDER BY e.full_name
+      `;
+    }
+
+    const [partners] = await db.execute(query);
     return res.json({ success: true, data: partners });
   } catch (error) {
     console.error('Failed to load delivery partners:', error.message);
