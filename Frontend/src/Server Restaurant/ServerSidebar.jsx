@@ -160,9 +160,9 @@ const ServerSidebar = ({ isOpen, onClose, collapsed, onToggleCollapse }) => {
 
           {!collapsed && (
             <div className="overflow-hidden flex-1">
-              <h1 className="text-base font-bold text-white tracking-wide font-serif">Foodie Restaurant</h1>
+              <h1 className="text-base font-bold text-white tracking-wide font-serif">Server</h1>
               <p className="text-[10px] text-white tracking-[0.2em] uppercase">
-                Fresh Food, Warm Welcome
+                Dining workspace
               </p>
             </div>
           )}
