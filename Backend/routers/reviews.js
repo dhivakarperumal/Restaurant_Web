@@ -23,6 +23,7 @@ const requireAdmin = async (req, res, next) => {
 };
 
 // Static routes MUST come before /:reviewId to avoid being swallowed by the param
+router.get('/published', controller.listPublished);
 router.get('/stats',   requireAdmin, controller.stats);
 router.get('/next-id', requireAdmin, controller.nextId);
 

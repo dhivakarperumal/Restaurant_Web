@@ -3,6 +3,7 @@ import HomeCategories from '../../CommonComponents/HomeCategories';
 import HomeCuisines from '../../CommonComponents/HomeCuisines';
 import HomeBanner from '../../CommonComponents/HomeBanner';
 import OfferBanner from '../../CommonComponents/OfferBanner';
+import CustomerReviews from '../../CommonComponents/CustomerReviews';
 
 const Home = () => {
   return (
@@ -12,6 +13,7 @@ const Home = () => {
       <HomeCuisines />
       <HomeProducts />
       <OfferBanner />
+      <CustomerReviews />
     </main>
   );
 };

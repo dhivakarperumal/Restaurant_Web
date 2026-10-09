@@ -5,6 +5,7 @@ const {
   getNextReviewId,
   getReviewStats,
   listReviews,
+  listPublishedReviews,
   updateReview,
 } = require('../modules/reviews');
 
@@ -17,6 +18,15 @@ const list = async (req, res) => {
   } catch (error) {
     console.error('Failed to list reviews:', error.message);
     return res.status(500).json({ success: false, message: 'Unable to load reviews.' });
+  }
+};
+
+const listPublished = async (_req, res) => {
+  try {
+    return res.json({ success: true, data: await listPublishedReviews() });
+  } catch (error) {
+    console.error('Failed to list published reviews:', error.message);
+    return res.status(500).json({ success: false, message: 'Unable to load customer reviews.' });
   }
 };
 
@@ -134,4 +144,4 @@ const remove = async (req, res) => {
   }
 };
 
-module.exports = { create, getById, list, nextId, remove, stats, update };
+module.exports = { create, getById, list, listPublished, nextId, remove, stats, update };
