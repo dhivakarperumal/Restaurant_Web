@@ -22,33 +22,35 @@ import toast from "react-hot-toast";
 import api, { API_URL } from "../../api";
 import { StoreContext } from "../../PrivateRouter/StoreContext";
 
-const trackingStatuses = [
-  "Order Placed",
-  "Preparing",
-  "Out for Delivery",
-  "Delivered",
-];
+const trackingStatuses = ["Order Placed", "Preparing", "Ready", "Assigned", "Delivered"];
 
 const normalizeStatus = (status) => {
   const normalized = String(status || "").trim().toUpperCase().replace(/_/g, " ");
-  if (normalized === "PENDING" || normalized === "NEW" || normalized === "NEW ORDER") {
+  if (["PENDING", "NEW", "NEW ORDER", "PLACED", "PROCESSING"].includes(normalized)) {
     return "ORDER PLACED";
   }
+  if (normalized === "READY TO SERVE") return "READY";
+  if (["OUT FOR DELIVERY", "SHIPPED"].includes(normalized)) return "ASSIGNED";
+  if (["COMPLETED", "SERVED"].includes(normalized)) return "DELIVERED";
   return normalized;
 };
 
 const statusColorMap = {
   DELIVERED: "bg-[#eaf4e4] text-[#396F0B] border-[#cfe3c4]",
-  "OUT FOR DELIVERY": "bg-[#edf3fa] text-[#245b85] border-[#c9daee]",
-  SHIPPED: "bg-[#edf3fa] text-[#245b85] border-[#c9daee]",
+  ASSIGNED: "bg-[#edf3fa] text-[#245b85] border-[#c9daee]",
+  READY: "bg-[#eaf4e4] text-[#396F0B] border-[#cfe3c4]",
   PROCESSING: "bg-[#fff6d8] text-[#795500] border-[#f1d889]",
   PACKING: "bg-[#fff6d8] text-[#795500] border-[#f1d889]",
-  READY: "bg-[#eaf4e4] text-[#396F0B] border-[#cfe3c4]",
   CONFIRMED: "bg-[#eaf4e4] text-[#396F0B] border-[#cfe3c4]",
   CANCELLED: "bg-[#fff0ec] text-[#b83b1d] border-[#f5c6b9]",
   "ON HOLD": "bg-[#fff6d8] text-[#795500] border-[#f1d889]",
   RETURNED: "bg-[#fff0ec] text-[#b83b1d] border-[#f5c6b9]",
   "ORDER PLACED": "bg-[#fff6d8] text-[#795500] border-[#f1d889]",
+};
+
+const getStatusLabel = (status) => {
+  const normalized = normalizeStatus(status);
+  return trackingStatuses.find((step) => normalizeStatus(step) === normalized) || normalized;
 };
 
 const resolveImageUrl = (value) => {
@@ -170,60 +172,42 @@ const OrderDetailsModal = ({ order: initialOrder, orderId, isOpen, onClose, onEd
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [isOpen, lightboxImage, onClose]);
 
-  // Fetch full order data on mount or order change
+  // Refresh the saved order status while the customer is viewing its details.
   useEffect(() => {
     if (!isOpen || !activeOrderId) return;
-
-    if (Array.isArray(initialOrder?.items)) {
-      setOrderDetails(initialOrder);
-      setLoading(false);
-      return undefined;
-    }
-
     let isMounted = true;
-    setLoading(true);
-
-    api
-      .get(`/orders/${activeOrderId}`)
+    const refreshOrder = () => api
+      .get(`/orders/mine/${encodeURIComponent(activeOrderId)}`)
       .then((res) => {
-        if (isMounted) {
-          const data = res.data?.data;
-          if (data) {
-            setOrderDetails(data);
-          } else if (initialOrder) {
-            setOrderDetails(initialOrder);
-          }
-        }
+        if (isMounted && res.data?.data) setOrderDetails(res.data.data);
       })
       .catch((err) => {
-        console.warn("Could not fetch full order details:", err);
-        if (isMounted && initialOrder) {
-          setOrderDetails(initialOrder);
-        }
+        if (import.meta.env.DEV) console.warn("Could not refresh order details:", err);
       })
       .finally(() => {
         if (isMounted) setLoading(false);
       });
 
+    setLoading(!initialOrder);
+    refreshOrder();
+    const intervalId = window.setInterval(refreshOrder, 10000);
+
     return () => {
       isMounted = false;
+      window.clearInterval(intervalId);
     };
   }, [isOpen, activeOrderId, initialOrder]);
 
   if (!isOpen) return null;
 
   const currentOrder = orderDetails || initialOrder || {};
-  const currentStatus = currentOrder.order_status || "Processing";
+  const currentStatus = currentOrder.order_status || "placed";
   const normalizedStatus = normalizeStatus(currentStatus);
-  const isCancelled = ["CANCELLED", "RETURNED"].includes(normalizedStatus);
+  const isCancelled = ["CANCELLED", "RETURNED", "PAYMENT FAILED"].includes(normalizedStatus);
   const statusIndex = trackingStatuses.findIndex(
     (status) => normalizeStatus(status) === normalizedStatus,
   );
-  const stepIndex =
-    ["DELIVERED", "COMPLETED"].includes(normalizedStatus) ? 3
-      : ["OUT FOR DELIVERY", "SHIPPED", "READY"].includes(normalizedStatus) ? 2
-        : ["CONFIRMED", "PREPARING", "PROCESSING", "PACKING"].includes(normalizedStatus) ? 1
-          : statusIndex >= 0 ? statusIndex : 0;
+  const stepIndex = statusIndex >= 0 ? statusIndex : 0;
   const statusInfo = {
     badge: statusColorMap[normalizedStatus] || "bg-white/10 text-white border-white/20",
     stepIndex,
@@ -337,8 +321,9 @@ const OrderDetailsModal = ({ order: initialOrder, orderId, isOpen, onClose, onEd
   const trackingSteps = [
     { title: "Order Placed", desc: formattedDate },
     { title: "Preparing", desc: "In the kitchen" },
-    { title: "Out for Delivery", desc: "Arriving today" },
-    { title: "Delivered", desc: "Safe doorstep delivery" },
+    { title: "Ready", desc: "Prepared and ready" },
+    { title: "Assigned", desc: "Delivery assigned" },
+    { title: "Delivered", desc: "Order delivered" },
   ];
 
   return (
@@ -384,7 +369,7 @@ const OrderDetailsModal = ({ order: initialOrder, orderId, isOpen, onClose, onEd
                   </button>
                 </div>
                 <span className={`mt-1.5 inline-flex w-fit items-center gap-1 rounded-md border px-2 py-1 text-[10px] font-bold uppercase tracking-wide ${statusInfo.badge}`}>
-                  <CheckCircle2 size={13} />{currentStatus}
+                  <CheckCircle2 size={13} />{getStatusLabel(currentStatus)}
                 </span>
                 <p className="mt-2 flex flex-wrap items-center gap-x-1.5 text-xs text-white/90 sm:text-sm">
                   <Calendar size={13} />{formattedDate} {formattedTime && `• ${formattedTime}`}
@@ -398,7 +383,7 @@ const OrderDetailsModal = ({ order: initialOrder, orderId, isOpen, onClose, onEd
             {/* 1. ORDER PROGRESS TRACKER */}
             {!isCancelled ? (
               <div className="order-2 px-1 py-1.5">
-                <div className="grid grid-cols-4">
+                <div className="grid grid-cols-5">
                   {trackingSteps.map((step, idx) => {
                     const isCompleted = idx <= statusInfo.stepIndex;
 
@@ -408,7 +393,7 @@ const OrderDetailsModal = ({ order: initialOrder, orderId, isOpen, onClose, onEd
                           <span className={`absolute left-1/2 top-[11px] h-0.5 w-full ${idx < statusInfo.stepIndex ? "bg-[#087b2f]" : "bg-[#dce3da]"}`} />
                         )}
                         <span className={`relative z-10 flex h-6 w-6 items-center justify-center rounded-full ${isCompleted ? "bg-[#087b2f] text-white" : "bg-[#e3e8e0] text-[#68736e]"}`}>
-                          {isCompleted ? idx === 2 ? <Truck size={13} /> : <CheckCircle2 size={15} /> : idx + 1}
+                          {isCompleted ? idx === 3 ? <Truck size={13} /> : <CheckCircle2 size={15} /> : idx + 1}
                         </span>
                         <span className="mt-1.5 truncate px-0.5 text-[10px] font-bold leading-tight text-[#111827] sm:text-xs">{step.title}</span>
                         <span className="mt-0.5 text-[9px] leading-tight text-[#697386] sm:text-[10px]">{idx === 0 || idx === statusInfo.stepIndex ? formattedDate.replace(/^[^,]+,?\s*/, "") : step.desc}</span>

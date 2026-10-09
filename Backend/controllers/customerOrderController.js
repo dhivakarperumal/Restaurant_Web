@@ -1,6 +1,6 @@
 const db = require('../config/db');
 
-const orderStatuses = ['placed', 'preparing', 'ready', 'completed', 'delivered', 'cancelled'];
+const orderStatuses = ['placed', 'preparing', 'ready', 'assigned', 'completed', 'delivered', 'cancelled'];
 const parseJson = (value, fallback) => {
   if (value && typeof value === 'object') return value;
   try {
@@ -10,7 +10,7 @@ const parseJson = (value, fallback) => {
   }
 };
 
-const getOrders = async (req, res, customerOnly) => {
+const getOrders = async (req, res, customerOnly, orderNumber = null) => {
   const { status } = req.query || {};
   const requestedOrderType = req.query?.order_type ?? req.query?.fulfillment;
   const orderType = requestedOrderType === 'delivery' ? 'home_delivery' : requestedOrderType;
@@ -24,8 +24,14 @@ const getOrders = async (req, res, customerOnly) => {
     conditions.push('o.user_id = ?');
     params.push(req.auth.user_id);
   }
+  if (orderNumber) {
+    conditions.push('o.order_number = ?');
+    params.push(orderNumber);
+  }
   if (status === 'placed') {
     conditions.push("o.order_status = 'placed'");
+  } else if (status === 'delivered') {
+    conditions.push("o.order_status IN ('delivered', 'completed')");
   } else if (status) {
     conditions.push('o.order_status = ?');
     params.push(status);
@@ -43,7 +49,9 @@ const getOrders = async (req, res, customerOnly) => {
     const [orders] = await db.execute(
       `SELECT o.id, o.order_number, o.user_id, o.customer_name, o.customer_email,
               o.customer_phone, o.order_type, o.address_id, o.subtotal, o.total_amount,
-              o.payment_method, o.payment_status, o.order_status, o.created_at, o.updated_at,
+              o.payment_method, o.payment_status,
+              CASE WHEN o.order_status = 'completed' THEN 'delivered' ELSE o.order_status END AS order_status,
+              o.created_at, o.updated_at,
               a.address_line, a.area_locality, a.city, a.state, a.pincode, a.landmark
        FROM orders o
        LEFT JOIN \`address\` a ON a.id = o.address_id AND a.user_id = o.user_id
@@ -52,6 +60,10 @@ const getOrders = async (req, res, customerOnly) => {
        LIMIT 250`,
       params
     );
+
+    if (orderNumber && orders.length === 0) {
+      return res.status(404).json({ success: false, message: 'Customer order was not found.' });
+    }
 
     if (orders.length) {
       const orderIds = orders.map((order) => order.id);
@@ -97,6 +109,12 @@ const getOrders = async (req, res, customerOnly) => {
         delete order.id;
       }
     }
+    if (orderNumber) {
+      return res.json({
+        success: true,
+        data: { ...orders[0], order_id: orders[0].order_number },
+      });
+    }
     return res.json({ success: true, data: orders });
   } catch (error) {
     console.error('Failed to load customer orders:', error.message);
@@ -106,7 +124,8 @@ const getOrders = async (req, res, customerOnly) => {
 
 const updateCustomerOrderStatus = async (req, res) => {
   const { orderNumber } = req.params;
-  const status = String(req.body?.status || '').trim().toLowerCase();
+  let status = String(req.body?.status || '').trim().toLowerCase();
+  if (status === 'completed') status = 'delivered';
   if (!orderStatuses.includes(status)) {
     return res.status(400).json({ success: false, message: 'Choose a valid customer order status.' });
   }
@@ -135,5 +154,6 @@ const updateCustomerOrderStatus = async (req, res) => {
 module.exports = {
   listCustomerOrders: (req, res) => getOrders(req, res, false),
   listMyOrders: (req, res) => getOrders(req, res, true),
+  getMyOrder: (req, res) => getOrders(req, res, true, req.params.orderNumber),
   updateCustomerOrderStatus,
 };

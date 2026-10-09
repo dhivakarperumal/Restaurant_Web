@@ -5,13 +5,19 @@ import api, { BACKEND_BASE_URL } from '../api';
 import PageHeader from './PageHeader';
 
 const STATUS_OPTIONS = [
-  { value: 'placed', label: 'New' },
+  { value: 'placed', label: 'Order Placed' },
   { value: 'preparing', label: 'Preparing' },
   { value: 'ready', label: 'Ready' },
-  { value: 'completed', label: 'Completed' },
+  { value: 'assigned', label: 'Assigned' },
   { value: 'delivered', label: 'Delivered' },
   { value: 'cancelled', label: 'Cancelled' },
 ];
+
+const formatStatus = (status) => {
+  const normalized = String(status || 'placed').toLowerCase();
+  if (normalized === 'completed') return 'Delivered';
+  return STATUS_OPTIONS.find((option) => option.value === normalized)?.label || normalized.replaceAll('_', ' ');
+};
 
 const FILTERS = {
   all: {},
@@ -276,12 +282,13 @@ function CustomerOrdersPage({ audience = 'admin', view = 'all', showOrderFilters
                       <Clock3 size={13} /> {formatDate(order.created_at)}
                     </p>
                   </div>
-                  <span className={`rounded-full px-3 py-1 text-xs font-bold capitalize ${
-                    order.order_status === 'cancelled' ? 'bg-rose-50 text-rose-700'
-                      : order.order_status === 'completed' ? 'bg-emerald-50 text-emerald-700'
-                        : 'bg-amber-50 text-amber-800'
+                  <span className={`rounded-full px-3 py-1 text-xs font-bold ${
+                    ['cancelled'].includes(order.order_status) ? 'bg-rose-50 text-rose-700'
+                      : ['completed', 'delivered'].includes(order.order_status) ? 'bg-emerald-50 text-emerald-700'
+                        : ['assigned', 'ready'].includes(order.order_status) ? 'bg-blue-50 text-blue-700'
+                          : 'bg-amber-50 text-amber-800'
                   }`}>
-                    {order.order_status?.replaceAll('_', ' ') || 'placed'}
+                    {formatStatus(order.order_status)}
                   </span>
                 </div>
 
