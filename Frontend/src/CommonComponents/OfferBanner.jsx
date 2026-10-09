@@ -73,7 +73,7 @@ export default function OfferBanner({
             loading="lazy"
           />
 
-          <div className="pointer-events-none absolute inset-0 z-0 bg-gradient-to-r from-[#031d12]/75 via-[#031d12]/55 via-55% to-transparent" />
+          <div className="pointer-events-none absolute inset-0 z-0 bg-gradient-to-r from-[#031d12]/45 via-[#031d12]/25 via-55% to-transparent" />
 
           <div className="relative z-10 w-full px-5 py-7 text-left sm:px-8 sm:py-9 md:px-8 lg:px-12">
             <div className="grid w-full grid-cols-1 items-center gap-6 sm:grid-cols-2 md:gap-5 lg:w-[68%] lg:grid-cols-[1.05fr_1fr_.72fr] lg:gap-4 xl:gap-6">
