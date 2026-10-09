@@ -53,7 +53,7 @@ import {
 } from "lucide-react";
 
 import { useAuth } from "../PrivateRouter/AuthContext";
-const Logo = "/favicon.svg";
+const Logo = "/images/adminlogo.png";
 
 /* ================= NAV ITEMS ================= */
 const navItems = [
@@ -170,7 +170,7 @@ const ChefSidebar = ({ isOpen, onClose, collapsed, onToggleCollapse }) => {
         {/* ========== LOGO ========== */}
         <div className={`flex items-center gap-3 border-b border-[#1f3228] shrink-0 ${collapsed ? "px-3 py-5 justify-center" : "px-5 py-5"}`}>
           <div className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0 p-1 border border-[#d4a843]/30 bg-white">
-            <img src={Logo} alt="Logo" className="w-full h-full object-cover drop-shadow-lg" />
+            <img src={Logo} alt="Buy Foods restaurant logo" className="w-full h-full object-contain drop-shadow-lg" />
           </div>
 
           {!collapsed && (
