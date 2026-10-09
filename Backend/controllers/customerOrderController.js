@@ -1,5 +1,6 @@
 const db = require('../config/db');
 const { clockInEmployee, clockOutEmployee, getTodayAttendance } = require('../modules/attendance');
+const { notifyDeliveryPartner, notifyUser } = require('../utils/notificationSocket');
 
 const orderStatuses = ['placed', 'preparing', 'ready', 'assigned', 'completed', 'delivered', 'cancelled'];
 const deliveryPartnerNextStatus = {
@@ -147,6 +148,15 @@ const updateCustomerOrderStatus = async (req, res) => {
   }
 
   try {
+    const [customerOrders] = await db.execute(
+      'SELECT user_id, customer_name, order_type FROM orders WHERE order_number = ? LIMIT 1',
+      [orderNumber]
+    );
+    if (!customerOrders.length) {
+      return res.status(404).json({ success: false, message: 'Customer order was not found.' });
+    }
+    const customerOrder = customerOrders[0];
+
     let result;
     let assignedPartnerName = null;
     if (status === 'assigned') {
@@ -199,6 +209,24 @@ const updateCustomerOrderStatus = async (req, res) => {
       }
       return res.status(409).json({ success: false, message: 'Payment-failed orders cannot be updated.' });
     }
+
+    notifyUser(customerOrder.user_id, {
+      type: 'order',
+      title: 'Order status updated',
+      message: `Your order #${orderNumber} is now ${status.replaceAll('_', ' ')}.`,
+      link: '/account?tab=orders',
+      data: { order_number: orderNumber, status },
+    });
+    if (status === 'assigned') {
+      notifyDeliveryPartner(partnerId, {
+        type: 'delivery',
+        title: 'New order assigned',
+        message: `Order #${orderNumber} has been assigned to you for delivery.`,
+        link: '/delivery/orders',
+        data: { order_number: orderNumber, customer_name: customerOrder.customer_name },
+      });
+    }
+
     return res.json({
       success: true,
       data: {
@@ -326,7 +354,7 @@ const updateAssignedDeliveryOrderStatus = async (req, res) => {
 
   try {
     const [orders] = await db.execute(
-      `SELECT order_status FROM orders
+      `SELECT order_status, user_id FROM orders
        WHERE order_number = ? AND assigned_delivery_partner_id = ?
          AND order_type = 'home_delivery'
        LIMIT 1`,
@@ -352,6 +380,13 @@ const updateAssignedDeliveryOrderStatus = async (req, res) => {
     if (!result.affectedRows) {
       return res.status(409).json({ success: false, message: 'This delivery was updated by another session. Refresh and try again.' });
     }
+    notifyUser(orders[0].user_id, {
+      type: 'order',
+      title: 'Order status updated',
+      message: `Your order #${req.params.orderId} is now ${status.replaceAll('_', ' ')}.`,
+      link: '/account?tab=orders',
+      data: { order_number: req.params.orderId, status },
+    });
     return res.json({ success: true, order: { order_id: req.params.orderId, order_status: status } });
   } catch (error) {
     console.error('Failed to update assigned delivery order:', error.message);

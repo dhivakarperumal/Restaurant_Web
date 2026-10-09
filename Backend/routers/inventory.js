@@ -1,4 +1,5 @@
 const express = require('express');
+const { notifyAdmins } = require('../utils/notificationSocket');
 const {
   listInventoryCategories,
   listInventorySubcategories,
@@ -187,6 +188,13 @@ router.get('/kitchen-requests', withErrorHandler(async (req, res) => {
 
 router.post('/kitchen-requests', withErrorHandler(async (req, res) => {
   const result = await createKitchenRequest(req.body);
+  notifyAdmins({
+    type: 'kitchen',
+    title: 'New kitchen inventory request',
+    message: `${req.body?.requested_by || req.auth?.username || 'Kitchen staff'} submitted request ${result.request_number}.`,
+    link: '/admin/inventory/kitchen-requests',
+    data: { request_id: result.id, request_number: result.request_number },
+  });
   res.status(201).json({ success: true, message: 'Kitchen request created successfully.', data: result });
 }));
 

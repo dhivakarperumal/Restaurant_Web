@@ -4,6 +4,11 @@
 /* @import url('https://fonts.googleapis.com/css2?family=Vollkorn:ital,wght@0,400..900;1,400..900&display=swap'); */
 @import "tailwindcss";
 
+@keyframes notification-progress {
+  from { transform: scaleX(1); }
+  to { transform: scaleX(0); }
+}
+
 @theme {
   /* Brand / Primary */
   --color-primary: #396F0B;

@@ -5,6 +5,7 @@ const {
   findReservationsForUser,
   updateReservationStatus,
 } = require('../modules/reservations');
+const { notifyAdmins, notifyUser } = require('../utils/notificationSocket');
 
 const isValidDate = (value) => {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(value || '')) return false;
@@ -82,6 +83,13 @@ async function createReservation(req, res) {
       guests,
       notes,
     });
+    notifyAdmins({
+      type: 'reservation',
+      title: 'New table reservation',
+      message: `${name} requested Table ${reservation.table_number} for ${date} at ${time}.`,
+      link: '/admin/reservations',
+      data: { reservation_id: reservation.reservation_id },
+    });
     return res.status(201).json({
       success: true,
       message: 'Reservation request sent. Our team will confirm it shortly.',
@@ -128,6 +136,13 @@ async function changeReservationStatus(req, res) {
   }
   try {
     const reservation = await updateReservationStatus(req.params.reservationId, status);
+    notifyUser(reservation.user_id, {
+      type: 'reservation',
+      title: 'Reservation update',
+      message: `Your reservation for Table ${reservation.table_number} is ${status.toLowerCase()}.`,
+      link: '/reservation',
+      data: { reservation_id: reservation.reservation_id, status },
+    });
     return res.json({ success: true, message: `Reservation ${status.toLowerCase()}.`, reservation });
   } catch (error) {
     if (error.statusCode) {
