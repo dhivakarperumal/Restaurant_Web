@@ -45,7 +45,7 @@ function CustomerOrdersPage({ audience = 'admin', view = 'all', showOrderFilters
     view === 'delivery' ? 'home_delivery' : view === 'pickup' ? 'pickup' : 'all'
   );
   const [statusFilter, setStatusFilter] = useState(
-    view === 'new' ? 'placed' : view === 'delivery' ? 'delivered' : view === 'cancelled' ? 'cancelled' : 'all'
+    view === 'new' ? 'placed' : view === 'cancelled' ? 'cancelled' : 'all'
   );
   const [searchTerm, setSearchTerm] = useState('');
   const [sortOrder, setSortOrder] = useState('latest');
