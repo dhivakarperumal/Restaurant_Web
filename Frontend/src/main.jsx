@@ -360,6 +360,18 @@ const router = createHashRouter([
             element: <CustomerOrdersPage audience="chef" view="new" />,
           },
           {
+            path: 'customer-orders/homedelivery',
+            element: <CustomerOrdersPage audience="chef" view="delivery" />,
+          },
+          {
+            path: 'customer-orders/pickup',
+            element: <CustomerOrdersPage audience="chef" view="pickup" />,
+          },
+          {
+            path: 'customer-orders/dining',
+            element: <ChefKitchenOrders defaultViewMode="table" orderTypeFilter="dine-in" />,
+          },
+          {
             path: 'customer-orders/delivery',
             element: <CustomerOrdersPage audience="chef" view="delivery" />,
           },
