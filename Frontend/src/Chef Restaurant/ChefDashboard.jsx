@@ -147,7 +147,7 @@ const ChefDashboard = () => {
       </section>
 
       <section className="grid gap-5 xl:grid-cols-[1.5fr_1fr]">
-        <div className="min-w-0 border-y border-slate-200 bg-white">
+        <div className="min-w-0 overflow-hidden rounded-xl border border-slate-200 bg-white">
           <div className="flex items-center justify-between gap-3 border-b border-slate-200 px-4 py-4">
             <div className="flex items-center gap-2">
               <UtensilsCrossed size={18} className="text-[#1a3c36]" />
@@ -162,7 +162,7 @@ const ChefDashboard = () => {
           ) : orders.length ? (
             <div className="overflow-x-auto">
               <table className="min-w-full text-left text-sm">
-                <thead className="bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
+                <thead className="bg-[#d4a843] text-xs uppercase tracking-wide text-white">
                   <tr><th className="px-4 py-3 font-semibold">S No</th><th className="px-4 py-3 font-semibold">Ticket</th><th className="px-4 py-3 font-semibold">Table</th><th className="px-4 py-3 font-semibold">Items</th><th className="px-4 py-3 font-semibold">Status</th></tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
