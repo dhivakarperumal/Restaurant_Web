@@ -12,6 +12,7 @@ const formatPrice = (value) => new Intl.NumberFormat("en-IN", {
 const ChefProducts = () => {
   const [foods, setFoods] = useState([]);
   const [search, setSearch] = useState("");
+  const [categoryFilter, setCategoryFilter] = useState("all");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [updatingFoodId, setUpdatingFoodId] = useState("");
@@ -37,8 +38,12 @@ const ChefProducts = () => {
   }, []);
 
   const normalizedSearch = search.trim().toLowerCase();
-  const filteredFoods = foods.filter((food) => [food.food_name, food.category_name]
-    .some((value) => String(value || "").toLowerCase().includes(normalizedSearch)));
+  const categories = [...new Set(foods.map((food) => String(food.category_name || "").trim()).filter(Boolean))]
+    .sort((first, second) => first.localeCompare(second));
+  const filteredFoods = foods.filter((food) => (
+    (categoryFilter === "all" || food.category_name === categoryFilter)
+    && [food.food_name, food.category_name].some((value) => String(value || "").toLowerCase().includes(normalizedSearch))
+  ));
   const normalizedPopupSearch = popupSearch.trim().toLowerCase();
   const popupFoods = foods.filter((food) => [food.food_name, food.category_name]
     .some((value) => String(value || "").toLowerCase().includes(normalizedPopupSearch)));
@@ -164,16 +169,27 @@ const ChefProducts = () => {
         })}
       </div>
 
-      <div className="relative max-w-md">
-        <Search size={16} className="absolute left-3 top-3 text-slate-400" />
-        <input
-          type="search"
-          value={search}
-          onChange={(event) => setSearch(event.target.value)}
-          placeholder="Search foods or categories"
-          aria-label="Search foods or categories"
-          className="w-full rounded-lg border border-slate-300 bg-white py-2.5 pl-9 pr-3 text-sm text-slate-800 outline-none focus:border-emerald-700"
-        />
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="relative w-full sm:max-w-md">
+          <Search size={16} className="absolute left-3 top-3 text-slate-400" />
+          <input
+            type="search"
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+            placeholder="Search foods or categories"
+            aria-label="Search foods or categories"
+            className="w-full rounded-lg border border-slate-300 bg-white py-2.5 pl-9 pr-3 text-sm text-slate-800 outline-none focus:border-emerald-700"
+          />
+        </div>
+        <select
+          value={categoryFilter}
+          onChange={(event) => setCategoryFilter(event.target.value)}
+          aria-label="Filter foods by category"
+          className="min-h-10 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 outline-none focus:border-emerald-700 sm:w-52"
+        >
+          <option value="all">All categories</option>
+          {categories.map((category) => <option key={category} value={category}>{category}</option>)}
+        </select>
       </div>
 
       <div className="overflow-hidden rounded-xl border border-slate-200 bg-white">
