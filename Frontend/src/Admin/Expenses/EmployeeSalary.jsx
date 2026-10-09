@@ -888,8 +888,8 @@ export default function EmployeeSalary() {
                 <tr>
                   <th className="px-4 py-4 rounded-l-lg font-medium">Employee</th>
                   <th className="px-4 py-4 font-medium">Period</th>
-                  <th className="px-4 py-4 font-medium">Basic (Γé╣)</th>
-                  <th className="px-4 py-4 font-medium">Net Salary (Γé╣)</th>
+                  <th className="px-4 py-4 font-medium">Basic</th>
+                  <th className="px-4 py-4 font-medium">Net Salary</th>
                   <th className="px-4 py-4 font-medium">Paid On</th>
                   <th className="px-4 py-4 rounded-r-lg font-medium text-right">Action</th>
                 </tr>
