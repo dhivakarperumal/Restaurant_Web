@@ -19,6 +19,40 @@ const formatStatus = (status) => {
   return STATUS_OPTIONS.find((option) => option.value === normalized)?.label || normalized.replaceAll('_', ' ');
 };
 
+const STATUS_FLOW = ['placed', 'preparing', 'ready', 'assigned', 'delivered'];
+
+const getAvailableStatusOptions = (order) => {
+  const current = String(order?.order_status || 'placed').toLowerCase();
+  const normalized = current === 'completed' ? 'delivered' : current;
+
+  if (normalized === 'cancelled') {
+    return [{ value: 'cancelled', label: 'Cancelled' }];
+  }
+
+  if (normalized === 'delivered') {
+    return [{ value: 'delivered', label: 'Delivered' }];
+  }
+
+  const isPickup = order?.order_type === 'pickup';
+  const flow = isPickup
+    ? ['placed', 'preparing', 'ready', 'delivered']
+    : STATUS_FLOW;
+
+  const currentIndex = flow.indexOf(normalized);
+
+  if (currentIndex === -1) {
+    return STATUS_OPTIONS;
+  }
+
+  // Hide previous order statuses so only the current and subsequent statuses are selectable
+  return STATUS_OPTIONS.filter((option) => {
+    if (option.value === 'cancelled') return true;
+    if (isPickup && option.value === 'assigned') return false;
+    const optionIndex = flow.indexOf(option.value);
+    return optionIndex >= currentIndex;
+  });
+};
+
 const FILTERS = {
   all: {},
   new: { status: 'placed' },
@@ -325,8 +359,16 @@ function CustomerOrdersPage({ audience = 'admin', view = 'all', showOrderFilters
                       <td className="max-w-56 px-4 py-3 text-xs text-[#435047]">{order.items.map((item) => `${item.product_name} ×${item.quantity}`).join(', ')}</td>
                       <td className="whitespace-nowrap px-4 py-3 text-[#435047]">{order.order_type === 'home_delivery' ? 'Home Delivery' : 'Pickup'}</td>
                       <td className="px-4 py-3">
-                        <select value={order.order_status} disabled={updatingOrder === order.order_number || order.payment_status === 'failed'} onChange={(event) => changeStatus(order, event.target.value)} aria-label={`Update order ${order.order_number} status`} className="rounded-lg border border-[#d9ded8] bg-white px-2 py-1.5 text-xs font-semibold capitalize text-[#263830] disabled:opacity-50">
-                          {STATUS_OPTIONS.map((status) => <option key={status.value} value={status.value}>{status.label}</option>)}
+                        <select
+                          value={order.order_status}
+                          disabled={updatingOrder === order.order_number || order.payment_status === 'failed' || ['delivered', 'completed', 'cancelled'].includes(String(order.order_status || '').toLowerCase())}
+                          onChange={(event) => changeStatus(order, event.target.value)}
+                          aria-label={`Update order ${order.order_number} status`}
+                          className="rounded-lg border border-[#d9ded8] bg-white px-2 py-1.5 text-xs font-semibold capitalize text-[#263830] disabled:opacity-50"
+                        >
+                          {getAvailableStatusOptions(order).map((status) => (
+                            <option key={status.value} value={status.value}>{status.label}</option>
+                          ))}
                         </select>
                       </td>
                       <td className="whitespace-nowrap px-4 py-3 text-xs capitalize text-[#435047]">{order.payment_method} · {order.payment_status}</td>
@@ -424,11 +466,11 @@ function CustomerOrdersPage({ audience = 'admin', view = 'all', showOrderFilters
                       Update order
                       <select
                         value={order.order_status}
-                        disabled={updatingOrder === order.order_number || order.payment_status === 'failed'}
+                        disabled={updatingOrder === order.order_number || order.payment_status === 'failed' || ['delivered', 'completed', 'cancelled'].includes(String(order.order_status || '').toLowerCase())}
                         onChange={(event) => changeStatus(order, event.target.value)}
                         className="mt-1 block w-full rounded-lg border border-[#d9ded8] bg-white px-3 py-2 text-sm font-semibold capitalize text-[#263830] disabled:opacity-50 sm:min-w-44"
                       >
-                        {STATUS_OPTIONS.map((status) => (
+                        {getAvailableStatusOptions(order).map((status) => (
                           <option key={status.value} value={status.value}>{status.label}</option>
                         ))}
                       </select>
