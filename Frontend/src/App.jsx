@@ -9,11 +9,10 @@ import FloatingSupport from "./CommonComponents/FloatingSupport";
 import Loader from "./CommonComponents/Loader";
 import CartSidebar from "./CommonComponents/CartSidebar";
 import FavoritesSidebar from "./CommonComponents/FavoritesSidebar";
-import { useAuth } from "./PrivateRouter/AuthContext";
+import RealtimeNotificationCenter from "./CommonComponents/RealtimeNotificationCenter";
 
 function App() {
   const [loading] = useState(false);
-  const { user } = useAuth();
   const { pathname, hash } = useLocation();
   const currentRoute = hash?.startsWith("#") ? hash.slice(1) : pathname;
   const isAuthPage = currentRoute === "/login" || currentRoute === "/register";
@@ -40,6 +39,7 @@ function App() {
       </div>
       <CartSidebar />
       <FavoritesSidebar />
+      <RealtimeNotificationCenter />
       <Outlet />
       <Toaster
         position="top-right"

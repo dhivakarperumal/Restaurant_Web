@@ -188,7 +188,7 @@ async function updateReservationStatus(reservationId, status) {
   try {
     await connection.beginTransaction();
     const [reservationRows] = await connection.execute(
-      `SELECT reservation_id, table_id,
+      `SELECT reservation_id, user_id, table_id, table_number,
               DATE_FORMAT(reservation_date, '%Y-%m-%d') AS reservation_date,
               start_time, end_time, status
        FROM reservations WHERE reservation_id = ? FOR UPDATE`,

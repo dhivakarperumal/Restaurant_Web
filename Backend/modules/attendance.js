@@ -1,5 +1,25 @@
 const { randomUUID } = require('crypto');
 const db = require('../config/db');
+const { notifyAdmins } = require('../utils/notificationSocket');
+
+async function notifyAttendanceChange(employeeId, action) {
+  try {
+    const [employees] = await db.execute(
+      'SELECT full_name, employee_type FROM employees WHERE employee_id = ? LIMIT 1',
+      [employeeId]
+    );
+    if (!employees.length) return;
+    notifyAdmins({
+      type: 'attendance',
+      title: `Employee ${action}`,
+      message: `${employees[0].full_name} (${employees[0].employee_type}) ${action.toLowerCase()}.`,
+      link: '/admin/employees/attendance',
+      data: { employee_id: employeeId, employee_name: employees[0].full_name, action },
+    });
+  } catch (error) {
+    console.error('Could not notify admins about employee attendance:', error.message);
+  }
+}
 
 async function initializeAttendanceSchema() {
   await db.query(`
@@ -80,6 +100,7 @@ async function recordLoginAttendance(userId, employeeId) {
       'SELECT * FROM employee_attendance WHERE attendance_id = ? LIMIT 1',
       [attendanceId]
     );
+    await notifyAttendanceChange(empId, 'clocked in');
 
     // Auto set delivery partner online upon checkin
     try {
@@ -122,6 +143,7 @@ async function clockInEmployee(employeeId, userId) {
         'SELECT * FROM employee_attendance WHERE id = ? LIMIT 1',
         [existing[0].id]
       );
+      await notifyAttendanceChange(employeeId, 'clocked in');
       return updated[0];
     }
     try {
@@ -176,6 +198,7 @@ async function clockOutEmployee(employeeId) {
     'SELECT * FROM employee_attendance WHERE id = ? LIMIT 1',
     [existing[0].id]
   );
+  await notifyAttendanceChange(employeeId, 'clocked out');
   return updated[0];
 }
 
