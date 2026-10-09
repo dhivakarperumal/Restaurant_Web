@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Plus, X, ClipboardList, Clock3, CheckCircle2, AlertCircle } from "lucide-react";
+import { Plus, X, ClipboardList, Clock3, CheckCircle2, AlertCircle, ChevronLeft, ChevronRight } from "lucide-react";
 import toast from "react-hot-toast";
 import api from "../api";
 import { useAuth } from "../PrivateRouter/AuthContext";
@@ -25,6 +25,7 @@ const ChefInventoryRequests = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [page, setPage] = useState(1);
 
   const loadPageData = async () => {
     try {
@@ -97,6 +98,11 @@ const ChefInventoryRequests = () => {
   const pendingCount = useMemo(() => requests.filter((r) => String(r.status || "Pending").toLowerCase() === "pending").length, [requests]);
   const approvedCount = useMemo(() => requests.filter((r) => String(r.status || "").toLowerCase() === "approved").length, [requests]);
   const completedCount = useMemo(() => requests.filter((r) => String(r.status || "").toLowerCase() === "completed").length, [requests]);
+  const pageSize = 10;
+  const pageCount = Math.max(1, Math.ceil(requests.length / pageSize));
+  const currentPage = Math.min(page, pageCount);
+  const pageOffset = (currentPage - 1) * pageSize;
+  const paginatedRequests = requests.slice(pageOffset, pageOffset + pageSize);
 
   const statCards = [
     { title: "Total Requests", value: requests.length, hint: "All kitchen stock tickets", icon: ClipboardList, bg: "bg-[#22c55e]" },
@@ -187,7 +193,7 @@ const ChefInventoryRequests = () => {
             <tbody className="divide-y divide-slate-100">
               {isLoading ? (
                 <tr><td colSpan="6" className="px-4 py-10 text-center text-slate-500">Loading requests...</td></tr>
-              ) : requests.length ? requests.map((request) => (
+              ) : requests.length ? paginatedRequests.map((request) => (
                 <tr key={request.id}>
                   <td className="whitespace-nowrap px-4 py-4 font-semibold text-slate-800">{request.request_number}</td>
                   <td className="min-w-48 px-4 py-4 text-slate-700">
@@ -211,6 +217,35 @@ const ChefInventoryRequests = () => {
           </table>
         </div>
       </div>
+
+      {!isLoading && requests.length > 0 && (
+        <nav aria-label="Kitchen request pages" className="flex flex-col gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-sm text-slate-600">
+            Showing {pageOffset + 1}-{Math.min(pageOffset + pageSize, requests.length)} of {requests.length} requests
+          </p>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setPage(Math.max(1, currentPage - 1))}
+              disabled={currentPage === 1}
+              className="inline-flex min-h-10 items-center gap-1 rounded-lg border border-slate-300 bg-white px-3 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              <ChevronLeft size={16} /> Previous
+            </button>
+            <span className="min-w-20 text-center text-sm font-medium text-slate-700">
+              {currentPage} / {pageCount}
+            </span>
+            <button
+              type="button"
+              onClick={() => setPage(Math.min(pageCount, currentPage + 1))}
+              disabled={currentPage === pageCount}
+              className="inline-flex min-h-10 items-center gap-1 rounded-lg border border-slate-300 bg-white px-3 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              Next <ChevronRight size={16} />
+            </button>
+          </div>
+        </nav>
+      )}
 
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-4" onMouseDown={(event) => event.target === event.currentTarget && setIsModalOpen(false)}>

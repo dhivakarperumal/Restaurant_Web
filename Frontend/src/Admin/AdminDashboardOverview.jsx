@@ -152,6 +152,7 @@ const AdminDashboardOverview = () => {
   const [loading, setLoading] = useState(true);
   const [reportLoading, setReportLoading] = useState(true);
   const [error, setError] = useState('');
+  const [kitchenRequestsLoaded, setKitchenRequestsLoaded] = useState(false);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -181,11 +182,33 @@ const AdminDashboardOverview = () => {
         kitchenRequests: value(6, ['data', 'data'], []),
         categories: value(7, ['data', 'data'], []),
       });
+      setKitchenRequestsLoaded(results[6]?.status === 'fulfilled');
       const failures = results.filter((result) => result.status === 'rejected');
       setError(failures.length ? 'Some dashboard sections are temporarily unavailable.' : '');
       setLoading(false);
     });
     return () => controller.abort();
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+    const refreshKitchenRequests = async () => {
+      try {
+        const { data } = await api.get('/inventory/kitchen-requests');
+        if (!active || !Array.isArray(data?.data)) return;
+        setSnapshot((current) => ({ ...current, kitchenRequests: data.data }));
+        setKitchenRequestsLoaded(true);
+      } catch {
+        // Keep the current list and summary fallback when refresh is unavailable.
+      }
+    };
+    const interval = window.setInterval(refreshKitchenRequests, 15000);
+    window.addEventListener('focus', refreshKitchenRequests);
+    return () => {
+      active = false;
+      window.clearInterval(interval);
+      window.removeEventListener('focus', refreshKitchenRequests);
+    };
   }, []);
 
   const apiRange = PERIOD_API[period] || period;
@@ -329,7 +352,12 @@ const AdminDashboardOverview = () => {
     : `${periodLabel} (${formatDate(new Date(), { day: '2-digit', month: 'short', year: 'numeric' })})`;
   const todayOrderCount = snapshot.orders.filter((order) => getDateKey(order.created_at) === getDateKey(new Date())).length
     + snapshot.bills.filter((bill) => getDateKey(bill.created_at) === getDateKey(new Date())).length;
-  const pendingKitchenCount = snapshot.kitchenRequests.filter((request) => ['pending', 'approved'].includes(String(request.status).toLowerCase())).length;
+  const listedPendingKitchenCount = snapshot.kitchenRequests.filter(
+    (request) => ['pending', 'approved'].includes(String(request.status || '').trim().toLowerCase())
+  ).length;
+  const pendingKitchenCount = kitchenRequestsLoaded
+    ? listedPendingKitchenCount
+    : Number(snapshot.inventory.pendingKitchenRequests || 0);
   const openBillsCount = snapshot.bills.filter((bill) => String(bill.status).toLowerCase() === 'active').length;
   const pendingOrderCount = report.statuses.reduce((count, item) => count + (['pending', 'placed', 'preparing', 'ready'].includes(String(item.status).toLowerCase()) ? Number(item.count || 0) : 0), 0);
   const completedOrderCount = report.statuses.reduce((count, item) => count + (['delivered', 'served', 'completed'].includes(String(item.status).toLowerCase()) ? Number(item.count || 0) : 0), 0);

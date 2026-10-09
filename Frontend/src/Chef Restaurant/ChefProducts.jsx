@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Search, UtensilsCrossed, CheckCircle2, Eye, EyeOff, X, List, LayoutGrid } from "lucide-react";
+import { Search, UtensilsCrossed, CheckCircle2, Eye, EyeOff, X, List, LayoutGrid, ChevronLeft, ChevronRight } from "lucide-react";
 import toast from "react-hot-toast";
 import api from "../api";
 
@@ -14,6 +14,7 @@ const ChefProducts = () => {
   const [search, setSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [viewMode, setViewMode] = useState("table");
+  const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [updatingFoodId, setUpdatingFoodId] = useState("");
@@ -45,6 +46,11 @@ const ChefProducts = () => {
     (categoryFilter === "all" || food.category_name === categoryFilter)
     && [food.food_name, food.category_name].some((value) => String(value || "").toLowerCase().includes(normalizedSearch))
   ));
+  const pageSize = 10;
+  const pageCount = Math.max(1, Math.ceil(filteredFoods.length / pageSize));
+  const currentPage = Math.min(page, pageCount);
+  const pageOffset = (currentPage - 1) * pageSize;
+  const paginatedFoods = filteredFoods.slice(pageOffset, pageOffset + pageSize);
   const normalizedPopupSearch = popupSearch.trim().toLowerCase();
   const popupFoods = foods.filter((food) => [food.food_name, food.category_name]
     .some((value) => String(value || "").toLowerCase().includes(normalizedPopupSearch)));
@@ -176,7 +182,7 @@ const ChefProducts = () => {
           <input
             type="search"
             value={search}
-            onChange={(event) => setSearch(event.target.value)}
+            onChange={(event) => { setSearch(event.target.value); setPage(1); }}
             placeholder="Search foods or categories"
             aria-label="Search foods or categories"
             className="w-full rounded-lg border border-slate-300 bg-white py-2.5 pl-9 pr-3 text-sm text-slate-800 outline-none focus:border-emerald-700"
@@ -185,7 +191,7 @@ const ChefProducts = () => {
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
           <select
             value={categoryFilter}
-            onChange={(event) => setCategoryFilter(event.target.value)}
+            onChange={(event) => { setCategoryFilter(event.target.value); setPage(1); }}
             aria-label="Filter foods by category"
             className="min-h-10 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 outline-none focus:border-emerald-700 sm:w-52"
           >
@@ -250,7 +256,7 @@ const ChefProducts = () => {
                   <p role="alert">{error}</p>
                   <button type="button" onClick={loadFoods} className="mt-2 font-semibold underline">Try again</button>
                 </td></tr>
-              ) : filteredFoods.length ? filteredFoods.map((food, index) => (
+              ) : filteredFoods.length ? paginatedFoods.map((food, index) => (
                 <tr key={food.food_id}>
                   <td className="px-4 py-3">
                     <input
@@ -262,7 +268,7 @@ const ChefProducts = () => {
                       className="h-4 w-4 accent-emerald-700"
                     />
                   </td>
-                  <td className="whitespace-nowrap px-4 py-3 text-slate-500">{index + 1}</td>
+                  <td className="whitespace-nowrap px-4 py-3 text-slate-500">{pageOffset + index + 1}</td>
                   <td className="px-4 py-3 font-semibold text-slate-800">{food.food_name || "Unnamed food"}</td>
                   <td className="px-4 py-3 text-slate-600">{food.category_name || "Uncategorized"}</td>
                   <td className="px-4 py-3 text-slate-600">{food.preparation_time ? `${food.preparation_time} min` : "-"}</td>
@@ -294,7 +300,7 @@ const ChefProducts = () => {
               <p role="alert">{error}</p>
               <button type="button" onClick={loadFoods} className="mt-2 font-semibold underline">Try again</button>
             </div>
-          ) : filteredFoods.length ? filteredFoods.map((food, index) => (
+          ) : filteredFoods.length ? paginatedFoods.map((food, index) => (
             <article key={food.food_id} className="min-w-0 rounded-xl border border-slate-200 bg-white p-4 shadow-[0_4px_16px_rgba(15,23,42,0.08)] transition-shadow hover:shadow-md">
               <div className="flex items-start gap-3">
                 <input
@@ -308,7 +314,7 @@ const ChefProducts = () => {
                 <div className="min-w-0 flex-1">
                   <div className="flex items-start justify-between gap-2">
                     <h2 className="truncate font-semibold text-slate-900">{food.food_name || "Unnamed food"}</h2>
-                    <span className="shrink-0 text-xs text-slate-500">#{index + 1}</span>
+                    <span className="shrink-0 text-xs text-slate-500">#{pageOffset + index + 1}</span>
                   </div>
                   <p className="mt-1 truncate text-sm text-slate-600">{food.category_name || "Uncategorized"}</p>
                 </div>
@@ -344,6 +350,35 @@ const ChefProducts = () => {
             <div className="col-span-full rounded-xl border border-slate-200 bg-white px-4 py-10 text-center text-slate-500">{foods.length ? "No foods match this search." : "No foods have been added yet."}</div>
           )}
         </div>
+      )}
+
+      {!loading && !error && filteredFoods.length > 0 && (
+        <nav aria-label="Food pages" className="flex flex-col gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-sm text-slate-600">
+            Showing {pageOffset + 1}-{Math.min(pageOffset + pageSize, filteredFoods.length)} of {filteredFoods.length} foods
+          </p>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setPage((current) => Math.max(1, currentPage - 1))}
+              disabled={currentPage === 1}
+              className="inline-flex min-h-10 items-center gap-1 rounded-lg border border-slate-300 bg-white px-3 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              <ChevronLeft size={16} /> Previous
+            </button>
+            <span className="min-w-20 text-center text-sm font-medium text-slate-700">
+              {currentPage} / {pageCount}
+            </span>
+            <button
+              type="button"
+              onClick={() => setPage((current) => Math.min(pageCount, currentPage + 1))}
+              disabled={currentPage === pageCount}
+              className="inline-flex min-h-10 items-center gap-1 rounded-lg border border-slate-300 bg-white px-3 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              Next <ChevronRight size={16} />
+            </button>
+          </div>
+        </nav>
       )}
 
       {showVisibilityPopup && (

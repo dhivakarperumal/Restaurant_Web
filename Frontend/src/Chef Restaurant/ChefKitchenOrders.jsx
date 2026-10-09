@@ -7,6 +7,8 @@ import {
   Clock3,
   Flame,
   LayoutGrid,
+  ChevronLeft,
+  ChevronRight,
   Loader2,
   List,
   MoreVertical,
@@ -86,6 +88,7 @@ const ChefKitchenOrders = ({ defaultViewMode = "table", orderTypeFilter = "" }) 
   const [viewMode, setViewMode] = useState(defaultViewMode);
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState("latest");
+  const [page, setPage] = useState(1);
 
   const fetchOrders = useCallback(async (showLoading = false) => {
     if (showLoading) setLoading(true);
@@ -157,6 +160,11 @@ const ChefKitchenOrders = ({ defaultViewMode = "table", orderTypeFilter = "" }) 
       return sortBy === "latest" ? secondTime - firstTime : firstTime - secondTime;
     });
   }, [orders, activeTab, searchQuery, sortBy]);
+  const pageSize = 10;
+  const pageCount = Math.max(1, Math.ceil(filteredOrders.length / pageSize));
+  const currentPage = Math.min(page, pageCount);
+  const pageOffset = (currentPage - 1) * pageSize;
+  const paginatedOrders = filteredOrders.slice(pageOffset, pageOffset + pageSize);
 
   return (
     <main className="min-h-screen  p-4 md:p-2 lg:p-2">
@@ -173,7 +181,7 @@ const ChefKitchenOrders = ({ defaultViewMode = "table", orderTypeFilter = "" }) 
               key={status}
               type="button"
               aria-pressed={activeTab === status}
-              onClick={() => { setActiveTab(activeTab === status ? 'all' : status); setSearchQuery(''); }}
+              onClick={() => { setActiveTab(activeTab === status ? 'all' : status); setSearchQuery(''); setPage(1); }}
               className={`relative min-w-0 overflow-hidden rounded-xl border border-transparent p-4 sm:p-5 shadow-[0_2px_10px_rgba(20,56,34,0.08)] flex flex-col justify-between min-h-[140px] text-white text-left transition hover:-translate-y-0.5 hover:shadow-lg ${bg} ${activeTab === status ? 'ring-4 ring-white/40' : ''}`}
             >
               <div className="flex items-start gap-3 relative z-10">
@@ -208,18 +216,18 @@ const ChefKitchenOrders = ({ defaultViewMode = "table", orderTypeFilter = "" }) 
         <div className="flex flex-col gap-3 rounded-xl border border-[#e1ded8] bg-white p-3 sm:flex-row sm:items-center sm:justify-between">
           <label className="relative block w-full sm:max-w-sm sm:flex-1">
             <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-[#7a857d]" />
-            <input type="search" value={searchQuery} onChange={(event) => setSearchQuery(event.target.value)} placeholder="Search table, ticket, food..." aria-label="Search kitchen orders" className="h-[46px] w-full rounded-xl border border-[#dfe2e5] bg-[#faf9f8] pl-11 pr-3 text-sm text-[#2d3830] outline-none placeholder:text-[#89938c] focus:border-[#6d9a79]" />
+            <input type="search" value={searchQuery} onChange={(event) => { setSearchQuery(event.target.value); setPage(1); }} placeholder="Search table, ticket, food..." aria-label="Search kitchen orders" className="h-[46px] w-full rounded-xl border border-[#dfe2e5] bg-[#faf9f8] pl-11 pr-3 text-sm text-[#2d3830] outline-none placeholder:text-[#89938c] focus:border-[#6d9a79]" />
           </label>
           <div className="flex flex-wrap items-center gap-2 sm:justify-end">
             <span className="mr-1 text-xs text-gray-500">{filteredOrders.length} of {orders.length}</span>
-            <select value={activeTab} onChange={(event) => setActiveTab(event.target.value)} aria-label="Filter kitchen orders by status" className="h-[46px] rounded-xl border border-[#dfe2e5] bg-white px-3 text-sm text-[#34443b] outline-none focus:border-[#6d9a79]">
+            <select value={activeTab} onChange={(event) => { setActiveTab(event.target.value); setPage(1); }} aria-label="Filter kitchen orders by status" className="h-[46px] rounded-xl border border-[#dfe2e5] bg-white px-3 text-sm text-[#34443b] outline-none focus:border-[#6d9a79]">
               <option value="all">All Status ({counts.all})</option>
               <option value="Pending">Pending ({counts.Pending})</option>
               <option value="Preparing">Preparing ({counts.Preparing})</option>
               <option value="Ready to Serve">Ready to Serve ({counts["Ready to Serve"]})</option>
               <option value="Served">Served / Completed ({counts.Served})</option>
             </select>
-            <select value={sortBy} onChange={(event) => setSortBy(event.target.value)} aria-label="Sort kitchen orders" className="h-[46px] rounded-xl border border-[#dfe2e5] bg-white px-3 text-sm text-[#34443b] outline-none focus:border-[#6d9a79]">
+            <select value={sortBy} onChange={(event) => { setSortBy(event.target.value); setPage(1); }} aria-label="Sort kitchen orders" className="h-[46px] rounded-xl border border-[#dfe2e5] bg-white px-3 text-sm text-[#34443b] outline-none focus:border-[#6d9a79]">
               <option value="latest">Sort by: Latest</option>
               <option value="oldest">Sort by: Oldest</option>
             </select>
@@ -262,14 +270,14 @@ const ChefKitchenOrders = ({ defaultViewMode = "table", orderTypeFilter = "" }) 
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#edf0eb]">
-                {filteredOrders.map((order, index) => {
+                {paginatedOrders.map((order, index) => {
                   const currentStatus = order.status || 'Pending';
                   const cfg = STATUS_CONFIG[currentStatus] || STATUS_CONFIG.Pending;
                   const isUpdating = updatingOrderId === order.order_id;
                   const totalItems = order.items.reduce((sum, item) => sum + Number(item.quantity || 1), 0);
                   const orderTotal = order.items.reduce((sum, item) => sum + Number(item.unit_price || 0) * Number(item.quantity || 1), 0);
                   return <tr key={order.order_id} className="align-middle hover:bg-[#fbfcfa]">
-                    <td className="whitespace-nowrap px-4 py-3 font-medium text-[#66736b]">{index + 1}</td>
+                    <td className="whitespace-nowrap px-4 py-3 font-medium text-[#66736b]">{pageOffset + index + 1}</td>
                     <td className="whitespace-nowrap px-4 py-3"><span className="font-mono text-xs font-semibold text-[#244b35]" title={order.order_id}>{String(order.order_id).slice(0, 8).toUpperCase()}</span><span className="mt-1 block text-[10px] text-[#89938c]">{totalItems} item{totalItems === 1 ? '' : 's'}</span></td>
                     <td className="whitespace-nowrap px-4 py-3"><span className="font-semibold text-[#34443b]">Table {order.table_number}</span>{order.bill_number && <span className="mt-1 block text-[10px] text-[#7c8980]">{order.bill_number}</span>}</td>
                     <td className="whitespace-nowrap px-4 py-3 text-xs text-[#66736b]">{order.round_number > 1 ? `Round ${order.round_number} · Add-on` : 'Round 1'}</td>
@@ -285,7 +293,7 @@ const ChefKitchenOrders = ({ defaultViewMode = "table", orderTypeFilter = "" }) 
           </div>
         ) : (
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-            {filteredOrders.map((order) => {
+            {paginatedOrders.map((order) => {
               const currentStatus = order.status || "Pending";
               const cfg = STATUS_CONFIG[currentStatus] || STATUS_CONFIG.Pending;
               const StatusIcon = cfg.icon;
@@ -457,6 +465,34 @@ const ChefKitchenOrders = ({ defaultViewMode = "table", orderTypeFilter = "" }) 
               );
             })}
           </div>
+        )}
+        {!loading && !error && filteredOrders.length > 0 && (
+          <nav aria-label="Kitchen order pages" className="flex flex-col gap-3 rounded-xl border border-[#e1ded8] bg-white px-4 py-3 shadow-sm sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-sm text-gray-600">
+              Showing {pageOffset + 1}-{Math.min(pageOffset + pageSize, filteredOrders.length)} of {filteredOrders.length} orders
+            </p>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setPage(Math.max(1, currentPage - 1))}
+                disabled={currentPage === 1}
+                className="inline-flex min-h-10 items-center gap-1 rounded-lg border border-[#dfe2e5] bg-white px-3 text-sm font-medium text-[#34443b] transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <ChevronLeft size={16} /> Previous
+              </button>
+              <span className="min-w-20 text-center text-sm font-medium text-[#34443b]">
+                {currentPage} / {pageCount}
+              </span>
+              <button
+                type="button"
+                onClick={() => setPage(Math.min(pageCount, currentPage + 1))}
+                disabled={currentPage === pageCount}
+                className="inline-flex min-h-10 items-center gap-1 rounded-lg border border-[#dfe2e5] bg-white px-3 text-sm font-medium text-[#34443b] transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                Next <ChevronRight size={16} />
+              </button>
+            </div>
+          </nav>
         )}
       </div>
     </main>

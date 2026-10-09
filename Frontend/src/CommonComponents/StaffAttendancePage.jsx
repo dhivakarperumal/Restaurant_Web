@@ -749,7 +749,7 @@ export default function StaffAttendancePage({
         {/* History Table */}
         <div className="overflow-x-auto rounded-2xl border border-gray-100 shadow-sm">
           <table className="w-full text-left text-xs">
-            <thead className="border-b border-gray-200 bg-gray-50/90 text-[11px] font-bold uppercase tracking-wider text-gray-600">
+            <thead className={`border-b text-[11px] font-bold uppercase tracking-wider ${role === "Chef" ? "border-[#c3972f] bg-[#d4a843] text-white" : "border-gray-200 bg-gray-50/90 text-gray-600"}`}>
               <tr>
                 <th className="px-5 py-3.5">Date</th>
                 <th className="px-4 py-3.5">Scheduled Shift</th>
