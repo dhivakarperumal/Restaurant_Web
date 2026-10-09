@@ -53,7 +53,7 @@ import {
 } from "lucide-react";
 
 import { useAuth } from "../PrivateRouter/AuthContext";
-const Logo = "/images/logo.png";
+const Logo = "/images/adminlogo.png";
 
 /* ================= NAV ITEMS ================= */
 const navItems = [
@@ -155,14 +155,14 @@ const ServerSidebar = ({ isOpen, onClose, collapsed, onToggleCollapse }) => {
         {/* ========== LOGO ========== */}
         <div className={`flex items-center gap-3 border-b border-[#1f3228] shrink-0 ${collapsed ? "px-3 py-5 justify-center" : "px-5 py-5"}`}>
           <div className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0 p-1 border border-[#d4a843]/30 bg-white">
-            <img src={Logo} alt="Foodie Restaurant" className="w-full h-full object-contain drop-shadow-lg" />
+            <img src={Logo} alt="Buy Foods restaurant logo" className="w-full h-full object-contain drop-shadow-lg" />
           </div>
 
           {!collapsed && (
             <div className="overflow-hidden flex-1">
-              <h1 className="text-base font-bold text-white tracking-wide font-serif">Foodie Restaurant</h1>
+              <h1 className="text-base font-bold text-white tracking-wide font-serif">Server</h1>
               <p className="text-[10px] text-white tracking-[0.2em] uppercase">
-                Fresh Food, Warm Welcome
+                Dining workspace
               </p>
             </div>
           )}
