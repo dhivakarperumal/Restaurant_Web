@@ -5,6 +5,7 @@ import {
   CalendarDays,
   ArrowRight,
   CheckCircle2,
+  Clock3,
   CookingPot,
   Truck,
   CircleX,
@@ -23,6 +24,7 @@ import {
   Trash2,
   Utensils,
   UserRound,
+  Users,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import api, { API_URL } from "../../api";
@@ -80,6 +82,28 @@ const ORDER_STATUS_BADGE_CLASSES = {
   Cancelled: "bg-[#fff0f2] text-[#c51d42] border border-[#f6d1d9]",
 };
 
+const RESERVATION_STATUS_CLASSES = {
+  Pending: "border-amber-200 bg-amber-50 text-amber-800",
+  Confirmed: "border-emerald-200 bg-emerald-50 text-emerald-800",
+  Declined: "border-rose-200 bg-rose-50 text-rose-700",
+  Cancelled: "border-slate-200 bg-slate-100 text-slate-600",
+};
+
+const formatReservationDate = (value) => {
+  if (!value) return "Date unavailable";
+  const dateString = String(value).slice(0, 10);
+  const date = new Date(`${dateString}T00:00:00`);
+  return Number.isNaN(date.getTime())
+    ? dateString
+    : date.toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
+};
+
+const formatReservationTime = (value) => {
+  if (!value) return "Time unavailable";
+  const [hour, minute] = String(value).slice(0, 5).split(":").map(Number);
+  return `${hour % 12 || 12}:${String(minute).padStart(2, "0")} ${hour < 12 ? "AM" : "PM"}`;
+};
+
 const getOrderFilterGroup = (status) => {
   const normalized = String(status || "processing").trim().toLowerCase().replaceAll("_", " ");
   if (["cancelled", "returned", "payment failed"].includes(normalized)) return "Cancelled";
@@ -128,6 +152,12 @@ const TAB_CONFIG = [
     icon: Package,
   },
   {
+    id: "reservations",
+    label: "Reservations",
+    desc: "View your table bookings",
+    icon: CalendarDays,
+  },
+  {
     id: "password",
     label: "Change Password",
     desc: "Security and account credentials",
@@ -145,6 +175,7 @@ const Account = () => {
   const [address, setAddress] = useState(emptyAddress);
   const [addresses, setAddresses] = useState([]);
   const [orders, setOrders] = useState([]);
+  const [reservations, setReservations] = useState([]);
   const [editingAddress, setEditingAddress] = useState(false);
   const [editingAddressId, setEditingAddressId] = useState(null);
   const [password, setPassword] = useState({
@@ -256,6 +287,15 @@ const Account = () => {
 
   useEffect(() => {
     if (!userId) return;
+
+    api.get("/reservations/mine")
+      .then((response) => {
+        setReservations(Array.isArray(response.data?.reservations) ? response.data.reservations : []);
+      })
+      .catch((error) => {
+        console.error("Could not load customer reservations:", error);
+        toast.error(error.response?.data?.message || "We could not load your reservations");
+      });
 
     Promise.all([
       api.get(`/users/profile/${userId}`),
@@ -454,9 +494,10 @@ const Account = () => {
                 <LogOut size={15} /> Sign out
               </button>
             </div>
-            <div className="relative grid grid-cols-2 gap-2 px-4 pb-4 sm:grid-cols-2 sm:gap-3 lg:absolute lg:inset-x-7 lg:bottom-2 lg:grid-cols-4 lg:pb-0">
+            <div className="relative grid grid-cols-2 gap-2 px-4 pb-4 sm:grid-cols-2 sm:gap-3 lg:absolute lg:inset-x-7 lg:bottom-2 lg:grid-cols-5 lg:pb-0">
               {[
                 { id: "orders", icon: Package, value: orders.length, title: "Total Orders", detail: "Your food journey", tone: "text-[#FD5E02]", wash: "bg-[#fff0e6]" },
+                { id: "reservations", icon: CalendarDays, value: reservations.length, title: "Reservations", detail: "Your table bookings", tone: "text-[#396F0B]", wash: "bg-[#edf5e9]" },
                 { id: "address", icon: MapPin, value: addresses.length, title: "Saved Addresses", detail: "Faster checkout", tone: "text-[#396F0B]", wash: "bg-[#edf5e9]" },
                 { id: "profile", icon: Heart, value: profile.mobile_number ? "Ready" : "Add", title: "Your Details", detail: "Keep in touch", tone: "text-[#eaa600]", wash: "bg-[#fff6d8]" },
                 { id: "password", icon: LockKeyhole, value: "Secure", title: "Your Account", detail: "Privacy matters", tone: "text-[#e84747]", wash: "bg-[#fff0f0]" },
@@ -493,7 +534,7 @@ const Account = () => {
                   {TAB_CONFIG.map((tab) => {
                     const Icon = tab.icon;
                     const isActive = activeTab === tab.id;
-                    const label = tab.id === "profile" ? "Profile Details" : tab.id === "address" ? "Saved Address" : tab.id === "orders" ? "Your Orders" : "Change Password";
+                    const label = tab.label;
                     return (
                       <button
                         key={tab.id}
@@ -926,6 +967,77 @@ const Account = () => {
                 )}
 
                 {/* TAB 4: CHANGE PASSWORD */}
+                {activeTab === "reservations" && (
+                  <div>
+                    <div className="mb-5 flex flex-wrap items-center justify-between gap-3 border-b border-[#E8EDE6] pb-5">
+                      <div className="flex items-center gap-3">
+                        <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#EFF5E9] text-[#396F0B] shadow-sm">
+                          <CalendarDays size={20} />
+                        </span>
+                        <div>
+                          <h2 className="text-xl font-serif font-semibold text-[#071C18]">Your Reservations</h2>
+                          <p className="text-xs text-[#7b8580]">Review your table, date, time, and booking status.</p>
+                        </div>
+                      </div>
+                      <span className="inline-flex items-center gap-2 rounded-full border border-[#dce8d5] bg-[#f3f8ef] px-3.5 py-2 text-xs font-bold text-[#396F0B]">
+                        <CalendarDays size={14} />
+                        {reservations.length} {reservations.length === 1 ? "reservation" : "reservations"}
+                      </span>
+                    </div>
+
+                    {reservations.length ? (
+                      <div className="space-y-3">
+                        {reservations.map((reservation) => (
+                          <article key={reservation.reservation_id} className="rounded-xl border border-[#e8ebe7] bg-white p-4 shadow-[0_4px_14px_rgba(26,37,27,0.05)] sm:p-5">
+                            <div className="flex flex-wrap items-start justify-between gap-3">
+                              <div>
+                                <p className="text-xs font-bold uppercase tracking-wider text-[#7b8580]">Table</p>
+                                <h3 className="mt-1 font-serif text-xl font-bold text-[#071C18]">{reservation.table_number}</h3>
+                              </div>
+                              <span className={`inline-flex rounded-full border px-3 py-1 text-xs font-bold ${RESERVATION_STATUS_CLASSES[reservation.status] || RESERVATION_STATUS_CLASSES.Pending}`}>
+                                {reservation.status}
+                              </span>
+                            </div>
+
+                            <div className="mt-4 grid gap-3 rounded-xl bg-[#f7f9f5] p-3 sm:grid-cols-3 sm:p-4">
+                              <p className="flex items-center gap-2 text-sm text-[#344035]">
+                                <CalendarDays size={16} className="shrink-0 text-[#396F0B]" />
+                                {formatReservationDate(reservation.reservation_date)}
+                              </p>
+                              <p className="flex items-center gap-2 text-sm text-[#344035]">
+                                <Clock3 size={16} className="shrink-0 text-[#396F0B]" />
+                                {formatReservationTime(reservation.start_time)} – {formatReservationTime(reservation.end_time)}
+                              </p>
+                              <p className="flex items-center gap-2 text-sm text-[#344035]">
+                                <Users size={16} className="shrink-0 text-[#396F0B]" />
+                                {reservation.guests} {Number(reservation.guests) === 1 ? "guest" : "guests"}
+                              </p>
+                            </div>
+
+                            {reservation.notes && (
+                              <p className="mt-3 text-sm leading-6 text-[#68736e]">
+                                <span className="font-semibold text-[#344035]">Special requests:</span> {reservation.notes}
+                              </p>
+                            )}
+                            <p className="mt-3 break-all font-mono text-[10px] text-[#89938c]">
+                              Reference: {reservation.reservation_id}
+                            </p>
+                          </article>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="rounded-2xl border-2 border-dashed border-[#e1e8dd] bg-[#fafcf9] px-5 py-12 text-center">
+                        <CalendarDays className="mx-auto h-10 w-10 text-[#9aab9a]" />
+                        <h3 className="mt-3 text-base font-bold text-[#071C18]">No reservations yet</h3>
+                        <p className="mt-1 text-sm text-[#7b8580]">Your table bookings will appear here after you request a reservation.</p>
+                        <Link to="/reservation" className="mt-5 inline-flex items-center gap-2 rounded-xl bg-[#071C18] px-5 py-3 text-xs font-bold uppercase tracking-wider text-white transition hover:bg-[#396F0B]">
+                          Book a table <ArrowRight size={15} />
+                        </Link>
+                      </div>
+                    )}
+                  </div>
+                )}
+
                 {activeTab === "password" && (
                   <div>
                     <div className="mb-7 flex items-center justify-between border-b border-[#E8EDE6] pb-5">
