@@ -43,20 +43,32 @@ const formatDate = (value) => {
 };
 
 function CustomerOrdersPage({ audience = 'admin', view = 'all', showOrderFilters = false }) {
+  const getInitialOrderType = (v) => (v === 'delivery' ? 'home_delivery' : v === 'pickup' ? 'pickup' : 'all');
+  const getInitialStatus = (v) => (v === 'new' ? 'placed' : v === 'cancelled' ? 'cancelled' : v === 'delivered' ? 'delivered' : 'all');
+
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState('');
   const [updatingOrder, setUpdatingOrder] = useState('');
-  const [orderTypeFilter, setOrderTypeFilter] = useState(
-    view === 'delivery' ? 'home_delivery' : view === 'pickup' ? 'pickup' : 'all'
-  );
-  const [statusFilter, setStatusFilter] = useState(
-    view === 'new' ? 'placed' : view === 'cancelled' ? 'cancelled' : view === 'delivered' ? 'delivered' : 'all'
-  );
+  const [orderTypeFilter, setOrderTypeFilter] = useState(getInitialOrderType(view));
+  const [statusFilter, setStatusFilter] = useState(getInitialStatus(view));
   const [searchTerm, setSearchTerm] = useState('');
   const [sortOrder, setSortOrder] = useState('latest');
   const [layout, setLayout] = useState('table');
+
+  // Immediately synchronize filter state whenever audience or view prop changes
+  const [prevViewKey, setPrevViewKey] = useState(`${audience}-${view}`);
+  if (prevViewKey !== `${audience}-${view}`) {
+    setPrevViewKey(`${audience}-${view}`);
+    setOrderTypeFilter(getInitialOrderType(view));
+    setStatusFilter(getInitialStatus(view));
+    setSearchTerm('');
+    setOrders([]);
+    setLoading(true);
+    setError('');
+  }
+
   const isCustomer = audience === 'customer';
   const showChefDeliveryTable = audience === 'chef' && view === 'delivery';
   const showOrderSummary = audience === 'admin' || (audience === 'chef' && showOrderFilters);
@@ -73,14 +85,19 @@ function CustomerOrdersPage({ audience = 'admin', view = 'all', showOrderFilters
           : view === 'cancelled' ? 'Cancelled Orders'
             : view === 'delivery' ? (showOrderFilters ? 'Home Delivery Orders' : 'Delivery Orders')
             : 'Customer Orders';
-  const filterStatus = showOrderFilters && ['new', 'delivery', 'delivered', 'cancelled'].includes(view)
+  const filterStatus = showOrderFilters && ['new', 'delivery', 'pickup', 'delivered', 'cancelled'].includes(view)
     ? (statusFilter === 'all' ? undefined : statusFilter)
     : FILTERS[view]?.status;
   const filterOrderType = FILTERS[view]?.order_type;
   const visibleOrders = useMemo(() => {
     const query = searchTerm.trim().toLowerCase();
     return orders
-      .filter((order) => statusFilter === 'all' || order.order_status === statusFilter)
+      .filter((order) => {
+        if (orderTypeFilter !== 'all' && order.order_type && order.order_type !== orderTypeFilter) {
+          return false;
+        }
+        return statusFilter === 'all' || order.order_status === statusFilter;
+      })
       .filter((order) => {
         if (!query) return true;
         const text = [
@@ -96,7 +113,7 @@ function CustomerOrdersPage({ audience = 'admin', view = 'all', showOrderFilters
         const difference = new Date(first.created_at || 0).getTime() - new Date(second.created_at || 0).getTime();
         return sortOrder === 'latest' ? -difference : difference;
       });
-  }, [orders, searchTerm, sortOrder, statusFilter]);
+  }, [orders, orderTypeFilter, searchTerm, sortOrder, statusFilter]);
   const statusCounts = useMemo(() => STATUS_OPTIONS.reduce((counts, status) => {
     counts[status.value] = orders.filter((order) => order.order_status === status.value).length;
     return counts;
@@ -105,11 +122,12 @@ function CustomerOrdersPage({ audience = 'admin', view = 'all', showOrderFilters
   const fetchOrders = useCallback(async (showSpinner = false) => {
     if (showSpinner) setRefreshing(true);
     try {
+      const activeOrderType = showOrderFilters
+        ? (orderTypeFilter !== 'all' ? orderTypeFilter : undefined)
+        : filterOrderType;
       const params = {
         ...(filterStatus ? { status: filterStatus } : {}),
-        ...(showOrderFilters
-          ? (orderTypeFilter !== 'all' ? { order_type: orderTypeFilter } : {})
-          : (filterOrderType ? { order_type: filterOrderType } : {})),
+        ...(activeOrderType ? { order_type: activeOrderType } : {}),
       };
       const endpoint = isCustomer ? '/orders/mine' : '/orders/management';
       const { data } = await api.get(endpoint, { params: isCustomer ? undefined : params });
@@ -125,13 +143,41 @@ function CustomerOrdersPage({ audience = 'admin', view = 'all', showOrderFilters
   }, [filterStatus, filterOrderType, isCustomer, orderTypeFilter, showOrderFilters]);
 
   useEffect(() => {
-    const initialFetch = window.setTimeout(() => fetchOrders(), 0);
-    const intervalId = window.setInterval(() => fetchOrders(), 15000);
+    let isCancelled = false;
+    const executeFetch = async (showSpinner = false) => {
+      if (showSpinner) setRefreshing(true);
+      try {
+        const activeOrderType = showOrderFilters
+          ? (orderTypeFilter !== 'all' ? orderTypeFilter : undefined)
+          : filterOrderType;
+        const params = {
+          ...(filterStatus ? { status: filterStatus } : {}),
+          ...(activeOrderType ? { order_type: activeOrderType } : {}),
+        };
+        const endpoint = isCustomer ? '/orders/mine' : '/orders/management';
+        const { data } = await api.get(endpoint, { params: isCustomer ? undefined : params });
+        if (isCancelled) return;
+        setOrders(Array.isArray(data?.data) ? data.data : []);
+        setError('');
+      } catch (requestError) {
+        if (isCancelled) return;
+        const message = requestError.response?.data?.message || 'Customer orders could not be loaded.';
+        setError(message);
+      } finally {
+        if (!isCancelled) {
+          setLoading(false);
+          setRefreshing(false);
+        }
+      }
+    };
+
+    executeFetch();
+    const intervalId = window.setInterval(() => executeFetch(false), 15000);
     return () => {
-      window.clearTimeout(initialFetch);
+      isCancelled = true;
       window.clearInterval(intervalId);
     };
-  }, [fetchOrders]);
+  }, [filterStatus, filterOrderType, isCustomer, orderTypeFilter, showOrderFilters]);
 
   const changeStatus = async (order, status) => {
     setUpdatingOrder(order.order_number);
