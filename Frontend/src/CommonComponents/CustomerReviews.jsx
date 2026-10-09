@@ -102,7 +102,7 @@ const CustomerReviews = () => {
               </>
             )}
             <Swiper
-              className="customer-reviews-swiper !overflow-visible !py-2"
+              className="customer-reviews-swiper !overflow-hidden !py-2"
               onSwiper={(swiper) => {
                 swiperRef.current = swiper;
               }}
