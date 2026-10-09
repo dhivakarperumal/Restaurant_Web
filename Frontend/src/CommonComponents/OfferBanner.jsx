@@ -73,11 +73,11 @@ export default function OfferBanner({
             loading="lazy"
           />
 
-          <div className="pointer-events-none absolute inset-0 z-0 bg-gradient-to-r from-[#031d12]/95 via-[#031d12]/85 to-[#031d12]/25" />
+          <div className="pointer-events-none absolute inset-0 z-0 bg-gradient-to-r from-[#031d12]/75 via-[#031d12]/55 via-55% to-transparent" />
 
           <div className="relative z-10 w-full px-5 py-7 text-left sm:px-8 sm:py-9 md:px-8 lg:px-12">
-            <div className="grid grid-cols-1 items-center gap-6 md:grid-cols-3 md:gap-5 lg:gap-8">
-              <div className="flex min-w-0 flex-col items-start">
+            <div className="grid w-full grid-cols-1 items-center gap-6 sm:grid-cols-2 md:gap-5 lg:w-[68%] lg:grid-cols-[1.05fr_1fr_.72fr] lg:gap-4 xl:gap-6">
+              <div className="flex min-w-0 flex-col items-start sm:col-span-2 lg:col-span-1">
                 <span className="font-dancing text-2xl font-semibold leading-tight text-[#f5a623] drop-shadow-sm select-none sm:text-3xl lg:text-[34px]">
                   {badgeTitle}
                 </span>
@@ -127,9 +127,9 @@ export default function OfferBanner({
                 </div>
               </div>
 
-              <div className="relative hidden select-none items-center justify-center text-center md:flex">
-                <span aria-hidden="true" className="absolute h-36 w-36 rounded-full border border-[#facc15]/25" />
-                <span aria-hidden="true" className="absolute h-28 w-28 rounded-full border border-dashed border-white/20" />
+              <div className="relative hidden min-w-0 select-none items-center justify-center text-center sm:col-span-2 lg:col-span-1 lg:flex">
+                <span aria-hidden="true" className="absolute h-28 w-28 rounded-full border border-[#facc15]/25 xl:h-36 xl:w-36" />
+                <span aria-hidden="true" className="absolute h-20 w-20 rounded-full border border-dashed border-white/20 xl:h-28 xl:w-28" />
                 <div className="relative -rotate-6 font-dancing text-3xl font-bold leading-[1.05] text-white drop-shadow-md lg:text-4xl">
                   <span>Tasty</span>
                   <br />
