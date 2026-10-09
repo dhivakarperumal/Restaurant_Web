@@ -27,6 +27,8 @@ const employeeColumns = [
   'commission_percent', 'admin_notes', 'app_access', 'login_status',
 ];
 
+const normalizePhone = (phone) => String(phone || '').replace(/^\+91/, '').replace(/[\s\-()]/g, '');
+
 async function initializeEmployeeSchema() {
   await db.query(`
     CREATE TABLE IF NOT EXISTS employees (
@@ -343,36 +345,45 @@ async function deleteEmployeeWithUser(employeeId) {
 
 async function checkEmployeeUniqueness(employeeData, excludeEmployeeId = null, excludeUserId = null) {
   let userIdToExclude = excludeUserId;
-  if (excludeEmployeeId && !userIdToExclude) {
-    const [empRows] = await db.execute('SELECT user_id FROM employees WHERE employee_id = ? LIMIT 1', [excludeEmployeeId]);
+  let existingPhone = null;
+  if (excludeEmployeeId) {
+    const [empRows] = await db.execute(
+      'SELECT user_id, phone_number FROM employees WHERE employee_id = ? LIMIT 1',
+      [excludeEmployeeId]
+    );
     if (empRows.length > 0) {
-      userIdToExclude = empRows[0].user_id;
+      userIdToExclude = userIdToExclude || empRows[0].user_id;
+      existingPhone = empRows[0].phone_number;
     }
   }
 
   // 1. Phone number
   if (employeeData.phone_number) {
-    const cleanPhone = String(employeeData.phone_number).replace(/^\+91/, '').replace(/[\s\-()]/g, '');
-    let empQuery = 'SELECT employee_id FROM employees WHERE phone_number = ?';
-    const empParams = [cleanPhone];
-    if (excludeEmployeeId) {
-      empQuery += ' AND employee_id != ?';
-      empParams.push(excludeEmployeeId);
-    }
-    const [empRows] = await db.execute(empQuery, empParams);
-    if (empRows.length > 0) {
-      return { field: 'phone_number', message: 'This phone number is already registered to another employee' };
-    }
+    const cleanPhone = normalizePhone(employeeData.phone_number);
+    const isUnchangedPhone = existingPhone !== null && normalizePhone(existingPhone) === cleanPhone;
 
-    let userQuery = 'SELECT user_id FROM users WHERE mobile_number = ?';
-    const userParams = [cleanPhone];
-    if (userIdToExclude) {
-      userQuery += ' AND user_id != ?';
-      userParams.push(userIdToExclude);
-    }
-    const [userRows] = await db.execute(userQuery, userParams);
-    if (userRows.length > 0) {
-      return { field: 'phone_number', message: 'This phone number is already registered to another user account' };
+    if (!isUnchangedPhone) {
+      let empQuery = 'SELECT employee_id FROM employees WHERE phone_number = ?';
+      const empParams = [cleanPhone];
+      if (excludeEmployeeId) {
+        empQuery += ' AND employee_id != ?';
+        empParams.push(excludeEmployeeId);
+      }
+      const [empRows] = await db.execute(empQuery, empParams);
+      if (empRows.length > 0) {
+        return { field: 'phone_number', message: 'This phone number is already registered to another employee' };
+      }
+
+      let userQuery = 'SELECT user_id FROM users WHERE mobile_number = ?';
+      const userParams = [cleanPhone];
+      if (userIdToExclude) {
+        userQuery += ' AND user_id != ?';
+        userParams.push(userIdToExclude);
+      }
+      const [userRows] = await db.execute(userQuery, userParams);
+      if (userRows.length > 0) {
+        return { field: 'phone_number', message: 'This phone number is already registered to another user account' };
+      }
     }
   }
 
