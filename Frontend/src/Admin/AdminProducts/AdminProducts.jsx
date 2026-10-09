@@ -59,7 +59,7 @@ const AdminProducts = () => {
           name: food.food_name,
           code: food.food_id,
           category: food.category_name,
-          cuisine: food.cuisine_name || '—',
+          cuisine: food.cuisine_name || food.cuisine || '—',
           cuisineId: String(food.cuisine_id || ''),
           price: `₹${Number(food.final_price || 0).toFixed(2)}`,
           oldPrice: `₹${Number(food.mrp || 0).toFixed(2)}`,
@@ -454,6 +454,12 @@ const AdminProducts = () => {
 
                               <td className="px-4 py-4 text-sm text-[#4d4d4d]">{product.category}</td>
 
+                              <td className="px-4 py-4 text-sm text-[#4d4d4d]">
+                                {product.cuisine && product.cuisine !== '—'
+                                  ? product.cuisine
+                                  : cuisinesList.find((c) => String(c.cuisine_id) === String(product.cuisineId))?.cuisine_name || '—'}
+                              </td>
+
                               <td className="px-4 py-4">
                                 <div className="text-lg font-bold text-[#1e1e1e]">{product.price}</div>
                                 {product.oldPrice && (
@@ -556,6 +562,7 @@ const AdminProducts = () => {
                   </h2>
                   <p className="text-xs font-mono text-[#888]">
                     {selectedProductView.code} • {selectedProductView.category}
+                    {selectedProductView.cuisine && selectedProductView.cuisine !== '—' ? ` • ${selectedProductView.cuisine}` : ''}
                   </p>
                 </div>
               </div>
