@@ -203,7 +203,7 @@ const Reservation = () => {
                 </label>
                 <label className="text-sm font-semibold text-slate-700">
                   Time
-                  <input name="time" type="time" min="10:00" max="22:00" step="3600" required value={time} onChange={(event) => updateAvailability({ time: event.target.value })} className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-3 font-normal outline-none transition focus:border-[#1a3c36] focus:ring-2 focus:ring-[#1a3c36]/10" />
+                  <input name="time" type="time" min="10:00" max="22:00" step="60" required value={time} onChange={(event) => updateAvailability({ time: event.target.value })} className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-3 font-normal outline-none transition focus:border-[#1a3c36] focus:ring-2 focus:ring-[#1a3c36]/10" />
                 </label>
                 <label className="text-sm font-semibold text-slate-700">
                   Guests

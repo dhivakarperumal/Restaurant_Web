@@ -13,8 +13,7 @@ const isValidDate = (value) => {
 };
 
 const isValidTime = (value) => {
-  if (!/^(?:1[0-9]|2[0-2]):00$/.test(value || '')) return false;
-  return true;
+  return /^(?:1[0-9]|20|21):[0-5][0-9]$|^22:00$/.test(value || '');
 };
 
 const normalizeText = (value) => String(value || '').trim();
