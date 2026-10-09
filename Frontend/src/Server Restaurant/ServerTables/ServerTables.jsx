@@ -51,6 +51,20 @@ const statusConfig = {
   },
 };
 
+const formatReservationTime = (value) => {
+  if (!value) return "";
+  const [hour, minute] = String(value).slice(0, 5).split(":").map(Number);
+  return `${hour % 12 || 12}:${String(minute).padStart(2, "0")} ${hour < 12 ? "AM" : "PM"}`;
+};
+
+const formatReservationDate = (value) => {
+  if (!value) return "";
+  const date = new Date(`${String(value).slice(0, 10)}T00:00:00`);
+  return Number.isNaN(date.getTime())
+    ? String(value).slice(0, 10)
+    : date.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
+};
+
 export default function ServerTables() {
   const { userProfile } = useAuth();
   const location = useLocation();
@@ -134,9 +148,9 @@ export default function ServerTables() {
     }
   };
 
-  const fetchTables = async () => {
+  const fetchTables = async ({ quiet = false } = {}) => {
     try {
-      setLoading(true);
+      if (!quiet) setLoading(true);
       const res = await api.get("/server-tables");
       if (res.data?.success) {
         setTables(res.data.tables || []);
@@ -147,17 +161,14 @@ export default function ServerTables() {
       console.error("Error loading server tables:", error);
       toast.error(error.response?.data?.message || "Failed to load server tables");
     } finally {
-      setLoading(false);
+      if (!quiet) setLoading(false);
     }
   };
 
   useEffect(() => {
     fetchTables();
-    fetchKitchenOrders();
-    fetchActiveBills();
     const interval = window.setInterval(() => {
-      fetchKitchenOrders();
-      fetchActiveBills();
+      fetchTables({ quiet: true });
     }, 10000);
     return () => window.clearInterval(interval);
   }, []);
@@ -408,6 +419,17 @@ export default function ServerTables() {
   const currentServerEmployeeId = userProfile?.employee_id || userProfile?.employeeId;
   const currentUserId = userProfile?.user_id || userProfile?.id || userProfile?.uuid;
   const currentUserName = userProfile?.name || userProfile?.displayName || userProfile?.full_name || userProfile?.username;
+  const getDisplayStatus = (table) => (
+    Number(table.reservation_is_active) === 1 ? "Reserved" : table.status
+  );
+  const getReservationSchedule = (table) => {
+    if (!table.next_reservation_date) return null;
+    return {
+      date: formatReservationDate(table.next_reservation_date),
+      start: formatReservationTime(table.next_reservation_start_time),
+      end: formatReservationTime(table.next_reservation_end_time),
+    };
+  };
 
   const selectTableForOrder = (table) => {
     if (String(table.status || "").trim().toLowerCase() !== "occupied") {
@@ -470,7 +492,7 @@ export default function ServerTables() {
 
       const matchesStatus =
         statusFilter === "all" ||
-        String(table.status || "").toLowerCase() === statusFilter.toLowerCase();
+        String(getDisplayStatus(table) || "").toLowerCase() === statusFilter.toLowerCase();
 
       const userEmpId = userProfile?.employee_id || userProfile?.employeeId;
       const matchesAssignment =
@@ -510,9 +532,9 @@ export default function ServerTables() {
   // Statistics
   const stats = useMemo(() => {
     const total = baseTables.length;
-    const available = baseTables.filter((t) => t.status === "Available").length;
-    const occupied = baseTables.filter((t) => t.status === "Occupied").length;
-    const reserved = baseTables.filter((t) => t.status === "Reserved").length;
+    const available = baseTables.filter((t) => getDisplayStatus(t) === "Available").length;
+    const occupied = baseTables.filter((t) => getDisplayStatus(t) === "Occupied").length;
+    const reserved = baseTables.filter((t) => getDisplayStatus(t) === "Reserved").length;
     const assigned = baseTables.filter((t) => Boolean(t.assigned_server_id)).length;
     const unassigned = baseTables.length - assigned;
     const totalSeats = baseTables.reduce((sum, t) => sum + Number(t.no_of_seats || 0), 0);
@@ -785,7 +807,9 @@ export default function ServerTables() {
         /* GRID VIEW */
         <div className={`grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 ${isAdminTablesPage ? "rounded-[18px]" : ""}`}>
           {sortedTables.map((table) => {
-            const config = statusConfig[table.status] || statusConfig.Available;
+            const displayStatus = getDisplayStatus(table);
+            const config = statusConfig[displayStatus] || statusConfig.Available;
+            const reservationSchedule = getReservationSchedule(table);
             const activeOrder = getTableActiveOrder(table);
             const activeBill = getTableActiveBill(table);
             const isReady = activeOrder?.status === "Ready to Serve";
@@ -830,9 +854,24 @@ export default function ServerTables() {
                       className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold border ${config.bg}`}
                     >
                       <span className={`w-1.5 h-1.5 rounded-full ${config.badge}`} />
-                      {table.status}
+                      {displayStatus}
                     </span>
                   </div>
+
+                  {reservationSchedule && (
+                    <div className={`mb-3 rounded-xl border px-3 py-2 text-xs ${Number(table.reservation_is_active) === 1 ? "border-blue-200 bg-blue-50 text-blue-900" : "border-slate-200 bg-slate-50 text-slate-700"}`}>
+                      <p className="font-semibold">
+                        {Number(table.reservation_is_active) === 1 ? "Reserved now" : "Next reservation"}
+                        {" · "}{reservationSchedule.date}
+                      </p>
+                      <p className="mt-1">
+                        {reservationSchedule.start}–{reservationSchedule.end}
+                        {table.next_reservation_guests ? ` · ${table.next_reservation_guests} guests` : ""}
+                        {table.next_reservation_customer_name ? ` · ${table.next_reservation_customer_name}` : ""}
+                      </p>
+                      <p className="mt-1 font-medium">{table.next_reservation_status}</p>
+                    </div>
+                  )}
 
                   {/* Seat count & Details */}
                   <div className="space-y-2 py-3 border-y border-gray-100 my-3">
@@ -1037,6 +1076,7 @@ export default function ServerTables() {
                   <th className="py-3.5 px-4">Table Number</th>
                   <th className="py-3.5 px-4">Seats</th>
                   <th className="py-3.5 px-4">Status</th>
+                  <th className="py-3.5 px-4">Reservation</th>
                   {isAdminTablesPage ? (
                     <>
                       <th className="py-3.5 px-4">Assigned Server</th>
@@ -1054,7 +1094,9 @@ export default function ServerTables() {
               </thead>
               <tbody className="divide-y divide-gray-100">
                 {sortedTables.map((table) => {
-                  const config = statusConfig[table.status] || statusConfig.Available;
+                  const displayStatus = getDisplayStatus(table);
+                  const config = statusConfig[displayStatus] || statusConfig.Available;
+                  const reservationSchedule = getReservationSchedule(table);
                   return (
                     <tr
                       key={table.table_id || table.id}
@@ -1084,8 +1126,26 @@ export default function ServerTables() {
                           className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold border ${config.bg}`}
                         >
                           <span className={`w-1.5 h-1.5 rounded-full ${config.badge}`} />
-                          {table.status}
+                          {displayStatus}
                         </span>
+                      </td>
+                      <td className="py-3 px-4 text-xs text-gray-600">
+                        {reservationSchedule ? (
+                          <div>
+                            <span className="font-semibold text-gray-800">
+                              {Number(table.reservation_is_active) === 1 ? "Reserved now" : reservationSchedule.date}
+                            </span>
+                            <span className="mt-0.5 block">
+                              {reservationSchedule.start}–{reservationSchedule.end}
+                              {table.next_reservation_guests ? ` · ${table.next_reservation_guests} guests` : ""}
+                            </span>
+                            <span className="mt-0.5 block">
+                              {table.next_reservation_customer_name || ""}{table.next_reservation_customer_name && table.next_reservation_status ? " · " : ""}{table.next_reservation_status || ""}
+                            </span>
+                          </div>
+                        ) : (
+                          <span className="text-gray-400">No upcoming reservations</span>
+                        )}
                       </td>
                       {isAdminTablesPage ? (
                         <>

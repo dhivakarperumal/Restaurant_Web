@@ -110,12 +110,51 @@ async function findServerTables(filters = {}) {
       e.employee_type AS assigned_server_type,
       e.email AS assigned_server_email,
       e.phone_number AS assigned_server_phone,
+      DATE_FORMAT(r.reservation_date, '%Y-%m-%d') AS next_reservation_date,
+      r.start_time AS next_reservation_start_time,
+      r.end_time AS next_reservation_end_time,
+      r.guests AS next_reservation_guests,
+      r.customer_name AS next_reservation_customer_name,
+      r.status AS next_reservation_status,
+      CASE
+        WHEN r.reservation_date = CURDATE()
+          AND r.start_time <= CURTIME()
+          AND r.end_time > CURTIME() THEN 1
+        ELSE 0
+      END AS reservation_is_active,
       st.created_by, 
       st.updated_by, 
       st.created_at, 
       st.updated_at
     FROM server_table st
     LEFT JOIN employees e ON (st.assigned_server_id = e.employee_id OR st.assigned_server_id = e.user_id)
+    LEFT JOIN reservations r
+      ON r.table_id = st.table_id
+      AND r.status IN ('Pending', 'Confirmed')
+      AND (
+        r.reservation_date > CURDATE()
+        OR (r.reservation_date = CURDATE() AND r.end_time > CURTIME())
+      )
+      AND NOT EXISTS (
+        SELECT 1
+        FROM reservations earlier
+        WHERE earlier.table_id = st.table_id
+          AND earlier.status IN ('Pending', 'Confirmed')
+          AND (
+            earlier.reservation_date > CURDATE()
+            OR (earlier.reservation_date = CURDATE() AND earlier.end_time > CURTIME())
+          )
+          AND (
+            earlier.reservation_date < r.reservation_date
+            OR (
+              earlier.reservation_date = r.reservation_date
+              AND (
+                earlier.start_time < r.start_time
+                OR (earlier.start_time = r.start_time AND earlier.id < r.id)
+              )
+            )
+          )
+      )
   `;
   const conditions = [];
   const params = [];
