@@ -181,28 +181,32 @@ function CustomerOrdersPage({ audience = 'admin', view = 'all', showOrderFilters
     }
   }, [filterStatus, filterOrderType, isCustomer, orderTypeFilter, showOrderFilters]);
 
+  const fetchDeliveryPartners = useCallback(async () => {
+    if (!canAssignDelivery) return;
+    try {
+      const { data } = await api.get('/delivery-partners');
+      setDeliveryPartners(Array.isArray(data?.data) ? data.data : []);
+      setDeliveryPartnersError('');
+    } catch (requestError) {
+      setDeliveryPartnersError(requestError.response?.data?.message || 'Delivery partners could not be loaded.');
+      setDeliveryPartners([]);
+    } finally {
+      setLoadingDeliveryPartners(false);
+    }
+  }, [canAssignDelivery]);
+
   useEffect(() => {
     if (!canAssignDelivery) return undefined;
-    let isCancelled = false;
-    const fetchDeliveryPartners = async () => {
-      setLoadingDeliveryPartners(true);
-      setDeliveryPartnersError('');
-      try {
-        const { data } = await api.get('/delivery-partners');
-        if (!isCancelled) setDeliveryPartners(Array.isArray(data?.data) ? data.data : []);
-      } catch (requestError) {
-        if (isCancelled) return;
-        setDeliveryPartnersError(requestError.response?.data?.message || 'Delivery partners could not be loaded.');
-        setDeliveryPartners([]);
-      } finally {
-        if (!isCancelled) setLoadingDeliveryPartners(false);
-      }
-    };
+    setLoadingDeliveryPartners(true);
     fetchDeliveryPartners();
-    return () => {
-      isCancelled = true;
+    const handleAttendanceUpdate = () => {
+      fetchDeliveryPartners();
     };
-  }, [canAssignDelivery]);
+    window.addEventListener('attendance-updated', handleAttendanceUpdate);
+    return () => {
+      window.removeEventListener('attendance-updated', handleAttendanceUpdate);
+    };
+  }, [canAssignDelivery, fetchDeliveryPartners]);
 
   useEffect(() => {
     let isCancelled = false;
@@ -221,6 +225,9 @@ function CustomerOrdersPage({ audience = 'admin', view = 'all', showOrderFilters
         if (isCancelled) return;
         setOrders(Array.isArray(data?.data) ? data.data : []);
         setError('');
+        if (canAssignDelivery) {
+          fetchDeliveryPartners();
+        }
       } catch (requestError) {
         if (isCancelled) return;
         const message = requestError.response?.data?.message || 'Customer orders could not be loaded.';
@@ -239,7 +246,7 @@ function CustomerOrdersPage({ audience = 'admin', view = 'all', showOrderFilters
       isCancelled = true;
       window.clearInterval(intervalId);
     };
-  }, [filterStatus, filterOrderType, isCustomer, orderTypeFilter, showOrderFilters]);
+  }, [canAssignDelivery, fetchDeliveryPartners, filterStatus, filterOrderType, isCustomer, orderTypeFilter, showOrderFilters]);
 
   const changeStatus = async (order, status, deliveryPartnerId = '') => {
     setUpdatingOrder(order.order_number);
@@ -301,7 +308,13 @@ function CustomerOrdersPage({ audience = 'admin', view = 'all', showOrderFilters
           aria-label={`Choose delivery partner for order ${order.order_number}`}
           className="rounded-lg border border-[#d9ded8] bg-white px-2 py-1.5 text-xs text-[#263830] disabled:opacity-50"
         >
-          <option value="">{loadingDeliveryPartners ? 'Loading partners…' : 'Choose delivery partner'}</option>
+          <option value="">
+            {loadingDeliveryPartners
+              ? 'Loading logged-in partners…'
+              : deliveryPartners.length === 0
+              ? 'No delivery partner logged in'
+              : 'Choose delivery partner'}
+          </option>
           {deliveryPartners.map((partner) => (
             <option key={partner.employee_id} value={partner.employee_id}>
               {partner.full_name}{partner.phone_number ? ` · ${partner.phone_number}` : ''}
@@ -310,7 +323,9 @@ function CustomerOrdersPage({ audience = 'admin', view = 'all', showOrderFilters
         </select>
         {deliveryPartnersError && <span role="alert" className="text-xs text-red-700">{deliveryPartnersError}</span>}
         {!loadingDeliveryPartners && !deliveryPartnersError && deliveryPartners.length === 0 && (
-          <span className="text-xs text-[#68766e]">No active delivery partners available.</span>
+          <span className="rounded bg-amber-50 px-2 py-1 text-xs font-medium text-amber-800 border border-amber-200">
+            No delivery partners are currently logged in.
+          </span>
         )}
         <button
           type="button"
