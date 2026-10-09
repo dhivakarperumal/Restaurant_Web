@@ -15,6 +15,9 @@ import ModalPortal from '../../CommonComponents/ModalPortal';
 const fieldClass = 'w-full rounded-xl border border-[#e7e0d8] bg-[#f8f7f4] px-3 py-2.5 text-sm text-[#1f3228] outline-none focus:border-[#d4a843] transition placeholder:text-[#929b94]';
 const sectionClass = 'rounded-2xl border border-[#e7e0d8] bg-white p-5';
 const readOnlyFieldClass = 'w-full rounded-xl border border-[#e7e0d8] bg-[#f2f3f0] px-3 py-2.5 text-sm text-[#56645b] outline-none cursor-not-allowed';
+const getEmployeeName = (employee) =>
+  String(employee?.full_name || `${employee?.first_name || ''} ${employee?.last_name || ''}`.trim() || employee?.employee_id || 'Unnamed Employee').trim();
+const getEmployeeCode = (employee) => employee?.employee_code || employee?.employee_id || 'No code';
 
 const customSelectStyles = {
   control: (provided, state) => ({
@@ -190,6 +193,7 @@ export default function EmployeeSalary() {
   const [employees, setEmployees] = useState([]);
   const [history, setHistory] = useState([]);
   const [employeeLoading, setEmployeeLoading] = useState(false);
+  const [employeeLoadError, setEmployeeLoadError] = useState('');
   const [detailsLoading, setDetailsLoading] = useState(false);
   const [loading, setLoading] = useState(false);
   const [historyLoading, setHistoryLoading] = useState(false);
@@ -220,12 +224,14 @@ export default function EmployeeSalary() {
     (async () => {
       setEmployeeLoading(true);
       try {
-        const { data } = await api.get('/employees?limit=500&page=1');
-        if (data.data && Array.isArray(data.data)) setEmployees(data.data);
-        else if (data.data?.rows) setEmployees(data.data.rows);
-        else if (Array.isArray(data)) setEmployees(data);
+        const { data } = await api.get('/employees');
+        if (!Array.isArray(data?.employees)) {
+          throw new Error(data?.message || 'Employee records were not returned by the server.');
+        }
+        setEmployees(data.employees);
+        setEmployeeLoadError('');
       } catch (err) {
-        console.warn('Failed to load employees:', err);
+        setEmployeeLoadError(err?.response?.data?.message || err.message || 'Employees could not be loaded.');
       } finally {
         setEmployeeLoading(false);
       }
@@ -426,8 +432,8 @@ export default function EmployeeSalary() {
       .filter((emp) => (emp.status || emp.employment_status) === 'Active')
       .filter((emp) => {
         if (!search) return true;
-        const fullName = `${emp.first_name || ''} ${emp.last_name || ''}`.toLowerCase();
-        const code = (emp.employee_code || '').toLowerCase();
+        const fullName = getEmployeeName(emp).toLowerCase();
+        const code = getEmployeeCode(emp).toLowerCase();
         return fullName.includes(search) || code.includes(search);
       });
   }, [employees, employeeSearch]);
@@ -478,6 +484,7 @@ export default function EmployeeSalary() {
 
     return history.filter((record) => record.employee_id === selectedSalaryEmployee.employee_id);
   }, [history, selectedSalaryEmployee]);
+  const selectedFormEmployee = employees.find((employee) => employee.employee_id === formData.employee_id);
 
   return (
     <div className="space-y-6 text-[#1f3228] pb-10">
@@ -544,18 +551,20 @@ export default function EmployeeSalary() {
                       .filter(emp => (emp.status || emp.employment_status) === 'Active' || emp.employee_id === formData.employee_id)
                       .map(emp => ({
                         value: emp.employee_id,
-                        label: `${emp.first_name} ${emp.last_name} (${emp.employee_code || 'No Code'})`
+                        label: `${getEmployeeName(emp)} (${getEmployeeCode(emp)})`
                       }))
                   ]}
-                  value={formData.employee_id ? {
-                    value: formData.employee_id,
-                    label: employees.find(e => e.employee_id === formData.employee_id)
-                      ? `${employees.find(e => e.employee_id === formData.employee_id).first_name} ${employees.find(e => e.employee_id === formData.employee_id).last_name} (${employees.find(e => e.employee_id === formData.employee_id).employee_code || 'No Code'})`
-                      : ''
-                  } : null}
+                  value={selectedFormEmployee
+                    ? {
+                      value: formData.employee_id,
+                      label: `${getEmployeeName(selectedFormEmployee)} (${getEmployeeCode(selectedFormEmployee)})`,
+                    }
+                    : null}
                   onChange={(option) => handleChange({ target: { name: 'employee_id', value: option ? option.value : '' } })}
                   styles={customSelectStyles}
                   isDisabled={editId}
+                  isLoading={employeeLoading}
+                  noOptionsMessage={() => employeeLoadError || (employeeLoading ? 'Loading employees...' : 'No active employees found')}
                   placeholder={employeeLoading ? "Loading..." : "Select Employee"}
                   isSearchable={true}
                 />
