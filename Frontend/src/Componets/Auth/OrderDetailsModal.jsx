@@ -42,17 +42,17 @@ const normalizeStatus = (status) => {
 };
 
 const statusColorMap = {
-  DELIVERED: "bg-[#e1f2e8] text-[#1e6f43] border-[#c3e6d1]",
-  "OUT FOR DELIVERY": "bg-[#e3edf7] text-[#245b85] border-[#b8daff]",
-  SHIPPED: "bg-[#e3edf7] text-[#245b85] border-[#b8daff]",
-  PROCESSING: "bg-[#fef3c7] text-[#92400e] border-[#fde68a]",
-  PACKING: "bg-[#fef3c7] text-[#92400e] border-[#fde68a]",
-  READY: "bg-[#e8f5e9] text-[#2e7d32] border-[#c8e6c9]",
-  CONFIRMED: "bg-[#e8f5e9] text-[#2e7d32] border-[#c8e6c9]",
-  CANCELLED: "bg-[#fae5e2] text-[#a43e32] border-[#f5c6cb]",
-  "ON HOLD": "bg-[#fff3e0] text-[#b26a00] border-[#ffe0b2]",
-  RETURNED: "bg-[#fae5e2] text-[#a43e32] border-[#f5c6cb]",
-  "ORDER PLACED": "bg-[#fff3e0] text-[#b26a00] border-[#ffe0b2]",
+  DELIVERED: "bg-[#eaf4e4] text-[#396F0B] border-[#cfe3c4]",
+  "OUT FOR DELIVERY": "bg-[#edf3fa] text-[#245b85] border-[#c9daee]",
+  SHIPPED: "bg-[#edf3fa] text-[#245b85] border-[#c9daee]",
+  PROCESSING: "bg-[#fff6d8] text-[#795500] border-[#f1d889]",
+  PACKING: "bg-[#fff6d8] text-[#795500] border-[#f1d889]",
+  READY: "bg-[#eaf4e4] text-[#396F0B] border-[#cfe3c4]",
+  CONFIRMED: "bg-[#eaf4e4] text-[#396F0B] border-[#cfe3c4]",
+  CANCELLED: "bg-[#fff0ec] text-[#b83b1d] border-[#f5c6b9]",
+  "ON HOLD": "bg-[#fff6d8] text-[#795500] border-[#f1d889]",
+  RETURNED: "bg-[#fff0ec] text-[#b83b1d] border-[#f5c6b9]",
+  "ORDER PLACED": "bg-[#fff6d8] text-[#795500] border-[#f1d889]",
 };
 
 const resolveImageUrl = (value) => {
@@ -221,7 +221,7 @@ const OrderDetailsModal = ({ order: initialOrder, orderId, isOpen, onClose }) =>
     (status) => normalizeStatus(status) === normalizedStatus,
   );
   const statusInfo = {
-    badge: statusColorMap[normalizedStatus] || "bg-[#f3eee7] text-[#7b6a58] border-[#dfd6ca]",
+    badge: statusColorMap[normalizedStatus] || "bg-white/10 text-white border-white/20",
     stepIndex: statusIndex >= 0 ? statusIndex : 0,
   };
 
@@ -286,46 +286,48 @@ const OrderDetailsModal = ({ order: initialOrder, orderId, isOpen, onClose }) =>
   return (
     <>
       <div
-        className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/60 p-3 backdrop-blur-sm sm:p-5 md:p-8"
+        className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-[#03130d]/80 p-3 backdrop-blur-md sm:p-5 md:p-8"
         role="dialog"
         aria-modal="true"
         onMouseDown={(e) => {
           if (e.target === e.currentTarget) onClose();
         }}
       >
-        <div className="relative flex flex-col my-auto max-h-[92vh] w-full max-w-4xl rounded-2xl border border-[#e8dfd2] bg-white shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+        <div className="relative my-auto flex max-h-[94vh] w-full max-w-6xl flex-col overflow-hidden rounded-[28px] border border-white/70 bg-[#F9F8F6] shadow-[0_32px_100px_rgba(2,38,16,0.34)] animate-in fade-in zoom-in-95 duration-200">
           
           {/* MODAL HEADER */}
-          <div className="flex items-start justify-between border-b border-[#eee8df] bg-[#fcfbf9] px-6 py-5">
+          <div className="relative flex items-start justify-between overflow-hidden border-b border-white/10 bg-[#071C18] px-5 py-5 text-white sm:px-8 sm:py-6">
+            <div aria-hidden="true" className="pointer-events-none absolute -right-10 -top-24 h-64 w-64 rounded-full border-[36px] border-[#396F0B]/30" />
+            <div aria-hidden="true" className="pointer-events-none absolute -right-3 -bottom-20 h-44 w-44 rounded-full bg-[#FEB914]/10 blur-2xl" />
             <div className="space-y-1.5 min-w-0 pr-4">
               <div className="flex flex-wrap items-center gap-2.5">
-                <span className="text-xs font-bold uppercase tracking-wider text-[#b87840]">
+                <span className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-[#FEB914]">
                   Order Details
                 </span>
                 <span
-                  className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold uppercase tracking-wide ${statusInfo.badge}`}
+                  className={`inline-flex items-center rounded-full border px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide ${statusInfo.badge}`}
                 >
                   {currentStatus}
                 </span>
               </div>
 
-              <div className="flex flex-wrap items-center gap-2">
-                <h3 className="text-xl sm:text-2xl font-serif font-bold text-[#1b2925] tracking-tight truncate">
+              <div className="relative flex flex-wrap items-center gap-2">
+                <h3 className="truncate font-serif text-2xl font-bold tracking-tight text-white sm:text-3xl">
                   #{currentOrder.order_id || activeOrderId}
                 </h3>
                 <button
                   type="button"
                   onClick={copyOrderId}
                   title="Copy Order ID"
-                  className="inline-flex items-center gap-1 rounded-md border border-[#dfd6ca] bg-white px-2 py-0.5 text-[11px] font-medium text-[#68736e] hover:bg-[#f4eee6] hover:text-[#1b2925] transition"
+                  className="inline-flex items-center gap-1 rounded-lg border border-white/20 bg-white/10 px-2.5 py-1 text-[11px] font-semibold text-white/80 transition hover:border-[#FEB914]/60 hover:bg-white/15 hover:text-white"
                 >
                   <Copy size={11} />
                   Copy
                 </button>
               </div>
 
-              <p className="flex items-center gap-2 text-xs text-[#7b8580]">
-                <Calendar size={13} className="text-[#b87840]" />
+              <p className="flex flex-wrap items-center gap-2 text-xs text-white/65">
+                <Calendar size={13} className="text-[#FEB914]" />
                 <span>
                   {formattedDate} {formattedTime && `at ${formattedTime}`}
                 </span>
@@ -342,7 +344,7 @@ const OrderDetailsModal = ({ order: initialOrder, orderId, isOpen, onClose }) =>
             <button
               type="button"
               onClick={onClose}
-              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-[#e8dfd2] bg-white text-[#68736e] hover:bg-[#fae5e2] hover:text-[#c24130] hover:border-[#f5c6cb] transition"
+              className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-white/20 bg-white/10 text-white/80 transition hover:border-[#FD5E02] hover:bg-[#FD5E02] hover:text-white"
               aria-label="Close dialog"
             >
               <X size={18} />
@@ -350,20 +352,21 @@ const OrderDetailsModal = ({ order: initialOrder, orderId, isOpen, onClose }) =>
           </div>
 
           {/* SCROLLABLE BODY */}
-          <div className="flex-1 overflow-y-auto px-6 py-6 space-y-7">
+          <div className="flex-1 space-y-6 overflow-y-auto bg-[#F9F8F6] px-4 py-5 sm:px-8 sm:py-7">
             
             {/* 1. ORDER PROGRESS TRACKER */}
             {!isCancelled ? (
-              <div className="rounded-xl border border-[#eee8df] bg-[#faf8f5] p-5">
+              <div className="rounded-2xl border border-[#dce8d5] bg-gradient-to-br from-[#f1f7ed] to-white p-4 shadow-sm sm:p-5">
                 <div className="mb-4 flex items-center justify-between">
-                  <h4 className="text-xs font-bold uppercase tracking-wider text-[#b87840] flex items-center gap-1.5">
-                    <Truck size={14} /> Order Journey
+                  <h4 className="flex items-center gap-2 text-xs font-extrabold uppercase tracking-wider text-[#071C18]">
+                    <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#396F0B] text-white"><Truck size={15} /></span>
+                    Order Journey
                   </h4>
                   {currentOrder.courier_name && (
                     <span className="text-xs font-medium text-[#4a5550]">
                       Via <strong>{currentOrder.courier_name}</strong>
                       {currentOrder.docket_number && (
-                        <> (Docket: <code className="bg-white px-1.5 py-0.5 rounded border text-[#1b2925]">{currentOrder.docket_number}</code>)</>
+                        <> (Docket: <code className="rounded border border-[#dce8d5] bg-white px-1.5 py-0.5 text-[#071C18]">{currentOrder.docket_number}</code>)</>
                       )}
                     </span>
                   )}
@@ -379,18 +382,18 @@ const OrderDetailsModal = ({ order: initialOrder, orderId, isOpen, onClose }) =>
                         key={step.title}
                         className={`relative rounded-lg p-3 transition-all ${
                           isCurrent
-                            ? "bg-white border-2 border-[#b87840] shadow-xs"
+                            ? "bg-white border-2 border-[#396F0B] shadow-md"
                             : isCompleted
-                            ? "bg-white border border-[#c3e6d1]"
-                            : "bg-[#f4efe8]/50 border border-transparent opacity-60"
+                            ? "bg-white border border-[#cfe3c4]"
+                            : "bg-white/50 border border-transparent opacity-55"
                         }`}
                       >
                         <div className="flex items-center gap-2">
                           <span
                             className={`flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-bold ${
                               isCompleted
-                                ? "bg-[#28724a] text-white"
-                                : "bg-[#ddd6ce] text-[#68736e]"
+                                ? "bg-[#396F0B] text-white"
+                                : "bg-[#e3e8e0] text-[#68736e]"
                             }`}
                           >
                             {isCompleted ? <CheckCircle2 size={12} /> : idx + 1}
@@ -398,9 +401,9 @@ const OrderDetailsModal = ({ order: initialOrder, orderId, isOpen, onClose }) =>
                           <span
                             className={`text-xs font-semibold ${
                               isCurrent
-                                ? "text-[#b87840]"
+                                ? "text-[#396F0B]"
                                 : isCompleted
-                                ? "text-[#1b2925]"
+                                ? "text-[#071C18]"
                                 : "text-[#87908b]"
                             }`}
                           >
@@ -416,13 +419,13 @@ const OrderDetailsModal = ({ order: initialOrder, orderId, isOpen, onClose }) =>
                 </div>
               </div>
             ) : (
-              <div className="rounded-xl border border-[#f5c6cb] bg-[#fae5e2]/50 p-4 flex items-start gap-3">
-                <AlertCircle className="text-[#a43e32] shrink-0 mt-0.5" size={18} />
+              <div className="flex items-start gap-3 rounded-2xl border border-[#f5c6b9] bg-[#fff0ec] p-4">
+                <AlertCircle className="mt-0.5 shrink-0 text-[#b83b1d]" size={18} />
                 <div>
-                  <h4 className="text-sm font-semibold text-[#a43e32]">
+                  <h4 className="text-sm font-semibold text-[#b83b1d]">
                     Order Cancelled
                   </h4>
-                  <p className="text-xs text-[#7b4038] mt-0.5">
+                  <p className="mt-0.5 text-xs text-[#7b4038]">
                     {currentOrder.notes
                       ? `Reason: ${currentOrder.notes}`
                       : "This order was cancelled."}
@@ -434,8 +437,9 @@ const OrderDetailsModal = ({ order: initialOrder, orderId, isOpen, onClose }) =>
             {/* 2. ORDERED ITEMS LIST */}
             <div>
               <div className="mb-3 flex items-center justify-between">
-                <h4 className="text-xs font-bold uppercase tracking-wider text-[#b87840] flex items-center gap-1.5">
-                  <Package size={15} /> Purchased Items (
+                <h4 className="flex items-center gap-2 text-xs font-extrabold uppercase tracking-wider text-[#071C18]">
+                  <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#EFF5E9] text-[#396F0B]"><Package size={15} /></span>
+                  Purchased Items (
                   {loading && items.length === 0 ? "Loading..." : items.length || currentOrder.item_count || 1}
                   )
                 </h4>
@@ -446,14 +450,14 @@ const OrderDetailsModal = ({ order: initialOrder, orderId, isOpen, onClose }) =>
                   {[1, 2].map((n) => (
                     <div
                       key={n}
-                      className="animate-pulse flex items-center gap-4 rounded-xl border border-[#eee8df] bg-[#faf8f5] p-4"
+                      className="flex animate-pulse items-center gap-4 rounded-xl border border-[#e4e9e1] bg-[#f3f8ef] p-4"
                     >
-                      <div className="h-16 w-16 bg-[#e8dfd2] rounded-lg" />
+                      <div className="h-16 w-16 rounded-lg bg-[#dce8d5]" />
                       <div className="flex-1 space-y-2">
-                        <div className="h-4 bg-[#e8dfd2] rounded w-1/3" />
-                        <div className="h-3 bg-[#e8dfd2] rounded w-1/4" />
+                        <div className="h-4 w-1/3 rounded bg-[#dce8d5]" />
+                        <div className="h-3 w-1/4 rounded bg-[#dce8d5]" />
                       </div>
-                      <div className="h-4 bg-[#e8dfd2] rounded w-16" />
+                      <div className="h-4 w-16 rounded bg-[#dce8d5]" />
                     </div>
                   ))}
                 </div>
@@ -479,12 +483,12 @@ const OrderDetailsModal = ({ order: initialOrder, orderId, isOpen, onClose }) =>
                     return (
                       <div
                         key={item.id || item.product_id || index}
-                        className="rounded-xl border border-[#e8dfd2] bg-white p-4 sm:p-5 shadow-2xs hover:border-[#d6c7b2] transition"
+                        className="rounded-2xl border border-[#e4e9e1] bg-white p-4 shadow-sm transition hover:border-[#a9c69a] hover:shadow-md sm:p-5"
                       >
                         {/* Main Item Row */}
                         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                           <div className="flex items-center gap-4 min-w-0">
-                            <div className="relative flex h-16 w-16 sm:h-20 sm:w-20 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-[#e8dfd2] bg-[#fcfbf9]">
+                            <div className="relative flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-[#e4e9e1] bg-[#f3f8ef] sm:h-20 sm:w-20">
                               {itemImage ? (
                                 <img
                                   src={itemImage}
@@ -503,12 +507,12 @@ const OrderDetailsModal = ({ order: initialOrder, orderId, isOpen, onClose }) =>
                             </div>
 
                             <div className="min-w-0 flex-1">
-                              <h5 className="font-semibold text-base text-[#1b2925] truncate">
+                              <h5 className="truncate text-base font-semibold text-[#071C18]">
                                 {item.product_name || "Custom Frame"}
                               </h5>
                               <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-[#7b8580]">
                                 {item.category && (
-                                  <span className="rounded bg-[#f4eee6] px-2 py-0.5 text-[#b87840] font-medium">
+                                  <span className="rounded bg-[#EFF5E9] px-2 py-0.5 font-medium text-[#396F0B]">
                                     {item.category}
                                   </span>
                                 )}
@@ -531,7 +535,7 @@ const OrderDetailsModal = ({ order: initialOrder, orderId, isOpen, onClose }) =>
 
                           <div className="text-right sm:self-center">
                             <p className="text-xs text-[#7b8580]">Total</p>
-                            <p className="text-base font-bold text-[#1b2925]">
+                            <p className="text-base font-bold text-[#071C18]">
                               ₹{itemTotal.toLocaleString("en-IN")}
                             </p>
                           </div>
@@ -539,10 +543,10 @@ const OrderDetailsModal = ({ order: initialOrder, orderId, isOpen, onClose }) =>
 
                         {/* Whole Frame Rendered Preview (if customized) */}
                         {wholeFrame && (
-                          <div className="mt-4 rounded-xl border border-[#dfd6ca] bg-[#faf8f5] p-3.5">
+                          <div className="mt-4 rounded-xl border border-[#dce8d5] bg-[#f3f8ef] p-3.5">
                             <div className="mb-2 flex items-center justify-between">
-                              <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#1b2925]">
-                                <Sparkles size={14} className="text-[#b87840]" />
+                              <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#071C18]">
+                                <Sparkles size={14} className="text-[#396F0B]" />
                                 Final Assembled Frame Preview
                               </span>
                               <div className="flex items-center gap-2">
@@ -554,7 +558,7 @@ const OrderDetailsModal = ({ order: initialOrder, orderId, isOpen, onClose }) =>
                                       title: `${item.product_name} - Final Frame Preview`,
                                     })
                                   }
-                                  className="inline-flex items-center gap-1 rounded bg-white px-2.5 py-1 text-xs font-medium text-[#1b2925] border border-[#dfd6ca] hover:bg-[#f4eee6] transition cursor-pointer"
+                                  className="inline-flex cursor-pointer items-center gap-1 rounded-lg border border-[#dce8d5] bg-white px-2.5 py-1 text-xs font-medium text-[#071C18] transition hover:bg-[#EFF5E9]"
                                 >
                                   <Eye size={12} /> View
                                 </button>
@@ -563,13 +567,13 @@ const OrderDetailsModal = ({ order: initialOrder, orderId, isOpen, onClose }) =>
                                   download={`Order-${currentOrder.order_id}-Frame.jpg`}
                                   target="_blank"
                                   rel="noreferrer"
-                                  className="inline-flex items-center gap-1 rounded bg-[#1b2925] px-2.5 py-1 text-xs font-medium text-white hover:bg-[#b87840] transition"
+                                  className="inline-flex items-center gap-1 rounded-lg bg-[#071C18] px-2.5 py-1 text-xs font-medium text-white transition hover:bg-[#396F0B]"
                                 >
                                   <Download size={12} /> Download
                                 </a>
                               </div>
                             </div>
-                            <div className="flex justify-center bg-white p-2 rounded-lg border border-[#e8dfd2]">
+                            <div className="flex justify-center rounded-lg border border-[#e4e9e1] bg-white p-2">
                               <img
                                 src={wholeFrame}
                                 alt="Final frame preview"
@@ -589,14 +593,14 @@ const OrderDetailsModal = ({ order: initialOrder, orderId, isOpen, onClose }) =>
                         {photos.length > 0 && (
                           <div className="mt-3 pt-3 border-t border-[#f0e8dc]">
                             <p className="text-xs font-semibold text-[#68736e] mb-2 flex items-center gap-1">
-                              <ImageIcon size={13} className="text-[#b87840]" />
+                              <ImageIcon size={13} className="text-[#396F0B]" />
                               Uploaded Photos ({photos.length})
                             </p>
                             <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-2.5">
                               {photos.map((photo, pIdx) => (
                                 <div
                                   key={pIdx}
-                                  className="group relative rounded-lg border border-[#e8dfd2] bg-[#fcfbf9] p-1.5 hover:border-[#b87840] transition overflow-hidden"
+                                  className="group relative overflow-hidden rounded-xl border border-[#e4e9e1] bg-[#f3f8ef] p-1.5 transition hover:border-[#396F0B]"
                                 >
                                   <div className="aspect-square overflow-hidden rounded bg-white">
                                     <img
@@ -617,7 +621,7 @@ const OrderDetailsModal = ({ order: initialOrder, orderId, isOpen, onClose }) =>
                                           title: `${item.product_name} - ${photo.label}`,
                                         })
                                       }
-                                      className="p-1 rounded bg-white text-[#1b2925] hover:bg-[#f4eee6] cursor-pointer"
+                                      className="cursor-pointer rounded bg-white p-1 text-[#071C18] hover:bg-[#EFF5E9]"
                                       title="View photo"
                                     >
                                       <Eye size={12} />
@@ -627,7 +631,7 @@ const OrderDetailsModal = ({ order: initialOrder, orderId, isOpen, onClose }) =>
                                       download={`Order-${currentOrder.order_id}-${photo.label}.jpg`}
                                       target="_blank"
                                       rel="noreferrer"
-                                      className="p-1 rounded bg-white text-[#1b2925] hover:bg-[#f4eee6]"
+                                      className="rounded bg-white p-1 text-[#071C18] hover:bg-[#EFF5E9]"
                                       title="Download photo"
                                     >
                                       <Download size={12} />
@@ -644,7 +648,7 @@ const OrderDetailsModal = ({ order: initialOrder, orderId, isOpen, onClose }) =>
                           <div className="mt-3 pt-2.5 border-t border-[#f0e8dc] space-y-1">
                             {textDetails.map((td, tdIdx) => (
                               <p key={tdIdx} className="text-xs text-[#4a5550]">
-                                <strong className="text-[#1b2925]">{td.label}:</strong> {td.text}
+                                <strong className="text-[#071C18]">{td.label}:</strong> {td.text}
                               </p>
                             ))}
                           </div>
@@ -654,27 +658,28 @@ const OrderDetailsModal = ({ order: initialOrder, orderId, isOpen, onClose }) =>
                   })}
                 </div>
               ) : (
-                <div className="rounded-xl border border-[#eee8df] bg-[#faf8f5] p-5 text-center text-xs text-[#7b8580]">
+                <div className="rounded-2xl border border-[#e4e9e1] bg-white p-5 text-center text-xs text-[#7b8580]">
                   Item details could not be retrieved.
                 </div>
               )}
             </div>
 
             {/* 3. TWO-COLUMN DETAILS: SHIPPING & PAYMENT */}
-            <div className="grid gap-5 sm:grid-cols-2">
+            <div className="grid gap-4 sm:grid-cols-2">
               
               {/* Delivery Address Card */}
-              <div className="rounded-xl border border-[#e8dfd2] bg-[#faf8f5] p-5 space-y-3">
-                <h4 className="text-xs font-bold uppercase tracking-wider text-[#b87840] flex items-center gap-1.5">
-                  <MapPin size={15} /> Delivery Address
+              <div className="space-y-3 rounded-2xl border border-[#e4e9e1] bg-white p-4 shadow-sm sm:p-5">
+                <h4 className="flex items-center gap-2 text-xs font-extrabold uppercase tracking-wider text-[#071C18]">
+                  <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#EFF5E9] text-[#396F0B]"><MapPin size={15} /></span>
+                  Delivery Address
                 </h4>
 
                 <div className="text-xs space-y-1 text-[#4a5550]">
-                  <p className="text-sm font-bold text-[#1b2925]">
+                  <p className="text-sm font-bold text-[#071C18]">
                     {currentOrder.customer_name || "Customer"}
                   </p>
                   {currentOrder.customer_phone && (
-                    <p className="flex items-center gap-1.5 font-medium text-[#1b2925]">
+                    <p className="flex items-center gap-1.5 font-medium text-[#071C18]">
                       <Phone size={12} className="text-[#7b8580]" />
                       {currentOrder.customer_phone}
                     </p>
@@ -696,15 +701,16 @@ const OrderDetailsModal = ({ order: initialOrder, orderId, isOpen, onClose }) =>
               </div>
 
               {/* Payment & Order Summary Card */}
-              <div className="rounded-xl border border-[#e8dfd2] bg-[#faf8f5] p-5 space-y-3">
-                <h4 className="text-xs font-bold uppercase tracking-wider text-[#b87840] flex items-center gap-1.5">
-                  <FileText size={15} /> Payment & Billing
+              <div className="space-y-3 rounded-2xl border border-[#dce8d5] bg-gradient-to-br from-[#f1f7ed] to-white p-4 shadow-sm sm:p-5">
+                <h4 className="flex items-center gap-2 text-xs font-extrabold uppercase tracking-wider text-[#071C18]">
+                  <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#071C18] text-[#FEB914]"><FileText size={15} /></span>
+                  Payment & Billing
                 </h4>
 
                 <div className="space-y-2 text-xs">
                   <div className="flex justify-between text-[#5a6661]">
                     <span>Payment Method:</span>
-                    <strong className="text-[#1b2925]">
+                    <strong className="text-[#071C18]">
                       {currentOrder.payment_method || "Cash on Delivery"}
                     </strong>
                   </div>
@@ -726,13 +732,13 @@ const OrderDetailsModal = ({ order: initialOrder, orderId, isOpen, onClose }) =>
                   {currentOrder.billing_type && (
                     <div className="flex justify-between text-[#5a6661]">
                       <span>Order Type:</span>
-                      <span className="text-[#1b2925]">
+                      <span className="text-[#071C18]">
                         {currentOrder.billing_type}
                       </span>
                     </div>
                   )}
 
-                  <div className="border-t border-[#e8dfd2] pt-2 space-y-1.5">
+                  <div className="space-y-1.5 border-t border-[#dce8d5] pt-2">
                     <div className="flex justify-between text-[#5a6661]">
                       <span>Items Subtotal:</span>
                       <span>₹{(itemsTotal || grandTotal).toLocaleString("en-IN")}</span>
@@ -741,9 +747,9 @@ const OrderDetailsModal = ({ order: initialOrder, orderId, isOpen, onClose }) =>
                       <span>Delivery / Shipping:</span>
                       <span className="text-[#28724a] font-medium">FREE</span>
                     </div>
-                    <div className="flex justify-between border-t border-[#dfd6ca] pt-2 text-sm font-bold text-[#1b2925]">
+                    <div className="flex justify-between border-t border-[#dce8d5] pt-2 text-sm font-bold text-[#071C18]">
                       <span>Grand Total:</span>
-                      <span className="text-base text-[#1b2925]">
+                      <span className="text-base text-[#071C18]">
                         ₹{grandTotal.toLocaleString("en-IN")}
                       </span>
                     </div>
@@ -754,18 +760,18 @@ const OrderDetailsModal = ({ order: initialOrder, orderId, isOpen, onClose }) =>
 
             {/* 4. ORDER NOTES (if any) */}
             {currentOrder.notes && (
-              <div className="rounded-xl border border-[#e8dfd2] bg-[#fcfbf9] p-4 text-xs text-[#5a6661]">
-                <strong className="text-[#1b2925]">Order Note:</strong> {currentOrder.notes}
+              <div className="rounded-2xl border border-[#f1d889] bg-[#fff9e8] p-4 text-xs text-[#5a6661]">
+                <strong className="text-[#071C18]">Order Note:</strong> {currentOrder.notes}
               </div>
             )}
           </div>
 
           {/* MODAL FOOTER */}
-          <div className="flex flex-wrap items-center justify-between gap-3 border-t border-[#eee8df] bg-[#fcfbf9] px-6 py-4">
+          <div className="flex flex-wrap items-center justify-between gap-3 border-t border-white/10 bg-[#071C18] px-5 py-4 sm:px-8">
             <button
               type="button"
               onClick={handlePrint}
-              className="inline-flex items-center gap-2 rounded-lg border border-[#dfd6ca] bg-white px-4 py-2 text-xs font-semibold text-[#1b2925] hover:bg-[#f4eee6] transition cursor-pointer"
+              className="inline-flex items-center gap-2 rounded-xl border border-white/20 bg-white/10 px-4 py-2.5 text-xs font-semibold text-white transition hover:border-[#FEB914]/60 hover:bg-white/15"
             >
               <Printer size={14} />
               Print Receipt
@@ -775,7 +781,7 @@ const OrderDetailsModal = ({ order: initialOrder, orderId, isOpen, onClose }) =>
               <button
                 type="button"
                 onClick={onClose}
-                className="rounded-lg bg-[#1b2925] px-6 py-2 text-xs font-semibold text-white hover:bg-[#b87840] transition cursor-pointer"
+                className="rounded-xl bg-[#FD5E02] px-6 py-2.5 text-xs font-bold text-white transition hover:bg-[#e65300]"
               >
                 Close
               </button>
@@ -787,17 +793,17 @@ const OrderDetailsModal = ({ order: initialOrder, orderId, isOpen, onClose }) =>
       {/* FULL-SIZE IMAGE LIGHTBOX POPUP */}
       {lightboxImage && (
         <div
-          className="fixed inset-0 z-[60] flex items-center justify-center bg-black/85 p-4 backdrop-blur-md"
+          className="fixed inset-0 z-[60] flex items-center justify-center bg-[#03130d]/90 p-4 backdrop-blur-md"
           role="dialog"
           aria-label="Image preview"
           onClick={() => setLightboxImage(null)}
         >
           <div
-            className="relative max-h-[90vh] max-w-3xl overflow-hidden rounded-2xl bg-white p-3 shadow-2xl"
+            className="relative max-h-[90vh] max-w-3xl overflow-hidden rounded-2xl border border-[#dce8d5] bg-[#F9F8F6] p-3 shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between border-b border-[#eee] pb-2 mb-2">
-              <p className="text-xs font-bold text-[#1b2925] truncate pr-4">
+              <p className="truncate pr-4 text-xs font-bold text-[#071C18]">
                 {lightboxImage.title || "Photo Preview"}
               </p>
               <div className="flex items-center gap-2">
@@ -806,7 +812,7 @@ const OrderDetailsModal = ({ order: initialOrder, orderId, isOpen, onClose }) =>
                   download="Photo-Download.jpg"
                   target="_blank"
                   rel="noreferrer"
-                  className="p-1 rounded hover:bg-[#f4eee6] text-[#1b2925]"
+                  className="rounded-lg p-1.5 text-[#396F0B] transition hover:bg-[#EFF5E9]"
                   title="Download full resolution"
                 >
                   <Download size={16} />
@@ -814,7 +820,7 @@ const OrderDetailsModal = ({ order: initialOrder, orderId, isOpen, onClose }) =>
                 <button
                   type="button"
                   onClick={() => setLightboxImage(null)}
-                  className="p-1 rounded hover:bg-[#fae5e2] text-[#c24130] cursor-pointer"
+                  className="cursor-pointer rounded-lg p-1.5 text-[#b83b1d] transition hover:bg-[#fff0ec]"
                   title="Close preview"
                 >
                   <X size={16} />

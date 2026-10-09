@@ -49,17 +49,17 @@ const normalizeAddress = (value = {}) => ({
 });
 
 const statusClass = {
-  placed: "bg-[#fef3c7] text-[#92400e] border border-[#fde68a]",
-  preparing: "bg-[#fef3c7] text-[#92400e] border border-[#fde68a]",
-  ready: "bg-[#e1f2e8] text-[#28724a] border border-[#c3e6d1]",
-  completed: "bg-[#e1f2e8] text-[#28724a] border border-[#c3e6d1]",
-  delivered: "bg-[#e1f2e8] text-[#28724a] border border-[#c3e6d1]",
-  cancelled: "bg-[#fae5e2] text-[#a43e32] border border-[#f5c6cb]",
-  payment_failed: "bg-[#fae5e2] text-[#a43e32] border border-[#f5c6cb]",
-  Delivered: "bg-[#e1f2e8] text-[#28724a] border border-[#c3e6d1]",
-  Cancelled: "bg-[#fae5e2] text-[#a43e32] border border-[#f5c6cb]",
-  Shipped: "bg-[#e3edf7] text-[#35688e] border border-[#b8daff]",
-  Processing: "bg-[#fef3c7] text-[#92400e] border border-[#fde68a]",
+  placed: "bg-[#fff6d8] text-[#795500] border border-[#f1d889]",
+  preparing: "bg-[#fff6d8] text-[#795500] border border-[#f1d889]",
+  ready: "bg-[#eaf4e4] text-[#396F0B] border border-[#cfe3c4]",
+  completed: "bg-[#eaf4e4] text-[#396F0B] border border-[#cfe3c4]",
+  delivered: "bg-[#eaf4e4] text-[#396F0B] border border-[#cfe3c4]",
+  cancelled: "bg-[#fff0ec] text-[#b83b1d] border border-[#f5c6b9]",
+  payment_failed: "bg-[#fff0ec] text-[#b83b1d] border border-[#f5c6b9]",
+  Delivered: "bg-[#eaf4e4] text-[#396F0B] border border-[#cfe3c4]",
+  Cancelled: "bg-[#fff0ec] text-[#b83b1d] border border-[#f5c6b9]",
+  Shipped: "bg-[#edf3fa] text-[#35688e] border border-[#c9daee]",
+  Processing: "bg-[#fff6d8] text-[#795500] border border-[#f1d889]",
 };
 
 const TAB_CONFIG = [
@@ -658,44 +658,45 @@ const Account = () => {
                 {/* TAB 3: YOUR ORDERS */}
                 {activeTab === "orders" && (
                   <div>
-                    <div className="mb-7 flex items-center justify-between border-b border-[#E8EDE6] pb-5">
+                    <div className="mb-6 flex flex-wrap items-center justify-between gap-4 border-b border-[#E8EDE6] pb-5">
                       <div className="flex items-center gap-3">
-                        <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-[#EFF5E9] text-[#FD5E02]">
+                        <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#EFF5E9] text-[#396F0B] shadow-sm">
                           <Package size={20} />
                         </span>
                         <div>
-                          <h2 className="text-xl font-serif font-semibold text-[#071C18]">
+                          <h2 className="text-2xl font-serif font-semibold text-[#071C18]">
                             Your Orders
                           </h2>
                           <p className="text-xs text-[#7b8580]">
-                            Review your recent restaurant orders and delivery status.
+                            Your recent meals, payments and delivery updates.
                           </p>
                         </div>
                       </div>
-                      <span className="rounded-full bg-[#EFF5E9] px-3 py-1 text-xs font-bold uppercase tracking-wider text-[#FD5E02]">
+                      <span className="inline-flex items-center gap-2 rounded-full border border-[#dce8d5] bg-[#f3f8ef] px-3.5 py-2 text-xs font-bold text-[#396F0B]">
+                        <ShoppingBag size={14} />
                         {orders.length} {orders.length === 1 ? "order" : "orders"}
                       </span>
                     </div>
 
                     <form
                       onSubmit={handleTrackOrder}
-                      className="mb-6 flex flex-col gap-2 rounded-xl border border-[#E2E8DF] bg-[#F5F7F3] p-4 sm:flex-row sm:items-end"
+                      className="mb-6 flex flex-col gap-3 rounded-2xl border border-[#dce8d5] bg-gradient-to-br from-[#f3f8ef] to-[#fbfcf9] p-4 sm:flex-row sm:items-end sm:p-5"
                     >
                       <label className="min-w-0 flex-1">
-                        <span className="mb-1.5 block text-xs font-semibold text-[#071C18]">
-                          Track an order
+                        <span className="mb-1.5 block text-xs font-bold text-[#071C18]">
+                          Find an order
                         </span>
                         <input
                           type="text"
                           value={trackingOrderId}
                           onChange={(event) => setTrackingOrderId(event.target.value)}
                           placeholder="Enter order ID, e.g. ORD-20260909-A6FY"
-                          className="h-11 w-full rounded-lg border border-[#E2E8DF] bg-white px-3 text-sm text-[#071C18] outline-none transition placeholder:text-[#a39a90] focus:border-[#FD5E02] focus:ring-2 focus:ring-[#FD5E02]/15"
+                          className="h-12 w-full rounded-xl border border-[#dce3da] bg-white px-4 text-sm text-[#071C18] outline-none transition placeholder:text-[#929a94] focus:border-[#396F0B] focus:ring-2 focus:ring-[#396F0B]/15"
                         />
                       </label>
                       <button
                         type="submit"
-                        className="inline-flex h-11 items-center justify-center gap-2 rounded-lg bg-[#071C18] px-5 text-xs font-bold text-white transition hover:bg-[#FD5E02]"
+                        className="inline-flex h-12 items-center justify-center gap-2 rounded-xl bg-[#071C18] px-5 text-xs font-bold text-white shadow-sm transition hover:bg-[#396F0B]"
                       >
                         <Search size={15} />
                         Track Order
@@ -703,7 +704,7 @@ const Account = () => {
                     </form>
 
                     {orders.length > 0 ? (
-                      <div className="divide-y divide-[#E8EDE6]">
+                      <div className="space-y-3">
                         {orders.map((order) => {
                           const dateStr = order.created_at || order.order_date;
                           const formattedDate = dateStr
@@ -718,65 +719,71 @@ const Account = () => {
                           const displayStatus = String(status).replaceAll("_", " ");
 
                           return (
-                            <div
+                            <button
                               key={order.order_id}
+                              type="button"
                               onClick={() => handleOpenOrder(order)}
-                              className="group flex flex-col gap-4 py-5 sm:flex-row sm:items-center sm:justify-between hover:bg-[#F5F7F3] px-3.5 rounded-xl transition-all cursor-pointer border border-transparent hover:border-[#E2E8DF] hover:shadow-xs"
+                              className="group flex w-full flex-col gap-4 rounded-2xl border border-[#e4e9e1] bg-white p-4 text-left shadow-sm transition-all hover:-translate-y-0.5 hover:border-[#a9c69a] hover:shadow-md sm:flex-row sm:items-center sm:justify-between sm:p-5"
                             >
-                              <div className="space-y-1.5 min-w-0">
+                              <div className="flex min-w-0 items-center gap-3.5">
+                                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#EFF5E9] text-[#396F0B] transition group-hover:bg-[#396F0B] group-hover:text-white">
+                                  <Package size={19} />
+                                </span>
+                                <div className="min-w-0 space-y-1.5">
                                 <div className="flex items-center gap-2">
-                                  <p className="font-semibold text-[#071C18] text-base tracking-wide group-hover:text-[#FD5E02] transition-colors">
+                                  <p className="truncate text-sm font-bold tracking-wide text-[#071C18] transition-colors group-hover:text-[#396F0B] sm:text-base">
                                     #{order.order_id}
                                   </p>
-                                  <span className="text-[11px] font-medium text-[#FD5E02] bg-[#EFF5E9] px-2 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity hidden sm:inline-block">
-                                    Click to view details
+                                  <span className="hidden rounded-full bg-[#f3f8ef] px-2.5 py-1 text-[10px] font-semibold text-[#396F0B] opacity-0 transition-opacity group-hover:opacity-100 sm:inline-block">
+                                    View details
                                   </span>
                                 </div>
-                                <div className="flex flex-wrap items-center gap-2 text-xs text-[#7b8580]">
-                                  <span>{formattedDate}</span>
-                                  <span>•</span>
-                                  <span>
-                                    {order.item_count || 1}{" "}
-                                    {(order.item_count || 1) === 1
-                                      ? "item"
-                                      : "items"}
-                                  </span>
-                                  {order.payment_method && (
-                                    <>
-                                      <span>•</span>
-                                      <span>{order.payment_method}</span>
-                                    </>
-                                  )}
+                                  <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-[#7b8580]">
+                                    <span>{formattedDate}</span>
+                                    <span aria-hidden="true">•</span>
+                                    <span>
+                                      {order.item_count || 1}{" "}
+                                      {(order.item_count || 1) === 1
+                                        ? "item"
+                                        : "items"}
+                                    </span>
+                                    {order.payment_method && (
+                                      <>
+                                        <span aria-hidden="true">•</span>
+                                        <span>{order.payment_method}</span>
+                                      </>
+                                    )}
+                                  </div>
                                 </div>
                               </div>
 
                               <div className="flex items-center justify-between sm:justify-end gap-3.5">
                                 <span
-                                  className={`rounded-md px-3 py-1 text-xs font-bold uppercase tracking-wide ${
+                                  className={`rounded-full px-3 py-1.5 text-[10px] font-bold uppercase tracking-wide ${
                                     statusClass[String(status).toLowerCase()] || statusClass[displayStatus] ||
                                     "bg-[#f3eee7] text-[#396F0B] border border-[#E2E8DF]"
                                   }`}
                                 >
                                   {displayStatus}
                                 </span>
-                                <strong className="text-base font-bold text-[#071C18]">
+                                <strong className="text-lg font-bold text-[#071C18]">
                                   ₹
                                   {Number(
                                     order.total_amount || 0
                                   ).toLocaleString("en-IN")}
                                 </strong>
-                                
+                                <ChevronRight size={17} className="hidden text-[#9ca79e] transition group-hover:translate-x-1 group-hover:text-[#396F0B] sm:block" />
                               </div>
-                            </div>
+                            </button>
                           );
                         })}
                       </div>
                     ) : (
-                      <div className="py-14 text-center">
-                        <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-[#EFF5E9] text-[#FD5E02]">
+                      <div className="rounded-2xl border border-dashed border-[#dce8d5] bg-[#fbfcf9] py-14 text-center">
+                        <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-[#EFF5E9] text-[#396F0B]">
                           <ShoppingBag size={26} />
                         </div>
-                        <h4 className="mt-4 text-base font-semibold text-[#071C18]">
+                        <h4 className="mt-4 text-lg font-semibold text-[#071C18]">
                           No orders yet
                         </h4>
                         <p className="mx-auto mt-1 max-w-sm text-xs text-[#7b8580]">
@@ -784,7 +791,7 @@ const Account = () => {
                         </p>
                         <Link
                           to="/shop"
-                          className="mt-5 inline-flex items-center gap-2 rounded-lg bg-[#071C18] px-6 py-2.5 text-xs font-bold uppercase tracking-wider text-white hover:bg-[#FD5E02] transition"
+                          className="mt-5 inline-flex items-center gap-2 rounded-xl bg-[#071C18] px-6 py-3 text-xs font-bold uppercase tracking-wider text-white transition hover:bg-[#396F0B]"
                         >
                           Browse the menu
                         </Link>
