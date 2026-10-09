@@ -400,7 +400,7 @@ const createOrderFromCart = async ({
       };
     });
     const subtotal = Number(items.reduce((sum, item) => sum + item.totalPrice, 0).toFixed(2));
-    const orderNumber = randomUUID();
+    const temporaryOrderNumber = randomUUID();
     let addressId = null;
 
     if (fulfillmentType === 'delivery') {
@@ -432,7 +432,7 @@ const createOrderFromCart = async ({
          payment_status, order_status, idempotency_key)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?, ?)`,
       [
-        orderNumber,
+        temporaryOrderNumber,
         userId,
         customer.name,
         customer.email || null,
@@ -445,6 +445,11 @@ const createOrderFromCart = async ({
         paymentMethod === 'online' ? 'awaiting_payment' : 'placed',
         idempotencyKey,
       ]
+    );
+    const orderNumber = `ORD${String(orderResult.insertId).padStart(3, '0')}`;
+    await connection.execute(
+      'UPDATE orders SET order_number = ? WHERE id = ?',
+      [orderNumber, orderResult.insertId]
     );
     for (const item of items) {
       await connection.execute(
