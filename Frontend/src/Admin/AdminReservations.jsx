@@ -4,13 +4,14 @@ import {
   Check,
   CheckCircle2,
   Clock3,
+  CircleAlert,
   LayoutGrid,
   List,
   LoaderCircle,
   RefreshCw,
   Search,
+  Trash2,
   Users,
-  X,
 } from "lucide-react";
 import api from "../api";
 
@@ -139,10 +140,11 @@ const AdminReservations = () => {
           type="button"
           disabled={Boolean(updatingId)}
           onClick={() => handleStatusChange(reservation.reservation_id, reservation.status === "Pending" ? "Declined" : "Cancelled")}
-          className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-700 transition hover:border-red-200 hover:bg-red-50 hover:text-red-700 disabled:opacity-50"
+          aria-label={`${reservation.status === "Pending" ? "Decline" : "Cancel"} reservation`}
+          title={`${reservation.status === "Pending" ? "Decline" : "Cancel"} reservation`}
+          className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 text-slate-600 transition hover:border-red-200 hover:bg-red-50 hover:text-red-700 disabled:opacity-50"
         >
-          <X className="h-3.5 w-3.5" />
-          {reservation.status === "Pending" ? "Decline" : "Cancel"}
+          <Trash2 className="h-4 w-4" />
         </button>
       </div>
     );
@@ -169,18 +171,19 @@ const AdminReservations = () => {
           </button>
         </header>
 
-        <section aria-label="Reservation status summaries" className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <section aria-label="Reservation status summaries" className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-5">
           {[
+            { status: "All", label: "All Reservations", caption: "Every reservation request", icon: CalendarDays, bg: "bg-[#1a3c36]" },
             { status: "Pending", label: "Pending Requests", caption: "Waiting for review", icon: Clock3, bg: "bg-[#f59e0b]" },
             { status: "Confirmed", label: "Confirmed", caption: "Tables booked", icon: CheckCircle2, bg: "bg-[#22c55e]" },
-            { status: "Declined", label: "Declined", caption: "Requests declined", icon: X, bg: "bg-[#ef4444]" },
+            { status: "Declined", label: "Declined", caption: "Requests declined", icon: CircleAlert, bg: "bg-[#ef4444]" },
             { status: "Cancelled", label: "Cancelled", caption: "Requests cancelled", icon: CalendarDays, bg: "bg-[#64748b]" },
           ].map(({ status, label, caption, icon: Icon, bg }) => (
             <button
               key={status}
               type="button"
               aria-pressed={activeStatus === status}
-              onClick={() => setActiveStatus(activeStatus === status ? "All" : status)}
+              onClick={() => setActiveStatus(status === "All" || activeStatus === status ? "All" : status)}
               className={`relative flex min-h-[140px] min-w-0 flex-col justify-between overflow-hidden rounded-xl border border-transparent p-4 text-left text-white shadow-[0_2px_10px_rgba(20,56,34,0.08)] transition hover:-translate-y-0.5 hover:shadow-lg sm:p-5 ${bg} ${activeStatus === status ? "ring-4 ring-white/40" : ""}`}
             >
               <div className="relative z-10 flex items-start gap-3">
