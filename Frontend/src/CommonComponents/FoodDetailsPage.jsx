@@ -1,5 +1,5 @@
 import { useContext, useEffect, useState } from 'react';
-import { ArrowLeft, Clock3, Flame, Heart, ShoppingCart, Star, UtensilsCrossed } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, Clock3, Flame, Heart, Info, ShoppingCart, Star, UtensilsCrossed } from 'lucide-react';
 import { Link, useLocation, useParams } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import api, { BACKEND_BASE_URL } from '../api';
@@ -88,6 +88,8 @@ function FoodDetailsPage() {
   };
 
   const images = Array.isArray(food?.food_images) ? food.food_images.filter(Boolean) : [];
+  const addons = Array.isArray(food?.addons) ? food.addons : [];
+  const customizations = Array.isArray(food?.customizations) ? food.customizations : [];
   const price = Number(food?.final_price || food?.mrp || 0);
   const mrp = Number(food?.mrp || 0);
   const hasDiscount = Number(food?.discount || 0) > 0 && mrp > price;
@@ -199,6 +201,7 @@ function FoodDetailsPage() {
                 {hasDiscount && <span className="pb-1 text-xs font-bold text-emerald-700">You save ₹{(mrp - price).toFixed(2)}</span>}
               </div>
               <p className={`mt-2 text-xs font-semibold ${isAvailable ? 'text-emerald-700' : 'text-rose-600'}`}>{isAvailable ? 'Available to order' : 'Currently unavailable'}</p>
+              {food.featured && <span className="mt-3 w-fit rounded-full bg-amber-50 px-3 py-1 text-xs font-bold text-amber-800">Featured dish</span>}
 
               <button type="button" onClick={() => setCustomizing(true)} disabled={!isAvailable} className="mt-6 inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-[#1a3c36] px-6 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-[#245048] disabled:cursor-not-allowed disabled:bg-slate-300">
                 {isAvailable ? <><ShoppingCart className="h-4 w-4" />Customize & add to cart</> : 'Unavailable'}
@@ -206,6 +209,107 @@ function FoodDetailsPage() {
               <p className="mt-3 text-center text-xs text-slate-400">Choose your quantity and available customizations before adding.</p>
             </div>
           </section>
+
+          <section className="mt-8 overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
+            <div className="border-b border-slate-100 bg-gradient-to-r from-[#f4f8f2] to-white px-5 py-5 sm:px-7">
+              <div className="flex items-center gap-3">
+                <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#1a3c36] text-white">
+                  <Info className="h-5 w-5" />
+                </span>
+                <div>
+                  <h2 className="font-serif text-xl font-bold text-slate-900">Food details</h2>
+                  <p className="mt-0.5 text-xs text-slate-500">Serving, preparation, and ordering information</p>
+                </div>
+              </div>
+            </div>
+            <div className="grid gap-px bg-slate-100 sm:grid-cols-2 lg:grid-cols-3">
+              {[
+                ['Food ID', food.food_id || food.id],
+                ['Cuisine', food.cuisine_name],
+                ['Category', food.category_name],
+                ['Subcategory', food.subcategory_name],
+                ['Serving size', food.serving_size],
+                ['Portion', food.portion_size],
+                ['Preparation time', Number(food.preparation_time) > 0 ? `${food.preparation_time} minutes` : 'Not specified'],
+                ['Available time', food.available_time],
+                ['Menu status', String(food.status || 'Active')],
+              ].filter(([, value]) => value !== undefined && value !== null && String(value).trim() !== '').map(([label, value]) => (
+                <div key={label} className="bg-white px-5 py-4 sm:px-6">
+                  <p className="text-[10px] font-extrabold uppercase tracking-[0.14em] text-slate-400">{label}</p>
+                  <p className="mt-1.5 break-words text-sm font-semibold text-slate-800">{value}</p>
+                </div>
+              ))}
+            </div>
+            <div className="border-t border-slate-100 p-5 sm:p-6">
+              <h3 className="text-xs font-extrabold uppercase tracking-[0.14em] text-slate-500">Ordering availability</h3>
+              <div className="mt-3 flex flex-wrap gap-2">
+                {[
+                  ['Dine-in', food.dining_available],
+                  ['Takeaway', food.takeaway_available],
+                  ['Delivery', food.delivery_available],
+                ].map(([label, available]) => (
+                  <span key={label} className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-bold ${available ? 'border-emerald-200 bg-emerald-50 text-emerald-800' : 'border-slate-200 bg-slate-50 text-slate-500'}`}>
+                    <CheckCircle2 className="h-3.5 w-3.5" />
+                    {label}: {available ? 'Available' : 'Not available'}
+                  </span>
+                ))}
+              </div>
+            </div>
+          </section>
+
+          {(addons.length > 0 || customizations.length > 0) && (
+            <section className="mt-8 grid items-start gap-5 lg:grid-cols-2">
+              {addons.length > 0 && (
+                <div className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
+                  <div className="border-b border-slate-100 px-5 py-4 sm:px-6">
+                    <h2 className="font-serif text-lg font-bold text-slate-900">Add-ons</h2>
+                    <p className="mt-0.5 text-xs text-slate-500">Optional extras available with this dish</p>
+                  </div>
+                  <ul className="divide-y divide-slate-100 px-5 sm:px-6">
+                    {addons.map((addon, index) => {
+                      const available = String(addon.status || 'Active').toLowerCase() === 'active';
+                      return (
+                        <li key={`${addon.addon_name || addon.name}-${index}`} className="flex items-center justify-between gap-3 py-3">
+                          <span className={`text-sm font-medium ${available ? 'text-slate-700' : 'text-slate-400 line-through'}`}>{addon.addon_name || addon.name}</span>
+                          <span className="shrink-0 text-sm font-bold text-[#1a3c36]">{Number(addon.price) > 0 ? `+₹${Number(addon.price).toFixed(2)}` : 'Included'}</span>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </div>
+              )}
+
+              {customizations.length > 0 && (
+                <div className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
+                  <div className="border-b border-slate-100 px-5 py-4 sm:px-6">
+                    <h2 className="font-serif text-lg font-bold text-slate-900">Choose your options</h2>
+                    <p className="mt-0.5 text-xs text-slate-500">Customize this dish to your preference</p>
+                  </div>
+                  <div className="space-y-4 p-5 sm:p-6">
+                    {customizations.map((group, index) => (
+                      <div key={`${group.name}-${index}`}>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <h3 className="text-sm font-bold text-slate-800">{group.name}</h3>
+                          <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-500">
+                            {group.selection_type === 'Multiple' ? 'Choose any' : 'Choose one'}
+                          </span>
+                          {group.required && <span className="text-[10px] font-bold text-rose-600">Required</span>}
+                        </div>
+                        <ul className="mt-2 flex flex-wrap gap-2">
+                          {(group.options || []).map((option, optionIndex) => (
+                            <li key={`${option.name}-${optionIndex}`} className="rounded-lg border border-[#e8eee5] bg-[#f8faf7] px-3 py-2 text-xs text-slate-700">
+                              {option.name}
+                              {Number(option.price) > 0 && <span className="ml-1 font-bold text-[#1a3c36]">+₹{Number(option.price).toFixed(2)}</span>}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </section>
+          )}
         </PageContainer>
       </main>
       {customizing && (
