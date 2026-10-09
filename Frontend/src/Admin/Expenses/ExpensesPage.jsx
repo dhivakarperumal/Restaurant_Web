@@ -1095,17 +1095,17 @@ const ExpensesPage = () => {
 
       <div className="bg-white border border-[#e7e0d8] rounded-2xl p-4">
         <div className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
-          <div className="flex flex-wrap gap-3">
-            <div>
-              <label className="block text-[10px] text-[#818a83] uppercase tracking-wider font-semibold mb-1">Search</label>
-              <input
-                type="text"
-                value={filters.search}
-                onChange={(e) => setFilters((prev) => ({ ...prev, search: e.target.value }))}
-                placeholder="Search category, supplier, receipt..."
-                className="w-52 bg-[#f8f7f4] border border-[#e7e0d8] rounded-xl px-3 py-2 text-xs text-[#1f3228] placeholder:text-[#929b94] focus:outline-none focus:border-[#d4a843]/50"
-              />
-            </div>
+          <div className="w-full xl:w-auto">
+            <label className="block text-[10px] text-[#818a83] uppercase tracking-wider font-semibold mb-1">Search</label>
+            <input
+              type="text"
+              value={filters.search}
+              onChange={(e) => setFilters((prev) => ({ ...prev, search: e.target.value }))}
+              placeholder="Search category, supplier, receipt..."
+              className="w-full xl:w-64 bg-[#f8f7f4] border border-[#e7e0d8] rounded-xl px-3 py-2 text-xs text-[#1f3228] placeholder:text-[#929b94] focus:outline-none focus:border-[#d4a843]/50"
+            />
+          </div>
+          <div className="flex flex-wrap items-end justify-start gap-3 xl:justify-end">
             <div>
               <label className="block text-[10px] text-[#818a83] uppercase tracking-wider font-semibold mb-1">Restaurant Expense</label>
               <Select
@@ -1136,21 +1136,16 @@ const ExpensesPage = () => {
             </div>
             <div>
               <label className="block text-[10px] text-[#818a83] uppercase tracking-wider font-semibold mb-1">Date Range</label>
-              <div className="flex flex-wrap gap-2">
+              <select
+                value={filters.datePreset}
+                onChange={(e) => setFilters((prev) => ({ ...prev, datePreset: e.target.value }))}
+                className="w-48 rounded-xl border border-[#e7e0d8] bg-[#f8f7f4] px-3 py-2 text-xs text-[#1f3228] outline-none focus:border-[#d4a843]/50"
+              >
                 {datePresetOptions.map((preset) => (
-                  <button
-                    key={preset.value}
-                    type="button"
-                    onClick={() => setFilters((prev) => ({ ...prev, datePreset: preset.value }))}
-                    className={`rounded-full px-3 py-1.5 text-xs font-semibold transition ${filters.datePreset === preset.value ? "bg-[#d4a843] text-[#1f3228]" : "bg-[#f8f7f4] text-[#56645b] hover:bg-[#f2f3f0]"}`}
-                  >
-                    {preset.label}
-                  </button>
+                  <option key={preset.value} value={preset.value}>{preset.label}</option>
                 ))}
-              </div>
+              </select>
             </div>
-          </div>
-          <div className="flex flex-wrap items-center gap-3">
             {filters.datePreset === "custom" && (
               <div className="flex flex-wrap gap-2">
                 <input
