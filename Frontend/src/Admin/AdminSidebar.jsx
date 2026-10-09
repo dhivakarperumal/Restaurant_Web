@@ -12,6 +12,7 @@ import {
   CircleDollarSign,
   CalendarOff,
   ClipboardCheck,
+  CalendarCheck,
   BarChart3,
   Bike,
   CalendarDays,
