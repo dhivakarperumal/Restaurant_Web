@@ -12,17 +12,17 @@ import { useAuth } from '../../PrivateRouter/AuthContext';
 import { useReactToPrint } from "react-to-print";
 import ModalPortal from '../../CommonComponents/ModalPortal';
 
-const fieldClass = 'w-full rounded-xl border border-white/10 bg-[#0e1118] px-3 py-2.5 text-sm text-white outline-none focus:border-orange-500/70 transition placeholder:text-white/20';
-const sectionClass = 'rounded-2xl border border-white/8 bg-white/[0.03] p-5';
-const readOnlyFieldClass = 'w-full rounded-xl border border-white/5 bg-[#0a0c10] px-3 py-2.5 text-sm text-white/70 outline-none cursor-not-allowed';
+const fieldClass = 'w-full rounded-xl border border-[#e7e0d8] bg-[#f8f7f4] px-3 py-2.5 text-sm text-[#1f3228] outline-none focus:border-[#d4a843] transition placeholder:text-[#929b94]';
+const sectionClass = 'rounded-2xl border border-[#e7e0d8] bg-white p-5';
+const readOnlyFieldClass = 'w-full rounded-xl border border-[#e7e0d8] bg-[#f2f3f0] px-3 py-2.5 text-sm text-[#56645b] outline-none cursor-not-allowed';
 
 const customSelectStyles = {
   control: (provided, state) => ({
     ...provided,
-    backgroundColor: '#1a1d24',
+    backgroundColor: '#f8f7f4',
     border: `1px solid ${state.isFocused
-      ? '#f97316'
-      : 'rgba(255,255,255,0.1)'
+      ? '#d4a843'
+      : '#e7e0d8'
       }`,
     boxShadow: 'none',
     outline: 'none',
@@ -31,7 +31,7 @@ const customSelectStyles = {
     borderRadius: '12px',
 
     '&:hover': {
-      border: '1px solid #f97316',
+      border: '1px solid #d4a843',
     },
   }),
 
@@ -43,19 +43,19 @@ const customSelectStyles = {
 
   singleValue: (provided) => ({
     ...provided,
-    color: '#fff',
+    color: '#1f3228',
     fontSize: '13px',
   }),
 
   placeholder: (provided) => ({
     ...provided,
-    color: 'rgba(255,255,255,.35)',
+    color: '#748078',
     fontSize: '13px',
   }),
 
   input: (provided) => ({
     ...provided,
-    color: '#fff',
+    color: '#1f3228',
     fontSize: '13px',
     margin: 0,
     padding: 0,
@@ -63,8 +63,8 @@ const customSelectStyles = {
 
   menu: (provided) => ({
     ...provided,
-    background: '#1a1d24',
-    border: '1px solid rgba(255,255,255,.1)',
+    background: '#ffffff',
+    border: '1px solid #e7e0d8',
     borderRadius: '12px',
     overflow: 'hidden',
   }),
@@ -80,14 +80,14 @@ const customSelectStyles = {
     fontSize: '13px',      // dropdown font size
     padding: '8px 14px',   // reduce option height
     backgroundColor: state.isSelected
-      ? '#f97316'
+      ? '#d4a843'
       : state.isFocused
-        ? 'rgba(249,115,22,.15)'
-        : '#1a1d24',
-    color: '#fff',
+        ? 'rgba(212,168,67,.16)'
+        : '#ffffff',
+    color: '#1f3228',
     cursor: 'pointer',
     ':active': {
-      backgroundColor: '#ea580c',
+      backgroundColor: '#f2f3f0',
     },
   }),
 
@@ -97,7 +97,7 @@ const customSelectStyles = {
 
   dropdownIndicator: (provided) => ({
     ...provided,
-    color: '#888',
+    color: '#748078',
     padding: '6px',
   }),
 };
@@ -127,18 +127,18 @@ function PayslipTemplate({ payslip }) {
   })}`;
 
   return (
-    <div className="mx-auto my-6 max-w-2xl bg-white p-8 text-slate-800">
-      <div className="border-b border-slate-200 pb-5 text-center">
+    <div className="mx-auto my-6 max-w-2xl bg-white p-8 text-[#1f3228]">
+      <div className="border-b border-[#e7e0d8] pb-5 text-center">
         <h2 className="text-xl font-bold">Restaurant Salary Slip</h2>
-        <p className="mt-1 text-sm text-slate-500">
+        <p className="mt-1 text-sm text-[#748078]">
           {new Date(0, Number(payslip.salary_month) - 1).toLocaleString('default', { month: 'long' })} {payslip.salary_year}
         </p>
       </div>
-      <div className="grid grid-cols-2 gap-4 border-b border-slate-200 py-5 text-sm">
-        <p><span className="text-slate-500">Employee:</span> {payslip.first_name} {payslip.last_name}</p>
-        <p><span className="text-slate-500">Employee code:</span> {payslip.employee_code || '—'}</p>
-        <p><span className="text-slate-500">Present days:</span> {payslip.present_days ?? '—'}</p>
-        <p><span className="text-slate-500">Leave days:</span> {payslip.leave_days ?? '—'}</p>
+      <div className="grid grid-cols-2 gap-4 border-b border-[#e7e0d8] py-5 text-sm">
+        <p><span className="text-[#748078]">Employee:</span> {payslip.first_name} {payslip.last_name}</p>
+        <p><span className="text-[#748078]">Employee code:</span> {payslip.employee_code || '—'}</p>
+        <p><span className="text-[#748078]">Present days:</span> {payslip.present_days ?? '—'}</p>
+        <p><span className="text-[#748078]">Leave days:</span> {payslip.leave_days ?? '—'}</p>
       </div>
       <div className="space-y-3 py-5 text-sm">
         <div className="flex justify-between"><span>Basic salary</span><span>{currency(payslip.basic_salary)}</span></div>
@@ -146,7 +146,7 @@ function PayslipTemplate({ payslip }) {
         <div className="flex justify-between"><span>Leave deduction</span><span>- {currency(payslip.leave_deduction)}</span></div>
         <div className="flex justify-between"><span>Additional deduction</span><span>- {currency(payslip.additional_deduction)}</span></div>
       </div>
-      <div className="flex justify-between border-t-2 border-slate-800 pt-4 text-base font-bold">
+      <div className="flex justify-between border-t-2 border-[#1f3228] pt-4 text-base font-bold">
         <span>Net salary</span><span>{currency(payslip.total_salary)}</span>
       </div>
     </div>
@@ -161,15 +161,15 @@ function Modal({ open, onClose, title, children }) {
         className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-md p-4"
         onClick={(e) => e.target === e.currentTarget && onClose()}
       >
-        <div className="w-full max-w-3xl max-h-[90vh] overflow-y-auto rounded-3xl border border-white/10 bg-[#111318] p-6 shadow-2xl">
+        <div className="w-full max-w-3xl max-h-[90vh] overflow-y-auto rounded-3xl border border-[#e7e0d8] bg-white p-6 shadow-2xl">
           <div className="flex items-start justify-between gap-4 mb-6">
             <div>
-              <h2 className="text-xl font-semibold text-white">{title}</h2>
+              <h2 className="text-xl font-semibold text-[#1f3228]">{title}</h2>
             </div>
             <button
               type="button"
               onClick={onClose}
-              className="rounded-full border border-white/10 bg-white/5 p-2 text-white/70 hover:bg-white/10 hover:text-white transition"
+              className="rounded-full border border-[#e7e0d8] bg-[#f8f7f4] p-2 text-[#44534a] hover:bg-[#f2f3f0] hover:text-[#1f3228] transition"
             >
               <X size={20} />
             </button>
@@ -480,28 +480,28 @@ export default function EmployeeSalary() {
   }, [history, selectedSalaryEmployee]);
 
   return (
-    <div className="space-y-6 text-white pb-10">
+    <div className="space-y-6 text-[#1f3228] pb-10">
       <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
         {/* Left Side */}
         <div className="flex items-start gap-4">
           <button
             onClick={() => navigate("/admin/expenses")}
-            className="w-9 h-9 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-white/40 hover:text-white hover:bg-white/10 transition shrink-0 mt-1"
+            className="w-9 h-9 rounded-xl bg-[#f8f7f4] border border-[#e7e0d8] flex items-center justify-center text-[#748078] hover:text-[#1f3228] hover:bg-[#f2f3f0] transition shrink-0 mt-1"
           >
             <ArrowLeft size={16} />
           </button>
 
           <div>
-            <div className="mb-1 inline-flex items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-emerald-400">
+            <div className="mb-1 inline-flex items-center gap-2 rounded-full border border-[#1f3228]/20 bg-[#1f3228]/10 px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-[#1f3228]">
               <DollarSign size={11} />
               Salary Management
             </div>
 
-            <h1 className="text-2xl font-bold text-white tracking-tight">
+            <h1 className="text-2xl font-bold text-[#1f3228] tracking-tight">
               Employee Salary
             </h1>
 
-            <p className="text-sm text-white/40 mt-0.5">
+            <p className="text-sm text-[#748078] mt-0.5">
               Calculate, process monthly salaries, and print payslips.
             </p>
           </div>
@@ -520,7 +520,7 @@ export default function EmployeeSalary() {
             }
           }}
           className="inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold text-white transition hover:opacity-90 self-start"
-          style={{ background: "linear-gradient(135deg,#f97316,#ea580c)" }}
+          style={{ background: "linear-gradient(135deg,#1f3228,#28523c)" }}
         >
           <Plus size={15} />
           {showForm ? "Close Form" : "Record Payment"}
@@ -531,12 +531,12 @@ export default function EmployeeSalary() {
         <form onSubmit={handleSave} className="space-y-6">
           <section className={sectionClass}>
             <div className="mb-5 flex items-center gap-2">
-              <div className="w-8 h-8 rounded-xl bg-blue-500/15 flex items-center justify-center"><Users size={15} className="text-blue-400" /></div>
-              <h2 className="text-base font-bold text-white">{editId ? 'Edit Details' : 'Select Details'}</h2>
+              <div className="w-8 h-8 rounded-xl bg-[#1f3228]/10 flex items-center justify-center"><Users size={15} className="text-[#28523c]" /></div>
+              <h2 className="text-base font-bold text-[#1f3228]">{editId ? 'Edit Details' : 'Select Details'}</h2>
             </div>
 
             <div className="grid gap-4 md:grid-cols-3">
-              <label className="text-sm text-white/60">
+              <label className="text-sm text-[#56645b]">
                 <span className="mb-1.5 block font-medium">Employee *</span>
                 <Select
                   options={[
@@ -561,7 +561,7 @@ export default function EmployeeSalary() {
                 />
               </label>
 
-              <label className="text-sm text-white/60">
+              <label className="text-sm text-[#56645b]">
                 <span className="mb-1.5 block font-medium">Month *</span>
                 <Select
                   options={Array.from({ length: 12 }, (_, i) => i + 1).map(m => ({
@@ -575,7 +575,7 @@ export default function EmployeeSalary() {
                 />
               </label>
 
-              <label className="text-sm text-white/60">
+              <label className="text-sm text-[#56645b]">
                 <span className="mb-1.5 block font-medium">Year *</span>
                 <Select
                   options={Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - 2 + i).map(y => ({
@@ -589,60 +589,60 @@ export default function EmployeeSalary() {
                 />
               </label>
             </div>
-            {detailsLoading && <p className="mt-4 text-xs text-orange-400 animate-pulse">Loading employee salary details...</p>}
+            {detailsLoading && <p className="mt-4 text-xs text-[#a98026] animate-pulse">Loading employee salary details...</p>}
           </section>
 
           <section className={sectionClass}>
             <div className="mb-5 flex items-center gap-2">
-              <div className="w-8 h-8 rounded-xl bg-orange-500/15 flex items-center justify-center"><DollarSign size={15} className="text-orange-400" /></div>
-              <h2 className="text-base font-bold text-white">Salary Calculation</h2>
+              <div className="w-8 h-8 rounded-xl bg-[#d4a843]/15 flex items-center justify-center"><DollarSign size={15} className="text-[#a98026]" /></div>
+              <h2 className="text-base font-bold text-[#1f3228]">Salary Calculation</h2>
             </div>
 
             <div className="grid gap-4 md:grid-cols-2">
-              <label className="text-sm text-white/60">
+              <label className="text-sm text-[#56645b]">
                 <span className="mb-1.5 block font-medium">Basic Salary (₹)</span>
                 <input className={readOnlyFieldClass} type="number" readOnly value={formData.basic_salary} />
               </label>
 
               <div className="grid gap-4 grid-cols-3">
-                <label className="text-sm text-white/60">
+                <label className="text-sm text-[#56645b]">
                   <span className="mb-1.5 block font-medium">Present Days</span>
                   <input className={readOnlyFieldClass} type="number" readOnly value={formData.present_days} />
                 </label>
 
-                <label className="text-sm text-white/60">
+                <label className="text-sm text-[#56645b]">
                   <span className="mb-1.5 block font-medium">Leave Days</span>
                   <input className={readOnlyFieldClass} type="number" readOnly value={formData.leave_days} />
                 </label>
 
-                <label className="text-sm text-white/60">
+                <label className="text-sm text-[#56645b]">
                   <span className="mb-1.5 block font-medium">Leave Deduct (₹)</span>
                   <input className={readOnlyFieldClass} type="number" readOnly value={formData.leave_deduction} />
                 </label>
               </div>
 
               <div className="grid gap-4 grid-cols-2">
-                <label className="text-sm text-white/60">
+                <label className="text-sm text-[#56645b]">
                   <span className="mb-1.5 block font-medium">Incentive (%)</span>
                   <input className={fieldClass} type="number" name="incentive_percentage" min="0" max="100" step="0.01" placeholder="0" value={formData.incentive_percentage} onChange={handleChange} />
                 </label>
 
-                <label className="text-sm text-white/60">
+                <label className="text-sm text-[#56645b]">
                   <span className="mb-1.5 block font-medium">Incentive Amount (₹)</span>
                   <input className={readOnlyFieldClass} type="number" readOnly value={formData.incentive_amount} />
                 </label>
               </div>
 
-              <label className="text-sm text-white/60">
+              <label className="text-sm text-[#56645b]">
                 <span className="mb-1.5 block font-medium">Additional Deduction (₹)</span>
                 <input className={fieldClass} type="number" name="additional_deduction" min="0" step="0.01" placeholder="0" value={formData.additional_deduction} onChange={handleChange} />
               </label>
 
-              <label className="text-sm text-emerald-400 md:col-span-2">
+              <label className="text-sm text-[#1f3228] md:col-span-2">
                 <span className="mb-1.5 block font-bold text-lg">Total Calculated Salary (₹)</span>
-                <input className="w-full rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-xl font-bold text-emerald-400 outline-none" type="number" readOnly value={formData.total_salary} />
+                <input className="w-full rounded-xl border border-[#1f3228]/30 bg-[#1f3228]/10 px-4 py-3 text-xl font-bold text-[#1f3228] outline-none" type="number" readOnly value={formData.total_salary} />
                 {(formData.present_days === 0 && formData.leave_days === 0) && (
-                  <p className="mt-2 text-xs text-rose-400">Warning: Attendance not marked for this month. Calculated salary is ₹0.</p>
+                  <p className="mt-2 text-xs text-rose-700">Warning: Attendance not marked for this month. Calculated salary is ₹0.</p>
                 )}
               </label>
             </div>
@@ -651,27 +651,27 @@ export default function EmployeeSalary() {
           {!editId && (
             <section className={sectionClass}>
               <div className="mb-5 flex items-center gap-2">
-                <div className="w-8 h-8 rounded-xl bg-violet-500/15 flex items-center justify-center"><Briefcase size={15} className="text-violet-400" /></div>
-                <h2 className="text-base font-bold text-white">Bank Details</h2>
+                <div className="w-8 h-8 rounded-xl bg-[#1f3228]/10 flex items-center justify-center"><Briefcase size={15} className="text-[#28523c]" /></div>
+                <h2 className="text-base font-bold text-[#1f3228]">Bank Details</h2>
               </div>
 
               <div className="grid gap-4 md:grid-cols-2">
-                <label className="text-sm text-white/60">
+                <label className="text-sm text-[#56645b]">
                   <span className="mb-1.5 block font-medium">Bank Name</span>
                   <input className={readOnlyFieldClass} type="text" readOnly value={formData.bank_name || 'Not provided'} />
                 </label>
 
-                <label className="text-sm text-white/60">
+                <label className="text-sm text-[#56645b]">
                   <span className="mb-1.5 block font-medium">Account Number</span>
                   <input className={readOnlyFieldClass} type="text" readOnly value={formData.account_number || 'Not provided'} />
                 </label>
 
-                <label className="text-sm text-white/60">
+                <label className="text-sm text-[#56645b]">
                   <span className="mb-1.5 block font-medium">IFSC Code</span>
                   <input className={readOnlyFieldClass} type="text" readOnly value={formData.ifsc_code || 'Not provided'} />
                 </label>
 
-                <label className="text-sm text-white/60">
+                <label className="text-sm text-[#56645b]">
                   <span className="mb-1.5 block font-medium">UPI ID</span>
                   <input className={readOnlyFieldClass} type="text" readOnly value={formData.upi_id || 'Not provided'} />
                 </label>
@@ -681,7 +681,7 @@ export default function EmployeeSalary() {
 
           <div className="flex flex-wrap justify-end gap-3 pt-2">
             <button type="button" onClick={resetForm} disabled={loading}
-              className="px-5 py-2.5 rounded-xl text-sm font-medium text-white/70 hover:bg-white/5 transition">
+              className="px-5 py-2.5 rounded-xl text-sm font-medium text-[#44534a] hover:bg-[#f8f7f4] transition">
               {editId ? 'Cancel' : 'Reset'}
             </button>
 
@@ -698,20 +698,20 @@ export default function EmployeeSalary() {
       {/* <section className={sectionClass}>
         <div className="mb-5 flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
           <div>
-            <div className="mb-2 inline-flex items-center gap-2 rounded-full border border-blue-500/20 bg-blue-500/10 px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-blue-400">
+            <div className="mb-2 inline-flex items-center gap-2 rounded-full border border-[#1f3228]/20 bg-[#1f3228]/10 px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-[#28523c]">
               <Users size={11} /> Employee Overview
             </div>
-            <h2 className="text-base font-bold text-white">Employee cards & salary history</h2>
+            <h2 className="text-base font-bold text-[#1f3228]">Employee cards & salary history</h2>
           </div>
           <div className="flex flex-wrap gap-2">
             <div className="relative">
-              <Search size={14} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-white/30" />
+              <Search size={14} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[#818a83]" />
               <input
                 type="text"
                 value={employeeSearch}
                 onChange={(e) => setEmployeeSearch(e.target.value)}
                 placeholder="Search employee"
-                className="w-48 rounded-xl border border-white/10 bg-[#0e1118] py-2 pl-9 pr-3 text-sm text-white outline-none focus:border-orange-500/70"
+                className="w-48 rounded-xl border border-[#e7e0d8] bg-[#f8f7f4] py-2 pl-9 pr-3 text-sm text-[#1f3228] outline-none focus:border-[#d4a843]"
               />
             </div>
             <Select
@@ -740,20 +740,20 @@ export default function EmployeeSalary() {
               className="w-40"
               isSearchable={false}
             />
-            <div className="flex items-center rounded-xl border border-white/10 bg-[#0e1118] p-1">
+            <div className="flex items-center rounded-xl border border-[#e7e0d8] bg-[#f8f7f4] p-1">
               <button onClick={() => {
                 setEmployeeViewMode("table");
                 setSelectedEmployeeId(""); // optional reset
-              }} className={`rounded-lg p-2 transition ${employeeViewMode === "table" ? 'bg-orange-500 text-white' : 'text-white/50 hover:text-white'}`} title="Table view"><List size={15} /></button>
-              <button onClick={() => setEmployeeViewMode('card')} className={`rounded-lg p-2 transition ${employeeViewMode === 'card' ? 'bg-orange-500 text-white' : 'text-white/50 hover:text-white'}`} title="Card view"><LayoutGrid size={15} /></button>
+              }} className={`rounded-lg p-2 transition ${employeeViewMode === "table" ? 'bg-[#d4a843] text-[#1f3228]' : 'text-[#56645b] hover:text-[#1f3228]'}`} title="Table view"><List size={15} /></button>
+              <button onClick={() => setEmployeeViewMode('card')} className={`rounded-lg p-2 transition ${employeeViewMode === 'card' ? 'bg-[#d4a843] text-[#1f3228]' : 'text-[#56645b] hover:text-[#1f3228]'}`} title="Card view"><LayoutGrid size={15} /></button>
             </div>
           </div>
         </div>
 
         {employeeViewMode === "table" ? (
-          <div className="overflow-x-auto rounded-2xl border border-white/10 bg-[#0e1118]">
+          <div className="overflow-x-auto rounded-2xl border border-[#e7e0d8] bg-[#f8f7f4]">
             <table className="min-w-full text-sm">
-              <thead className="bg-white/5 text-white/40">
+              <thead className="bg-[#f8f7f4] text-[#748078]">
                 <tr>
                   <th className="px-3 py-2 text-left">S.No</th>
                   <th className="px-3 py-2 text-left">Employee</th>
@@ -762,9 +762,9 @@ export default function EmployeeSalary() {
                   <th className="px-3 py-2 text-left">Total Salary</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-white/10 text-white/70">
+              <tbody className="divide-y divide-[#e7e0d8] text-[#44534a]">
                 {filteredEmployees.length === 0 ? (
-                  <tr><td colSpan="5" className="px-3 py-4 text-center text-white/40">No employees match this search.</td></tr>
+                  <tr><td colSpan="5" className="px-3 py-4 text-center text-[#748078]">No employees match this search.</td></tr>
                 ) : filteredEmployees.map((emp, i) => {
                   const employeeName = `${emp.first_name || ''} ${emp.last_name || ''}`.trim();
                   const employeeHistory = history.filter((item) => item.employee_id === emp.employee_id);
@@ -774,15 +774,15 @@ export default function EmployeeSalary() {
                       key={emp.employee_id}
                       onClick={() => setSelectedEmployeeId(emp.employee_id)}
                       className={`cursor-pointer transition ${selectedEmployeeId === emp.employee_id
-                          ? "bg-orange-500/10"
-                          : "hover:bg-white/5"
+                          ? "bg-[#d4a843]/15"
+                          : "hover:bg-[#f8f7f4]"
                         }`}
                     >
-                      <td className="px-3 py-2 text-white/60">{i + 1}</td>
-                      <td className="px-3 py-2 font-medium text-white">{employeeName || emp.employee_code || 'Unnamed Employee'}</td>
+                      <td className="px-3 py-2 text-[#56645b]">{i + 1}</td>
+                      <td className="px-3 py-2 font-medium text-[#1f3228]">{employeeName || emp.employee_code || 'Unnamed Employee'}</td>
                       <td className="px-3 py-2">{emp.employee_code || 'No code'}</td>
                       <td className="px-3 py-2">{employeeHistory.length}</td>
-                      <td className="px-3 py-2 font-semibold text-emerald-400">₹{totalPaid.toLocaleString('en-IN')}</td>
+                      <td className="px-3 py-2 font-semibold text-[#1f3228]">₹{totalPaid.toLocaleString('en-IN')}</td>
                     </tr>
                   );
                 })}
@@ -792,7 +792,7 @@ export default function EmployeeSalary() {
         ) : (
           <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
             {filteredEmployees.length === 0 ? (
-              <div className="md:col-span-2 xl:col-span-3 rounded-2xl border border-white/10 bg-white/5 p-4 text-sm text-white/50">No employees match this search.</div>
+              <div className="md:col-span-2 xl:col-span-3 rounded-2xl border border-[#e7e0d8] bg-[#f8f7f4] p-4 text-sm text-[#56645b]">No employees match this search.</div>
             ) : (
               filteredEmployees.map((emp) => {
                 const employeeName = `${emp.first_name || ''} ${emp.last_name || ''}`.trim();
@@ -804,18 +804,18 @@ export default function EmployeeSalary() {
                     key={emp.employee_id}
                     type="button"
                     onClick={() => setSelectedEmployeeId(emp.employee_id)}
-                    className={`rounded-2xl border p-4 text-left transition ${isActive ? 'border-orange-500/50 bg-orange-500/10' : 'border-white/10 bg-white/5 hover:bg-white/10'}`}
+                    className={`rounded-2xl border p-4 text-left transition ${isActive ? 'border-[#d4a843]/50 bg-[#d4a843]/15' : 'border-[#e7e0d8] bg-[#f8f7f4] hover:bg-[#f2f3f0]'}`}
                   >
                     <div className="flex items-center justify-between gap-2">
                       <div>
-                        <p className="text-sm font-semibold text-white">{employeeName || emp.employee_code || 'Unnamed Employee'}</p>
-                        <p className="text-xs text-white/40">{emp.employee_code || 'No code'}</p>
+                        <p className="text-sm font-semibold text-[#1f3228]">{employeeName || emp.employee_code || 'Unnamed Employee'}</p>
+                        <p className="text-xs text-[#748078]">{emp.employee_code || 'No code'}</p>
                       </div>
-                      <div className="rounded-full bg-white/10 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-widest text-white/60">{employeeHistory.length} pays</div>
+                      <div className="rounded-full bg-[#f2f3f0] px-2.5 py-1 text-[10px] font-semibold uppercase tracking-widest text-[#56645b]">{employeeHistory.length} pays</div>
                     </div>
                     <div className="mt-3 flex items-center justify-between text-sm">
-                      <span className="text-white/50">Total salary</span>
-                      <span className="font-semibold text-emerald-400">₹{totalPaid.toLocaleString('en-IN')}</span>
+                      <span className="text-[#56645b]">Total salary</span>
+                      <span className="font-semibold text-[#1f3228]">₹{totalPaid.toLocaleString('en-IN')}</span>
                     </div>
                   </button>
                 );
@@ -824,14 +824,14 @@ export default function EmployeeSalary() {
           </div>
         )}
 
-        <div className="mt-6 rounded-2xl border border-white/10 bg-[#0e1118] p-4">
+        <div className="mt-6 rounded-2xl border border-[#e7e0d8] bg-[#f8f7f4] p-4">
           <div className="mb-3 flex items-center justify-between">
-            <h3 className="text-sm font-semibold text-white">Salary history {selectedEmployeeId ? 'for selected employee' : 'for current filters'}</h3>
-            <span className="text-xs text-white/40">{selectedEmployeeHistory.length} record(s)</span>
+            <h3 className="text-sm font-semibold text-[#1f3228]">Salary history {selectedEmployeeId ? 'for selected employee' : 'for current filters'}</h3>
+            <span className="text-xs text-[#748078]">{selectedEmployeeHistory.length} record(s)</span>
           </div>
           <div className="overflow-x-auto">
             <table className="min-w-full text-sm">
-              <thead className="bg-white/5 text-white/40">
+              <thead className="bg-[#f8f7f4] text-[#748078]">
                 <tr>
                   <th className="px-3 py-2 text-left">Employee</th>
                   <th className="px-3 py-2 text-left">Month</th>
@@ -840,19 +840,19 @@ export default function EmployeeSalary() {
                   <th className="px-3 py-2 text-left">Present / Leave</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-white/10 text-white/70">
+              <tbody className="divide-y divide-[#e7e0d8] text-[#44534a]">
                 {selectedEmployeeHistory.length === 0 ? (
-                  <tr><td colSpan="5" className="px-3 py-4 text-center text-white/40">No salary records found.</td></tr>
+                  <tr><td colSpan="5" className="px-3 py-4 text-center text-[#748078]">No salary records found.</td></tr>
                 ) : (
                   selectedEmployeeHistory.map((record) => {
                     const emp = employees.find((item) => item.employee_id === record.employee_id);
                     const employeeLabel = `${emp?.first_name || ''} ${emp?.last_name || ''}`.trim() || emp?.employee_code || 'Unknown';
                     return (
-                      <tr key={record.id} className="hover:bg-white/5">
-                        <td className="px-3 py-2 font-medium text-white">{employeeLabel}</td>
+                      <tr key={record.id} className="hover:bg-[#f8f7f4]">
+                        <td className="px-3 py-2 font-medium text-[#1f3228]">{employeeLabel}</td>
                         <td className="px-3 py-2">{new Date(0, Number(record.salary_month) - 1).toLocaleString('default', { month: 'long' })}</td>
                         <td className="px-3 py-2">{record.salary_year}</td>
-                        <td className="px-3 py-2 font-semibold text-emerald-400">₹{parseFloat(record.total_salary || 0).toLocaleString('en-IN')}</td>
+                        <td className="px-3 py-2 font-semibold text-[#1f3228]">₹{parseFloat(record.total_salary || 0).toLocaleString('en-IN')}</td>
                         <td className="px-3 py-2">{record.present_days}/{record.leave_days}</td>
                       </tr>
                     );
@@ -865,12 +865,12 @@ export default function EmployeeSalary() {
       </section> */}
 
       {success && (
-        <div className="flex items-center gap-3 bg-emerald-500/10 border border-emerald-500/25 text-emerald-400 text-sm px-5 py-3.5 rounded-2xl">
+        <div className="flex items-center gap-3 bg-[#1f3228]/10 border border-[#1f3228]/20 text-[#1f3228] text-sm px-5 py-3.5 rounded-2xl">
           <CheckCircle size={16} /> {success}
         </div>
       )}
       {error && (
-        <div className="flex items-center gap-3 bg-rose-500/10 border border-rose-500/25 text-rose-400 text-sm px-5 py-3.5 rounded-2xl">
+        <div className="flex items-center gap-3 bg-rose-50 border border-rose-200 text-rose-700 text-sm px-5 py-3.5 rounded-2xl">
           <AlertCircle size={16} /> {error}
         </div>
       )}
@@ -881,16 +881,16 @@ export default function EmployeeSalary() {
 
           {/* Title */}
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-xl bg-pink-500/15 flex items-center justify-center">
-              <History size={15} className="text-pink-400" />
+            <div className="w-8 h-8 rounded-xl bg-[#d4a843]/15 flex items-center justify-center">
+              <History size={15} className="text-[#a98026]" />
             </div>
 
             <div>
-              <h2 className="text-base font-bold text-white">
+              <h2 className="text-base font-bold text-[#1f3228]">
                 Salary History
               </h2>
 
-              <p className="text-xs text-white/40 mt-0.5">
+              <p className="text-xs text-[#748078] mt-0.5">
                 View and manage employee salary records
               </p>
             </div>
@@ -903,7 +903,7 @@ export default function EmployeeSalary() {
             <div className="relative">
               <Search
                 size={14}
-                className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-white/30"
+                className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[#818a83]"
               />
 
               <input
@@ -911,7 +911,7 @@ export default function EmployeeSalary() {
                 value={employeeSearch}
                 onChange={(e) => setEmployeeSearch(e.target.value)}
                 placeholder="Search employee..."
-                className="w-52 rounded-xl border border-white/10 bg-[#0e1118] py-2.5 pl-9 pr-3 text-sm text-white outline-none focus:border-orange-500/70 transition placeholder:text-white/25"
+                className="w-52 rounded-xl border border-[#e7e0d8] bg-[#f8f7f4] py-2.5 pl-9 pr-3 text-sm text-[#1f3228] outline-none focus:border-[#d4a843] transition placeholder:text-[#929b94]"
               />
             </div>
 
@@ -953,14 +953,14 @@ export default function EmployeeSalary() {
             />
 
             {/* View Toggle */}
-            <div className="flex items-center rounded-xl border border-white/10 bg-[#0e1118] p-1">
+            <div className="flex items-center rounded-xl border border-[#e7e0d8] bg-[#f8f7f4] p-1">
 
               <button
                 type="button"
                 onClick={() => setHistoryViewMode("table")}
                 className={`rounded-lg p-2 transition ${historyViewMode === "table"
-                  ? "bg-orange-500 text-white"
-                  : "text-white/50 hover:text-white"
+                  ? "bg-[#d4a843] text-[#1f3228]"
+                  : "text-[#56645b] hover:text-[#1f3228]"
                   }`}
                 title="Table view"
               >
@@ -971,8 +971,8 @@ export default function EmployeeSalary() {
                 type="button"
                 onClick={() => setHistoryViewMode("card")}
                 className={`rounded-lg p-2 transition ${historyViewMode === "card"
-                  ? "bg-orange-500 text-white"
-                  : "text-white/50 hover:text-white"
+                  ? "bg-[#d4a843] text-[#1f3228]"
+                  : "text-[#56645b] hover:text-[#1f3228]"
                   }`}
                 title="Card view"
               >
@@ -987,46 +987,46 @@ export default function EmployeeSalary() {
         {historyViewMode === "card" ? (
           <div className="grid gap-3 md:grid-cols-2">
             {historyLoading ? (
-              <div className="md:col-span-2 rounded-2xl border border-white/10 bg-white/5 p-6 text-center text-white/40">Loading history...</div>
+              <div className="md:col-span-2 rounded-2xl border border-[#e7e0d8] bg-[#f8f7f4] p-6 text-center text-[#748078]">Loading history...</div>
             ) : filteredHistory.length === 0 ? (
-              <div className="md:col-span-2 rounded-2xl border border-white/10 bg-white/5 p-6 text-center text-white/40">No salary records found.</div>
+              <div className="md:col-span-2 rounded-2xl border border-[#e7e0d8] bg-[#f8f7f4] p-6 text-center text-[#748078]">No salary records found.</div>
             ) : filteredHistory.map((record) => (
-              <div key={record.id} className="rounded-2xl border border-white/10 bg-white/5 p-4">
+              <div key={record.id} className="rounded-2xl border border-[#e7e0d8] bg-[#f8f7f4] p-4">
                 <div className="flex items-start justify-between gap-3">
                   <div>
-                    <p className="font-semibold text-white">{record.first_name} {record.last_name}</p>
-                    <p className="text-xs text-white/40">{record.employee_code}</p>
+                    <p className="font-semibold text-[#1f3228]">{record.first_name} {record.last_name}</p>
+                    <p className="text-xs text-[#748078]">{record.employee_code}</p>
                   </div>
-                  <span className="rounded-full bg-emerald-500/10 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-widest text-emerald-400">{new Date(0, record.salary_month - 1).toLocaleString('default', { month: 'short' })} {record.salary_year}</span>
+                  <span className="rounded-full bg-[#1f3228]/10 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-widest text-[#1f3228]">{new Date(0, record.salary_month - 1).toLocaleString('default', { month: 'short' })} {record.salary_year}</span>
                 </div>
                 <div className="mt-3 flex items-center justify-between text-sm">
-                  <span className="text-white/50">Net Salary</span>
-                  <span className="font-semibold text-emerald-400">₹{parseFloat(record.total_salary).toLocaleString('en-IN')}</span>
+                  <span className="text-[#56645b]">Net Salary</span>
+                  <span className="font-semibold text-[#1f3228]">₹{parseFloat(record.total_salary).toLocaleString('en-IN')}</span>
                 </div>
                 <div className="mt-2 flex items-center justify-between text-sm">
-                  <span className="text-white/50">Paid On</span>
-                  <span className="text-white/70">{new Date(record.created_at).toLocaleDateString()}</span>
+                  <span className="text-[#56645b]">Paid On</span>
+                  <span className="text-[#44534a]">{new Date(record.created_at).toLocaleDateString()}</span>
                 </div>
                 <div className="mt-4 flex items-center justify-end gap-2">
                   <button
                     type="button"
                     onClick={() => setSelectedSalaryEmployee(record)}
-                    className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 transition"
+                    className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-[#1f3228]/10 text-[#1f3228] hover:bg-[#1f3228]/15 transition"
                     title="View Employee Salary History"
                   >
                     <Eye size={14} />
                   </button>
-                  <button onClick={() => handleEdit(record)} className="rounded-lg bg-blue-500/10 p-2 text-blue-400"> <Edit size={14} /> </button>
-                  <button onClick={() => handleDelete(record)} className="rounded-lg bg-red-500/10 p-2 text-red-400"> <Trash2 size={14} /> </button>
-                  <button onClick={() => setSelectedPayslip(record)} className="rounded-lg bg-orange-500/10 px-3 py-2 text-xs font-medium text-orange-400"> <Printer size={13} /> </button>
+                  <button onClick={() => handleEdit(record)} className="rounded-lg bg-[#1f3228]/10 p-2 text-[#28523c]"> <Edit size={14} /> </button>
+                  <button onClick={() => handleDelete(record)} className="rounded-lg bg-rose-50 p-2 text-rose-700"> <Trash2 size={14} /> </button>
+                  <button onClick={() => setSelectedPayslip(record)} className="rounded-lg bg-[#d4a843]/15 px-3 py-2 text-xs font-medium text-[#a98026]"> <Printer size={13} /> </button>
                 </div>
               </div>
             ))}
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm text-white/70">
-              <thead className="bg-white/5 text-white/50">
+            <table className="w-full text-left text-sm text-[#44534a]">
+              <thead className="bg-[#f8f7f4] text-[#56645b]">
                 <tr>
                   <th className="px-4 py-3 rounded-l-lg font-medium">Employee</th>
                   <th className="px-4 py-3 font-medium">Period</th>
@@ -1036,28 +1036,28 @@ export default function EmployeeSalary() {
                   <th className="px-4 py-3 rounded-r-lg font-medium text-right">Action</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-white/5">
+              <tbody className="divide-y divide-[#f0ede7]">
                 {historyLoading ? (
-                  <tr><td colSpan="6" className="px-4 py-6 text-center text-white/40">Loading history...</td></tr>
+                  <tr><td colSpan="6" className="px-4 py-6 text-center text-[#748078]">Loading history...</td></tr>
                 ) : filteredHistory.length === 0 ? (
-                  <tr><td colSpan="6" className="px-4 py-6 text-center text-white/40">No salary records found.</td></tr>
+                  <tr><td colSpan="6" className="px-4 py-6 text-center text-[#748078]">No salary records found.</td></tr>
                 ) : (
                   filteredHistory.map((record) => (
-                    <tr key={record.id} className="hover:bg-white/2 transition-colors">
+                    <tr key={record.id} className="hover:bg-[#f8f7f4] transition-colors">
                       <td className="px-4 py-3">
-                        <div className="font-medium text-white">{record.first_name} {record.last_name}</div>
+                        <div className="font-medium text-[#1f3228]">{record.first_name} {record.last_name}</div>
                         <div className="text-xs opacity-60">{record.employee_code}</div>
                       </td>
                       <td className="px-4 py-3">{new Date(0, record.salary_month - 1).toLocaleString('default', { month: 'short' })} {record.salary_year}</td>
                       <td className="px-4 py-3">{parseFloat(record.basic_salary).toLocaleString('en-IN')}</td>
-                      <td className="px-4 py-3 font-bold text-emerald-400">{parseFloat(record.total_salary).toLocaleString('en-IN')}</td>
+                      <td className="px-4 py-3 font-bold text-[#1f3228]">{parseFloat(record.total_salary).toLocaleString('en-IN')}</td>
                       <td className="px-4 py-3">{new Date(record.created_at).toLocaleDateString()}</td>
                       <td className="px-4 py-3 text-right">
                         <div className="flex items-center justify-end gap-2">
                           <button
                             type="button"
                             onClick={() => setSelectedSalaryEmployee(record)}
-                            className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 transition"
+                            className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-[#1f3228]/10 text-[#1f3228] hover:bg-[#1f3228]/15 transition"
                             title="View Employee Salary History"
                           >
                             <Eye size={14} />
@@ -1065,21 +1065,21 @@ export default function EmployeeSalary() {
 
                           <button
                             onClick={() => handleEdit(record)}
-                            className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 transition"
+                            className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-[#1f3228]/10 text-[#28523c] hover:bg-[#1f3228]/15 transition"
                             title="Edit"
                           >
                             <Edit size={14} />
                           </button>
                           <button
                             onClick={() => handleDelete(record)}
-                            className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500/20 transition"
+                            className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-rose-50 text-rose-700 hover:bg-rose-100 transition"
                             title="Delete"
                           >
                             <Trash2 size={14} />
                           </button>
                           <button
                             onClick={() => setSelectedPayslip(record)}
-                            className="inline-flex items-center gap-1.5 rounded-lg bg-orange-500/10 px-3 py-1.5 text-xs font-medium text-orange-400 hover:bg-orange-500/20 transition"
+                            className="inline-flex items-center gap-1.5 rounded-lg bg-[#d4a843]/15 px-3 py-1.5 text-xs font-medium text-[#a98026] hover:bg-[#d4a843]/20 transition"
                             title="Payslip"
                           >
                             <Printer size={13} /> Payslip
@@ -1105,27 +1105,27 @@ export default function EmployeeSalary() {
           <div className="space-y-5">
 
             {/* Employee Header */}
-            <div className="rounded-2xl border border-orange-500/20 bg-orange-500/10 p-5">
+            <div className="rounded-2xl border border-[#d4a843]/30 bg-[#d4a843]/15 p-5">
               <div className="flex items-center justify-between gap-4">
 
                 <div>
-                  <p className="text-lg font-bold text-white">
+                  <p className="text-lg font-bold text-[#1f3228]">
                     {selectedSalaryEmployee.first_name}{' '}
                     {selectedSalaryEmployee.last_name}
                   </p>
 
-                  <p className="mt-1 text-xs text-white/40">
+                  <p className="mt-1 text-xs text-[#748078]">
                     Employee Code:{' '}
                     {selectedSalaryEmployee.employee_code || 'No Code'}
                   </p>
                 </div>
 
-                <div className="rounded-xl bg-orange-500/10 border border-orange-500/20 px-4 py-2 text-right">
-                  <p className="text-[10px] uppercase tracking-widest text-orange-400/70">
+                <div className="rounded-xl bg-[#d4a843]/15 border border-[#d4a843]/30 px-4 py-2 text-right">
+                  <p className="text-[10px] uppercase tracking-widest text-[#a98026]">
                     Total Pays
                   </p>
 
-                  <p className="mt-1 text-lg font-bold text-orange-400">
+                  <p className="mt-1 text-lg font-bold text-[#a98026]">
                     {selectedEmployeeSalaryHistory.length}
                   </p>
                 </div>
@@ -1136,12 +1136,12 @@ export default function EmployeeSalary() {
             {/* Total Salary Summary */}
             <div className="grid grid-cols-2 gap-3">
 
-              <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
-                <p className="text-xs text-white/40">
+              <div className="rounded-2xl border border-[#e7e0d8] bg-white p-4">
+                <p className="text-xs text-[#748078]">
                   Total Salary Paid
                 </p>
 
-                <p className="mt-1 text-xl font-bold text-emerald-400">
+                <p className="mt-1 text-xl font-bold text-[#1f3228]">
                   ₹
                   {selectedEmployeeSalaryHistory
                     .reduce(
@@ -1153,12 +1153,12 @@ export default function EmployeeSalary() {
                 </p>
               </div>
 
-              <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
-                <p className="text-xs text-white/40">
+              <div className="rounded-2xl border border-[#e7e0d8] bg-white p-4">
+                <p className="text-xs text-[#748078]">
                   Salary Records
                 </p>
 
-                <p className="mt-1 text-xl font-bold text-white">
+                <p className="mt-1 text-xl font-bold text-[#1f3228]">
                   {selectedEmployeeSalaryHistory.length}
                 </p>
               </div>
@@ -1166,24 +1166,24 @@ export default function EmployeeSalary() {
             </div>
 
             {/* Full Salary History */}
-            <section className="rounded-2xl border border-white/10 bg-white/[0.03] overflow-hidden">
+            <section className="rounded-2xl border border-[#e7e0d8] bg-white overflow-hidden">
 
-              <div className="flex items-center justify-between px-5 py-4 border-b border-white/10">
+              <div className="flex items-center justify-between px-5 py-4 border-b border-[#e7e0d8]">
                 <div className="flex items-center gap-2">
 
-                  <div className="w-8 h-8 rounded-xl bg-pink-500/15 flex items-center justify-center">
+                  <div className="w-8 h-8 rounded-xl bg-[#d4a843]/15 flex items-center justify-center">
                     <History
                       size={15}
-                      className="text-pink-400"
+                      className="text-[#a98026]"
                     />
                   </div>
 
                   <div>
-                    <h3 className="text-sm font-bold text-white">
+                    <h3 className="text-sm font-bold text-[#1f3228]">
                       Complete Salary History
                     </h3>
 
-                    <p className="text-xs text-white/40">
+                    <p className="text-xs text-[#748078]">
                       All months and years
                     </p>
                   </div>
@@ -1195,13 +1195,13 @@ export default function EmployeeSalary() {
 
                 {selectedEmployeeSalaryHistory.length === 0 ? (
 
-                  <div className="p-8 text-center text-sm text-white/40">
+                  <div className="p-8 text-center text-sm text-[#748078]">
                     No salary history found for this employee.
                   </div>
 
                 ) : (
 
-                  <div className="divide-y divide-white/5">
+                  <div className="divide-y divide-[#f0ede7]">
 
                     {selectedEmployeeSalaryHistory.map((record) => {
 
@@ -1215,18 +1215,18 @@ export default function EmployeeSalary() {
                       return (
                         <div
                           key={record.id}
-                          className="p-4 hover:bg-white/[0.03] transition"
+                          className="p-4 hover:bg-white transition"
                         >
 
                           {/* Month Header */}
                           <div className="flex items-center justify-between gap-3 mb-4">
 
                             <div>
-                              <p className="text-sm font-semibold text-white">
+                              <p className="text-sm font-semibold text-[#1f3228]">
                                 {monthName} {record.salary_year}
                               </p>
 
-                              <p className="text-xs text-white/40 mt-1">
+                              <p className="text-xs text-[#748078] mt-1">
                                 Paid on{' '}
                                 {record.created_at
                                   ? new Date(
@@ -1237,11 +1237,11 @@ export default function EmployeeSalary() {
                             </div>
 
                             <div className="text-right">
-                              <p className="text-[10px] uppercase tracking-wider text-white/40">
+                              <p className="text-[10px] uppercase tracking-wider text-[#748078]">
                                 Net Salary
                               </p>
 
-                              <p className="text-base font-bold text-emerald-400">
+                              <p className="text-base font-bold text-[#1f3228]">
                                 ₹
                                 {parseFloat(
                                   record.total_salary || 0
@@ -1254,12 +1254,12 @@ export default function EmployeeSalary() {
                           {/* Salary Details */}
                           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
 
-                            <div className="rounded-xl bg-[#0e1118] border border-white/5 p-3">
-                              <p className="text-[10px] text-white/40">
+                            <div className="rounded-xl bg-[#f8f7f4] border border-[#f0ede7] p-3">
+                              <p className="text-[10px] text-[#748078]">
                                 Basic
                               </p>
 
-                              <p className="mt-1 text-sm font-semibold text-white">
+                              <p className="mt-1 text-sm font-semibold text-[#1f3228]">
                                 ₹
                                 {parseFloat(
                                   record.basic_salary || 0
@@ -1267,32 +1267,32 @@ export default function EmployeeSalary() {
                               </p>
                             </div>
 
-                            <div className="rounded-xl bg-[#0e1118] border border-white/5 p-3">
-                              <p className="text-[10px] text-white/40">
+                            <div className="rounded-xl bg-[#f8f7f4] border border-[#f0ede7] p-3">
+                              <p className="text-[10px] text-[#748078]">
                                 Present
                               </p>
 
-                              <p className="mt-1 text-sm font-semibold text-white">
+                              <p className="mt-1 text-sm font-semibold text-[#1f3228]">
                                 {record.present_days || 0}
                               </p>
                             </div>
 
-                            <div className="rounded-xl bg-[#0e1118] border border-white/5 p-3">
-                              <p className="text-[10px] text-white/40">
+                            <div className="rounded-xl bg-[#f8f7f4] border border-[#f0ede7] p-3">
+                              <p className="text-[10px] text-[#748078]">
                                 Leave
                               </p>
 
-                              <p className="mt-1 text-sm font-semibold text-white">
+                              <p className="mt-1 text-sm font-semibold text-[#1f3228]">
                                 {record.leave_days || 0}
                               </p>
                             </div>
 
-                            <div className="rounded-xl bg-[#0e1118] border border-white/5 p-3">
-                              <p className="text-[10px] text-white/40">
+                            <div className="rounded-xl bg-[#f8f7f4] border border-[#f0ede7] p-3">
+                              <p className="text-[10px] text-[#748078]">
                                 Incentive
                               </p>
 
-                              <p className="mt-1 text-sm font-semibold text-blue-400">
+                              <p className="mt-1 text-sm font-semibold text-[#28523c]">
                                 ₹
                                 {parseFloat(
                                   record.incentive_amount || 0
@@ -1305,9 +1305,9 @@ export default function EmployeeSalary() {
                           {/* Deductions */}
                           <div className="mt-3 flex flex-wrap gap-4 text-xs">
 
-                            <span className="text-white/40">
+                            <span className="text-[#748078]">
                               Leave Deduction:{' '}
-                              <span className="text-red-400">
+                              <span className="text-rose-700">
                                 ₹
                                 {parseFloat(
                                   record.leave_deduction || 0
@@ -1315,9 +1315,9 @@ export default function EmployeeSalary() {
                               </span>
                             </span>
 
-                            <span className="text-white/40">
+                            <span className="text-[#748078]">
                               Additional Deduction:{' '}
-                              <span className="text-red-400">
+                              <span className="text-rose-700">
                                 ₹
                                 {parseFloat(
                                   record.additional_deduction || 0
@@ -1325,9 +1325,9 @@ export default function EmployeeSalary() {
                               </span>
                             </span>
 
-                            <span className="text-white/40">
+                            <span className="text-[#748078]">
                               Incentive:{' '}
-                              <span className="text-blue-400">
+                              <span className="text-[#28523c]">
                                 {record.incentive_percentage || 0}%
                               </span>
                             </span>
@@ -1351,7 +1351,7 @@ export default function EmployeeSalary() {
               <button
                 type="button"
                 onClick={() => setSelectedSalaryEmployee(null)}
-                className="rounded-xl border border-white/10 bg-white/5 px-5 py-2.5 text-sm font-medium text-white/70 hover:bg-white/10 hover:text-white transition"
+                className="rounded-xl border border-[#e7e0d8] bg-[#f8f7f4] px-5 py-2.5 text-sm font-medium text-[#44534a] hover:bg-[#f2f3f0] hover:text-[#1f3228] transition"
               >
                 Close
               </button>
@@ -1366,24 +1366,24 @@ export default function EmployeeSalary() {
         <ModalPortal>
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
             <div className="w-full max-w-4xl bg-white rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
-              <div className="flex items-center justify-between p-4 border-b border-gray-200 bg-gray-50">
-                <h3 className="font-bold text-gray-800">Payslip Preview</h3>
+              <div className="flex items-center justify-between p-4 border-b border-gray-200 bg-[#f8f7f4]">
+                <h3 className="font-bold text-[#1f3228]">Payslip Preview</h3>
                 <div className="flex items-center gap-2">
                   <button
                     onClick={handlePrint}
-                    className="inline-flex items-center gap-2 rounded-lg bg-orange-600 px-4 py-2 text-sm font-medium text-white hover:bg-orange-700 transition shadow-sm"
+                    className="inline-flex items-center gap-2 rounded-lg bg-[#1f3228] px-4 py-2 text-sm font-medium text-white hover:bg-[#28523c] transition shadow-sm"
                   >
                     <Printer size={15} />
                     Print
                   </button>
-                  <button onClick={() => setSelectedPayslip(null)} className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition">
+                  <button onClick={() => setSelectedPayslip(null)} className="p-2 text-[#748078] hover:text-[#56645b] hover:bg-[#f2f3f0] rounded-lg transition">
                     <X size={20} />
                   </button>
                 </div>
               </div>
 
               {/* Printable Area */}
-              <div className="bg-[#f8fafc] overflow-y-auto" ref={payslipRef}>
+              <div className="bg-[#f8f7f4] overflow-y-auto" ref={payslipRef}>
                 <PayslipTemplate payslip={selectedPayslip} />
               </div>
             </div>
