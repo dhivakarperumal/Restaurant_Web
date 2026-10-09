@@ -119,11 +119,11 @@ const navItems = [
     ],
   },
 
-  {
-    path: "/admin/kitchen-orders",
-    label: "Kitchen Orders",
-    icon: UtensilsCrossed,
-  },
+  // {
+  //   path: "/admin/kitchen-orders",
+  //   label: "Kitchen Orders",
+  //   icon: UtensilsCrossed,
+  // },
   {
     path: "/admin/reservations",
     label: "Reservations",
