@@ -85,6 +85,10 @@ function CustomerOrdersPage({ audience = 'admin', view = 'all', showOrderFilters
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState('');
   const [updatingOrder, setUpdatingOrder] = useState('');
+  const [deliveryPartners, setDeliveryPartners] = useState([]);
+  const [loadingDeliveryPartners, setLoadingDeliveryPartners] = useState(false);
+  const [deliveryPartnersError, setDeliveryPartnersError] = useState('');
+  const [assignmentDrafts, setAssignmentDrafts] = useState({});
   const [orderTypeFilter, setOrderTypeFilter] = useState(getInitialOrderType(view));
   const [statusFilter, setStatusFilter] = useState(getInitialStatus(view));
   const [searchTerm, setSearchTerm] = useState('');
@@ -105,6 +109,7 @@ function CustomerOrdersPage({ audience = 'admin', view = 'all', showOrderFilters
 
   const isCustomer = audience === 'customer';
   const showChefDeliveryTable = audience === 'chef' && view === 'delivery';
+  const canAssignDelivery = showChefDeliveryTable || (showOrderFilters && view === 'delivery');
   const showOrderSummary = audience === 'admin' || (audience === 'chef' && showOrderFilters);
   const title = isCustomer
     ? 'My Orders'
@@ -177,6 +182,29 @@ function CustomerOrdersPage({ audience = 'admin', view = 'all', showOrderFilters
   }, [filterStatus, filterOrderType, isCustomer, orderTypeFilter, showOrderFilters]);
 
   useEffect(() => {
+    if (!canAssignDelivery) return undefined;
+    let isCancelled = false;
+    const fetchDeliveryPartners = async () => {
+      setLoadingDeliveryPartners(true);
+      setDeliveryPartnersError('');
+      try {
+        const { data } = await api.get('/delivery-partners');
+        if (!isCancelled) setDeliveryPartners(Array.isArray(data?.data) ? data.data : []);
+      } catch (requestError) {
+        if (isCancelled) return;
+        setDeliveryPartnersError(requestError.response?.data?.message || 'Delivery partners could not be loaded.');
+        setDeliveryPartners([]);
+      } finally {
+        if (!isCancelled) setLoadingDeliveryPartners(false);
+      }
+    };
+    fetchDeliveryPartners();
+    return () => {
+      isCancelled = true;
+    };
+  }, [canAssignDelivery]);
+
+  useEffect(() => {
     let isCancelled = false;
     const executeFetch = async (showSpinner = false) => {
       if (showSpinner) setRefreshing(true);
@@ -213,25 +241,87 @@ function CustomerOrdersPage({ audience = 'admin', view = 'all', showOrderFilters
     };
   }, [filterStatus, filterOrderType, isCustomer, orderTypeFilter, showOrderFilters]);
 
-  const changeStatus = async (order, status) => {
+  const changeStatus = async (order, status, deliveryPartnerId = '') => {
     setUpdatingOrder(order.order_number);
     try {
       const { data } = await api.patch(
         `/orders/management/${encodeURIComponent(order.order_number)}/status`,
-        { status }
+        { status, ...(status === 'assigned' ? { delivery_partner_id: deliveryPartnerId } : {}) }
       );
       if (!data?.success) throw new Error(data?.message || 'Order status could not be updated.');
       setOrders((current) => current.map((item) => (
         item.order_number === order.order_number
-          ? { ...item, order_status: status }
+          ? {
+            ...item,
+            order_status: status,
+            ...(status === 'assigned' ? {
+              assigned_delivery_partner_id: data.data?.assigned_delivery_partner_id,
+              assigned_partner_name: data.data?.assigned_partner_name,
+            } : {}),
+          }
           : item
       )));
-      toast.success('Customer order updated.');
+      setAssignmentDrafts((current) => {
+        const next = { ...current };
+        delete next[order.order_number];
+        return next;
+      });
+      toast.success(status === 'assigned' ? 'Delivery partner assigned.' : 'Customer order updated.');
     } catch (requestError) {
       toast.error(requestError.response?.data?.message || requestError.message || 'Order status could not be updated.');
     } finally {
       setUpdatingOrder('');
     }
+  };
+
+  const selectOrderStatus = (order, status) => {
+    if (canAssignDelivery && order.order_type === 'home_delivery' && status === 'assigned') {
+      setAssignmentDrafts((current) => ({ ...current, [order.order_number]: '' }));
+      return;
+    }
+    setAssignmentDrafts((current) => {
+      const next = { ...current };
+      delete next[order.order_number];
+      return next;
+    });
+    changeStatus(order, status);
+  };
+
+  const renderPartnerAssignment = (order) => {
+    const isSelectingPartner = Object.prototype.hasOwnProperty.call(assignmentDrafts, order.order_number);
+    if (!canAssignDelivery || order.order_type !== 'home_delivery') return '—';
+    if (!isSelectingPartner) return order.assigned_partner_name || 'Not assigned';
+
+    return (
+      <div className="flex min-w-64 flex-col gap-2">
+        <select
+          value={assignmentDrafts[order.order_number]}
+          onChange={(event) => setAssignmentDrafts((current) => ({ ...current, [order.order_number]: event.target.value }))}
+          disabled={loadingDeliveryPartners || updatingOrder === order.order_number}
+          aria-label={`Choose delivery partner for order ${order.order_number}`}
+          className="rounded-lg border border-[#d9ded8] bg-white px-2 py-1.5 text-xs text-[#263830] disabled:opacity-50"
+        >
+          <option value="">{loadingDeliveryPartners ? 'Loading partners…' : 'Choose delivery partner'}</option>
+          {deliveryPartners.map((partner) => (
+            <option key={partner.employee_id} value={partner.employee_id}>
+              {partner.full_name}{partner.phone_number ? ` · ${partner.phone_number}` : ''}
+            </option>
+          ))}
+        </select>
+        {deliveryPartnersError && <span role="alert" className="text-xs text-red-700">{deliveryPartnersError}</span>}
+        {!loadingDeliveryPartners && !deliveryPartnersError && deliveryPartners.length === 0 && (
+          <span className="text-xs text-[#68766e]">No active delivery partners available.</span>
+        )}
+        <button
+          type="button"
+          onClick={() => changeStatus(order, 'assigned', assignmentDrafts[order.order_number])}
+          disabled={!assignmentDrafts[order.order_number] || loadingDeliveryPartners || updatingOrder === order.order_number}
+          className="rounded-lg bg-[#1a3c36] px-3 py-1.5 text-xs font-bold text-white disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          {updatingOrder === order.order_number ? 'Assigning…' : 'Assign'}
+        </button>
+      </div>
+    );
   };
 
   return (
@@ -349,7 +439,7 @@ function CustomerOrdersPage({ audience = 'admin', view = 'all', showOrderFilters
             <div className="overflow-x-auto">
               <table className="w-full min-w-[900px] text-left text-sm">
                 <thead className="bg-[#d4a843] text-xs uppercase tracking-wide text-white">
-                  <tr>{['Order', 'Customer', 'Items', 'Type', 'Status', 'Payment', 'Total', 'Placed'].map((heading) => <th key={heading} className="whitespace-nowrap px-4 py-4 font-bold">{heading}</th>)}</tr>
+                  <tr>{['Order', 'Customer', 'Items', 'Type', 'Status', ...(canAssignDelivery ? ['Delivery Partner'] : []), 'Payment', 'Total', 'Placed'].map((heading) => <th key={heading} className="whitespace-nowrap px-4 py-4 font-bold">{heading}</th>)}</tr>
                 </thead>
                 <tbody className="divide-y divide-[#edf0eb]">
                   {visibleOrders.map((order) => (
@@ -360,9 +450,9 @@ function CustomerOrdersPage({ audience = 'admin', view = 'all', showOrderFilters
                       <td className="whitespace-nowrap px-4 py-3 text-[#435047]">{order.order_type === 'home_delivery' ? 'Home Delivery' : 'Pickup'}</td>
                       <td className="px-4 py-3">
                         <select
-                          value={order.order_status}
+                          value={Object.prototype.hasOwnProperty.call(assignmentDrafts, order.order_number) ? 'assigned' : order.order_status}
                           disabled={updatingOrder === order.order_number || order.payment_status === 'failed' || ['delivered', 'completed', 'cancelled'].includes(String(order.order_status || '').toLowerCase())}
-                          onChange={(event) => changeStatus(order, event.target.value)}
+                          onChange={(event) => selectOrderStatus(order, event.target.value)}
                           aria-label={`Update order ${order.order_number} status`}
                           className="rounded-lg border border-[#d9ded8] bg-white px-2 py-1.5 text-xs font-semibold capitalize text-[#263830] disabled:opacity-50"
                         >
@@ -371,6 +461,7 @@ function CustomerOrdersPage({ audience = 'admin', view = 'all', showOrderFilters
                           ))}
                         </select>
                       </td>
+                      {canAssignDelivery && <td className="px-4 py-3 text-xs text-[#435047]">{renderPartnerAssignment(order)}</td>}
                       <td className="whitespace-nowrap px-4 py-3 text-xs capitalize text-[#435047]">{order.payment_method} · {order.payment_status}</td>
                       <td className="whitespace-nowrap px-4 py-3 font-bold text-[#263830]">₹{Number(order.total_amount).toFixed(2)}</td>
                       <td className="whitespace-nowrap px-4 py-3 text-xs text-[#68766e]">{formatDate(order.created_at)}</td>
@@ -465,15 +556,21 @@ function CustomerOrdersPage({ audience = 'admin', view = 'all', showOrderFilters
                     <label className="text-xs font-semibold text-[#68766e]">
                       Update order
                       <select
-                        value={order.order_status}
+                        value={Object.prototype.hasOwnProperty.call(assignmentDrafts, order.order_number) ? 'assigned' : order.order_status}
                         disabled={updatingOrder === order.order_number || order.payment_status === 'failed' || ['delivered', 'completed', 'cancelled'].includes(String(order.order_status || '').toLowerCase())}
-                        onChange={(event) => changeStatus(order, event.target.value)}
+                        onChange={(event) => selectOrderStatus(order, event.target.value)}
                         className="mt-1 block w-full rounded-lg border border-[#d9ded8] bg-white px-3 py-2 text-sm font-semibold capitalize text-[#263830] disabled:opacity-50 sm:min-w-44"
                       >
                         {getAvailableStatusOptions(order).map((status) => (
                           <option key={status.value} value={status.value}>{status.label}</option>
                         ))}
                       </select>
+                      {canAssignDelivery && order.order_type === 'home_delivery' && (
+                        <div className="mt-2 text-xs text-[#68766e]">
+                          <span className="mb-1 block">Delivery partner</span>
+                          {renderPartnerAssignment(order)}
+                        </div>
+                      )}
                     </label>
                   )}
                 </footer>

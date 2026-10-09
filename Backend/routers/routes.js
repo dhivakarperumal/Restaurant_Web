@@ -28,6 +28,11 @@ const cartRouter = require('./cartRouter');
 const wishlistRouter = require('./wishlistRouter');
 const inventoryRouter = require('./inventory');
 const { changeKitchenOrderStatus, getKitchenOrders, submitKitchenOrder } = require('../controllers/kitchenOrderController');
+const {
+  listAssignedDeliveryOrders,
+  listDeliveryPartners,
+  updateAssignedDeliveryOrderStatus,
+} = require('../controllers/customerOrderController');
 const { getActiveBill, getAllBills, getBill, settleBill } = require('../controllers/tableBillController');
 const ordersRouter = require('./orders');
 const revenueRouter = require('./revenue');
@@ -218,6 +223,9 @@ router.get('/users', requireAdmin, listUsers);
 router.put('/users/:userId', requireAdmin, updateUser);
 router.delete('/users/:userId', requireAdmin, removeUser);
 router.get('/delivery-partner/profile', requireDeliveryPartner, getDeliveryPartnerProfile);
+router.get('/delivery-partners', requireKitchenRole(['chef', 'super admin', 'admin']), listDeliveryPartners);
+router.get('/delivery-partner/orders', requireDeliveryPartner, listAssignedDeliveryOrders);
+router.patch('/delivery-partner/orders/:orderId/status', requireDeliveryPartner, updateAssignedDeliveryOrderStatus);
 router.use(
   '/orders',
   requireAuthenticatedUser,

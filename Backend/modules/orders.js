@@ -47,6 +47,7 @@ const initializeOrderSchema = async () => {
       payment_method ENUM('cod', 'online') NOT NULL,
       payment_status VARCHAR(24) NOT NULL DEFAULT 'pending',
       order_status VARCHAR(32) NOT NULL DEFAULT 'placed',
+      assigned_delivery_partner_id VARCHAR(255) NULL,
       razorpay_order_id VARCHAR(64) NULL,
       razorpay_payment_id VARCHAR(64) NULL,
       idempotency_key VARCHAR(64) NULL,
@@ -57,6 +58,23 @@ const initializeOrderSchema = async () => {
       INDEX orders_status_idx (order_status)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
   `);
+
+  const [deliveryPartnerColumn] = await db.execute(
+    `SELECT COLUMN_NAME FROM information_schema.COLUMNS
+     WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'orders'
+       AND COLUMN_NAME = 'assigned_delivery_partner_id'`
+  );
+  if (deliveryPartnerColumn.length === 0) {
+    await db.query('ALTER TABLE orders ADD COLUMN assigned_delivery_partner_id VARCHAR(255) NULL');
+  }
+  const [deliveryPartnerIndex] = await db.execute(
+    `SELECT INDEX_NAME FROM information_schema.STATISTICS
+     WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'orders'
+       AND INDEX_NAME = 'orders_delivery_partner_idx'`
+  );
+  if (deliveryPartnerIndex.length === 0) {
+    await db.query('ALTER TABLE orders ADD INDEX orders_delivery_partner_idx (assigned_delivery_partner_id)');
+  }
 
   const [idempotencyColumn] = await db.execute(
     `SELECT COLUMN_NAME FROM information_schema.COLUMNS
