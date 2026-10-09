@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  AlertTriangle, ArrowRight, Bike, CalendarDays,
+  AlertTriangle, ArrowRight, Bike, CalendarDays, Layers, Receipt,
   Check, ChefHat, CircleDollarSign, Clock3, CreditCard, CookingPot, Package,
   PackageCheck, Search, ShoppingBag, ShoppingCart, Sparkles, Table2,
   TrendingUp, Users, UtensilsCrossed,
@@ -346,6 +346,8 @@ const AdminDashboardOverview = () => {
     { label: 'View Reports', icon: TrendingUp, path: '/admin/inventory/reports', tone: 'bg-[#f0eaff] text-[#8051d8]', surface: 'border-[#6841a5] bg-[#6841a5] hover:border-[#533383] hover:bg-[#533383]' },
     { label: 'Manage Users', icon: Users, path: '/admin/customers', tone: 'bg-[#fff0ed] text-[#e55243]', surface: 'border-[#bd493d] bg-[#bd493d] hover:border-[#983b32] hover:bg-[#983b32]' },
     { label: 'Inventory', icon: Package, path: '/admin/inventory/products', tone: 'bg-[#e6f6f4] text-[#14978a]', surface: 'border-[#087c70] bg-[#087c70] hover:border-[#06655c] hover:bg-[#06655c]' },
+    { label: 'Categories', icon: Layers, path: '/admin/products/categories', tone: 'bg-[#f3f6df] text-[#687a24]', surface: 'border-[#63752a] bg-[#63752a] hover:border-[#4f5e21] hover:bg-[#4f5e21]' },
+    { label: 'Expenses', icon: Receipt, path: '/admin/expenses', tone: 'bg-[#fff0ef] text-[#c4483a]', surface: 'border-[#a64039] bg-[#a64039] hover:border-[#87342e] hover:bg-[#87342e]' },
   ];
   const dateLabel = period === 'custom' && customFrom && customTo
     ? `${formatDate(customFrom, { day: '2-digit', month: 'short', year: 'numeric' })} - ${formatDate(customTo, { day: '2-digit', month: 'short', year: 'numeric' })}`
@@ -459,7 +461,7 @@ const AdminDashboardOverview = () => {
           <div className="mb-3 flex items-center justify-between"><h2 className="text-sm font-bold text-[#1c2c22] sm:text-base">Quick Actions</h2><button type="button" onClick={() => navigate('/admin')} className="text-[10px] font-medium text-[#66756b] hover:text-[#178a36]">View All <ArrowRight size={11} className="ml-1 inline" /></button></div>
           <div className="grid grid-cols-2 gap-2">
             {quickActions.map(({ label, icon: Icon, path, tone, surface }) => <button type="button" key={label} onClick={() => navigate(path)} className={`flex min-h-[74px] flex-col items-center justify-center gap-2 rounded-md border px-2 py-2 text-center text-white transition hover:shadow-sm ${surface}`}>
-              <span className={`grid h-10 w-10 place-items-center ${tone}`}><Icon size={20} /></span><span className="text-[10px] font-semibold text-white">{label}</span>
+              <span className={`grid h-10 w-10 place-items-center rounded-full ${tone}`}><Icon size={20} /></span><span className="text-[10px] font-semibold text-white">{label}</span>
             </button>)}
           </div>
         </article>
