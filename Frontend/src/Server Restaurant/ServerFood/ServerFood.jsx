@@ -710,7 +710,7 @@ export default function ServerFood() {
       </div>
 
       <div className={selectedTable ? "grid items-start gap-5 xl:grid-cols-[minmax(0,1fr)_380px]" : ""}>
-      <div className={selectedTable ? "min-w-0 xl:max-h-[calc(100vh-12rem)] xl:overflow-y-auto xl:overscroll-contain xl:pr-2" : "min-w-0"}>
+      <div className={selectedTable ? "min-w-0 xl:max-h-[calc(100vh-12rem)] xl:overflow-y-auto xl:overscroll-contain xl:pr-2 scrollbar-hide" : "min-w-0"}>
       {/* Main Content Area */}
       {loading ? (
         <div className="bg-white p-14 rounded-2xl border border-gray-100 flex flex-col items-center justify-center gap-3">
@@ -1098,7 +1098,7 @@ export default function ServerFood() {
             </div>
           </header>
 
-          <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-3 sm:p-4">
+          <div className="scrollbar-hide min-h-0 flex-1 overflow-y-auto overscroll-contain p-3 sm:p-4">
             {cartItems.length ? (
               <div className="space-y-3">
                 {cartItems.map(([cartKey, item]) => {
