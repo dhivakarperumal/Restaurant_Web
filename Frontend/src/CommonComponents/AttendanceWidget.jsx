@@ -16,7 +16,7 @@ import toast from "react-hot-toast";
 import api from "../api";
 import { useAuth } from "../PrivateRouter/AuthContext";
 
-export default function AttendanceWidget({ variant = "header" }) {
+export default function AttendanceWidget({ variant = "header", onAttendanceChange }) {
   const { user } = useAuth();
   const [attendance, setAttendance] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -35,6 +35,7 @@ export default function AttendanceWidget({ variant = "header" }) {
         if (res.data.data?.duration_seconds != null) {
           setLiveSeconds(Number(res.data.data.duration_seconds));
         }
+        onAttendanceChange?.(res.data.data || null);
       }
     } catch (err) {
       // If error occurs, attendance remains null
@@ -46,6 +47,11 @@ export default function AttendanceWidget({ variant = "header" }) {
 
   useEffect(() => {
     fetchTodayAttendance();
+    const handleUpdate = () => {
+      fetchTodayAttendance();
+    };
+    window.addEventListener("attendance-updated", handleUpdate);
+    return () => window.removeEventListener("attendance-updated", handleUpdate);
   }, []);
 
   // Live timer for active working shift
@@ -91,6 +97,8 @@ export default function AttendanceWidget({ variant = "header" }) {
         } else {
           setLiveSeconds(0);
         }
+        window.dispatchEvent(new CustomEvent("attendance-updated", { detail: res.data.data }));
+        onAttendanceChange?.(res.data.data);
         toast.success("Clocked in successfully! Have a great shift.");
       }
     } catch (err) {
@@ -107,6 +115,8 @@ export default function AttendanceWidget({ variant = "header" }) {
       const res = await api.post("/attendance/clock-out");
       if (res.data?.success) {
         setAttendance(res.data.data);
+        window.dispatchEvent(new CustomEvent("attendance-updated", { detail: res.data.data }));
+        onAttendanceChange?.(res.data.data);
         toast.success(
           `Clocked out successfully! Total worked: ${res.data.data?.total_hours || 0} hrs.`
         );

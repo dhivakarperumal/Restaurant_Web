@@ -1,4 +1,5 @@
 const db = require('../config/db');
+const { clockInEmployee, clockOutEmployee, getTodayAttendance } = require('../modules/attendance');
 
 const orderStatuses = ['placed', 'preparing', 'ready', 'assigned', 'completed', 'delivered', 'cancelled'];
 const deliveryPartnerNextStatus = {
@@ -324,7 +325,113 @@ const updateAssignedDeliveryOrderStatus = async (req, res) => {
   }
 };
 
+const getDeliveryPartnerDashboard = async (req, res) => {
+  const employeeId = req.auth.employee_id;
+  if (!employeeId) {
+    return res.status(404).json({ success: false, message: 'Delivery partner record was not found.' });
+  }
+
+  try {
+    const [empRows] = await db.execute(
+      'SELECT available_for_delivery, current_status FROM employees WHERE employee_id = ? LIMIT 1',
+      [employeeId]
+    );
+    const emp = empRows[0] || {};
+
+    const attendance = await getTodayAttendance(employeeId);
+    const isCheckedIn = Boolean(attendance && attendance.check_in && !attendance.check_out);
+    const isOnline = isCheckedIn && (emp.available_for_delivery === 'Yes' || emp.current_status === 'Available');
+
+    const [counts] = await db.execute(
+      `SELECT
+        COUNT(CASE WHEN DATE(created_at) = CURDATE() AND order_status IN ('delivered', 'completed') THEN 1 END) AS todayDeliveries,
+        COUNT(CASE WHEN order_status = 'assigned' THEN 1 END) AS newOrders,
+        COUNT(CASE WHEN order_status IN ('assigned', 'accepted') THEN 1 END) AS assignedOrders,
+        COUNT(CASE WHEN order_status = 'reached_pickup' THEN 1 END) AS pickupPending,
+        COUNT(CASE WHEN order_status IN ('picked_up', 'out_for_delivery', 'reached_customer') THEN 1 END) AS outForDelivery,
+        COUNT(CASE WHEN order_status IN ('delivered', 'completed') THEN 1 END) AS deliveredOrders,
+        COUNT(CASE WHEN order_status = 'cancelled' THEN 1 END) AS cancelledOrders,
+        COALESCE(SUM(CASE WHEN DATE(created_at) = CURDATE() AND order_status IN ('delivered', 'completed') THEN total_amount END), 0) AS todayEarnings,
+        COALESCE(SUM(CASE WHEN order_status IN ('delivered', 'completed') THEN total_amount END), 0) AS totalEarnings
+       FROM orders
+       WHERE assigned_delivery_partner_id = ? AND order_type = 'home_delivery'`,
+      [employeeId]
+    );
+
+    const [activeOrders] = await db.execute(
+      `SELECT o.id, o.order_number, o.customer_name, o.customer_phone, o.total_amount,
+              o.order_status, o.created_at, a.address_line, a.area_locality, a.city
+       FROM orders o
+       LEFT JOIN \`address\` a ON a.id = o.address_id AND a.user_id = o.user_id
+       WHERE o.assigned_delivery_partner_id = ?
+         AND o.order_type = 'home_delivery'
+         AND o.order_status IN ('assigned', 'accepted', 'reached_pickup', 'picked_up', 'out_for_delivery', 'reached_customer')
+       ORDER BY o.created_at DESC LIMIT 1`,
+      [employeeId]
+    );
+
+    return res.json({
+      success: true,
+      dashboard: {
+        is_online: isOnline,
+        isCheckedIn,
+        attendance,
+        summary: counts[0] || {},
+        active_order: activeOrders[0] || null,
+      },
+    });
+  } catch (error) {
+    console.error('Failed to load delivery partner dashboard:', error);
+    return res.status(500).json({ success: false, message: 'Delivery partner dashboard could not be loaded.' });
+  }
+};
+
+const updateDeliveryPartnerAvailability = async (req, res) => {
+  const employeeId = req.auth.employee_id;
+  const isOnlineRequested = Boolean(req.body?.is_online);
+  const shouldClockOut = Boolean(req.body?.clock_out);
+
+  try {
+    if (isOnlineRequested) {
+      await clockInEmployee(employeeId, req.auth.user_id);
+      await db.execute(
+        "UPDATE employees SET available_for_delivery = 'Yes', current_status = 'Available', updated_at = CURRENT_TIMESTAMP WHERE employee_id = ?",
+        [employeeId]
+      );
+    } else {
+      if (shouldClockOut) {
+        await clockOutEmployee(employeeId);
+      }
+      await db.execute(
+        "UPDATE employees SET available_for_delivery = 'No', current_status = 'Offline', updated_at = CURRENT_TIMESTAMP WHERE employee_id = ?",
+        [employeeId]
+      );
+    }
+
+    const attendance = await getTodayAttendance(employeeId);
+    const isCheckedIn = Boolean(attendance && attendance.check_in && !attendance.check_out);
+
+    return res.json({
+      success: true,
+      message: isOnlineRequested
+        ? 'You are now online and checked in for deliveries.'
+        : shouldClockOut
+        ? 'Shift clocked out and you are now offline.'
+        : 'You are now offline.',
+      data: {
+        is_online: isOnlineRequested,
+        isCheckedIn,
+        attendance,
+      },
+    });
+  } catch (error) {
+    console.error('Failed to update delivery partner availability:', error);
+    return res.status(500).json({ success: false, message: error.message || 'Availability could not be updated.' });
+  }
+};
+
 module.exports = {
+  getDeliveryPartnerDashboard,
   listCustomerOrders: (req, res) => getOrders(req, res, false),
   listMyOrders: (req, res) => getOrders(req, res, true),
   getMyOrder: (req, res) => getOrders(req, res, true, req.params.orderNumber),
@@ -332,4 +439,5 @@ module.exports = {
   listDeliveryPartners,
   updateAssignedDeliveryOrderStatus,
   updateCustomerOrderStatus,
+  updateDeliveryPartnerAvailability,
 };

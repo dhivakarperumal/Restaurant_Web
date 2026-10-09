@@ -80,6 +80,15 @@ async function recordLoginAttendance(userId, employeeId) {
       'SELECT * FROM employee_attendance WHERE attendance_id = ? LIMIT 1',
       [attendanceId]
     );
+
+    // Auto set delivery partner online upon checkin
+    try {
+      await db.execute(
+        "UPDATE employees SET available_for_delivery = 'Yes', current_status = 'Available', updated_at = CURRENT_TIMESTAMP WHERE employee_id = ? AND employee_type = 'Delivery Partner'",
+        [empId]
+      );
+    } catch (ignore) {}
+
     return created[0] || null;
   } catch (error) {
     console.error('Error recording login attendance:', error);
@@ -103,12 +112,24 @@ async function clockInEmployee(employeeId, userId) {
         'UPDATE employee_attendance SET check_out = NULL, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
         [existing[0].id]
       );
+      try {
+        await db.execute(
+          "UPDATE employees SET available_for_delivery = 'Yes', current_status = 'Available', updated_at = CURRENT_TIMESTAMP WHERE employee_id = ? AND employee_type = 'Delivery Partner'",
+          [employeeId]
+        );
+      } catch (ignore) {}
       const [updated] = await db.execute(
         'SELECT * FROM employee_attendance WHERE id = ? LIMIT 1',
         [existing[0].id]
       );
       return updated[0];
     }
+    try {
+      await db.execute(
+        "UPDATE employees SET available_for_delivery = 'Yes', current_status = 'Available', updated_at = CURRENT_TIMESTAMP WHERE employee_id = ? AND employee_type = 'Delivery Partner'",
+        [employeeId]
+      );
+    } catch (ignore) {}
     return existing[0];
   }
 
@@ -142,6 +163,14 @@ async function clockOutEmployee(employeeId) {
      WHERE id = ?`,
     [existing[0].id]
   );
+
+  // When clocking out, set delivery partner offline
+  try {
+    await db.execute(
+      "UPDATE employees SET available_for_delivery = 'No', current_status = 'Offline', updated_at = CURRENT_TIMESTAMP WHERE employee_id = ? AND employee_type = 'Delivery Partner'",
+      [employeeId]
+    );
+  } catch (ignore) {}
 
   const [updated] = await db.execute(
     'SELECT * FROM employee_attendance WHERE id = ? LIMIT 1',
