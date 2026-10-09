@@ -75,22 +75,23 @@ export default function OfferBanner({
 
           <div className="pointer-events-none absolute inset-0 z-0 bg-gradient-to-r from-[#031d12]/95 via-[#031d12]/85 to-[#031d12]/25" />
 
-          <div className="relative z-10 w-full px-5 py-7 text-left sm:px-8 sm:py-9 md:px-10 lg:px-14">
-            <div className="flex max-w-[min(100%,620px)] flex-col items-start">
-              <span className="font-dancing text-2xl font-semibold leading-tight text-[#f5a623] drop-shadow-sm select-none sm:text-3xl lg:text-[34px]">
-                {badgeTitle}
-              </span>
+          <div className="relative z-10 w-full px-5 py-7 text-left sm:px-8 sm:py-9 md:px-8 lg:px-12">
+            <div className="grid grid-cols-1 items-center gap-6 md:grid-cols-3 md:gap-5 lg:gap-8">
+              <div className="flex min-w-0 flex-col items-start">
+                <span className="font-dancing text-2xl font-semibold leading-tight text-[#f5a623] drop-shadow-sm select-none sm:text-3xl lg:text-[34px]">
+                  {badgeTitle}
+                </span>
+                <h3 className="my-1 text-3xl font-extrabold leading-tight tracking-tight text-white drop-shadow-md select-none sm:my-1.5 sm:text-4xl lg:text-[40px] xl:text-[46px]">
+                  {headlinePrefix}
+                  <span className="font-black text-[#f97316]">{discount}</span>
+                </h3>
+              </div>
 
-              <h3 className="my-1 text-3xl font-extrabold leading-tight tracking-tight text-white drop-shadow-md select-none sm:my-1.5 sm:text-4xl lg:text-5xl xl:text-[54px]">
-                {headlinePrefix}
-                <span className="font-black text-[#f97316]">{discount}</span>
-              </h3>
-
-              <p className="text-sm font-medium tracking-wide text-white/95 drop-shadow-sm select-none sm:text-base lg:text-lg">
-                {offerSubtitle}
-              </p>
-
-              <div className="mt-4 flex flex-wrap items-center justify-start gap-2.5 sm:gap-3.5">
+              <div className="flex min-w-0 flex-col items-start">
+                <p className="text-sm font-medium tracking-wide text-white/95 drop-shadow-sm select-none sm:text-base lg:text-lg">
+                  {offerSubtitle}
+                </p>
+                <div className="mt-3 flex flex-wrap items-center justify-start gap-2.5 sm:gap-3">
                 <div
                   onClick={handleCopyCode}
                   onKeyDown={(e) => {
@@ -118,11 +119,24 @@ export default function OfferBanner({
 
                 <Link
                   to={buttonLink}
-                  className="group inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#ea580c] to-[#f97316] px-6 py-2 font-bold text-white shadow-lg shadow-orange-950/40 transition-all duration-200 hover:scale-105 hover:from-[#d84e06] hover:to-[#ea580c] hover:shadow-orange-900/60 active:scale-95 sm:px-7 sm:py-2.5 sm:text-base"
+                  className="group inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#ea580c] to-[#f97316] px-5 py-2 font-bold text-white shadow-lg shadow-orange-950/40 transition-all duration-200 hover:scale-105 hover:from-[#d84e06] hover:to-[#ea580c] hover:shadow-orange-900/60 active:scale-95 sm:px-6 sm:py-2.5 sm:text-base"
                 >
                   <span>{buttonText}</span>
                   <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
                 </Link>
+                </div>
+              </div>
+
+              <div className="relative hidden select-none items-center justify-center text-center md:flex">
+                <span aria-hidden="true" className="absolute h-36 w-36 rounded-full border border-[#facc15]/25" />
+                <span aria-hidden="true" className="absolute h-28 w-28 rounded-full border border-dashed border-white/20" />
+                <div className="relative -rotate-6 font-dancing text-3xl font-bold leading-[1.05] text-white drop-shadow-md lg:text-4xl">
+                  <span>Tasty</span>
+                  <br />
+                  <span className="text-[#facc15]">Healthy</span>
+                  <br />
+                  <span>Fresh</span>
+                </div>
               </div>
             </div>
           </div>
