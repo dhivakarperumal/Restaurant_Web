@@ -48,6 +48,7 @@ import Billing from './Admin/Billings/Billing.jsx'
 import NewBilling from './Admin/Billings/NewBilling.jsx'
 import OrderDetails from './Admin/Billings/OrderDetails.jsx'
 import ExpensesPage from './Admin/Expenses/ExpensesPage.jsx'
+import EmployeeSalary from './Admin/Expenses/EmployeeSalary.jsx'
 const RevenuePage = lazy(() => import('./Admin/RevenuePage.jsx'))
 
 
@@ -159,6 +160,10 @@ const router = createHashRouter([
           {
             path: 'employees',
             element: <AllEmployees />,
+          },
+          {
+            path: 'employee-salary',
+            element: <EmployeeSalary />,
           },
           {
             path: 'servers',

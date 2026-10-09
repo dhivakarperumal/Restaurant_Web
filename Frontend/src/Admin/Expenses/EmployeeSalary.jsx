@@ -10,8 +10,7 @@ import {
 import api from '../../api';
 import { useAuth } from '../../PrivateRouter/AuthContext';
 import { useReactToPrint } from "react-to-print";
-import ModalPortal from '../../Componets/CommonComponents/ModalPortal';
-import PayslipTemplate from '../../Componets/PayslipTemplate';
+import ModalPortal from '../../CommonComponents/ModalPortal';
 
 const fieldClass = 'w-full rounded-xl border border-white/10 bg-[#0e1118] px-3 py-2.5 text-sm text-white outline-none focus:border-orange-500/70 transition placeholder:text-white/20';
 const sectionClass = 'rounded-2xl border border-white/8 bg-white/[0.03] p-5';
@@ -120,6 +119,39 @@ const BLANK = {
   ifsc_code: '',
   upi_id: ''
 };
+
+function PayslipTemplate({ payslip }) {
+  const currency = (value) => `₹${Number(value || 0).toLocaleString('en-IN', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })}`;
+
+  return (
+    <div className="mx-auto my-6 max-w-2xl bg-white p-8 text-slate-800">
+      <div className="border-b border-slate-200 pb-5 text-center">
+        <h2 className="text-xl font-bold">Restaurant Salary Slip</h2>
+        <p className="mt-1 text-sm text-slate-500">
+          {new Date(0, Number(payslip.salary_month) - 1).toLocaleString('default', { month: 'long' })} {payslip.salary_year}
+        </p>
+      </div>
+      <div className="grid grid-cols-2 gap-4 border-b border-slate-200 py-5 text-sm">
+        <p><span className="text-slate-500">Employee:</span> {payslip.first_name} {payslip.last_name}</p>
+        <p><span className="text-slate-500">Employee code:</span> {payslip.employee_code || '—'}</p>
+        <p><span className="text-slate-500">Present days:</span> {payslip.present_days ?? '—'}</p>
+        <p><span className="text-slate-500">Leave days:</span> {payslip.leave_days ?? '—'}</p>
+      </div>
+      <div className="space-y-3 py-5 text-sm">
+        <div className="flex justify-between"><span>Basic salary</span><span>{currency(payslip.basic_salary)}</span></div>
+        <div className="flex justify-between"><span>Incentive</span><span>{currency(payslip.incentive_amount)}</span></div>
+        <div className="flex justify-between"><span>Leave deduction</span><span>- {currency(payslip.leave_deduction)}</span></div>
+        <div className="flex justify-between"><span>Additional deduction</span><span>- {currency(payslip.additional_deduction)}</span></div>
+      </div>
+      <div className="flex justify-between border-t-2 border-slate-800 pt-4 text-base font-bold">
+        <span>Net salary</span><span>{currency(payslip.total_salary)}</span>
+      </div>
+    </div>
+  );
+}
 
 function Modal({ open, onClose, title, children }) {
   if (!open) return null;
