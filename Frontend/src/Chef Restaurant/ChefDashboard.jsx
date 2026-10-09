@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { ClipboardList, Clock3, RefreshCw, UtensilsCrossed } from "lucide-react";
+import { ClipboardList, Clock3, RefreshCw, UtensilsCrossed, Flame, CheckCircle2 } from "lucide-react";
 import api from "../api";
 import { useAuth } from "../PrivateRouter/AuthContext";
 import AttendanceWidget from "../CommonComponents/AttendanceWidget";
@@ -76,10 +76,10 @@ const ChefDashboard = () => {
   );
 
   const stats = [
-    { label: "Active Tickets", value: orderCounts.active, detail: "Open kitchen orders", tone: "border-[#1a3c36] text-[#1a3c36]" },
-    { label: "Pending", value: orderCounts.pending, detail: "Waiting to start", tone: "border-amber-500 text-amber-700" },
-    { label: "Preparing", value: orderCounts.preparing, detail: "In progress", tone: "border-sky-600 text-sky-700" },
-    { label: "Ready", value: orderCounts.ready, detail: "Ready to serve", tone: "border-emerald-600 text-emerald-700" },
+    { label: "Active Tickets", value: orderCounts.active, detail: "Open kitchen orders", icon: UtensilsCrossed, bg: "bg-[#22c55e]" },
+    { label: "Pending", value: orderCounts.pending, detail: "Waiting to start", icon: Clock3, bg: "bg-[#f59e0b]" },
+    { label: "Preparing", value: orderCounts.preparing, detail: "In progress", icon: Flame, bg: "bg-[#3b82f6]" },
+    { label: "Ready to Serve", value: orderCounts.ready, detail: "Plated & hot", icon: CheckCircle2, bg: "bg-[#8b5cf6]" },
   ];
 
   return (
@@ -102,14 +102,48 @@ const ChefDashboard = () => {
       {/* Attendance Banner */}
       <AttendanceWidget variant="dashboard" />
 
-      <section aria-label="Kitchen order summary" className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        {stats.map((stat) => (
-          <div key={stat.label} className={`border-l-4 bg-white px-4 py-4 shadow-sm ${stat.tone}`}>
-            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">{stat.label}</p>
-            <p className={`mt-2 text-3xl font-bold ${stat.tone.split(" ")[1]}`}>{loading ? "..." : stat.value}</p>
-            <p className="mt-1 text-xs text-slate-500">{stat.detail}</p>
-          </div>
-        ))}
+      <section aria-label="Kitchen order summary" className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        {stats.map((stat, index) => {
+          const Icon = stat.icon;
+          return (
+            <article
+              key={stat.label}
+              className={`relative min-w-0 overflow-hidden rounded-xl border border-transparent p-4 sm:p-5 shadow-[0_2px_10px_rgba(20,56,34,0.08)] flex flex-col justify-between min-h-[140px] ${stat.bg} text-white`}
+            >
+              <div className="flex items-start gap-3 relative z-10">
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg shadow-sm bg-white/20">
+                  <Icon size={24} strokeWidth={2.2} className="text-white" />
+                </div>
+                <div className="flex-1 mt-0.5 min-w-0">
+                  <h3 className="text-[12px] font-semibold opacity-90 mb-1 truncate">{stat.label}</h3>
+                  <div className="text-[26px] font-extrabold leading-none tracking-tight">
+                    {loading ? "..." : stat.value}
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2 mt-5 relative z-10">
+                <span className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[11px] font-bold bg-white/25">
+                  Live
+                </span>
+                <span className="text-[11px] font-medium opacity-75 truncate">{stat.detail}</span>
+              </div>
+
+              <div className="absolute right-0 bottom-0 w-24 h-16 pointer-events-none opacity-50">
+                <svg viewBox="0 0 100 50" preserveAspectRatio="none" className="w-full h-full">
+                  <defs>
+                    <linearGradient id={`chef-grad-${index}`} x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#ffffff" stopOpacity="0.4" />
+                      <stop offset="100%" stopColor="#ffffff" stopOpacity="0.0" />
+                    </linearGradient>
+                  </defs>
+                  <path d="M0,50 L0,40 Q25,30 50,40 T100,20 L100,50 Z" fill={`url(#chef-grad-${index})`} />
+                  <path d="M0,40 Q25,30 50,40 T100,20" fill="none" stroke="#ffffff" strokeWidth="2.5" />
+                </svg>
+              </div>
+            </article>
+          );
+        })}
       </section>
 
       <section className="grid gap-5 xl:grid-cols-[1.5fr_1fr]">
