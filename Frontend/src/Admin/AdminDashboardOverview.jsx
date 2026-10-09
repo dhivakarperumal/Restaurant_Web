@@ -216,7 +216,6 @@ const AdminDashboardOverview = () => {
 
   const dateRangeOrders = snapshot.orders.filter((order) => inRange(order.created_at || order.order_date, period, customFrom, customTo));
   const dateRangeBills = snapshot.bills.filter((bill) => inRange(bill.created_at, period, customFrom, customTo));
-  const dateRangeCustomers = snapshot.users.filter((user) => customerRole(user.role) && inRange(user.created_at, period, customFrom, customTo));
   const activeDeliveryCount = dateRangeOrders.filter((order) => order.order_type === 'home_delivery' && !terminalOrder(order.order_status)).length;
   const customerCount = snapshot.users.filter((user) => customerRole(user.role)).length;
   const statusTotal = report.statuses.reduce((sum, item) => sum + Number(item.count || 0), 0);
@@ -471,7 +470,7 @@ const AdminDashboardOverview = () => {
 
       <section className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
         {[
-          { title: 'Total Customers', value: loading ? '—' : customerCount.toLocaleString('en-IN'), detail: 'Registered customers', icon: Users, tone: 'bg-[#eaf7ed] text-[#269448]', path: '/admin/customers' },
+          { title: 'Total Foods', value: loading ? '—' : snapshot.foods.length.toLocaleString('en-IN'), detail: 'Items in menu', icon: CookingPot, tone: 'bg-[#eaf7ed] text-[#269448]', path: '/admin/products' },
           { title: 'Low Stock Items', value: loading ? '—' : Number(snapshot.inventory.lowStock || 0).toLocaleString('en-IN'), detail: 'Needs restocking', icon: AlertTriangle, tone: 'bg-[#fff0ed] text-[#e95045]', path: '/admin/inventory/products' },
           { title: 'Open Table Bills', value: loading ? '—' : openBillsCount.toLocaleString('en-IN'), detail: 'Awaiting settlement', icon: Table2, tone: 'bg-[#eaf2ff] text-[#2675d5]', path: '/admin/billing/history' },
           { title: 'Kitchen Requests', value: loading ? '—' : pendingKitchenCount.toLocaleString('en-IN'), detail: 'Pending or approved', icon: ChefHat, tone: 'bg-[#fff5df] text-[#e99b00]', path: '/admin/inventory/kitchen-requests' },
