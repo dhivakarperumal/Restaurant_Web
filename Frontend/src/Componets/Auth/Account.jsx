@@ -418,7 +418,7 @@ const Account = () => {
       <main className="min-h-screen bg-[#f7f7f3] pb-16 pt-2 sm:pt-4">
         <PageContainer className="max-w-[1500px]">
           <section className="relative mb-4 min-h-[300px] overflow-hidden rounded-[26px] bg-[#002d1c] text-white shadow-lg sm:min-h-[322px]">
-            <img src="/images/tab.png" alt="" aria-hidden="true" className="absolute inset-y-0 right-0 h-full w-full object-cover object-center opacity-65 sm:w-[68%] sm:object-[center_44%]" />
+            <img src="/images/header.png" alt="" aria-hidden="true" className="absolute inset-y-0 right-0 h-full w-full object-cover object-center opacity-65 sm:w-[68%] sm:object-[center_44%]" />
             <div className="absolute inset-0 bg-gradient-to-r from-[#002b1a] via-[#00351f]/95 to-[#002b1a]/15" />
             <div className="absolute inset-0 bg-gradient-to-t from-[#001d12]/90 via-transparent to-[#001d12]/10" />
             <div className="relative flex min-h-[235px] flex-col justify-center gap-5 px-5 pb-6 pt-7 sm:min-h-[242px] sm:flex-row sm:items-center sm:gap-8 sm:px-10 sm:pb-10">
