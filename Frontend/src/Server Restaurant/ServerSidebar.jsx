@@ -79,55 +79,6 @@ const navItems = [
 
 
 
-
-
-
-  {
-    label: "Orders",
-    icon: ShoppingCart,
-    children: [
-      { path: "/admin/orders/new", label: "New Order", icon: PlusSquare },
-      { path: "/admin/orders", label: "All Orders", icon: List },
-      { path: "/admin/orders/delivery", label: "Delivery Orders", icon: Package },
-      { path: "/admin/orders/cancelled", label: "Cancelled Orders", icon: XCircle },
-    ],
-  },
-
- 
-
-  {
-    path: "/admin/customers",
-    label: "Customers",
-    icon: Users,
-  },
-
- 
-
-  {
-    path: "/admin/billing",
-    label: "Billing",
-    icon: Receipt,
-  },
-
-  {
-    path: "/admin/reviews",
-    label: "Reviews",
-    icon: Star,
-  },
-
-  /* ---- MARKETING ---- */
-  {
-    label: "Marketing",
-    icon: TrendingUp,
-    children: [
-      { path: "/admin/banners", label: "Banners", icon: Image },
-      { path: "/admin/videos", label: "Videos Management", icon: Image },
-      { path: "/admin/gallery", label: "Gallery", icon: Image },
-      { path: "/admin/coupons", label: "Coupons & Offers", icon: Tag },
-    ],
-  },
-
-
 ];
 
 /* ================= SIDEBAR ================= */
