@@ -107,23 +107,40 @@ const mapOrder = (order) => ({
 const OrderDetails = () => {
   const navigate = useNavigate();
   const { orderId } = useParams();
-  const [order, setOrder] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [orderState, setOrderState] = useState({
+    orderId: null,
+    order: null,
+    loading: true,
+  });
+  const order = orderState.orderId === orderId ? orderState.order : null;
+  const loading = orderState.orderId !== orderId || orderState.loading;
 
   useEffect(() => {
+    let isCurrentRequest = true;
+
     const fetchOrder = async () => {
       try {
         const response = await api.get(`/orders/${orderId}`);
-        setOrder(response.data?.data ? mapOrder(response.data.data) : null);
+        if (isCurrentRequest) {
+          setOrderState({
+            orderId,
+            order: response.data?.data ? mapOrder(response.data.data) : null,
+            loading: false,
+          });
+        }
       } catch (error) {
-        console.error("Failed to load order details:", error);
-        setOrder(null);
-      } finally {
-        setLoading(false);
+        if (isCurrentRequest) {
+          console.error("Failed to load order details:", error);
+          setOrderState({ orderId, order: null, loading: false });
+        }
       }
     };
 
     fetchOrder();
+
+    return () => {
+      isCurrentRequest = false;
+    };
   }, [orderId]);
 
   const itemTotal = useMemo(
