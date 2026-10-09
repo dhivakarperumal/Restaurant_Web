@@ -185,7 +185,7 @@ const router = createHashRouter([
           },
           {
             path: 'orders/cancelled',
-            element: <CustomerOrdersPage audience="admin" view="cancelled" />,
+            element: <CustomerOrdersPage audience="admin" view="cancelled" showOrderFilters />,
           },
           {
             path: 'settings',

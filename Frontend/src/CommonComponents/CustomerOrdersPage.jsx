@@ -45,7 +45,7 @@ function CustomerOrdersPage({ audience = 'admin', view = 'all', showOrderFilters
     view === 'delivery' ? 'home_delivery' : view === 'pickup' ? 'pickup' : 'all'
   );
   const [statusFilter, setStatusFilter] = useState(
-    view === 'new' ? 'placed' : view === 'delivery' ? 'delivered' : 'all'
+    view === 'new' ? 'placed' : view === 'delivery' ? 'delivered' : view === 'cancelled' ? 'cancelled' : 'all'
   );
   const [searchTerm, setSearchTerm] = useState('');
   const [sortOrder, setSortOrder] = useState('latest');
@@ -56,9 +56,10 @@ function CustomerOrdersPage({ audience = 'admin', view = 'all', showOrderFilters
     : audience === 'chef' ? 'Customer Kitchen Orders'
       : view === 'new' ? 'New Orders'
         : view === 'pickup' ? 'Pickup Orders'
-      : view === 'delivery' ? (showOrderFilters ? 'Home Delivery Orders' : 'Delivery Orders')
+      : view === 'cancelled' ? 'Cancelled Orders'
+        : view === 'delivery' ? (showOrderFilters ? 'Home Delivery Orders' : 'Delivery Orders')
         : 'Customer Orders';
-  const filterStatus = showOrderFilters && ['new', 'delivery'].includes(view)
+  const filterStatus = showOrderFilters && ['new', 'delivery', 'cancelled'].includes(view)
     ? (statusFilter === 'all' ? undefined : statusFilter)
     : FILTERS[view]?.status;
   const filterOrderType = FILTERS[view]?.order_type;
