@@ -340,12 +340,12 @@ const AdminDashboardOverview = () => {
   const name = userProfile?.displayName?.split(' ')[0] || 'Admin';
   const periodLabel = PERIODS.find(([key]) => (PERIOD_API[key] || key) === apiRange)?.[1] || 'Today';
   const quickActions = [
-    { label: 'Add Food Item', icon: CookingPot, path: '/admin/products/add', tone: 'bg-[#eaf7ed] text-[#23944a]' },
-    { label: 'New Order', icon: ShoppingBag, path: '/admin/billing/new', tone: 'bg-[#eaf2ff] text-[#2475dc]' },
-    { label: 'Manage Menu', icon: UtensilsCrossed, path: '/admin/products', tone: 'bg-[#fff3df] text-[#e99a00]' },
-    { label: 'View Reports', icon: TrendingUp, path: '/admin/inventory/reports', tone: 'bg-[#f0eaff] text-[#8051d8]' },
-    { label: 'Manage Users', icon: Users, path: '/admin/customers', tone: 'bg-[#fff0ed] text-[#e55243]' },
-    { label: 'Inventory', icon: Package, path: '/admin/inventory/products', tone: 'bg-[#e6f6f4] text-[#14978a]' },
+    { label: 'Add Food Item', icon: CookingPot, path: '/admin/products/add', tone: 'bg-[#eaf7ed] text-[#23944a]', surface: 'border-[#1f7a4d] bg-[#1f7a4d] hover:border-[#19643f] hover:bg-[#19643f]' },
+    { label: 'New Order', icon: ShoppingBag, path: '/admin/billing/new', tone: 'bg-[#eaf2ff] text-[#2475dc]', surface: 'border-[#2864b3] bg-[#2864b3] hover:border-[#20518f] hover:bg-[#20518f]' },
+    { label: 'Manage Menu', icon: UtensilsCrossed, path: '/admin/products', tone: 'bg-[#fff3df] text-[#e99a00]', surface: 'border-[#a66a08] bg-[#a66a08] hover:border-[#875506] hover:bg-[#875506]' },
+    { label: 'View Reports', icon: TrendingUp, path: '/admin/inventory/reports', tone: 'bg-[#f0eaff] text-[#8051d8]', surface: 'border-[#6841a5] bg-[#6841a5] hover:border-[#533383] hover:bg-[#533383]' },
+    { label: 'Manage Users', icon: Users, path: '/admin/customers', tone: 'bg-[#fff0ed] text-[#e55243]', surface: 'border-[#bd493d] bg-[#bd493d] hover:border-[#983b32] hover:bg-[#983b32]' },
+    { label: 'Inventory', icon: Package, path: '/admin/inventory/products', tone: 'bg-[#e6f6f4] text-[#14978a]', surface: 'border-[#087c70] bg-[#087c70] hover:border-[#06655c] hover:bg-[#06655c]' },
   ];
   const dateLabel = period === 'custom' && customFrom && customTo
     ? `${formatDate(customFrom, { day: '2-digit', month: 'short', year: 'numeric' })} - ${formatDate(customTo, { day: '2-digit', month: 'short', year: 'numeric' })}`
@@ -458,7 +458,7 @@ const AdminDashboardOverview = () => {
         <article className="min-w-0 border border-[#e6ebe7] bg-white p-4 sm:p-5">
           <div className="mb-3 flex items-center justify-between"><h2 className="text-sm font-bold text-[#1c2c22] sm:text-base">Quick Actions</h2><button type="button" onClick={() => navigate('/admin')} className="text-[10px] font-medium text-[#66756b] hover:text-[#178a36]">View All <ArrowRight size={11} className="ml-1 inline" /></button></div>
           <div className="grid grid-cols-2 gap-2">
-            {quickActions.map(({ label, icon: Icon, path, tone }) => <button type="button" key={label} onClick={() => navigate(path)} className="flex min-h-[74px] flex-col items-center justify-center gap-2 rounded-full border border-[#173d2f] bg-[#173d2f] px-2 py-2 text-center text-white transition hover:border-[#22543f] hover:bg-[#22543f] hover:shadow-sm">
+            {quickActions.map(({ label, icon: Icon, path, tone, surface }) => <button type="button" key={label} onClick={() => navigate(path)} className={`flex min-h-[74px] flex-col items-center justify-center gap-2 rounded-md border px-2 py-2 text-center text-white transition hover:shadow-sm ${surface}`}>
               <span className={`grid h-10 w-10 place-items-center ${tone}`}><Icon size={20} /></span><span className="text-[10px] font-semibold text-white">{label}</span>
             </button>)}
           </div>
