@@ -419,8 +419,7 @@ const Account = () => {
         <PageContainer className="max-w-[1500px]">
           <section className="relative mb-4 min-h-[300px] overflow-hidden rounded-[26px] bg-[#002d1c] text-white shadow-lg sm:min-h-[322px]">
             <img src="/images/header.png" alt="" aria-hidden="true" className="absolute inset-0 h-full w-full object-cover object-center opacity-90 sm:object-[center_44%]" />
-            <div className="absolute inset-0 bg-gradient-to-r from-[#002b1a]/65 via-[#00351f]/45 to-[#002b1a]/10" />
-            <div className="absolute inset-0 bg-gradient-to-t from-[#001d12]/45 via-transparent to-[#001d12]/5" />
+            <div className="absolute inset-0 bg-[#002b1a]/40" />
             <div className="relative flex min-h-[235px] flex-col justify-center gap-5 px-5 pb-6 pt-7 sm:min-h-[242px] sm:flex-row sm:items-center sm:gap-8 sm:px-10 sm:pb-10">
               <div className="flex shrink-0 items-center gap-4 sm:gap-6">
                 <div className="relative flex h-[82px] w-[82px] shrink-0 items-center justify-center rounded-full border-[4px] border-[#FEB914] bg-[#146b3a] text-4xl font-bold text-white shadow-xl sm:h-[112px] sm:w-[112px] sm:text-5xl">
