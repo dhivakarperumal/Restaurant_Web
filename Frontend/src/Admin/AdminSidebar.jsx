@@ -113,7 +113,7 @@ const navItems = [
       { path: "/admin/orders/dining", label: "Dining Orders", icon: PlusSquare },
       { path: "/admin/orders/new", label: "New Order", icon: PlusSquare },
       { path: "/admin/orders", label: "All Orders", icon: List },
-      { path: "/admin/orders/delivery", label: "Delivery Orders", icon: Package },
+      { path: "/admin/orders/delivery", label: "Delivered Orders", icon: Package },
       { path: "/admin/orders/cancelled", label: "Cancelled Orders", icon: XCircle },
     ],
   },
