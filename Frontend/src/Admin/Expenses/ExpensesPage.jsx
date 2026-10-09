@@ -1210,14 +1210,14 @@ const ExpensesPage = () => {
           <div className="overflow-x-auto">
             <table className="w-full min-w-175 text-sm">
               <thead>
-                <tr className="bg-white border-b border-[#e7e0d8]">
-                  <th className="text-left text-[10px] font-bold text-[#818a83] uppercase tracking-widest px-5 py-3.5">S.No</th>
-                  <th className="text-left text-[10px] font-bold text-[#818a83] uppercase tracking-widest px-5 py-3.5">Date</th>
-                  <th className="text-left text-[10px] font-bold text-[#818a83] uppercase tracking-widest px-5 py-3.5">Expense Details</th>
-                  <th className="text-left text-[10px] font-bold text-[#818a83] uppercase tracking-widest px-4 py-3.5">Payment Mode</th>
-                  <th className="text-left text-[10px] font-bold text-[#818a83] uppercase tracking-widest px-4 py-3.5">Amount</th>
-                  <th className="text-left text-[10px] font-bold text-[#818a83] uppercase tracking-widest px-4 py-3.5">Bill</th>
-                  <th className="text-right text-[10px] font-bold text-[#818a83] uppercase tracking-widest px-5 py-3.5">Actions</th>
+                <tr className="border-b border-[#d4a843] bg-[#d4a843]">
+                  <th className="px-5 py-3.5 text-left text-[10px] font-bold uppercase tracking-widest text-white">S.No</th>
+                  <th className="px-5 py-3.5 text-left text-[10px] font-bold uppercase tracking-widest text-white">Date</th>
+                  <th className="px-5 py-3.5 text-left text-[10px] font-bold uppercase tracking-widest text-white">Expense Details</th>
+                  <th className="px-4 py-3.5 text-left text-[10px] font-bold uppercase tracking-widest text-white">Payment Mode</th>
+                  <th className="px-4 py-3.5 text-left text-[10px] font-bold uppercase tracking-widest text-white">Amount</th>
+                  <th className="px-4 py-3.5 text-left text-[10px] font-bold uppercase tracking-widest text-white">Bill</th>
+                  <th className="px-5 py-3.5 text-right text-[10px] font-bold uppercase tracking-widest text-white">Actions</th>
                 </tr>
               </thead>
               <tbody>
