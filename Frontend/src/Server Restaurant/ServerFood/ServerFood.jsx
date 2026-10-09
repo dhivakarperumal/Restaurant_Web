@@ -1075,86 +1075,114 @@ export default function ServerFood() {
       </div>
 
       {selectedTable && (
-        <section aria-label="Current table order" className="flex max-h-[calc(100vh-12rem)] flex-col overflow-hidden rounded-2xl border border-[#b8cbbd] bg-white p-4 shadow-[0_8px_28px_rgba(16,40,24,0.12)] sm:p-5 xl:sticky xl:top-4">
-          <div className="mb-3 flex shrink-0 flex-col gap-3 border-b border-gray-100 pb-3 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#1a3c36] text-white">
+        <section aria-label="Current table order" className="flex max-h-[70vh] flex-col overflow-hidden rounded-2xl border border-[#b8cbbd] bg-white shadow-[0_8px_28px_rgba(16,40,24,0.12)] xl:sticky xl:top-4 xl:h-[calc(100vh-8rem)] xl:max-h-none">
+          <header className="shrink-0 border-b border-[#e8eee9] bg-gradient-to-br from-[#f7faf7] to-white p-4 sm:p-5">
+            <div className="flex items-start gap-3">
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#1a3c36] text-white shadow-sm">
                 <ShoppingCart className="h-5 w-5" />
               </div>
-              <div>
-                <h2 className="text-base font-bold text-gray-900 flex items-center gap-2 flex-wrap">
-                  Order for {selectedTable.table_number}
+              <div className="min-w-0 flex-1">
+                <div className="flex flex-wrap items-center gap-2">
+                  <h2 className="text-lg font-bold text-gray-900">Table {selectedTable.table_number}</h2>
                   {activeBill && (
-                    <span className="text-xs font-bold text-purple-800 bg-purple-100 border border-purple-300 px-2 py-0.5 rounded-full">
-                      Same Bill: #{activeBill.bill_number} (Round {(activeBill.rounds?.length || 1) + 1})
+                    <span className="rounded-full border border-purple-200 bg-purple-50 px-2.5 py-1 text-[10px] font-bold text-purple-800">
+                      Bill #{activeBill.bill_number} · Round {(activeBill.rounds?.length || 1) + 1}
                     </span>
                   )}
-                </h2>
-                <p className="text-xs text-gray-500">
-                  {cartQuantity} item{cartQuantity === 1 ? "" : "s"} selected
-                  {activeBill ? ` · ${activeBill.total_items_count} items previously ordered` : ""}
+                </div>
+                <p className="mt-1 text-xs text-gray-500">
+                  {cartQuantity} selected item{cartQuantity === 1 ? "" : "s"}
+                  {activeBill ? ` · ${activeBill.total_items_count} already ordered` : ""}
                 </p>
               </div>
             </div>
-            <div className="flex items-center gap-3 flex-wrap">
-              <div className="text-right">
-                <p className="text-sm font-bold text-gray-900">This Round: ₹{cartTotal.toFixed(2)}</p>
+          </header>
+
+          <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-3 sm:p-4">
+            {cartItems.length ? (
+              <div className="space-y-3">
+                {cartItems.map(([cartKey, item]) => {
+                  const image = Array.isArray(item.food.food_images) ? item.food.food_images[0] : "";
+                  return (
+                    <article key={cartKey} className="flex gap-3 rounded-xl border border-gray-100 bg-white p-2.5 shadow-sm">
+                      <div className="h-16 w-16 shrink-0 overflow-hidden rounded-lg bg-[#f1f4f1]">
+                        {image ? (
+                          <img src={resolveImageUrl(image)} alt={item.food.food_name} className="h-full w-full object-cover" />
+                        ) : (
+                          <div className="flex h-full w-full items-center justify-center text-[#78907d]">
+                            <UtensilsCrossed className="h-6 w-6" />
+                          </div>
+                        )}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-start justify-between gap-2">
+                          <h3 className="line-clamp-2 text-sm font-semibold leading-5 text-gray-900">{item.food.food_name}</h3>
+                          <span className="shrink-0 text-xs font-bold text-[#1a3c36]">₹{(item.unitPrice * item.quantity).toFixed(2)}</span>
+                        </div>
+                        {(item.selected_addons.length > 0 || Object.keys(item.selected_customizations).length > 0) && (
+                          <p className="mt-1 line-clamp-2 text-[10px] leading-4 text-gray-500">
+                            {[
+                              ...item.selected_addons,
+                              ...Object.entries(item.selected_customizations).flatMap(([group, selection]) => {
+                                const options = Array.isArray(selection) ? selection : [selection];
+                                const label = group === "__custom_request__" ? "Custom request" : group;
+                                return options.filter(Boolean).map((option) => `${label}: ${option}`);
+                              }),
+                            ].join(" · ")}
+                          </p>
+                        )}
+                        <div className="mt-2 flex items-center justify-between gap-2">
+                          <span className="text-[11px] text-gray-500">₹{item.unitPrice.toFixed(2)} each</span>
+                          <div className="flex items-center gap-2">
+                            <button type="button" onClick={() => updateCartQuantity(item.food, item.quantity - 1, cartKey)} aria-label={`Decrease ${item.food.food_name} quantity`} className="flex h-7 w-7 cursor-pointer items-center justify-center rounded-lg border border-gray-200 text-gray-700 hover:bg-gray-50">
+                              <Minus className="h-3.5 w-3.5" />
+                            </button>
+                            <span className="w-5 text-center text-xs font-bold text-gray-800">{item.quantity}</span>
+                            <button type="button" onClick={() => updateCartQuantity(item.food, item.quantity + 1, cartKey)} aria-label={`Increase ${item.food.food_name} quantity`} disabled={item.quantity >= 99} className="flex h-7 w-7 cursor-pointer items-center justify-center rounded-lg border border-gray-200 text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50">
+                              <Plus className="h-3.5 w-3.5" />
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </article>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="flex h-full min-h-32 flex-col items-center justify-center rounded-xl border border-dashed border-[#d9e3db] bg-[#fafcfa] px-4 text-center">
+                <ShoppingCart className="h-7 w-7 text-[#91a797]" />
+                <p className="mt-2 text-sm font-semibold text-gray-700">Your order is empty</p>
+                <p className="mt-1 text-xs text-gray-500">Choose dishes from the menu to add them here.</p>
+              </div>
+            )}
+          </div>
+
+          <footer className="shrink-0 border-t border-[#e8eee9] bg-white p-4 sm:p-5">
+            <div className="mb-3 flex items-end justify-between gap-3">
+              <div>
+                <p className="text-xs text-gray-500">This round</p>
                 {activeBill && (
-                  <p className="text-[11px] text-gray-500">
-                    Est. Total: ₹{(Number(activeBill.grand_total || 0) + cartTotal * 1.05).toFixed(2)}
+                  <p className="mt-1 text-[10px] text-gray-500">
+                    Est. total: ₹{(Number(activeBill.grand_total || 0) + cartTotal * 1.05).toFixed(2)}
                   </p>
                 )}
               </div>
-              <button
-                type="button"
-                onClick={submitOrder}
-                disabled={cartItems.length === 0 || submittingOrder}
-                className="inline-flex h-10 cursor-pointer items-center justify-center gap-2 rounded-xl bg-[#1a3c36] px-4 text-sm font-semibold text-white transition hover:bg-[#214a42] disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                {submittingOrder ? <Loader2 className="h-4 w-4 animate-spin" /> : <ShoppingCart className="h-4 w-4" />}
-                {submittingOrder
-                  ? "Sending..."
-                  : activeBill
-                  ? `Add to Bill (Round ${(activeBill.rounds?.length || 1) + 1}) 🍳`
-                  : "Send Order to Kitchen (Round 1) 🍳"}
-              </button>
+              <p className="text-xl font-extrabold tabular-nums text-[#1a3c36]">₹{cartTotal.toFixed(2)}</p>
             </div>
-          </div>
-          {cartItems.length ? (
-            <div className="min-h-0 space-y-3 overflow-y-auto overscroll-contain pr-1">
-              {cartItems.map(([cartKey, item]) => (
-                <div key={cartKey} className="flex flex-wrap items-center justify-between gap-3">
-                  <div className="min-w-0">
-                    <p className="truncate text-sm font-semibold text-gray-800">{item.food.food_name}</p>
-                    {(item.selected_addons.length > 0 || Object.keys(item.selected_customizations).length > 0) && (
-                      <p className="mt-0.5 text-xs text-gray-500">
-                        {[
-                          ...item.selected_addons,
-                          ...Object.entries(item.selected_customizations).flatMap(([group, selection]) => {
-                            const options = Array.isArray(selection) ? selection : [selection];
-                            const label = group === "__custom_request__" ? "Custom request" : group;
-                            return options.filter(Boolean).map((option) => `${label}: ${option}`);
-                          }),
-                        ].join(" · ")}
-                      </p>
-                    )}
-                    <p className="text-xs text-gray-500">₹{item.unitPrice.toFixed(2)} each</p>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <button type="button" onClick={() => updateCartQuantity(item.food, item.quantity - 1, cartKey)} aria-label={`Decrease ${item.food.food_name} quantity`} className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg border border-gray-200 text-gray-700 hover:bg-gray-50">
-                      <Minus className="h-4 w-4" />
-                    </button>
-                    <span className="w-6 text-center text-sm font-bold text-gray-800">{item.quantity}</span>
-                    <button type="button" onClick={() => updateCartQuantity(item.food, item.quantity + 1, cartKey)} aria-label={`Increase ${item.food.food_name} quantity`} disabled={item.quantity >= 99} className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg border border-gray-200 text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50">
-                      <Plus className="h-4 w-4" />
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <p className="text-sm text-gray-500">Add available dishes below to start this order.</p>
-          )}
+            <button
+              type="button"
+              onClick={submitOrder}
+              disabled={cartItems.length === 0 || submittingOrder}
+              className="inline-flex min-h-12 w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-[#1a3c36] px-4 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-[#214a42] disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {submittingOrder ? <Loader2 className="h-4 w-4 animate-spin" /> : <ShoppingCart className="h-4 w-4" />}
+              {submittingOrder
+                ? "Sending to kitchen..."
+                : activeBill
+                ? `Add to Bill · Round ${(activeBill.rounds?.length || 1) + 1}`
+                : "Send Order to Kitchen"}
+            </button>
+          </footer>
         </section>
       )}
       </div>
