@@ -1,7 +1,9 @@
-import { useCallback, useEffect, useState } from "react";
-import { CalendarDays, MessageSquareQuote, Star } from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { ChevronLeft, ChevronRight, Quote, Star } from "lucide-react";
+import { Swiper, SwiperSlide } from "swiper/react";
 import api, { BACKEND_BASE_URL } from "../api";
 import PageContainer from "./PageContainer";
+import "swiper/css";
 
 const resolveReviewImage = (image) => {
   if (!image || typeof image !== "string") return "";
@@ -10,18 +12,8 @@ const resolveReviewImage = (image) => {
   return `${BACKEND_BASE_URL}${value.startsWith("/") ? value : `/${value}`}`;
 };
 
-const formatReviewDate = (dateValue) => {
-  if (!dateValue) return "";
-  const date = new Date(dateValue);
-  if (Number.isNaN(date.getTime())) return "";
-  return date.toLocaleDateString("en-IN", {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-  });
-};
-
 const CustomerReviews = () => {
+  const swiperRef = useRef(null);
   const [reviews, setReviews] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -51,26 +43,12 @@ const CustomerReviews = () => {
   if (!loading && !error && reviews.length === 0) return null;
 
   return (
-    <section className="bg-[#f8f8f4] py-10 sm:py-14" aria-labelledby="customer-reviews-title">
+    <section className="bg-white py-10 sm:py-14" aria-labelledby="customer-reviews-title">
       <PageContainer>
-        <div className="mb-6 flex flex-wrap items-end justify-between gap-4 sm:mb-8">
-          <div>
-            <p className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-[#FD5E02]">
-              From our food lovers
-            </p>
-            <h2 id="customer-reviews-title" className="mt-1 font-serif text-2xl font-bold text-[#071C18] sm:text-3xl">
-              What Our Customers Say
+        <div className="mb-6 text-center sm:mb-8">
+            <h2 id="customer-reviews-title" className="font-serif text-2xl font-extrabold text-[#111827] sm:text-3xl">
+              What Our <span className="font-serif italic text-[#075b2b]">Customers Say</span>
             </h2>
-            <p className="mt-1 text-sm text-[#69736e]">
-              Honest words from guests who have shared a meal with us.
-            </p>
-          </div>
-          {!loading && !error && reviews.length > 0 && (
-            <div className="inline-flex items-center gap-1.5 rounded-full border border-[#f1e5c5] bg-white px-3 py-2 text-xs font-bold text-[#755300] shadow-sm">
-              <Star size={14} fill="currentColor" className="text-[#FEB914]" />
-              {reviews.length} customer {reviews.length === 1 ? "review" : "reviews"}
-            </div>
-          )}
         </div>
 
         {loading ? (
@@ -96,70 +74,87 @@ const CustomerReviews = () => {
             </button>
           </div>
         ) : (
-          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-            {reviews.slice(0, 6).map((review, index) => {
-              const reviewImage = resolveReviewImage(review.review_photo);
-              const rating = Math.max(0, Math.min(5, Number(review.rating) || 0));
-              const reviewDate = formatReviewDate(review.created_at);
-
-              return (
-                <article
-                  key={`${review.reviewer_name}-${review.created_at}-${index}`}
-                  className="group overflow-hidden rounded-2xl border border-[#e8ebe5] bg-white shadow-sm transition hover:-translate-y-1 hover:border-[#c9d9bf] hover:shadow-md"
+          <div className="relative px-1 sm:px-10">
+            {reviews.length > 1 && (
+              <>
+                <button
+                  type="button"
+                  onClick={() => swiperRef.current?.slidePrev()}
+                  aria-label="Previous reviews"
+                  className="absolute left-0 top-1/2 z-10 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-[#edf0eb] bg-white text-[#183b2a] shadow-md transition hover:border-[#075b2b] hover:bg-[#075b2b] hover:text-white"
                 >
-                  {reviewImage && (
-                    <div className="h-40 overflow-hidden bg-[#eff5e9]">
-                      <img
-                        src={reviewImage}
-                        alt={review.product_name ? `Review of ${review.product_name}` : "Customer review"}
-                        loading="lazy"
-                        className="h-full w-full object-cover transition duration-300 group-hover:scale-105"
-                      />
-                    </div>
-                  )}
-                  <div className="p-5">
-                    <div className="flex items-center justify-between gap-3">
-                      <div className="flex items-center gap-0.5" aria-label={`${rating} out of 5 stars`}>
-                        {Array.from({ length: 5 }, (_, starIndex) => (
-                          <Star
-                            key={starIndex}
-                            size={15}
-                            fill={starIndex < rating ? "currentColor" : "none"}
-                            className={starIndex < rating ? "text-[#FEB914]" : "text-[#d7ddd5]"}
-                          />
-                        ))}
-                      </div>
-                      {reviewDate && (
-                        <span className="inline-flex items-center gap-1 text-[10px] text-[#7b8580]">
-                          <CalendarDays size={12} />
-                          {reviewDate}
+                  <ChevronLeft size={20} />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => swiperRef.current?.slideNext()}
+                  aria-label="Next reviews"
+                  className="absolute right-0 top-1/2 z-10 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-[#edf0eb] bg-white text-[#183b2a] shadow-md transition hover:border-[#075b2b] hover:bg-[#075b2b] hover:text-white"
+                >
+                  <ChevronRight size={20} />
+                </button>
+              </>
+            )}
+            <Swiper
+              className="customer-reviews-swiper"
+              onSwiper={(swiper) => {
+                swiperRef.current = swiper;
+              }}
+              spaceBetween={14}
+              slidesPerView={1}
+              loop={reviews.length > 3}
+              breakpoints={{
+                640: { slidesPerView: 2, spaceBetween: 16 },
+                1024: { slidesPerView: 3, spaceBetween: 20 },
+              }}
+            >
+              {reviews.map((review, index) => {
+                const reviewImage = resolveReviewImage(review.review_photo);
+                const rating = Math.max(0, Math.min(5, Number(review.rating) || 0));
+                const initials = String(review.reviewer_name || "Customer")
+                  .trim()
+                  .split(/\s+/)
+                  .slice(0, 2)
+                  .map((part) => part.charAt(0))
+                  .join("");
+
+                return (
+                  <SwiperSlide key={`${review.reviewer_name}-${review.created_at}-${index}`} className="!h-auto">
+                    <article className="h-full min-h-[190px] rounded-2xl border border-[#f0f0ed] bg-white p-5 shadow-[0_5px_22px_rgba(24,40,28,0.08)] transition hover:-translate-y-1 hover:shadow-[0_10px_28px_rgba(24,40,28,0.12)] sm:p-6">
+                      <div className="flex items-center gap-3.5">
+                        <span className="flex h-[62px] w-[62px] shrink-0 items-center justify-center overflow-hidden rounded-full border-2 border-[#f0f3ed] bg-[#eff5e9] text-lg font-extrabold uppercase text-[#075b2b] shadow-sm">
+                          {reviewImage ? (
+                            <img src={reviewImage} alt="" loading="lazy" className="h-full w-full object-cover" />
+                          ) : initials}
                         </span>
-                      )}
-                    </div>
-                    {review.title && (
-                      <h3 className="mt-3 line-clamp-1 text-sm font-bold text-[#071C18]">
-                        {review.title}
-                      </h3>
-                    )}
-                    <div className="mt-2 flex items-start gap-2">
-                      <MessageSquareQuote size={17} className="mt-0.5 shrink-0 text-[#396F0B]" />
-                      <p className="line-clamp-4 text-sm leading-6 text-[#53605a]">{review.comment}</p>
-                    </div>
-                    <div className="mt-4 flex items-center gap-3 border-t border-[#edf0eb] pt-3">
-                      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#eff5e9] text-xs font-extrabold uppercase text-[#396F0B]">
-                        {String(review.reviewer_name || "Customer").trim().charAt(0)}
-                      </span>
-                      <div className="min-w-0">
-                        <p className="truncate text-xs font-bold text-[#071C18]">{review.reviewer_name || "Customer"}</p>
-                        {review.product_name && (
-                          <p className="truncate text-[10px] text-[#7b8580]">About {review.product_name}</p>
-                        )}
+                        <div className="min-w-0">
+                          <h3 className="truncate text-base font-extrabold text-[#111827]">
+                            {review.reviewer_name || "Customer"}
+                          </h3>
+                          <div className="mt-1 flex items-center gap-0.5" aria-label={`${rating} out of 5 stars`}>
+                            {Array.from({ length: 5 }, (_, starIndex) => (
+                              <Star
+                                key={starIndex}
+                                size={18}
+                                fill={starIndex < rating ? "currentColor" : "none"}
+                                className={starIndex < rating ? "text-[#f59e0b]" : "text-[#d7ddd5]"}
+                              />
+                            ))}
+                          </div>
+                        </div>
                       </div>
-                    </div>
-                  </div>
-                </article>
-              );
-            })}
+                      <div className="relative mt-4 pl-1">
+                        <Quote size={18} fill="currentColor" className="absolute -left-1 -top-1 text-[#075b2b]/15" />
+                        {review.title && <p className="mb-1 line-clamp-1 pl-5 text-sm font-bold text-[#25342b]">{review.title}</p>}
+                        <p className="line-clamp-3 pl-5 text-sm leading-6 text-[#38443d]">
+                          “{review.comment}”
+                        </p>
+                      </div>
+                    </article>
+                  </SwiperSlide>
+                );
+              })}
+            </Swiper>
           </div>
         )}
       </PageContainer>
