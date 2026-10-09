@@ -1,13 +1,16 @@
 const express = require('express');
+const http = require('http');
 const cors = require('cors');
 const path = require('path');
 const { initializeAuthSchema, initializeBannerSchema, initializeCategorySchema, initializeCouponSchema, initializeCuisineSchema, initializeFoodSchema, initializeInventorySchema, initializeKitchenOrderSchema, initializeReviewSchema, initializeVideoSchema, initializeEmployeeSchema, initializeServerTableSchema, initializeSettingsSchema, initializeOrderSchema, initializeWishlistSchema, initializeReservationSchema, initializeAttendanceSchema, initializeExpenseSchema, initializeSalarySchema, testConnection } = require('./modules/modules');
 const apiRouter = require('./routers/routes');
 const { initializeRevenueIndexes } = require('./modules/revenue');
+const { initializeNotificationSocket } = require('./utils/notificationSocket');
 
 require('dotenv').config({ path: path.join(__dirname, '.env') });
 
 const app = express();
+const server = http.createServer(app);
 
 const allowedOrigins = new Set(
   (process.env.CORS_ORIGINS || process.env.FRONTEND_URL || '')
@@ -86,7 +89,8 @@ async function startServer() {
     process.exit(1);
   }
 
-  app.listen(PORT, () => {
+  initializeNotificationSocket(server, allowedOrigins);
+  server.listen(PORT, () => {
     console.log(`Backend running: http://localhost:${PORT}`);
   });
 }

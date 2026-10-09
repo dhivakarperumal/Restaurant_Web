@@ -12,6 +12,7 @@ const {
   getUserAddresses,
   updateUserAddress,
 } = require('../modules/orders');
+const { notifyChefs } = require('../utils/notificationSocket');
 
 // Paste the Razorpay Key ID (public key) here if it is not set in the environment or payment settings.
 const RAZORPAY_KEY_ID = 'rzp_test_SGj8n5SyKSE10b';
@@ -58,6 +59,17 @@ const paymentConfig = async () => {
     keyId: process.env.RAZORPAY_KEY_ID || settings.razorpay_key || RAZORPAY_KEY_ID,
     keySecret: process.env.RAZORPAY_KEY_SECRET || '',
   };
+};
+
+const notifyChefOfCustomerOrder = ({ orderNumber, customerName, orderType }) => {
+  const isDelivery = orderType === 'home_delivery';
+  notifyChefs({
+    type: 'kitchen',
+    title: isDelivery ? 'New home delivery order' : 'New pickup order',
+    message: `Order #${orderNumber}${customerName ? ` from ${customerName}` : ''} is ready to prepare.`,
+    link: isDelivery ? '/chef/customer-orders/homedelivery' : '/chef/customer-orders/pickup',
+    data: { order_number: orderNumber, order_type: orderType },
+  });
 };
 
 const listAddresses = async (req, res) => {
@@ -175,6 +187,13 @@ const create = async (req, res) => {
     const orderPaymentMethod = createdOrder.paymentMethod || paymentMethod;
 
     if (orderPaymentMethod === 'cod') {
+      if (!createdOrder.existing) {
+        notifyChefOfCustomerOrder({
+          orderNumber: createdOrder.orderNumber,
+          customerName: customer.name,
+          orderType,
+        });
+      }
       return res.status(201).json({
         success: true,
         data: {
@@ -186,6 +205,13 @@ const create = async (req, res) => {
     }
 
     if (createdOrder.paymentStatus === 'paid') {
+      if (!createdOrder.existing) {
+        notifyChefOfCustomerOrder({
+          orderNumber: createdOrder.orderNumber,
+          customerName: customer.name,
+          orderType,
+        });
+      }
       return res.json({
         success: true,
         data: {
@@ -328,6 +354,10 @@ const verifyPayment = async (req, res) => {
       return res.status(409).json({ success: false, message: 'This payment order is no longer awaiting payment.' });
     }
     await clearUserCart(getUserId(req));
+    notifyChefOfCustomerOrder({
+      orderNumber,
+      orderType: order.order_type,
+    });
     return res.json({ success: true, data: { order_number: orderNumber } });
   } catch (error) {
     console.error('Razorpay payment verification failed:', error.message);

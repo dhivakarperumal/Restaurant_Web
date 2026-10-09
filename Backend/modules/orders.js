@@ -513,7 +513,8 @@ const failOnlineOrder = async (orderNumber, userId) => {
 
 const findOrderForPayment = async (orderNumber, userId) => {
   const [rows] = await db.execute(
-    `SELECT order_number, total_amount, payment_method, payment_status, razorpay_order_id, razorpay_payment_id
+    `SELECT order_number, total_amount, payment_method, payment_status, razorpay_order_id,
+            razorpay_payment_id, order_type
      FROM orders WHERE order_number = ? AND user_id = ? LIMIT 1`,
     [orderNumber, userId]
   );

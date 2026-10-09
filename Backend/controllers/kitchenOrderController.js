@@ -1,4 +1,6 @@
 const { createKitchenOrder, listKitchenOrders, updateKitchenOrderStatus } = require('../modules/kitchenOrders');
+const db = require('../config/db');
+const { notifyChefs, notifyServer } = require('../utils/notificationSocket');
 
 const ALLOWED_STATUSES = ['Pending', 'Preparing', 'Ready to Serve', 'Served', 'Cancelled'];
 
@@ -34,6 +36,13 @@ async function submitKitchenOrder(req, res) {
 
   try {
     const order = await createKitchenOrder({ tableId, userId: req.auth.user_id, items });
+    notifyChefs({
+      type: 'kitchen',
+      title: 'New dining order',
+      message: `Table ${order.table_number} sent a new order to the kitchen.`,
+      link: '/chef/orders',
+      data: { order_id: order.order_id, table_number: order.table_number },
+    });
     return res.status(201).json({ success: true, order });
   } catch (error) {
     if (error.statusCode) {
@@ -71,6 +80,10 @@ async function changeKitchenOrderStatus(req, res) {
   }
 
   try {
+    const [previousOrders] = await db.execute(
+      'SELECT status, table_id, table_number FROM kitchen_orders WHERE order_id = ? LIMIT 1',
+      [orderId]
+    );
     const updatedOrder = await updateKitchenOrderStatus({
       orderId,
       status: matchedStatus,
@@ -78,6 +91,18 @@ async function changeKitchenOrderStatus(req, res) {
 
     if (!updatedOrder) {
       return res.status(404).json({ success: false, message: 'Kitchen order not found.' });
+    }
+
+    if (matchedStatus === 'Ready to Serve' && previousOrders[0]?.status !== matchedStatus) {
+      if (updatedOrder.user_id) {
+        notifyServer(updatedOrder.user_id, {
+          type: 'kitchen',
+          title: 'Dining order ready',
+          message: `Order for Table ${updatedOrder.table_number} is ready for pickup.`,
+          link: '/server/tables',
+          data: { order_id: updatedOrder.order_id, table_number: updatedOrder.table_number },
+        });
+      }
     }
 
     return res.json({ success: true, message: `Order status updated to ${matchedStatus}`, order: updatedOrder });
