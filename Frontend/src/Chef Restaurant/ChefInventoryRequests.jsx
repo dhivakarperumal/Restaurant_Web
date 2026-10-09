@@ -174,14 +174,14 @@ const ChefInventoryRequests = () => {
       <div className="overflow-hidden rounded-xl border border-slate-200 bg-white">
         <div className="overflow-x-auto">
           <table className="min-w-full text-left text-sm">
-            <thead className="bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
+            <thead className="bg-[#d4a843] text-xs uppercase tracking-wide text-white">
               <tr>
-                <th className="px-4 py-3 font-semibold">Request No.</th>
-                <th className="px-4 py-3 font-semibold">Items</th>
-                <th className="px-4 py-3 font-semibold">Date</th>
-                <th className="px-4 py-3 font-semibold">Priority</th>
-                <th className="px-4 py-3 font-semibold">Status</th>
-                <th className="px-4 py-3 font-semibold">Notes</th>
+                <th className="px-3 py-3 font-semibold">Request No.</th>
+                <th className="px-3 py-3 font-semibold">Items</th>
+                <th className="px-3 py-3 font-semibold">Date</th>
+                <th className="px-3 py-3 font-semibold">Priority</th>
+                <th className="px-3 py-3 font-semibold">Status</th>
+                <th className="px-3 py-3 font-semibold">Notes</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -225,18 +225,6 @@ const ChefInventoryRequests = () => {
 
             <form onSubmit={handleSubmit} className="space-y-5 p-5">
               <div className="grid gap-4 sm:grid-cols-2">
-                <label className="space-y-1.5 text-xs font-semibold uppercase tracking-wide text-slate-500">Request number
-                  <input className={fieldClass} value={form.request_number} onChange={(event) => setForm({ ...form, request_number: event.target.value })} required />
-                </label>
-                <label className="space-y-1.5 text-xs font-semibold uppercase tracking-wide text-slate-500">Requested by
-                  <input className={fieldClass} value={form.requested_by} onChange={(event) => setForm({ ...form, requested_by: event.target.value })} required />
-                </label>
-                <label className="space-y-1.5 text-xs font-semibold uppercase tracking-wide text-slate-500">Department
-                  <input className={fieldClass} value={form.department} onChange={(event) => setForm({ ...form, department: event.target.value })} />
-                </label>
-                <label className="space-y-1.5 text-xs font-semibold uppercase tracking-wide text-slate-500">Request date
-                  <input type="date" className={fieldClass} value={form.request_date} onChange={(event) => setForm({ ...form, request_date: event.target.value })} required />
-                </label>
                 <label className="space-y-1.5 text-xs font-semibold uppercase tracking-wide text-slate-500 sm:col-span-2">Priority
                   <select className={fieldClass} value={form.priority} onChange={(event) => setForm({ ...form, priority: event.target.value })}>
                     <option>Low</option><option>Normal</option><option>High</option><option>Urgent</option>
