@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { Search } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { Search, UtensilsCrossed, CheckCircle2, Eye, EyeOff } from "lucide-react";
 import toast from "react-hot-toast";
 import api from "../api";
 
@@ -58,6 +58,17 @@ const ChefProducts = () => {
     }
   };
 
+  const activeCount = useMemo(() => foods.filter((f) => (f.status || "Active") === "Active").length, [foods]);
+  const visibleCount = useMemo(() => foods.filter((f) => f.is_menu_visible !== false).length, [foods]);
+  const hiddenCount = useMemo(() => foods.filter((f) => f.is_menu_visible === false).length, [foods]);
+
+  const statCards = [
+    { title: "Total Dishes", value: foods.length, hint: "All menu items", icon: UtensilsCrossed, bg: "bg-[#22c55e]" },
+    { title: "Active Status", value: activeCount, hint: "Enabled for ordering", icon: CheckCircle2, bg: "bg-[#3b82f6]" },
+    { title: "Menu Visible", value: visibleCount, hint: "Shown to customers", icon: Eye, bg: "bg-[#10b981]" },
+    { title: "Hidden Dishes", value: hiddenCount, hint: "Hidden from customer view", icon: EyeOff, bg: hiddenCount > 0 ? "bg-[#f59e0b]" : "bg-[#8b5cf6]" },
+  ];
+
   return (
     <main className="space-y-5">
       <header className="flex flex-col gap-4 border-b border-slate-200 pb-5 sm:flex-row sm:items-end sm:justify-between">
@@ -68,6 +79,51 @@ const ChefProducts = () => {
         </div>
         <span className="text-sm text-slate-600">{foods.length} {foods.length === 1 ? "food" : "foods"}</span>
       </header>
+
+      {/* ── Stats Overview ── */}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        {statCards.map((stat, index) => {
+          const Icon = stat.icon;
+          return (
+            <article
+              key={stat.title}
+              className={`relative min-w-0 overflow-hidden rounded-xl border border-transparent p-4 sm:p-5 shadow-[0_2px_10px_rgba(20,56,34,0.08)] flex flex-col justify-between min-h-[140px] ${stat.bg} text-white`}
+            >
+              <div className="flex items-start gap-3 relative z-10">
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg shadow-sm bg-white/20">
+                  <Icon size={24} strokeWidth={2.2} className="text-white" />
+                </div>
+                <div className="flex-1 mt-0.5 min-w-0">
+                  <h3 className="text-[12px] font-semibold opacity-90 mb-1 truncate">{stat.title}</h3>
+                  <div className="text-[26px] font-extrabold leading-none tracking-tight">
+                    {loading ? "..." : stat.value}
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2 mt-5 relative z-10">
+                <span className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[11px] font-bold bg-white/25">
+                  Live
+                </span>
+                <span className="text-[11px] font-medium opacity-75 truncate">{stat.hint}</span>
+              </div>
+
+              <div className="absolute right-0 bottom-0 w-24 h-16 pointer-events-none opacity-50">
+                <svg viewBox="0 0 100 50" preserveAspectRatio="none" className="w-full h-full">
+                  <defs>
+                    <linearGradient id={`chef-prod-grad-${index}`} x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#ffffff" stopOpacity="0.4" />
+                      <stop offset="100%" stopColor="#ffffff" stopOpacity="0.0" />
+                    </linearGradient>
+                  </defs>
+                  <path d="M0,50 L0,40 Q25,30 50,40 T100,20 L100,50 Z" fill={`url(#chef-prod-grad-${index})`} />
+                  <path d="M0,40 Q25,30 50,40 T100,20" fill="none" stroke="#ffffff" strokeWidth="2.5" />
+                </svg>
+              </div>
+            </article>
+          );
+        })}
+      </div>
 
       <div className="relative max-w-md">
         <Search size={16} className="absolute left-3 top-3 text-slate-400" />
