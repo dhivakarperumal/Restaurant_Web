@@ -57,9 +57,11 @@ function CustomerOrdersPage({ audience = 'admin', view = 'all', showOrderFilters
   const [sortOrder, setSortOrder] = useState('latest');
   const [layout, setLayout] = useState('table');
   const isCustomer = audience === 'customer';
+  const showChefDeliveryTable = audience === 'chef' && view === 'delivery';
   const title = isCustomer
     ? 'My Orders'
-    : audience === 'chef' ? 'Customer Kitchen Orders'
+    : audience === 'chef' && view === 'delivery' ? 'Home Delivery Orders'
+      : audience === 'chef' ? 'Customer Kitchen Orders'
       : view === 'new' ? 'New Orders'
         : view === 'pickup' ? 'Pickup Orders'
       : view === 'cancelled' ? 'Cancelled Orders'
@@ -192,6 +194,19 @@ function CustomerOrdersPage({ audience = 'admin', view = 'all', showOrderFilters
           </div>
         )}
 
+        {showChefDeliveryTable && (
+          <div className="flex flex-wrap items-end justify-between gap-3 rounded-2xl border border-[#e7e0d8] bg-white px-5 py-4 shadow-sm">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-[0.16em] text-[#a34f32]">Customer orders</p>
+              <h1 className="mt-1 font-serif text-2xl font-bold text-[#203129]">Home Delivery Orders</h1>
+              <p className="mt-1 text-sm text-[#7c8980]">Track and update home delivery order status.</p>
+            </div>
+            <span className="rounded-full bg-[#f4f2ed] px-3 py-1.5 text-xs font-bold text-[#34443b]">
+              {orders.length} {orders.length === 1 ? 'order' : 'orders'}
+            </span>
+          </div>
+        )}
+
         {showOrderFilters && (
           <section aria-label="Filter orders" className="flex flex-col gap-3 rounded-xl border border-[#e3e7e1] bg-white p-3 sm:flex-row sm:items-center sm:justify-between">
             <label className="relative block w-full sm:max-w-sm sm:flex-1">
@@ -243,7 +258,7 @@ function CustomerOrdersPage({ audience = 'admin', view = 'all', showOrderFilters
             <p className="mt-3 text-lg font-bold text-[#263830]">No orders to show</p>
             <p className="mt-1 text-sm text-[#68766e]">New customer orders will appear here automatically.</p>
           </div>
-        ) : showOrderFilters && layout === 'table' ? (
+        ) : (showOrderFilters || showChefDeliveryTable) && layout === 'table' ? (
           <div className="overflow-hidden rounded-2xl border border-[#e3e7e1] bg-white shadow-sm">
             <div className="overflow-x-auto">
               <table className="w-full min-w-[900px] text-left text-sm">
