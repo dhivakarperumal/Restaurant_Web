@@ -163,13 +163,12 @@ const ChefDashboard = () => {
             <div className="overflow-x-auto">
               <table className="min-w-full text-left text-sm">
                 <thead className="bg-[#d4a843] text-xs uppercase tracking-wide text-white">
-                  <tr><th className="px-4 py-3 font-semibold">S No</th><th className="px-4 py-3 font-semibold">Ticket</th><th className="px-4 py-3 font-semibold">Table</th><th className="px-4 py-3 font-semibold">Items</th><th className="px-4 py-3 font-semibold">Status</th></tr>
+                  <tr><th className="rounded-tl-lg px-4 py-3 font-semibold">S No</th><th className="px-4 py-3 font-semibold">Table</th><th className="px-4 py-3 font-semibold">Items</th><th className="rounded-tr-lg px-4 py-3 font-semibold">Status</th></tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
                   {orders.slice(0, 6).map((order, index) => (
                     <tr key={order.order_id}>
                       <td className="whitespace-nowrap px-4 py-3 text-slate-500">{index + 1}</td>
-                      <td className="whitespace-nowrap px-4 py-3 font-semibold text-slate-800">{order.order_id}</td>
                       <td className="whitespace-nowrap px-4 py-3 text-slate-600">{order.table_number || order.table_id || "-"}</td>
                       <td className="max-w-sm px-4 py-3 text-slate-600">{(order.items || []).map((item) => `${item.food_name} × ${item.quantity}`).join(", ") || "No items"}</td>
                       <td className="whitespace-nowrap px-4 py-3"><span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${statusClasses[order.status] || statusClasses.Pending}`}>{order.status || "Pending"}</span></td>
