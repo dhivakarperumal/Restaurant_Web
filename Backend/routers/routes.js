@@ -31,6 +31,7 @@ const { changeKitchenOrderStatus, getKitchenOrders, submitKitchenOrder } = requi
 const { getActiveBill, getAllBills, getBill, settleBill } = require('../controllers/tableBillController');
 const ordersRouter = require('./orders');
 const revenueRouter = require('./revenue');
+const reservationsRouter = require('./reservations');
 
 const router = express.Router();
 const uploadDirectory = path.join(__dirname, '..', 'upload');
@@ -239,6 +240,19 @@ router.use('/videos', videosRouter);
 router.use('/settings', requireAdmin, settingsRouter);
 router.use('/cart', optionalAuth, cartRouter);
 router.use('/wishlist', requireAuthenticatedUser, wishlistRouter);
+router.use('/reservations', (req, res, next) => {
+  if (req.path === '/available-tables') return next();
+  if (req.path === '/mine' || req.method === 'POST' && req.path === '/') {
+    return requireAuthenticatedUser(req, res, () => {
+      const role = String(req.auth?.role || '').trim().toLowerCase();
+      if (!['user', 'customer'].includes(role)) {
+        return res.status(403).json({ success: false, message: 'Customer access is required to request a reservation.' });
+      }
+      return next();
+    });
+  }
+  return requireAdmin(req, res, next);
+}, reservationsRouter);
 router.use('/inventory', requireInventoryAccess, inventoryRouter);
 router.get('/employees', optionalAuth, requireEmployeeAdmin, listEmployees);
 router.get('/employees/documents/:filename', optionalAuth, requireEmployeeAdmin, (req, res) => {

@@ -42,6 +42,7 @@ import StockDetails from './Admin/AdminProducts/StockDetails.jsx'
 import AddFood from './Admin/AdminProducts/AddFood.jsx'
 import InventoryModule from './Admin/InventoryModule.jsx'
 import AdminReviews from './Admin/AdminReviews/AdminReviews.jsx'
+import AdminReservations from './Admin/AdminReservations.jsx'
 import PointOfSale from './Admin/Billings/PointOfSale.jsx'
 import Billing from './Admin/Billings/Billing.jsx'
 import NewBilling from './Admin/Billings/NewBilling.jsx'
@@ -189,6 +190,10 @@ const router = createHashRouter([
           {
             path: 'tables',
             element: <ServerTables />,
+          },
+          {
+            path: 'reservations',
+            element: <AdminReservations />,
           },
           {
             path: 'customers',
