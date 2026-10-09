@@ -80,7 +80,7 @@ const CustomerReviews = () => {
             </button>
           </div>
         ) : (
-          <div className="relative px-1 sm:px-10">
+          <div className="relative overflow-x-clip px-1 py-2 sm:px-10">
             {reviews.length > 1 && (
               <>
                 <button
