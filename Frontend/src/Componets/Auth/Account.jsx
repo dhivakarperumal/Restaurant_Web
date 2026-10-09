@@ -56,6 +56,7 @@ const normalizeAddress = (value = {}) => ({
 
 const statusClass = {
   placed: "bg-[#eaf4e4] text-[#075b20] border border-[#cfe3c4]",
+  assigned: "bg-[#edf3ff] text-[#1749c6] border border-[#cfddff]",
   preparing: "bg-[#fff6d8] text-[#a85b00] border border-[#f1d889]",
   ready: "bg-[#fff6d8] text-[#a85b00] border border-[#f1d889]",
   completed: "bg-[#eaf4e4] text-[#075b20] border border-[#cfe3c4]",
@@ -68,12 +69,13 @@ const statusClass = {
   Processing: "bg-[#fff6d8] text-[#a85b00] border border-[#f1d889]",
 };
 
-const ORDER_FILTERS = ["All Orders", "Processing", "Preparing", "Out for Delivery", "Delivered", "Cancelled"];
+const ORDER_FILTERS = ["All Orders", "Order Placed", "Preparing", "Ready", "Assigned", "Delivered", "Cancelled"];
 const ORDERS_PER_PAGE = 5;
 const ORDER_STATUS_BADGE_CLASSES = {
-  Processing: "bg-[#fff6d8] text-[#a85b00] border border-[#f1d889]",
+  "Order Placed": "bg-[#fff6d8] text-[#a85b00] border border-[#f1d889]",
   Preparing: "bg-[#fff6d8] text-[#a85b00] border border-[#f1d889]",
-  "Out for Delivery": "bg-[#edf3ff] text-[#1749c6] border border-[#cfddff]",
+  Ready: "bg-[#fff6d8] text-[#a85b00] border border-[#f1d889]",
+  Assigned: "bg-[#edf3ff] text-[#1749c6] border border-[#cfddff]",
   Delivered: "bg-[#eaf4e4] text-[#075b20] border border-[#cfe3c4]",
   Cancelled: "bg-[#fff0f2] text-[#c51d42] border border-[#f6d1d9]",
 };
@@ -82,9 +84,10 @@ const getOrderFilterGroup = (status) => {
   const normalized = String(status || "processing").trim().toLowerCase().replaceAll("_", " ");
   if (["cancelled", "returned", "payment failed"].includes(normalized)) return "Cancelled";
   if (["delivered", "completed"].includes(normalized)) return "Delivered";
-  if (["out for delivery", "shipped"].includes(normalized)) return "Out for Delivery";
-  if (["preparing", "ready"].includes(normalized)) return "Preparing";
-  return "Processing";
+  if (["assigned", "out for delivery", "shipped"].includes(normalized)) return "Assigned";
+  if (normalized === "ready" || normalized === "ready to serve") return "Ready";
+  if (normalized === "preparing") return "Preparing";
+  return "Order Placed";
 };
 
 const getOrderDateValue = (value) => {
@@ -807,9 +810,9 @@ const Account = () => {
                           const status = order.order_status || "Processing";
                           const statusGroup = getOrderFilterGroup(status);
                           const displayStatus = statusGroup;
-                          const StatusIcon = statusGroup === "Delivered"
+                          const StatusIcon = statusGroup === "Delivered" || statusGroup === "Ready"
                             ? CheckCircle2
-                            : statusGroup === "Out for Delivery"
+                            : statusGroup === "Assigned"
                               ? Truck
                               : statusGroup === "Cancelled"
                                 ? CircleX

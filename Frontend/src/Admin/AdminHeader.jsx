@@ -20,7 +20,7 @@ const pageInfo = {
   "/admin/revenue":                 { title: "Revenue",               icon: DollarSign },
   "/admin/billing/new":             { title: "New Billing",            icon: Plus },
   "/admin/orders/new":              { title: "New Orders",              icon: ShoppingCart },
-  "/admin/orders/delivery":          { title: "Delivery Orders",          icon: ShoppingCart },
+  "/admin/orders/delivery":          { title: "Delivered Orders",          icon: ShoppingCart },
   "/admin/orders/homedelivery":      { title: "Home Delivery Orders",      icon: ShoppingCart },
   "/admin/orders/pickup":            { title: "Pickup Orders",            icon: ShoppingCart },
   "/admin/orders/dining":            { title: "Dining Orders",             icon: UtensilsCrossed },

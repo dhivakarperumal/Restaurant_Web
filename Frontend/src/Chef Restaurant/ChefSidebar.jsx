@@ -87,8 +87,11 @@ const navItems = [
     label: "Orders",
     icon: ShoppingCart,
     children: [
-      { path: "/chef/customer-orders/new", label: "New Customer Orders", icon: PlusSquare },
-      { path: "/chef/customer-orders", label: "All Customer Orders", icon: List },
+      { path: "/chef/customer-orders/homedelivery", label: "Home Delivery Orders", icon: PlusSquare },
+      { path: "/chef/customer-orders/pickup", label: "Pickup Orders", icon: PlusSquare },
+      { path: "/chef/customer-orders/dining", label: "Dining Orders", icon: PlusSquare },
+      { path: "/chef/customer-orders/new", label: "New Order", icon: PlusSquare },
+      { path: "/chef/customer-orders", label: "All Orders", icon: List },
       { path: "/chef/customer-orders/delivery", label: "Delivery Orders", icon: Package },
       { path: "/chef/customer-orders/cancelled", label: "Cancelled Orders", icon: XCircle },
     ],
@@ -237,7 +240,7 @@ const ChefSidebar = ({ isOpen, onClose, collapsed, onToggleCollapse }) => {
                   {/* ===== SUB MENU ===== */}
                   {!collapsed && (
                     <div
-                      className={`ml-8 mt-1.5 space-y-1 overflow-hidden transition-all duration-200 ${isMenuOpen ? "max-h-72 opacity-100" : "max-h-0 opacity-0"
+                      className={`ml-8 mt-1.5 space-y-1 overflow-hidden transition-all duration-200 ${isMenuOpen ? "max-h-96 opacity-100" : "max-h-0 opacity-0"
                         }`}
                     >
                       {item.children.map((sub) => {

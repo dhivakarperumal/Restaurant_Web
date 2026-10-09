@@ -5,19 +5,60 @@ import api, { BACKEND_BASE_URL } from '../api';
 import PageHeader from './PageHeader';
 
 const STATUS_OPTIONS = [
-  { value: 'placed', label: 'New' },
+  { value: 'placed', label: 'Order Placed' },
   { value: 'preparing', label: 'Preparing' },
   { value: 'ready', label: 'Ready' },
-  { value: 'completed', label: 'Completed' },
+  { value: 'assigned', label: 'Assigned' },
   { value: 'delivered', label: 'Delivered' },
   { value: 'cancelled', label: 'Cancelled' },
 ];
+
+const formatStatus = (status) => {
+  const normalized = String(status || 'placed').toLowerCase();
+  if (normalized === 'completed') return 'Delivered';
+  return STATUS_OPTIONS.find((option) => option.value === normalized)?.label || normalized.replaceAll('_', ' ');
+};
+
+const STATUS_FLOW = ['placed', 'preparing', 'ready', 'assigned', 'delivered'];
+
+const getAvailableStatusOptions = (order) => {
+  const current = String(order?.order_status || 'placed').toLowerCase();
+  const normalized = current === 'completed' ? 'delivered' : current;
+
+  if (normalized === 'cancelled') {
+    return [{ value: 'cancelled', label: 'Cancelled' }];
+  }
+
+  if (normalized === 'delivered') {
+    return [{ value: 'delivered', label: 'Delivered' }];
+  }
+
+  const isPickup = order?.order_type === 'pickup';
+  const flow = isPickup
+    ? ['placed', 'preparing', 'ready', 'delivered']
+    : STATUS_FLOW;
+
+  const currentIndex = flow.indexOf(normalized);
+
+  if (currentIndex === -1) {
+    return STATUS_OPTIONS;
+  }
+
+  // Hide previous order statuses so only the current and subsequent statuses are selectable
+  return STATUS_OPTIONS.filter((option) => {
+    if (option.value === 'cancelled') return true;
+    if (isPickup && option.value === 'assigned') return false;
+    const optionIndex = flow.indexOf(option.value);
+    return optionIndex >= currentIndex;
+  });
+};
 
 const FILTERS = {
   all: {},
   new: { status: 'placed' },
   delivery: { order_type: 'home_delivery' },
   pickup: { order_type: 'pickup' },
+  delivered: { status: 'delivered' },
   cancelled: { status: 'cancelled' },
 };
 
@@ -36,37 +77,66 @@ const formatDate = (value) => {
 };
 
 function CustomerOrdersPage({ audience = 'admin', view = 'all', showOrderFilters = false }) {
+  const getInitialOrderType = (v) => (v === 'delivery' ? 'home_delivery' : v === 'pickup' ? 'pickup' : 'all');
+  const getInitialStatus = (v) => (v === 'new' ? 'placed' : v === 'cancelled' ? 'cancelled' : v === 'delivered' ? 'delivered' : 'all');
+
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState('');
   const [updatingOrder, setUpdatingOrder] = useState('');
-  const [orderTypeFilter, setOrderTypeFilter] = useState(
-    view === 'delivery' ? 'home_delivery' : view === 'pickup' ? 'pickup' : 'all'
-  );
-  const [statusFilter, setStatusFilter] = useState(
-    view === 'new' ? 'placed' : view === 'delivery' ? 'delivered' : view === 'cancelled' ? 'cancelled' : 'all'
-  );
+  const [deliveryPartners, setDeliveryPartners] = useState([]);
+  const [loadingDeliveryPartners, setLoadingDeliveryPartners] = useState(false);
+  const [deliveryPartnersError, setDeliveryPartnersError] = useState('');
+  const [assignmentDrafts, setAssignmentDrafts] = useState({});
+  const [orderTypeFilter, setOrderTypeFilter] = useState(getInitialOrderType(view));
+  const [statusFilter, setStatusFilter] = useState(getInitialStatus(view));
   const [searchTerm, setSearchTerm] = useState('');
   const [sortOrder, setSortOrder] = useState('latest');
   const [layout, setLayout] = useState('table');
+
+  // Immediately synchronize filter state whenever audience or view prop changes
+  const [prevViewKey, setPrevViewKey] = useState(`${audience}-${view}`);
+  if (prevViewKey !== `${audience}-${view}`) {
+    setPrevViewKey(`${audience}-${view}`);
+    setOrderTypeFilter(getInitialOrderType(view));
+    setStatusFilter(getInitialStatus(view));
+    setSearchTerm('');
+    setOrders([]);
+    setLoading(true);
+    setError('');
+  }
+
   const isCustomer = audience === 'customer';
+  const showChefDeliveryTable = audience === 'chef' && view === 'delivery';
+  const canAssignDelivery = showChefDeliveryTable || (showOrderFilters && view === 'delivery');
+  const showOrderSummary = audience === 'admin' || (audience === 'chef' && showOrderFilters);
   const title = isCustomer
     ? 'My Orders'
-    : audience === 'chef' ? 'Customer Kitchen Orders'
+    : audience === 'chef' && view === 'delivery' ? 'Home Delivery Orders'
+      : audience === 'chef' && view === 'new' ? 'New Customer Orders'
+        : audience === 'chef' && view === 'pickup' ? 'Pickup Orders'
+          : audience === 'chef' && view === 'cancelled' ? 'Cancelled Orders'
+            : audience === 'chef' ? 'All Customer Orders'
       : view === 'new' ? 'New Orders'
         : view === 'pickup' ? 'Pickup Orders'
-      : view === 'cancelled' ? 'Cancelled Orders'
-        : view === 'delivery' ? (showOrderFilters ? 'Home Delivery Orders' : 'Delivery Orders')
-        : 'Customer Orders';
-  const filterStatus = showOrderFilters && ['new', 'delivery', 'cancelled'].includes(view)
+          : view === 'delivered' ? 'Delivered Orders'
+          : view === 'cancelled' ? 'Cancelled Orders'
+            : view === 'delivery' ? (showOrderFilters ? 'Home Delivery Orders' : 'Delivery Orders')
+            : 'Customer Orders';
+  const filterStatus = showOrderFilters && ['new', 'delivery', 'pickup', 'delivered', 'cancelled'].includes(view)
     ? (statusFilter === 'all' ? undefined : statusFilter)
     : FILTERS[view]?.status;
   const filterOrderType = FILTERS[view]?.order_type;
   const visibleOrders = useMemo(() => {
     const query = searchTerm.trim().toLowerCase();
     return orders
-      .filter((order) => statusFilter === 'all' || order.order_status === statusFilter)
+      .filter((order) => {
+        if (orderTypeFilter !== 'all' && order.order_type && order.order_type !== orderTypeFilter) {
+          return false;
+        }
+        return statusFilter === 'all' || order.order_status === statusFilter;
+      })
       .filter((order) => {
         if (!query) return true;
         const text = [
@@ -82,7 +152,7 @@ function CustomerOrdersPage({ audience = 'admin', view = 'all', showOrderFilters
         const difference = new Date(first.created_at || 0).getTime() - new Date(second.created_at || 0).getTime();
         return sortOrder === 'latest' ? -difference : difference;
       });
-  }, [orders, searchTerm, sortOrder, statusFilter]);
+  }, [orders, orderTypeFilter, searchTerm, sortOrder, statusFilter]);
   const statusCounts = useMemo(() => STATUS_OPTIONS.reduce((counts, status) => {
     counts[status.value] = orders.filter((order) => order.order_status === status.value).length;
     return counts;
@@ -91,11 +161,12 @@ function CustomerOrdersPage({ audience = 'admin', view = 'all', showOrderFilters
   const fetchOrders = useCallback(async (showSpinner = false) => {
     if (showSpinner) setRefreshing(true);
     try {
+      const activeOrderType = showOrderFilters
+        ? (orderTypeFilter !== 'all' ? orderTypeFilter : undefined)
+        : filterOrderType;
       const params = {
         ...(filterStatus ? { status: filterStatus } : {}),
-        ...(showOrderFilters
-          ? (orderTypeFilter !== 'all' ? { order_type: orderTypeFilter } : {})
-          : (filterOrderType ? { order_type: filterOrderType } : {})),
+        ...(activeOrderType ? { order_type: activeOrderType } : {}),
       };
       const endpoint = isCustomer ? '/orders/mine' : '/orders/management';
       const { data } = await api.get(endpoint, { params: isCustomer ? undefined : params });
@@ -111,33 +182,146 @@ function CustomerOrdersPage({ audience = 'admin', view = 'all', showOrderFilters
   }, [filterStatus, filterOrderType, isCustomer, orderTypeFilter, showOrderFilters]);
 
   useEffect(() => {
-    const initialFetch = window.setTimeout(() => fetchOrders(), 0);
-    const intervalId = window.setInterval(() => fetchOrders(), 15000);
+    if (!canAssignDelivery) return undefined;
+    let isCancelled = false;
+    const fetchDeliveryPartners = async () => {
+      setLoadingDeliveryPartners(true);
+      setDeliveryPartnersError('');
+      try {
+        const { data } = await api.get('/delivery-partners');
+        if (!isCancelled) setDeliveryPartners(Array.isArray(data?.data) ? data.data : []);
+      } catch (requestError) {
+        if (isCancelled) return;
+        setDeliveryPartnersError(requestError.response?.data?.message || 'Delivery partners could not be loaded.');
+        setDeliveryPartners([]);
+      } finally {
+        if (!isCancelled) setLoadingDeliveryPartners(false);
+      }
+    };
+    fetchDeliveryPartners();
     return () => {
-      window.clearTimeout(initialFetch);
+      isCancelled = true;
+    };
+  }, [canAssignDelivery]);
+
+  useEffect(() => {
+    let isCancelled = false;
+    const executeFetch = async (showSpinner = false) => {
+      if (showSpinner) setRefreshing(true);
+      try {
+        const activeOrderType = showOrderFilters
+          ? (orderTypeFilter !== 'all' ? orderTypeFilter : undefined)
+          : filterOrderType;
+        const params = {
+          ...(filterStatus ? { status: filterStatus } : {}),
+          ...(activeOrderType ? { order_type: activeOrderType } : {}),
+        };
+        const endpoint = isCustomer ? '/orders/mine' : '/orders/management';
+        const { data } = await api.get(endpoint, { params: isCustomer ? undefined : params });
+        if (isCancelled) return;
+        setOrders(Array.isArray(data?.data) ? data.data : []);
+        setError('');
+      } catch (requestError) {
+        if (isCancelled) return;
+        const message = requestError.response?.data?.message || 'Customer orders could not be loaded.';
+        setError(message);
+      } finally {
+        if (!isCancelled) {
+          setLoading(false);
+          setRefreshing(false);
+        }
+      }
+    };
+
+    executeFetch();
+    const intervalId = window.setInterval(() => executeFetch(false), 15000);
+    return () => {
+      isCancelled = true;
       window.clearInterval(intervalId);
     };
-  }, [fetchOrders]);
+  }, [filterStatus, filterOrderType, isCustomer, orderTypeFilter, showOrderFilters]);
 
-  const changeStatus = async (order, status) => {
+  const changeStatus = async (order, status, deliveryPartnerId = '') => {
     setUpdatingOrder(order.order_number);
     try {
       const { data } = await api.patch(
         `/orders/management/${encodeURIComponent(order.order_number)}/status`,
-        { status }
+        { status, ...(status === 'assigned' ? { delivery_partner_id: deliveryPartnerId } : {}) }
       );
       if (!data?.success) throw new Error(data?.message || 'Order status could not be updated.');
       setOrders((current) => current.map((item) => (
         item.order_number === order.order_number
-          ? { ...item, order_status: status }
+          ? {
+            ...item,
+            order_status: status,
+            ...(status === 'assigned' ? {
+              assigned_delivery_partner_id: data.data?.assigned_delivery_partner_id,
+              assigned_partner_name: data.data?.assigned_partner_name,
+            } : {}),
+          }
           : item
       )));
-      toast.success('Customer order updated.');
+      setAssignmentDrafts((current) => {
+        const next = { ...current };
+        delete next[order.order_number];
+        return next;
+      });
+      toast.success(status === 'assigned' ? 'Delivery partner assigned.' : 'Customer order updated.');
     } catch (requestError) {
       toast.error(requestError.response?.data?.message || requestError.message || 'Order status could not be updated.');
     } finally {
       setUpdatingOrder('');
     }
+  };
+
+  const selectOrderStatus = (order, status) => {
+    if (canAssignDelivery && order.order_type === 'home_delivery' && status === 'assigned') {
+      setAssignmentDrafts((current) => ({ ...current, [order.order_number]: '' }));
+      return;
+    }
+    setAssignmentDrafts((current) => {
+      const next = { ...current };
+      delete next[order.order_number];
+      return next;
+    });
+    changeStatus(order, status);
+  };
+
+  const renderPartnerAssignment = (order) => {
+    const isSelectingPartner = Object.prototype.hasOwnProperty.call(assignmentDrafts, order.order_number);
+    if (!canAssignDelivery || order.order_type !== 'home_delivery') return '—';
+    if (!isSelectingPartner) return order.assigned_partner_name || 'Not assigned';
+
+    return (
+      <div className="flex min-w-64 flex-col gap-2">
+        <select
+          value={assignmentDrafts[order.order_number]}
+          onChange={(event) => setAssignmentDrafts((current) => ({ ...current, [order.order_number]: event.target.value }))}
+          disabled={loadingDeliveryPartners || updatingOrder === order.order_number}
+          aria-label={`Choose delivery partner for order ${order.order_number}`}
+          className="rounded-lg border border-[#d9ded8] bg-white px-2 py-1.5 text-xs text-[#263830] disabled:opacity-50"
+        >
+          <option value="">{loadingDeliveryPartners ? 'Loading partners…' : 'Choose delivery partner'}</option>
+          {deliveryPartners.map((partner) => (
+            <option key={partner.employee_id} value={partner.employee_id}>
+              {partner.full_name}{partner.phone_number ? ` · ${partner.phone_number}` : ''}
+            </option>
+          ))}
+        </select>
+        {deliveryPartnersError && <span role="alert" className="text-xs text-red-700">{deliveryPartnersError}</span>}
+        {!loadingDeliveryPartners && !deliveryPartnersError && deliveryPartners.length === 0 && (
+          <span className="text-xs text-[#68766e]">No active delivery partners available.</span>
+        )}
+        <button
+          type="button"
+          onClick={() => changeStatus(order, 'assigned', assignmentDrafts[order.order_number])}
+          disabled={!assignmentDrafts[order.order_number] || loadingDeliveryPartners || updatingOrder === order.order_number}
+          className="rounded-lg bg-[#1a3c36] px-3 py-1.5 text-xs font-bold text-white disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          {updatingOrder === order.order_number ? 'Assigning…' : 'Assign'}
+        </button>
+      </div>
+    );
   };
 
   return (
@@ -147,7 +331,7 @@ function CustomerOrdersPage({ audience = 'admin', view = 'all', showOrderFilters
       <div className="mx-auto max-w-[1500px] space-y-6">
        
 
-        {!isCustomer && audience === 'admin' && (
+        {!isCustomer && showOrderSummary && (
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
             {[
               { title: 'Total Orders', value: orders.length, icon: UtensilsCrossed, bg: 'bg-[#22c55e]', hint: 'All orders in view' },
@@ -183,6 +367,19 @@ function CustomerOrdersPage({ audience = 'admin', view = 'all', showOrderFilters
                 </div>
               </article>
             ))}
+          </div>
+        )}
+
+        {showChefDeliveryTable && (
+          <div className="flex flex-wrap items-end justify-between gap-3 rounded-2xl border border-[#e7e0d8] bg-white px-5 py-4 shadow-sm">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-[0.16em] text-[#a34f32]">Customer orders</p>
+              <h1 className="mt-1 font-serif text-2xl font-bold text-[#203129]">Home Delivery Orders</h1>
+              <p className="mt-1 text-sm text-[#7c8980]">Track and update home delivery order status.</p>
+            </div>
+            <span className="rounded-full bg-[#f4f2ed] px-3 py-1.5 text-xs font-bold text-[#34443b]">
+              {orders.length} {orders.length === 1 ? 'order' : 'orders'}
+            </span>
           </div>
         )}
 
@@ -237,12 +434,12 @@ function CustomerOrdersPage({ audience = 'admin', view = 'all', showOrderFilters
             <p className="mt-3 text-lg font-bold text-[#263830]">No orders to show</p>
             <p className="mt-1 text-sm text-[#68766e]">New customer orders will appear here automatically.</p>
           </div>
-        ) : showOrderFilters && layout === 'table' ? (
+        ) : (showOrderFilters || showChefDeliveryTable) && layout === 'table' ? (
           <div className="overflow-hidden rounded-2xl border border-[#e3e7e1] bg-white shadow-sm">
             <div className="overflow-x-auto">
               <table className="w-full min-w-[900px] text-left text-sm">
                 <thead className="bg-[#d4a843] text-xs uppercase tracking-wide text-white">
-                  <tr>{['Order', 'Customer', 'Items', 'Type', 'Status', 'Payment', 'Total', 'Placed'].map((heading) => <th key={heading} className="whitespace-nowrap px-4 py-4 font-bold">{heading}</th>)}</tr>
+                  <tr>{['Order', 'Customer', 'Items', 'Type', 'Status', ...(canAssignDelivery ? ['Delivery Partner'] : []), 'Payment', 'Total', 'Placed'].map((heading) => <th key={heading} className="whitespace-nowrap px-4 py-4 font-bold">{heading}</th>)}</tr>
                 </thead>
                 <tbody className="divide-y divide-[#edf0eb]">
                   {visibleOrders.map((order) => (
@@ -252,10 +449,19 @@ function CustomerOrdersPage({ audience = 'admin', view = 'all', showOrderFilters
                       <td className="max-w-56 px-4 py-3 text-xs text-[#435047]">{order.items.map((item) => `${item.product_name} ×${item.quantity}`).join(', ')}</td>
                       <td className="whitespace-nowrap px-4 py-3 text-[#435047]">{order.order_type === 'home_delivery' ? 'Home Delivery' : 'Pickup'}</td>
                       <td className="px-4 py-3">
-                        <select value={order.order_status} disabled={updatingOrder === order.order_number || order.payment_status === 'failed'} onChange={(event) => changeStatus(order, event.target.value)} aria-label={`Update order ${order.order_number} status`} className="rounded-lg border border-[#d9ded8] bg-white px-2 py-1.5 text-xs font-semibold capitalize text-[#263830] disabled:opacity-50">
-                          {STATUS_OPTIONS.map((status) => <option key={status.value} value={status.value}>{status.label}</option>)}
+                        <select
+                          value={Object.prototype.hasOwnProperty.call(assignmentDrafts, order.order_number) ? 'assigned' : order.order_status}
+                          disabled={updatingOrder === order.order_number || order.payment_status === 'failed' || ['delivered', 'completed', 'cancelled'].includes(String(order.order_status || '').toLowerCase())}
+                          onChange={(event) => selectOrderStatus(order, event.target.value)}
+                          aria-label={`Update order ${order.order_number} status`}
+                          className="rounded-lg border border-[#d9ded8] bg-white px-2 py-1.5 text-xs font-semibold capitalize text-[#263830] disabled:opacity-50"
+                        >
+                          {getAvailableStatusOptions(order).map((status) => (
+                            <option key={status.value} value={status.value}>{status.label}</option>
+                          ))}
                         </select>
                       </td>
+                      {canAssignDelivery && <td className="px-4 py-3 text-xs text-[#435047]">{renderPartnerAssignment(order)}</td>}
                       <td className="whitespace-nowrap px-4 py-3 text-xs capitalize text-[#435047]">{order.payment_method} · {order.payment_status}</td>
                       <td className="whitespace-nowrap px-4 py-3 font-bold text-[#263830]">₹{Number(order.total_amount).toFixed(2)}</td>
                       <td className="whitespace-nowrap px-4 py-3 text-xs text-[#68766e]">{formatDate(order.created_at)}</td>
@@ -276,12 +482,13 @@ function CustomerOrdersPage({ audience = 'admin', view = 'all', showOrderFilters
                       <Clock3 size={13} /> {formatDate(order.created_at)}
                     </p>
                   </div>
-                  <span className={`rounded-full px-3 py-1 text-xs font-bold capitalize ${
-                    order.order_status === 'cancelled' ? 'bg-rose-50 text-rose-700'
-                      : order.order_status === 'completed' ? 'bg-emerald-50 text-emerald-700'
-                        : 'bg-amber-50 text-amber-800'
+                  <span className={`rounded-full px-3 py-1 text-xs font-bold ${
+                    ['cancelled'].includes(order.order_status) ? 'bg-rose-50 text-rose-700'
+                      : ['completed', 'delivered'].includes(order.order_status) ? 'bg-emerald-50 text-emerald-700'
+                        : ['assigned', 'ready'].includes(order.order_status) ? 'bg-blue-50 text-blue-700'
+                          : 'bg-amber-50 text-amber-800'
                   }`}>
-                    {order.order_status?.replaceAll('_', ' ') || 'placed'}
+                    {formatStatus(order.order_status)}
                   </span>
                 </div>
 
@@ -349,15 +556,21 @@ function CustomerOrdersPage({ audience = 'admin', view = 'all', showOrderFilters
                     <label className="text-xs font-semibold text-[#68766e]">
                       Update order
                       <select
-                        value={order.order_status}
-                        disabled={updatingOrder === order.order_number || order.payment_status === 'failed'}
-                        onChange={(event) => changeStatus(order, event.target.value)}
+                        value={Object.prototype.hasOwnProperty.call(assignmentDrafts, order.order_number) ? 'assigned' : order.order_status}
+                        disabled={updatingOrder === order.order_number || order.payment_status === 'failed' || ['delivered', 'completed', 'cancelled'].includes(String(order.order_status || '').toLowerCase())}
+                        onChange={(event) => selectOrderStatus(order, event.target.value)}
                         className="mt-1 block w-full rounded-lg border border-[#d9ded8] bg-white px-3 py-2 text-sm font-semibold capitalize text-[#263830] disabled:opacity-50 sm:min-w-44"
                       >
-                        {STATUS_OPTIONS.map((status) => (
+                        {getAvailableStatusOptions(order).map((status) => (
                           <option key={status.value} value={status.value}>{status.label}</option>
                         ))}
                       </select>
+                      {canAssignDelivery && order.order_type === 'home_delivery' && (
+                        <div className="mt-2 text-xs text-[#68766e]">
+                          <span className="mb-1 block">Delivery partner</span>
+                          {renderPartnerAssignment(order)}
+                        </div>
+                      )}
                     </label>
                   )}
                 </footer>

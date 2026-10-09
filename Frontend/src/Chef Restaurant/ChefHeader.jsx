@@ -13,6 +13,7 @@ import {
 import api from "../api";
 import { useAuth } from "../PrivateRouter/AuthContext";
 import dayjs from "dayjs";
+import AttendanceWidget from "../CommonComponents/AttendanceWidget";
 
 /* ── page title map ── */
 const pageInfo = {
@@ -293,6 +294,9 @@ const ChefHeader = ({ onMenuClick }) => {
 
           {/* ── RIGHT ACTIONS ── */}
           <div className="flex items-center gap-2 shrink-0">
+
+            {/* Attendance clock in/out pill */}
+            <AttendanceWidget variant="header" />
 
             {/* Search */}
             <button

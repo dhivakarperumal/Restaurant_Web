@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { ClipboardList, Clock3, RefreshCw, UtensilsCrossed } from "lucide-react";
 import api from "../api";
 import { useAuth } from "../PrivateRouter/AuthContext";
+import AttendanceWidget from "../CommonComponents/AttendanceWidget";
 
 const statusClasses = {
   Pending: "bg-amber-100 text-amber-800",
@@ -97,6 +98,9 @@ const ChefDashboard = () => {
           </button>
         </div>
       </header>
+
+      {/* Attendance Banner */}
+      <AttendanceWidget variant="dashboard" />
 
       <section aria-label="Kitchen order summary" className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         {stats.map((stat) => (

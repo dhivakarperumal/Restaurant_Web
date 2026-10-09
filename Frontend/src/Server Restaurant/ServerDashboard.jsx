@@ -23,6 +23,7 @@ import {
 import toast from "react-hot-toast";
 import api from "../api";
 import { useAuth } from "../PrivateRouter/AuthContext";
+import AttendanceWidget from "../CommonComponents/AttendanceWidget";
 
 const STATUS_BADGES = {
   Pending: {
@@ -212,6 +213,9 @@ export default function ServerDashboard() {
             </div>
           </div>
         </div>
+
+        {/* Server Attendance Banner */}
+        <AttendanceWidget variant="dashboard" />
 
         {/* READY TO SERVE ALERT BANNER */}
         {readyOrders.length > 0 && (

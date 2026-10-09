@@ -391,13 +391,14 @@ const ManageServers = () => {
                       <th className="px-4 py-4">Phone </th>
                       <th className="px-4 py-4">Assigned Tables</th>
                       <th className="px-4 py-4">Status</th>
+                      <th className="px-4 py-4">Today's Attendance</th>
                       <th className="px-4 py-4 text-right">Actions</th>
                     </tr>
                   </thead>
                   <tbody>
                     {loading ? (
                       <tr>
-                        <td colSpan={6} className="px-5 py-14 text-center text-sm text-[#777]">
+                        <td colSpan={7} className="px-5 py-14 text-center text-sm text-[#777]">
                           <div className="flex items-center justify-center gap-2">
                             <RefreshCw className="h-4 w-4 animate-spin text-[#1a3c36]" />
                             <span>Loading servers...</span>
@@ -406,7 +407,7 @@ const ManageServers = () => {
                       </tr>
                     ) : error ? (
                       <tr>
-                        <td colSpan={6} className="px-5 py-12 text-center text-sm text-[#a13e30]">
+                        <td colSpan={7} className="px-5 py-12 text-center text-sm text-[#a13e30]">
                           {error}
                         </td>
                       </tr>
@@ -486,6 +487,29 @@ const ManageServers = () => {
                                 />
                                 {isToggling ? "Updating..." : server.status}
                               </button>
+                            </td>
+                            <td className="px-4 py-4">
+                              {server.today_check_in ? (
+                                <div className="flex flex-col gap-0.5">
+                                  <span className={`inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[11px] font-bold w-fit ${
+                                    server.today_check_out
+                                      ? "bg-blue-50 text-blue-800 border border-blue-200"
+                                      : "bg-emerald-50 text-emerald-800 border border-emerald-200"
+                                  }`}>
+                                    <span className={`h-1.5 w-1.5 rounded-full ${server.today_check_out ? "bg-blue-600" : "bg-emerald-600 animate-ping"}`} />
+                                    {server.today_check_out ? "Shift Done" : "Clocked In"}
+                                  </span>
+                                  <span className="text-[10px] text-gray-500 font-mono">
+                                    {new Date(server.today_check_in).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                    {server.today_check_out ? ` - ${new Date(server.today_check_out).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}` : ''}
+                                  </span>
+                                </div>
+                              ) : (
+                                <span className="inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[11px] font-medium bg-gray-100 text-gray-500 w-fit">
+                                  <span className="h-1.5 w-1.5 rounded-full bg-gray-400" />
+                                  Not Clocked In
+                                </span>
+                              )}
                             </td>
                             <td className="px-4 py-4 text-right">
                               <div className="flex items-center justify-end gap-1.5">

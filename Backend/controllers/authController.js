@@ -10,6 +10,7 @@ const {
   updateUserProfile: updateUserProfileRecord,
   verifyPassword,
 } = require('../modules/auth');
+const { recordLoginAttendance } = require('../modules/attendance');
 
 const isAdmin = (role) => ['admin', 'super admin', 'superadmin'].includes(String(role || '').trim().toLowerCase());
 const googleClientId = process.env.GOOGLE_CLIENT_ID
@@ -83,6 +84,18 @@ async function login(req, res) {
 
     const session = await createSession(userRecord.id, req.body.rememberMe !== false);
     const { password_hash: _passwordHash, ...user } = userRecord;
+
+    const roleNormalized = String(userRecord.role || '').trim().toLowerCase();
+    const isStaff = ['chef', 'server', 'delivery', 'delivery partner', 'cashier', 'manager', 'cleaner'].includes(roleNormalized) || Boolean(userRecord.employee_id);
+    if (isStaff) {
+      try {
+        const attendance = await recordLoginAttendance(userRecord.user_id, userRecord.employee_id);
+        user.today_attendance = attendance;
+      } catch (attError) {
+        console.error('Failed to auto-record attendance on login:', attError.message);
+      }
+    }
+
     return res.json({ success: true, user, ...session });
   } catch (error) {
     console.error('Login failed:', error);
@@ -230,6 +243,18 @@ async function googleLogin(req, res) {
 
     const session = await createSession(userRecord.id);
     const { password_hash: _passwordHash, ...user } = userRecord;
+
+    const roleNormalized = String(userRecord.role || '').trim().toLowerCase();
+    const isStaff = ['chef', 'server', 'delivery', 'delivery partner', 'cashier', 'manager', 'cleaner'].includes(roleNormalized) || Boolean(userRecord.employee_id);
+    if (isStaff) {
+      try {
+        const attendance = await recordLoginAttendance(userRecord.user_id, userRecord.employee_id);
+        user.today_attendance = attendance;
+      } catch (attError) {
+        console.error('Failed to auto-record attendance on google-login:', attError.message);
+      }
+    }
+
     return res.json({ success: true, user, ...session });
   } catch (error) {
     console.error('Google login failed:', error.message);

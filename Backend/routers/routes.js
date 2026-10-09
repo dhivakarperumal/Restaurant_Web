@@ -28,12 +28,20 @@ const cartRouter = require('./cartRouter');
 const wishlistRouter = require('./wishlistRouter');
 const inventoryRouter = require('./inventory');
 const { changeKitchenOrderStatus, getKitchenOrders, submitKitchenOrder } = require('../controllers/kitchenOrderController');
+const {
+  getDeliveryPartnerDashboard,
+  listAssignedDeliveryOrders,
+  listDeliveryPartners,
+  updateAssignedDeliveryOrderStatus,
+  updateDeliveryPartnerAvailability,
+} = require('../controllers/customerOrderController');
 const { getActiveBill, getAllBills, getBill, settleBill } = require('../controllers/tableBillController');
 const ordersRouter = require('./orders');
 const revenueRouter = require('./revenue');
 const reservationsRouter = require('./reservations');
 const expensesRouter = require('./expenses');
 const { getFund, updateFund } = require('../controllers/expenseController');
+const attendanceRouter = require('./attendance');
 
 const router = express.Router();
 const uploadDirectory = path.join(__dirname, '..', 'upload');
@@ -220,6 +228,12 @@ router.get('/users', requireAdmin, listUsers);
 router.put('/users/:userId', requireAdmin, updateUser);
 router.delete('/users/:userId', requireAdmin, removeUser);
 router.get('/delivery-partner/profile', requireDeliveryPartner, getDeliveryPartnerProfile);
+router.get('/delivery-partners', requireKitchenRole(['chef', 'super admin', 'admin']), listDeliveryPartners);
+router.get('/delivery-partner/dashboard', requireDeliveryPartner, getDeliveryPartnerDashboard);
+router.patch('/delivery-partner/availability', requireDeliveryPartner, updateDeliveryPartnerAvailability);
+router.put('/delivery-partner/availability', requireDeliveryPartner, updateDeliveryPartnerAvailability);
+router.get('/delivery-partner/orders', requireDeliveryPartner, listAssignedDeliveryOrders);
+router.patch('/delivery-partner/orders/:orderId/status', requireDeliveryPartner, updateAssignedDeliveryOrderStatus);
 router.use(
   '/orders',
   requireAuthenticatedUser,
@@ -288,6 +302,7 @@ router.put('/employees/:employeeId/status', optionalAuth, requireEmployeeAdmin, 
 router.put('/employees/:employeeId', optionalAuth, requireEmployeeAdmin, employeeUpload.any(), updateEmployee);
 router.delete('/employees/:employeeId', optionalAuth, requireEmployeeAdmin, deleteEmployee);
 router.post('/employees', optionalAuth, requireEmployeeAdmin, employeeUpload.any(), createEmployee);
+router.use('/attendance', attendanceRouter);
 
 router.use('/server-tables', optionalAuth, serverTableRouter);
 router.use('/tables', optionalAuth, serverTableRouter);

@@ -27,6 +27,7 @@ import ChefInventoryRequests from './Chef Restaurant/ChefInventoryRequests.jsx'
 import ChefProducts from './Chef Restaurant/ChefProducts.jsx'
 import AddEmployee from './Admin/AddEmployee.jsx'
 import AllEmployees from './Admin/AllEmployees.jsx'
+import AdminAttendance from './Admin/AdminAttendance.jsx'
 import ManageServers from './Admin/ManageServers.jsx'
 import ManageDeliveryPartners from './Admin/ManageDeliveryPartners.jsx'
 import AdminCustomers from './Admin/AdminCustomers.jsx'
@@ -123,7 +124,7 @@ const router = createHashRouter([
         path: 'my-orders',
         element: (
           <PrivateRoute allowedRoles={["user", "customer"]}>
-            <CustomerOrdersPage audience="customer" />
+            <CustomerOrdersPage key="customer-my-orders" audience="customer" />
           </PrivateRoute>
         ),
       },
@@ -164,6 +165,14 @@ const router = createHashRouter([
           {
             path: 'employee-salary',
             element: <EmployeeSalary />,
+          },
+          {
+            path: 'employees/attendance',
+            element: <AdminAttendance />,
+          },
+          {
+            path: 'attendance',
+            element: <AdminAttendance />,
           },
           {
             path: 'servers',
@@ -207,35 +216,35 @@ const router = createHashRouter([
           },
           {
             path: 'orders',
-            element: <CustomerOrdersPage audience="admin" view="all" showOrderFilters />,
+            element: <CustomerOrdersPage key="admin-orders-all" audience="admin" view="all" showOrderFilters />,
           },
           {
             path: 'kitchen-orders',
-            element: <ChefKitchenOrders defaultViewMode="table" />,
+            element: <ChefKitchenOrders key="admin-kitchen-orders" defaultViewMode="table" />,
           },
           {
             path: 'orders/new',
-            element: <CustomerOrdersPage audience="admin" view="new" showOrderFilters />,
+            element: <CustomerOrdersPage key="admin-orders-new" audience="admin" view="new" showOrderFilters />,
           },
           {
             path: 'orders/delivery',
-            element: <CustomerOrdersPage audience="admin" view="delivery" showOrderFilters />,
+            element: <CustomerOrdersPage key="admin-orders-delivered" audience="admin" view="delivered" showOrderFilters />,
           },
           {
             path: 'orders/homedelivery',
-            element: <CustomerOrdersPage audience="admin" view="delivery" showOrderFilters />,
+            element: <CustomerOrdersPage key="admin-orders-homedelivery" audience="admin" view="delivery" showOrderFilters />,
           },
           {
             path: 'orders/pickup',
-            element: <CustomerOrdersPage audience="admin" view="pickup" showOrderFilters />,
+            element: <CustomerOrdersPage key="admin-orders-pickup" audience="admin" view="pickup" showOrderFilters />,
           },
           {
             path: 'orders/dining',
-            element: <ChefKitchenOrders defaultViewMode="table" orderTypeFilter="dine-in" />,
+            element: <ChefKitchenOrders key="admin-orders-dining" defaultViewMode="table" orderTypeFilter="dine-in" />,
           },
           {
             path: 'orders/cancelled',
-            element: <CustomerOrdersPage audience="admin" view="cancelled" showOrderFilters />,
+            element: <CustomerOrdersPage key="admin-orders-cancelled" audience="admin" view="cancelled" showOrderFilters />,
           },
           {
             path: 'settings',
@@ -363,19 +372,31 @@ const router = createHashRouter([
           },
           {
             path: 'customer-orders',
-            element: <CustomerOrdersPage audience="chef" view="all" />,
+            element: <CustomerOrdersPage key="chef-orders-all" audience="chef" view="all" showOrderFilters />,
           },
           {
             path: 'customer-orders/new',
-            element: <CustomerOrdersPage audience="chef" view="new" />,
+            element: <CustomerOrdersPage key="chef-orders-new" audience="chef" view="new" showOrderFilters />,
+          },
+          {
+            path: 'customer-orders/homedelivery',
+            element: <CustomerOrdersPage key="chef-orders-homedelivery" audience="chef" view="delivery" showOrderFilters />,
+          },
+          {
+            path: 'customer-orders/pickup',
+            element: <CustomerOrdersPage key="chef-orders-pickup" audience="chef" view="pickup" showOrderFilters />,
+          },
+          {
+            path: 'customer-orders/dining',
+            element: <ChefKitchenOrders key="chef-orders-dining" defaultViewMode="table" orderTypeFilter="dine-in" />,
           },
           {
             path: 'customer-orders/delivery',
-            element: <CustomerOrdersPage audience="chef" view="delivery" />,
+            element: <CustomerOrdersPage key="chef-orders-delivery" audience="chef" view="delivery" />,
           },
           {
             path: 'customer-orders/cancelled',
-            element: <CustomerOrdersPage audience="chef" view="cancelled" />,
+            element: <CustomerOrdersPage key="chef-orders-cancelled" audience="chef" view="cancelled" showOrderFilters />,
           },
         ],
       },
