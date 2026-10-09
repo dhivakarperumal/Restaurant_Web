@@ -1,4 +1,4 @@
-import { useContext, useEffect, useMemo, useState } from 'react';
+import { useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { ArrowLeft, CheckCircle2, MapPin, PackageCheck, ShoppingBag, UtensilsCrossed } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
@@ -80,12 +80,40 @@ const addressFields = [
   { name: 'landmark', label: 'Landmark (optional)', placeholder: 'Nearby landmark' },
 ];
 
+const getCheckoutIdempotencyKey = async (userId, cart) => {
+  const requestFingerprint = JSON.stringify({
+    userId,
+    cart: cart.map((item) => ({
+      id: item.id || item.cart_id,
+      food_id: item.food_id,
+      quantity: item.quantity,
+      selected_addons: item.selected_addons,
+      selected_customizations: item.selected_customizations,
+      cooking_notes: item.cooking_notes,
+    })),
+  });
+  const digest = await window.crypto.subtle.digest(
+    'SHA-256',
+    new TextEncoder().encode(requestFingerprint)
+  );
+  const fingerprint = [...new Uint8Array(digest)]
+    .map((byte) => byte.toString(16).padStart(2, '0'))
+    .join('');
+  const storageKey = `checkout-order:${userId}:${fingerprint}`;
+  let idempotencyKey = localStorage.getItem(storageKey);
+  if (!idempotencyKey) {
+    idempotencyKey = window.crypto.randomUUID();
+    localStorage.setItem(storageKey, idempotencyKey);
+  }
+  return { idempotencyKey, storageKey };
+};
+
 function Checkout() {
   const { user } = useAuth();
   const store = useContext(StoreContext) || {};
   const { cart = [], loadingCart, fetchCart } = store;
   const navigate = useNavigate();
-  const [fulfillmentType, setFulfillmentType] = useState('delivery');
+  const [fulfillmentType, setFulfillmentType] = useState('home_delivery');
   const [paymentMethod, setPaymentMethod] = useState('cod');
   const [customer, setCustomer] = useState({
     name: user?.name || user?.username || '',
@@ -104,6 +132,8 @@ function Checkout() {
   const [selectedAddress, setSelectedAddress] = useState('new');
   const [submitting, setSubmitting] = useState(false);
   const [completedOrder, setCompletedOrder] = useState(null);
+  const submissionInProgress = useRef(false);
+  const idempotencyContext = useRef(null);
 
   useEffect(() => {
     if (!user?.user_id) return;
@@ -158,6 +188,14 @@ function Checkout() {
 
   const finishOrder = async (orderNumber, message) => {
     await fetchCart?.();
+    if (idempotencyContext.current) {
+      try {
+        localStorage.removeItem(idempotencyContext.current.storageKey);
+      } catch (error) {
+        console.error('Could not clear the completed checkout request key:', error);
+      }
+      idempotencyContext.current = null;
+    }
     setCompletedOrder(orderNumber);
     toast.success(message);
   };
@@ -173,21 +211,37 @@ function Checkout() {
       toast.error('Your cart is empty.');
       return;
     }
+    if (submissionInProgress.current) return;
 
+    submissionInProgress.current = true;
     setSubmitting(true);
     try {
-      const { data } = await api.post('/orders', {
-        customer,
-        fulfillment_type: fulfillmentType,
-        address: fulfillmentType === 'delivery' ? address : null,
-        payment_method: paymentMethod,
-      });
+      const requestKey = await getCheckoutIdempotencyKey(
+        user.user_id,
+        cart,
+      );
+      idempotencyContext.current = requestKey;
+      const { data } = await api.post(
+        '/orders',
+        {
+          customer,
+          order_type: fulfillmentType,
+          address: fulfillmentType === 'home_delivery' ? address : null,
+          payment_method: paymentMethod,
+        },
+        { headers: { 'Idempotency-Key': requestKey.idempotencyKey } },
+      );
       if (!data?.success || !data?.data?.order_number) {
         throw new Error(data?.message || 'Your order could not be placed.');
       }
 
-      if (paymentMethod === 'cod') {
+      const orderPaymentMethod = data.data.payment_method || paymentMethod;
+      if (orderPaymentMethod === 'cod') {
         await finishOrder(data.data.order_number, 'Order placed successfully.');
+        return;
+      }
+      if (data.data.completed) {
+        await finishOrder(data.data.order_number, 'Your order is already confirmed.');
         return;
       }
 
@@ -223,17 +277,20 @@ function Checkout() {
             toast.error(error?.response?.data?.message || error.message || 'Payment could not be verified. Please contact the restaurant.');
           } finally {
             setSubmitting(false);
+            submissionInProgress.current = false;
           }
         },
         modal: {
           ondismiss: () => {
             setSubmitting(false);
+            submissionInProgress.current = false;
             toast('Payment was not completed. Your cart is still available.');
           },
         },
       });
       checkout.on('payment.failed', (response) => {
         setSubmitting(false);
+        submissionInProgress.current = false;
         toast.error(response.error?.description || 'Payment failed. Please try again.');
       });
       checkout.open();
@@ -241,6 +298,7 @@ function Checkout() {
       console.error('Checkout failed:', error);
       toast.error(error?.response?.data?.message || error.message || 'Your order could not be placed. Please try again.');
       setSubmitting(false);
+      submissionInProgress.current = false;
     }
   };
 
@@ -340,14 +398,14 @@ function Checkout() {
                 </div>
               </div>
               <label className="block text-sm font-semibold text-[#263830]">
-                Delivery or pickup
+                Home delivery or pickup
                 <select value={fulfillmentType} onChange={(event) => setFulfillmentType(event.target.value)} className="mt-2 w-full rounded-xl border border-[#ded5c9] bg-white px-4 py-3 outline-none focus:border-[#a34f32] focus:ring-2 focus:ring-[#a34f32]/10 sm:max-w-sm">
-                  <option value="delivery">Delivery</option>
+                  <option value="home_delivery">Home Delivery</option>
                   <option value="pickup">Pickup</option>
                 </select>
               </label>
 
-              {fulfillmentType === 'delivery' && (
+              {fulfillmentType === 'home_delivery' && (
                 <div className="mt-5 border-t border-[#f0e9df] pt-5">
                   {savedAddresses.length > 0 && (
                     <label className="mb-4 block text-sm font-semibold text-[#263830]">

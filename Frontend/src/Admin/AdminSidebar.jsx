@@ -100,7 +100,7 @@ const navItems = [
       { path: "/admin/inventory/suppliers", label: "Suppliers", icon: Users },
       { path: "/admin/inventory/purchases", label: "Purchases", icon: ShoppingCart },
       { path: "/admin/inventory/kitchen-requests", label: "Kitchen Requests", icon: UtensilsCrossed },
-      { path: "/admin/inventory/reports", label: "Reports", icon: BarChart3 },
+      
     ],
   },
 
@@ -108,6 +108,9 @@ const navItems = [
     label: "Orders",
     icon: ShoppingCart,
     children: [
+      { path: "/admin/orders/homedelivery", label: "Home Delivery Orders", icon: PlusSquare },
+      { path: "/admin/orders/pickup", label: "Pickup Orders", icon: PlusSquare },
+      { path: "/admin/orders/dining", label: "Dining Orders", icon: PlusSquare },
       { path: "/admin/orders/new", label: "New Order", icon: PlusSquare },
       { path: "/admin/orders", label: "All Orders", icon: List },
       { path: "/admin/orders/delivery", label: "Delivery Orders", icon: Package },

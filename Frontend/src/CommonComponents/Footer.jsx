@@ -23,7 +23,7 @@ const quickLinks = [
   { name: "Menu", path: "/shop" },
   { name: "About Us", path: "/about" },
   { name: "Gallery", path: "/gallery" },
-  { name: "Reservation", path: "/contact?type=reservation" },
+  { name: "Reservation", path: "/reservation" },
   { name: "Contact", path: "/contact" },
 ];
 

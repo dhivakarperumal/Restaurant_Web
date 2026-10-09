@@ -5,10 +5,16 @@ import './index.css'
 import App from './App.jsx'
 import Home from './Componets/Home/Home.jsx'
 import Shop from './Componets/Shop/Shop.jsx'
+import Offers from './Componets/Shop/Offers.jsx'
 import Checkout from './Componets/Checkout/Checkout.jsx'
+import About from './Componets/About.jsx'
+import Gallery from './Componets/Gallery.jsx'
+import Contact from './Componets/Contact.jsx'
+import Reservation from './Componets/Reservation.jsx'
 
 import Login from './Componets/Auth/Login.jsx'
 import Register from './Componets/Auth/Register.jsx'
+import Account from './Componets/Auth/Account.jsx'
 
 import PrivateRoute from './PrivateRouter/PrivateRouter.jsx'
 
@@ -59,6 +65,7 @@ import { StoreProvider } from './PrivateRouter/StoreContext.jsx'
 import { AdminProvider } from './PrivateRouter/AdminContext';
 import RouteError from './CommonComponents/RouteError.jsx'
 import CustomerOrdersPage from './CommonComponents/CustomerOrdersPage.jsx'
+import FoodDetailsPage from './CommonComponents/FoodDetailsPage.jsx'
 
 
 
@@ -78,8 +85,32 @@ const router = createHashRouter([
         element: <Shop />,
       },
       {
+        path: 'offers',
+        element: <Offers />,
+      },
+      {
         path: 'menu',
         element: <Shop />,
+      },
+      {
+        path: 'about',
+        element: <About />,
+      },
+      {
+        path: 'gallery',
+        element: <Gallery />,
+      },
+      {
+        path: 'contact',
+        element: <Contact />,
+      },
+      {
+        path: 'reservation',
+        element: <Reservation />,
+      },
+      {
+        path: 'food/:foodId',
+        element: <FoodDetailsPage />,
       },
       {
         path: 'checkout',
@@ -90,6 +121,14 @@ const router = createHashRouter([
         element: (
           <PrivateRoute allowedRoles={["user", "customer"]}>
             <CustomerOrdersPage audience="customer" />
+          </PrivateRoute>
+        ),
+      },
+      {
+        path: 'account',
+        element: (
+          <PrivateRoute allowedRoles={["user", "customer"]}>
+            <Account />
           </PrivateRoute>
         ),
       },
@@ -157,7 +196,7 @@ const router = createHashRouter([
           },
           {
             path: 'orders',
-            element: <CustomerOrdersPage audience="admin" view="all" />,
+            element: <CustomerOrdersPage audience="admin" view="all" showOrderFilters />,
           },
           {
             path: 'kitchen-orders',
@@ -165,15 +204,27 @@ const router = createHashRouter([
           },
           {
             path: 'orders/new',
-            element: <CustomerOrdersPage audience="admin" view="new" />,
+            element: <CustomerOrdersPage audience="admin" view="new" showOrderFilters />,
           },
           {
             path: 'orders/delivery',
-            element: <CustomerOrdersPage audience="admin" view="delivery" />,
+            element: <CustomerOrdersPage audience="admin" view="delivery" showOrderFilters />,
+          },
+          {
+            path: 'orders/homedelivery',
+            element: <CustomerOrdersPage audience="admin" view="delivery" showOrderFilters />,
+          },
+          {
+            path: 'orders/pickup',
+            element: <CustomerOrdersPage audience="admin" view="pickup" showOrderFilters />,
+          },
+          {
+            path: 'orders/dining',
+            element: <ChefKitchenOrders defaultViewMode="table" orderTypeFilter="dine-in" />,
           },
           {
             path: 'orders/cancelled',
-            element: <CustomerOrdersPage audience="admin" view="cancelled" />,
+            element: <CustomerOrdersPage audience="admin" view="cancelled" showOrderFilters />,
           },
           {
             path: 'settings',

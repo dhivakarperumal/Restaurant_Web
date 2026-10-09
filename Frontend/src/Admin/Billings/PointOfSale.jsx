@@ -137,7 +137,7 @@ const PointOfSale = () => {
   };
 
   return (
-    <div className="pos-shell flex min-h-screen flex-col bg-[#f3f4f6] text-[#1f2937]">
+    <div className="pos-shell flex min-h-screen flex-col bg-[#f3f4f6] text-[#1f2937] md:h-full md:min-h-0 md:overflow-hidden">
       <style>{`@media print { body * { visibility: hidden !important; } .pos-bill, .pos-bill * { visibility: visible !important; } .pos-bill { position: absolute; inset: 0; width: 100%; border: 0 !important; box-shadow: none !important; } .pos-actions, .pos-header, .pos-category-rail, .pos-menu { display: none !important; } }`}</style>
       <header className="pos-header flex min-h-[76px] flex-wrap items-center gap-3 border-b border-[#e5e7eb] bg-white px-4 py-3 md:px-6">
         <div className="flex min-w-[190px] items-center gap-3">
@@ -155,8 +155,8 @@ const PointOfSale = () => {
         </div>
       </header>
 
-      <main className="pos-layout grid min-h-0 flex-1 gap-3 p-3 md:grid-cols-[104px_minmax(0,2.8fr)_minmax(300px,1fr)] md:gap-2 md:p-2">
-        <nav className="pos-category-rail flex gap-2 overflow-x-auto rounded-lg bg-[#f3f4f6] p-2 md:flex-col md:overflow-y-auto">
+      <main className="pos-layout grid min-h-0 flex-1 gap-3 p-3 md:grid-cols-[160px_minmax(0,2.8fr)_minmax(320px,1fr)] md:grid-rows-[minmax(0,1fr)] md:gap-2 md:overflow-hidden md:p-2">
+        <nav className="pos-category-rail flex gap-2 overflow-x-auto rounded-lg bg-[#f3f4f6] p-2 md:flex-col md:overflow-hidden">
           <button type="button" onClick={() => setSelectedCategory("all")} className={`flex min-w-[88px] items-center gap-2 rounded-md px-2 py-3 text-left text-xs font-semibold transition md:min-w-0 ${selectedCategory === "all" ? "bg-[#1a3c36] text-white shadow-sm" : "text-[#1f2937] hover:bg-white/80"}`}><Utensils className="h-5 w-5 shrink-0" /><span>All Items</span></button>
           {menuCategories.map((category) => {
             const id = String(category.category_id || category.id || category.category_name);
@@ -166,7 +166,7 @@ const PointOfSale = () => {
           })}
         </nav>
 
-        <section className="pos-menu min-h-[35vh] overflow-y-auto rounded-lg bg-white p-2 md:min-h-0 md:p-1">
+        <section className="pos-menu min-h-[35vh] overflow-y-auto rounded-lg bg-white p-2 md:min-h-0 md:overscroll-contain md:p-1">
           {loading ? <div className="flex h-full min-h-40 items-center justify-center text-sm font-medium text-[#806b5e]">Loading menu...</div> : visibleFoods.length ? (
             <div className="grid grid-cols-2 gap-2 xl:grid-cols-5">
               {visibleFoods.map((food) => {
@@ -196,12 +196,12 @@ const PointOfSale = () => {
           </div>
 
           <div className="min-h-[140px] flex-1 overflow-auto">
-            <table className="w-full min-w-[450px] border-collapse text-left text-[11px]">
-              <thead className="sticky top-0 bg-[#1a3c36] text-white"><tr><th className="px-2 py-2">#</th><th className="px-2 py-2">Item</th><th className="px-2 py-2">Portion</th><th className="px-2 py-2 text-center">Qty</th><th className="px-2 py-2 text-right">Price</th><th className="px-2 py-2 text-right">Amount</th><th className="px-1 py-2"></th></tr></thead>
+            <table className="w-full min-w-[360px] border-collapse text-left text-[11px]">
+              <thead className="sticky top-0 bg-[#1a3c36] text-white"><tr><th className="px-2 py-2">#</th><th className="px-2 py-2">Item</th><th className="px-1 py-2 text-center">Qty</th><th className="px-2 py-2 text-right">Price / Total</th><th className="px-1 py-2"></th></tr></thead>
               <tbody className="divide-y divide-[#e5e7eb]">{cart.map((item, index) => <tr key={item.id}>
                 <td className="px-2 py-2 text-[#66736e]">{index + 1}</td><td className="px-2 py-2"><div className="flex min-w-0 items-center gap-2">{item.image ? <img src={item.image} alt="" className="h-9 w-9 shrink-0 rounded object-cover" /> : <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded bg-[#f3f4f6] text-[#1a3c36]"><Utensils className="h-4 w-4" /></div>}<span className="min-w-0"><strong className="block truncate text-[#1f2937]">{item.name}</strong><small className="block truncate text-[#66736e]">{item.category}</small></span></div></td>
-                <td className="px-2 py-2 text-[#4b5563]">{item.portion}</td><td className="px-2 py-2"><div className="flex items-center justify-center gap-1"><button type="button" onClick={() => updateQuantity(item.id, -1)} className="flex h-6 w-6 items-center justify-center rounded border border-[#dfe2e5] text-[#1a3c36] hover:bg-[#eef5f3]" aria-label={`Remove one ${item.name}`} title={`Remove one ${item.name}`}><Minus className="h-3 w-3" /></button><span className="w-5 text-center font-semibold">{item.quantity}</span><button type="button" onClick={() => updateQuantity(item.id, 1)} className="flex h-6 w-6 items-center justify-center rounded border border-[#dfe2e5] text-[#1a3c36] hover:bg-[#eef5f3]" aria-label={`Add one ${item.name}`} title={`Add one ${item.name}`}><Plus className="h-3 w-3" /></button></div></td><td className="px-2 py-2 text-right">{money(item.price)}</td><td className="px-2 py-2 text-right font-semibold">{money(item.price * item.quantity)}</td><td className="px-1 py-2"><button type="button" onClick={() => setCart((current) => current.filter((entry) => entry.id !== item.id))} className="p-1 text-red-700 hover:bg-red-50" aria-label={`Remove ${item.name}`} title={`Remove ${item.name}`}><Trash2 className="h-3.5 w-3.5" /></button></td>
-              </tr>)}{!cart.length && <tr><td colSpan="7" className="px-4 py-12 text-center text-sm text-[#66736e]">Add food from the menu to start this bill.</td></tr>}</tbody>
+                <td className="px-1 py-2"><div className="flex items-center justify-center gap-1"><button type="button" onClick={() => updateQuantity(item.id, -1)} className="flex h-6 w-6 items-center justify-center rounded border border-[#dfe2e5] text-[#1a3c36] hover:bg-[#eef5f3]" aria-label={`Remove one ${item.name}`} title={`Remove one ${item.name}`}><Minus className="h-3 w-3" /></button><span className="w-5 text-center font-semibold">{item.quantity}</span><button type="button" onClick={() => updateQuantity(item.id, 1)} className="flex h-6 w-6 items-center justify-center rounded border border-[#dfe2e5] text-[#1a3c36] hover:bg-[#eef5f3]" aria-label={`Add one ${item.name}`} title={`Add one ${item.name}`}><Plus className="h-3 w-3" /></button></div></td><td className="px-2 py-2 text-right"><span className="block text-[10px] text-[#66736e]">{money(item.price)} each</span><strong className="block text-xs text-[#1f2937]">{money(item.price * item.quantity)}</strong></td><td className="px-1 py-2"><button type="button" onClick={() => setCart((current) => current.filter((entry) => entry.id !== item.id))} className="p-1 text-red-700 hover:bg-red-50" aria-label={`Remove ${item.name}`} title={`Remove ${item.name}`}><Trash2 className="h-3.5 w-3.5" /></button></td>
+              </tr>)}{!cart.length && <tr><td colSpan="5" className="px-4 py-12 text-center text-sm text-[#66736e]">Add food from the menu to start this bill.</td></tr>}</tbody>
             </table>
           </div>
 
@@ -220,8 +220,7 @@ const PointOfSale = () => {
       </main>
 
       <footer className="pos-actions flex flex-wrap items-center justify-between gap-2 border-t border-[#e5e7eb] bg-[#f8faf9] px-3 py-2.5 md:px-4">
-        <div className="flex gap-2"><button type="button" onClick={clearOrder} className="flex h-10 w-10 items-center justify-center rounded-md border border-[#dfe2e5] bg-white text-red-700 hover:bg-red-50" aria-label="Clear all items" title="Clear all items"><Trash2 className="h-4 w-4" /></button><button type="button" onClick={startNewOrder} className="flex h-10 w-10 items-center justify-center rounded-md border border-[#dfe2e5] bg-white text-[#1a3c36] hover:bg-[#eef5f3]" aria-label="Reset order" title="Reset order"><RotateCcw className="h-4 w-4" /></button></div>
-        <div className="flex flex-wrap justify-end gap-2"><button type="button" onClick={() => window.print()} disabled={!billGenerated} className="flex h-10 w-10 items-center justify-center rounded-md bg-[#1a3c36] text-white hover:bg-[#214a42] disabled:cursor-not-allowed disabled:opacity-50" aria-label="Print bill" title="Print bill"><Printer className="h-4 w-4" /></button><button type="button" onClick={sendToKitchen} disabled={!cart.length} className="flex h-10 w-10 items-center justify-center rounded-md border border-[#dfe2e5] bg-white text-[#1a3c36] hover:bg-[#eef5f3] disabled:cursor-not-allowed disabled:opacity-50" aria-label={sentToKitchen ? "Sent to kitchen" : "Send to kitchen"} title={sentToKitchen ? "Sent to kitchen" : "Send to kitchen"}><ChefHat className="h-4 w-4" /></button><button type="button" onClick={startNewOrder} className="flex h-10 w-10 items-center justify-center rounded-md bg-[#1a3c36] text-white hover:bg-[#214a42]" aria-label="Start new order" title="Start new order"><Plus className="h-4 w-4" /></button></div>
+        <div className="ml-auto flex flex-wrap justify-end gap-2"><button type="button" onClick={clearOrder} className="flex h-10 w-10 items-center justify-center rounded-md border border-[#dfe2e5] bg-white text-red-700 hover:bg-red-50" aria-label="Clear all items" title="Clear all items"><Trash2 className="h-4 w-4" /></button><button type="button" onClick={startNewOrder} className="flex h-10 w-10 items-center justify-center rounded-md border border-[#dfe2e5] bg-white text-[#1a3c36] hover:bg-[#eef5f3]" aria-label="Reset order" title="Reset order"><RotateCcw className="h-4 w-4" /></button><button type="button" onClick={() => window.print()} disabled={!billGenerated} className="flex h-10 w-10 items-center justify-center rounded-md bg-[#1a3c36] text-white hover:bg-[#214a42] disabled:cursor-not-allowed disabled:opacity-50" aria-label="Print bill" title="Print bill"><Printer className="h-4 w-4" /></button><button type="button" onClick={sendToKitchen} disabled={!cart.length} className="flex h-10 w-10 items-center justify-center rounded-md border border-[#dfe2e5] bg-white text-[#1a3c36] hover:bg-[#eef5f3] disabled:cursor-not-allowed disabled:opacity-50" aria-label={sentToKitchen ? "Sent to kitchen" : "Send to kitchen"} title={sentToKitchen ? "Sent to kitchen" : "Send to kitchen"}><ChefHat className="h-4 w-4" /></button><button type="button" onClick={startNewOrder} className="flex h-10 w-10 items-center justify-center rounded-md bg-[#1a3c36] text-white hover:bg-[#214a42]" aria-label="Start new order" title="Start new order"><Plus className="h-4 w-4" /></button></div>
       </footer>
     </div>
   );

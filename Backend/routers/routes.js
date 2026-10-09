@@ -3,7 +3,7 @@ const { randomUUID } = require('crypto');
 const fs = require('fs');
 const multer = require('multer');
 const path = require('path');
-const { getProfile, googleLogin, listUsers, login, register, removeUser, updateProfile, updateUser } = require('../controllers/authController');
+const { changePassword, getProfile, googleLogin, listUsers, login, register, removeUser, updateProfile, updateUser } = require('../controllers/authController');
 const {
   checkEmployeeFieldUniqueness,
   createEmployee,
@@ -133,7 +133,7 @@ const requireInventoryAccess = async (req, res, next) => {
     req.auth = user;
     return next();
   } catch (error) {
-    console.error('Failed to authorize inventory request:', error.message);
+    console.error('Failed to authorize inventory request:', error);
     return res.status(500).json({ success: false, message: 'Unable to verify inventory access.' });
   }
 };
@@ -147,7 +147,7 @@ const requireAuthenticatedUser = async (req, res, next) => {
     req.auth = user;
     return next();
   } catch (error) {
-    console.error('Failed to authorize profile request:', error.message);
+    console.error('Failed to authorize profile request:', error);
     return res.status(500).json({ success: false, message: 'Unable to verify your session.' });
   }
 };
@@ -212,6 +212,7 @@ router.post('/users/login', login);
 router.post('/users/google-login', googleLogin);
 router.get('/users/profile/:profileId', requireAuthenticatedUser, getProfile);
 router.put('/users/profile/:profileId', requireAuthenticatedUser, updateProfile);
+router.put('/users/password', requireAuthenticatedUser, changePassword);
 router.get('/users', requireAdmin, listUsers);
 router.put('/users/:userId', requireAdmin, updateUser);
 router.delete('/users/:userId', requireAdmin, removeUser);

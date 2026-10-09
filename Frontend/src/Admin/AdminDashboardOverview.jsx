@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import {
   AlertTriangle, ArrowRight, Bike, CalendarDays,
   Check, ChefHat, CircleDollarSign, Clock3, CreditCard, CookingPot, Package,
-  PackageCheck, Plus, Search, ShoppingBag, ShoppingCart, Sparkles, Table2,
+  PackageCheck, Search, ShoppingBag, ShoppingCart, Sparkles, Table2,
   TrendingUp, Users, UtensilsCrossed,
   XCircle,
 } from 'lucide-react';
@@ -26,7 +26,7 @@ const STATUS_COLORS = {
   cancelled: '#f24747', canceled: '#f24747', confirmed: '#8055e8',
   'out for delivery': '#8055e8', out_for_delivery: '#8055e8',
 };
-const HERO_IMAGE = '/uploads/foods/1790920301065-chatgpt-image-oct-1--2026--05_13_17-pm.png';
+const HERO_IMAGE = '/images/registre.png';
 const money = (amount) => `₹${Number(amount || 0).toLocaleString('en-IN', { maximumFractionDigits: 2 })}`;
 const getDateKey = (value) => {
   if (!value) return '';
@@ -52,7 +52,7 @@ const parseImages = (value) => {
 };
 const imageUrl = (value) => {
   if (!value) return '';
-  if (/^https?:\/\//i.test(value)) return value;
+  if (/^(https?:\/\/|data:|blob:)/i.test(value)) return value;
   return `${BACKEND_BASE_URL}${value.startsWith('/') ? value : `/${value}`}`;
 };
 const errorText = (error) => error?.response?.data?.message || 'Some dashboard data could not be loaded.';
@@ -147,7 +147,7 @@ const AdminDashboardOverview = () => {
   const [customFrom, setCustomFrom] = useState('');
   const [customTo, setCustomTo] = useState('');
   const [includeOrders, setIncludeOrders] = useState(true);
-  const [snapshot, setSnapshot] = useState({ orders: [], bills: [], kitchenOrders: [], users: [], foods: [], inventory: {}, kitchenRequests: [] });
+  const [snapshot, setSnapshot] = useState({ orders: [], bills: [], kitchenOrders: [], users: [], foods: [], categories: [], inventory: {}, kitchenRequests: [] });
   const [report, setReport] = useState({ summary: null, trend: [], statuses: [] });
   const [loading, setLoading] = useState(true);
   const [reportLoading, setReportLoading] = useState(true);
@@ -164,6 +164,7 @@ const AdminDashboardOverview = () => {
       api.get('/foods', { signal: controller.signal }),
       api.get('/inventory/dashboard', { signal: controller.signal }),
       api.get('/inventory/kitchen-requests', { signal: controller.signal }),
+      api.get('/categories', { signal: controller.signal }),
     ]).then((results) => {
       if (controller.signal.aborted) return;
       const value = (index, path, fallback) => {
@@ -178,6 +179,7 @@ const AdminDashboardOverview = () => {
         foods: value(4, ['data', 'data'], []),
         inventory: value(5, ['data', 'data'], {}),
         kitchenRequests: value(6, ['data', 'data'], []),
+        categories: value(7, ['data', 'data'], []),
       });
       const failures = results.filter((result) => result.status === 'rejected');
       setError(failures.length ? 'Some dashboard sections are temporarily unavailable.' : '');
@@ -215,7 +217,7 @@ const AdminDashboardOverview = () => {
   const dateRangeOrders = snapshot.orders.filter((order) => inRange(order.created_at || order.order_date, period, customFrom, customTo));
   const dateRangeBills = snapshot.bills.filter((bill) => inRange(bill.created_at, period, customFrom, customTo));
   const dateRangeCustomers = snapshot.users.filter((user) => customerRole(user.role) && inRange(user.created_at, period, customFrom, customTo));
-  const activeDeliveryCount = dateRangeOrders.filter((order) => order.fulfillment_type === 'delivery' && !terminalOrder(order.order_status)).length;
+  const activeDeliveryCount = dateRangeOrders.filter((order) => order.order_type === 'home_delivery' && !terminalOrder(order.order_status)).length;
   const customerCount = snapshot.users.filter((user) => customerRole(user.role)).length;
   const statusTotal = report.statuses.reduce((sum, item) => sum + Number(item.count || 0), 0);
 
@@ -251,27 +253,31 @@ const AdminDashboardOverview = () => {
     }));
   });
   const topSellingItems = [...topItems.values()].sort((a, b) => b.revenue - a.revenue).slice(0, 5);
-  const categoryGroups = new Map();
-  snapshot.foods
-    .filter((food) => food.is_menu_visible && String(food.status || '').toLowerCase() === 'active')
-    .forEach((food) => {
-      const category = String(food.category_name || 'Other').trim() || 'Other';
-      const items = categoryGroups.get(category) || [];
-      items.push(food);
-      categoryGroups.set(category, items);
-    });
-  const categoryTiles = [...categoryGroups.entries()].slice(0, 6).map(([name, items]) => ({
-    name,
-    count: items.length,
-    image: items.map((food) => parseImages(food.food_images)[0]).find(Boolean) || '',
-  }));
+  const visibleFoods = snapshot.foods.filter((food) => (
+    food.is_menu_visible && String(food.status || '').toLowerCase() === 'active'
+  ));
+  const categoryTiles = snapshot.categories
+    .filter((category) => String(category.status || 'Active').toLowerCase() === 'active')
+    .map((category) => {
+      const categoryFoods = visibleFoods.filter((food) => (
+        (category.category_id && String(food.category_id) === String(category.category_id))
+        || String(food.category_name || '').trim().toLowerCase() === String(category.category_name || '').trim().toLowerCase()
+      ));
+      return {
+        name: category.category_name || 'Category',
+        count: categoryFoods.length,
+        image: category.category_image || categoryFoods.map((food) => parseImages(food.food_images)[0]).find(Boolean) || '',
+      };
+    })
+    .filter((category) => category.count > 0)
+    .slice(0, 6);
 
   const recentOrders = [
     ...dateRangeOrders.map((order) => ({
       id: order.order_number,
       customer: order.customer_name || 'Customer',
       items: `${(order.items || []).reduce((sum, item) => sum + Number(item.quantity || 0), 0)} items`,
-      type: order.fulfillment_type === 'delivery' ? 'Delivery' : 'Take Away',
+      type: order.order_type === 'home_delivery' ? 'Home Delivery' : 'Take Away',
       amount: Number(order.total_amount || 0),
       status: normalizeStatus(order.order_status),
       time: order.created_at,
@@ -334,25 +340,22 @@ const AdminDashboardOverview = () => {
 
   return (
     <main className="min-h-screen space-y-3 pb-8 text-[#17231b] sm:space-y-4">
-      <section className="relative isolate flex min-h-[152px] items-center overflow-hidden border border-[#e8eee4] bg-[#eff6e9] px-3 sm:min-h-[142px] sm:px-8">
-        <img src={imageUrl(HERO_IMAGE)} alt="Freshly prepared biryani" className="absolute inset-0 h-full w-full object-cover object-center" />
-        <div className="absolute inset-0 z-10 bg-gradient-to-r from-[#eff6e9] via-[#eff6e9]/90 to-[#eff6e9]/15" />
+      <section className="relative isolate flex min-h-[152px] items-center overflow-hidden rounded-2xl border border-[#24483b] bg-[#10271f] px-3 shadow-sm sm:min-h-[142px] sm:px-8">
+        <img src={HERO_IMAGE} alt="Restaurant food spread" className="absolute inset-0 h-full w-full object-cover object-center" />
+        <div className="absolute inset-0 z-10 bg-gradient-to-r from-[#071c18]/75 via-[#10271f]/50 to-[#10271f]/5" />
         <div className="relative z-20 w-[62%] pt-12 pb-4 sm:w-[58%] sm:py-9">
-          <p className="text-xl font-extrabold leading-tight sm:text-2xl">Welcome Back, <span className="text-[#25833e]">{name}!</span></p>
-          <p className="mt-1 text-xs text-[#4c6251] sm:text-sm">Manage your restaurant, orders, and grow your business.</p>
-          <p className="mt-2 text-xs font-semibold italic text-[#368044]">“Good Food Brings Great People Together”</p>
+          <p className="text-xl font-extrabold leading-tight text-white sm:text-2xl">Welcome Back, <span className="text-[#f4c45e]">{name}!</span></p>
+          <p className="mt-1 text-xs text-white/85 sm:text-sm">Manage your restaurant, orders, and grow your business.</p>
+          <p className="mt-2 text-xs font-semibold italic text-[#f4d991]">“Good Food Brings Great People Together”</p>
         </div>
         <div className="absolute right-3 top-3 z-30 flex flex-wrap justify-end gap-2 sm:right-4 sm:top-4">
-          <label className="flex h-9 items-center gap-2 border border-[#e4e9e3] bg-white/95 px-2.5 text-xs shadow-sm sm:px-3">
+          <label className="flex h-9 items-center gap-2 rounded-xl border border-[#e4e9e3] bg-white/95 px-2.5 text-xs shadow-sm sm:px-3">
             <CalendarDays size={15} className="text-[#536259]" />
             <span className="sr-only">Dashboard date range</span>
             <select value={period} onChange={(event) => setPeriod(event.target.value)} aria-label="Dashboard date range" className="max-w-[125px] bg-transparent font-semibold text-[#354239] outline-none sm:max-w-[165px]">
               {PERIODS.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
             </select>
           </label>
-          <button type="button" onClick={() => navigate('/admin/billing/new')} className="inline-flex h-9 items-center gap-1.5 bg-[#198b36] px-3 text-xs font-semibold text-white shadow-sm transition hover:bg-[#14742c] sm:px-4">
-            <Plus size={15} /> New Order
-          </button>
         </div>
         {period === 'custom' && <div className="absolute bottom-3 right-4 z-20 flex gap-2">
           <input type="date" aria-label="Start date" value={customFrom} onChange={(event) => setCustomFrom(event.target.value)} className="h-8 border border-[#dfe7dc] bg-white px-2 text-xs" />
@@ -427,16 +430,18 @@ const AdminDashboardOverview = () => {
       <section className="grid gap-3 xl:grid-cols-[minmax(0,2fr)_minmax(270px,0.85fr)]">
         <article className="min-w-0 border border-[#e6ebe7] bg-white p-4 sm:p-5">
           <div className="mb-3 flex items-center justify-between"><h2 className="text-sm font-bold text-[#1c2c22] sm:text-base">Recent Orders</h2><button type="button" onClick={() => navigate('/admin/orders')} className="border border-[#e4e9e5] px-2.5 py-1 text-[10px] font-medium text-[#5d6c62] hover:bg-[#f6f8f6]">View All</button></div>
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[680px] text-left text-[11px]">
-              <thead className="bg-[#f4f7f5] text-[#637067]"><tr>{['#', 'Customer', 'Items', 'Type', 'Amount', 'Status', 'Time', ''].map((heading) => <th key={heading} className="whitespace-nowrap px-2.5 py-2 font-semibold">{heading}</th>)}</tr></thead>
+          <div className="overflow-hidden rounded-xl border border-[#e6ebe7]">
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[760px] text-left text-[11px]">
+              <thead className="bg-[#d4a843] text-xs font-bold uppercase tracking-wide text-white"><tr>{['S No', 'Order ID', 'Customer', 'Items', 'Type', 'Amount', 'Status', 'Time', ''].map((heading) => <th key={heading} className="whitespace-nowrap px-4 py-4">{heading}</th>)}</tr></thead>
               <tbody className="divide-y divide-[#edf1ed]">
-                {loading ? [0, 1, 2, 3].map((row) => <tr key={row}>{[0, 1, 2, 3, 4, 5, 6, 7].map((cell) => <td key={cell} className="px-2.5 py-3"><span className="block h-3 animate-pulse bg-[#f0f3f0]" /></td>)}</tr>) : recentOrders.length ? recentOrders.map((order, index) => {
+                {loading ? [0, 1, 2, 3].map((row) => <tr key={row}>{[0, 1, 2, 3, 4, 5, 6, 7, 8].map((cell) => <td key={cell} className="px-2.5 py-3"><span className="block h-3 animate-pulse bg-[#f0f3f0]" /></td>)}</tr>) : recentOrders.length ? recentOrders.map((order, index) => {
                   const tone = order.status === 'Delivered' ? 'bg-[#e6f8e9] text-[#259346]' : order.status === 'Cancelled' ? 'bg-[#fff0ee] text-[#db5549]' : order.status === 'Preparing' || order.status === 'Out for Delivery' ? 'bg-[#f1eaff] text-[#7652c6]' : order.status === 'Ready' ? 'bg-[#eaf2ff] text-[#3979d8]' : 'bg-[#fff5df] text-[#d58400]';
-                  return <tr key={`${order.id}-${index}`} className="hover:bg-[#fafcfa]"><td className="whitespace-nowrap px-2.5 py-3 font-semibold text-[#4f5f54]">{order.id || `#${index + 1}`}</td><td className="max-w-36 truncate px-2.5 py-3 text-[#3d4b41]">{order.customer}</td><td className="whitespace-nowrap px-2.5 py-3 text-[#68766d]">{order.items}</td><td className="whitespace-nowrap px-2.5 py-3 text-[#68766d]">{order.type}</td><td className="whitespace-nowrap px-2.5 py-3 font-semibold">{money(order.amount)}</td><td className="px-2.5 py-3"><span className={`whitespace-nowrap px-2 py-1 text-[10px] font-semibold ${tone}`}>{order.status}</span></td><td className="whitespace-nowrap px-2.5 py-3 text-[#7d8981]">{formatDateTime(order.time)}</td><td className="px-2.5 py-3"><button type="button" onClick={() => navigate(order.path)} aria-label={`Open ${order.id}`} className="text-[#718078] hover:text-[#1c7c39]">•••</button></td></tr>;
-                }) : <tr><td colSpan="8" className="px-3 py-8 text-center text-xs text-[#819087]">No orders for this period.</td></tr>}
+                  return <tr key={`${order.id}-${index}`} className="hover:bg-[#fafcfa]"><td className="whitespace-nowrap px-2.5 py-3 font-semibold text-[#4f5f54]">{index + 1}</td><td className="whitespace-nowrap px-2.5 py-3 font-mono text-[#3d4b41]">{order.id || '—'}</td><td className="max-w-36 truncate px-2.5 py-3 text-[#3d4b41]">{order.customer}</td><td className="whitespace-nowrap px-2.5 py-3 text-[#68766d]">{order.items}</td><td className="whitespace-nowrap px-2.5 py-3 text-[#68766d]">{order.type}</td><td className="whitespace-nowrap px-2.5 py-3 font-semibold">{money(order.amount)}</td><td className="px-2.5 py-3"><span className={`whitespace-nowrap px-2 py-1 text-[10px] font-semibold ${tone}`}>{order.status}</span></td><td className="whitespace-nowrap px-2.5 py-3 text-[#7d8981]">{formatDateTime(order.time)}</td><td className="px-2.5 py-3"><button type="button" onClick={() => navigate(order.path)} aria-label={`Open ${order.id}`} className="text-[#718078] hover:text-[#1c7c39]">•••</button></td></tr>;
+                }) : <tr><td colSpan="9" className="px-3 py-8 text-center text-xs text-[#819087]">No orders for this period.</td></tr>}
               </tbody>
-            </table>
+              </table>
+            </div>
           </div>
         </article>
 

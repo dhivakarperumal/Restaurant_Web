@@ -1,14 +1,17 @@
 import { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { ArrowLeft, ArrowRight, UtensilsCrossed } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { Autoplay } from 'swiper/modules';
+import { Swiper, SwiperSlide } from 'swiper/react';
 import api from '../../api';
 import FoodProductCard from '../../CommonComponents/FoodProductCard';
 import FoodCustomizationModal from '../../CommonComponents/FoodCustomizationModal';
 import PageContainer from '../../CommonComponents/PageContainer';
 import { StoreContext } from '../../PrivateRouter/StoreContext';
+import 'swiper/css';
 
 function HomeProducts() {
-  const carouselRef = useRef(null);
+  const swiperRef = useRef(null);
   const [foods, setFoods] = useState([]);
   const [selectedFood, setSelectedFood] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -42,6 +45,14 @@ function HomeProducts() {
   const featuredFoods = useMemo(() => [...foods]
     .sort((first, second) => Number(Boolean(second.featured)) - Number(Boolean(first.featured)))
     .slice(0, 10), [foods]);
+  const carouselFoods = useMemo(() => (
+    featuredFoods.length
+      ? Array.from(
+        { length: Math.max(6, featuredFoods.length) },
+        (_, index) => featuredFoods[index % featuredFoods.length],
+      )
+      : []
+  ), [featuredFoods]);
 
   const addSelectedFoodToCart = async ({ quantity, selectedAddons, selectedCustomizations, unitPrice }) => {
     if (!selectedFood || !addToCart) return false;
@@ -66,13 +77,6 @@ function HomeProducts() {
     });
   };
 
-  const scrollCarousel = (direction) => {
-    carouselRef.current?.scrollBy({
-      left: direction * (carouselRef.current.clientWidth * 0.8),
-      behavior: 'smooth',
-    });
-  };
-
   return (
     <>
       <section className="py-12 sm:py-16">
@@ -86,7 +90,7 @@ function HomeProducts() {
             <div className="hidden items-center gap-2 sm:flex">
               <button
                 type="button"
-                onClick={() => scrollCarousel(-1)}
+                onClick={() => swiperRef.current?.slidePrev()}
                 aria-label="Scroll food carousel left"
                 className="flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-[#1a3c36] shadow-sm transition hover:border-emerald-300 hover:bg-emerald-50"
               >
@@ -94,7 +98,7 @@ function HomeProducts() {
               </button>
               <button
                 type="button"
-                onClick={() => scrollCarousel(1)}
+                onClick={() => swiperRef.current?.slideNext()}
                 aria-label="Scroll food carousel right"
                 className="flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-[#1a3c36] shadow-sm transition hover:border-emerald-300 hover:bg-emerald-50"
               >
@@ -105,8 +109,8 @@ function HomeProducts() {
 
           {loading ? (
             <div className="flex gap-5 overflow-hidden">
-              {[1, 2, 3, 4].map((item) => (
-                <div key={item} className="w-[270px] shrink-0 animate-pulse rounded-3xl border border-slate-200 bg-white p-4">
+              {[1, 2, 3, 4, 5].map((item) => (
+                <div key={item} className="basis-[calc((100%-1.25rem)/2)] shrink-0 animate-pulse rounded-3xl border border-slate-200 bg-white p-4 sm:basis-[calc((100%-2.5rem)/3)] lg:basis-[calc((100%-3.75rem)/4)] xl:basis-[calc((100%-5rem)/5)]">
                   <div className="aspect-[4/3] rounded-2xl bg-slate-200" />
                   <div className="mt-4 h-4 w-2/3 rounded bg-slate-200" />
                   <div className="mt-2 h-3 w-full rounded bg-slate-100" />
@@ -121,25 +125,40 @@ function HomeProducts() {
               </button>
             </div>
           ) : featuredFoods.length ? (
-            <div
-              ref={carouselRef}
-              className="scrollbar-hide flex snap-x snap-mandatory gap-5 overflow-x-auto scroll-smooth pb-4"
+            <Swiper
+              onSwiper={(swiper) => { swiperRef.current = swiper; }}
+              modules={[Autoplay]}
+              loop={featuredFoods.length > 1}
+              autoplay={featuredFoods.length > 1
+                && !window.matchMedia('(prefers-reduced-motion: reduce)').matches
+                ? { delay: 3000, disableOnInteraction: false, pauseOnMouseEnter: true }
+                : false}
+              slidesPerView={2}
+              slidesPerGroup={1}
+              spaceBetween={20}
+              breakpoints={{
+                640: { slidesPerView: 3 },
+                1024: { slidesPerView: 4 },
+                1280: { slidesPerView: 5 },
+              }}
+              className="!pb-4"
             >
-              {featuredFoods.map((food) => (
-                <FoodProductCard
-                  key={food.food_id || food.id}
-                  food={food}
-                  className="w-[270px] shrink-0 snap-start sm:w-[290px]"
-                  onSelect={() => setSelectedFood(food)}
-                  onAdd={setSelectedFood}
-                  isInWishlist={wishlist.some((item) => (
-                    String(item.food_id || item.id || item.product_id || item._id)
-                      === String(food.food_id || food.id)
-                  ))}
-                  onToggleWishlist={toggleWishlist}
-                />
+              {carouselFoods.map((food, index) => (
+                <SwiperSlide key={`${food.food_id || food.id}-${index}`} className="!h-auto">
+                  <FoodProductCard
+                    food={food}
+                    className="h-full w-full"
+                    onSelect={() => setSelectedFood(food)}
+                    onAdd={setSelectedFood}
+                    isInWishlist={wishlist.some((item) => (
+                      String(item.food_id || item.id || item.product_id || item._id)
+                        === String(food.food_id || food.id)
+                    ))}
+                    onToggleWishlist={toggleWishlist}
+                  />
+                </SwiperSlide>
               ))}
-            </div>
+            </Swiper>
           ) : (
             <div className="rounded-2xl border border-dashed border-slate-300 bg-white px-6 py-12 text-center">
               <UtensilsCrossed className="mx-auto h-9 w-9 text-slate-300" />

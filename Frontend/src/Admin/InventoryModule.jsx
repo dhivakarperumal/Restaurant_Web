@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import { Route, Routes, NavLink, useNavigate } from 'react-router-dom';
-import { AlertTriangle, ArrowRightLeft, BarChart3, Boxes, CalendarClock, CircleDollarSign, ClipboardList, Eye, Filter, Gauge, MapPinned, NotebookPen, Package, PackagePlus, Pencil, Plus, PlusCircle, Search, ShoppingCart, Tag, Tags, Trash2, TrendingDown, TrendingUp, Truck, UtensilsCrossed, Warehouse, Wrench } from 'lucide-react';
+import { AlertTriangle, ArrowRightLeft, BarChart3, Boxes, CalendarClock, CircleDollarSign, ClipboardList, Eye, Filter, Gauge, LayoutGrid, MapPinned, NotebookPen, Package, PackagePlus, Pencil, Plus, PlusCircle, Search, ShoppingCart, Table2, Tag, Tags, Trash2, TrendingDown, TrendingUp, Truck, UtensilsCrossed, Warehouse, Wrench } from 'lucide-react';
 import api from '../api';
 import toast, { Toaster } from 'react-hot-toast';
 
@@ -293,19 +293,43 @@ function InventoryDashboard() {
 }
 
 function ProductsPage() {
-  const navigate = useNavigate();
   const { products, categories, subcategories, units, suppliers, locations, loadData } = useInventoryContext();
   const [search, setSearch] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('All Categories');
+  const [selectedStatus, setSelectedStatus] = useState('All Status');
+  const [selectedStockLevel, setSelectedStockLevel] = useState('All Stock');
+  const [sortBy, setSortBy] = useState('latest');
+  const [viewMode, setViewMode] = useState('table');
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [form, setForm] = useState({
     product_name: '', sku: '', barcode: '', category_id: '', subcategory_id: '', unit_id: '', supplier_id: '', purchase_price: '', selling_price: '', current_stock: '0', minimum_stock: '0', reorder_level: '0', status: 'Active',
   });
 
-  const filtered = products.filter((product) => {
-    const value = search.toLowerCase();
-    if (!value) return true;
-    return [product.product_name, product.sku, product.barcode, product.category_name].join(' ').toLowerCase().includes(value);
-  });
+  const filtered = [...products]
+    .filter((product) => {
+      const value = search.trim().toLowerCase();
+      const matchesSearch = [product.product_name, product.sku, product.barcode, product.category_name]
+        .some((field) => String(field || '').toLowerCase().includes(value));
+      const matchesCategory = selectedCategory === 'All Categories' ||
+        String(product.category_id || '') === selectedCategory;
+      const matchesStatus = selectedStatus === 'All Status' ||
+        (selectedStatus === 'Active'
+          ? String(product.status || 'Active').toLowerCase() === 'active'
+          : String(product.status || 'Active').toLowerCase() !== 'active');
+      const currentStock = Number(product.current_stock) || 0;
+      const reorderLevel = Number(product.reorder_level) || 0;
+      const matchesStockLevel = selectedStockLevel === 'All Stock' ||
+        (selectedStockLevel === 'In Stock' && currentStock > 0) ||
+        (selectedStockLevel === 'Low Stock' && currentStock > 0 && currentStock <= reorderLevel) ||
+        (selectedStockLevel === 'Out of Stock' && currentStock === 0);
+      return matchesSearch && matchesCategory && matchesStatus && matchesStockLevel;
+    })
+    .sort((first, second) => {
+      if (sortBy === 'name') return String(first.product_name || '').localeCompare(String(second.product_name || ''));
+      if (sortBy === 'stock-low') return Number(first.current_stock || 0) - Number(second.current_stock || 0);
+      if (sortBy === 'stock-high') return Number(second.current_stock || 0) - Number(first.current_stock || 0);
+      return new Date(second.created_at || 0) - new Date(first.created_at || 0);
+    });
 
   const handleSubmit = async (event) => {
     event.preventDefault();
@@ -333,24 +357,174 @@ function ProductsPage() {
     { key: 'actions', label: 'Actions', render: () => <div className="flex gap-2"><button className="text-sky-600" title="View"><Eye size={15} /></button><button className="text-amber-600" title="Edit"><Pencil size={15} /></button><button className="text-rose-600" title="Delete"><Trash2 size={15} /></button></div> },
   ];
 
+  const totalCategories = new Set(products.map(p => p.category_name).filter(Boolean)).size;
+  const lowStockCount = products.filter(p => (Number(p.current_stock) || 0) <= (Number(p.reorder_level) || 0) && (Number(p.current_stock) || 0) > 0).length;
+  const outOfStockCount = products.filter(p => (Number(p.current_stock) || 0) === 0).length;
+
+  const statCardsData = [
+    { title: "Total Groceries", value: products.length, icon: Package, bg: "bg-[#22c55e]", hint: "Registered inventory items" },
+    { title: "Categories", value: totalCategories, icon: Tags, bg: "bg-[#3b82f6]", hint: "Active categories" },
+    { title: "Low Stock", value: lowStockCount, icon: AlertTriangle, bg: "bg-[#f59e0b]", hint: "Below reorder level" },
+    { title: "Out of Stock", value: outOfStockCount, icon: TrendingDown, bg: outOfStockCount > 0 ? "bg-[#ef4444]" : "bg-[#8b5cf6]", hint: "No units left" },
+  ];
+
   return (
     <>
-      <InventoryCrudPage title="Groceries" subtitle="Manage grocery stock levels and supplier linkage." actions={
-        <div className="flex gap-2">
-          <button className="rounded-xl bg-[#1a3c36] px-4 py-2 text-sm font-semibold text-white" onClick={() => setIsAddModalOpen(true)}>Add Grocery</button>
-          <button className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700" onClick={() => navigate('/admin/inventory/stock-in')}>Stock In</button>
+      <div>
+        
+        <div className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+          {statCardsData.map(({ title, value, icon: Icon, bg, hint }, index) => (
+            <article key={title} className={`relative min-w-0 overflow-hidden rounded-xl border border-transparent p-4 sm:p-5 shadow-[0_2px_10px_rgba(20,56,34,0.08)] flex flex-col justify-between min-h-[140px] ${bg} text-white`}>
+              <div className="flex items-start gap-3 relative z-10">
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg shadow-sm bg-white/20">
+                  <Icon size={24} strokeWidth={2.2} className="text-white" />
+                </div>
+                <div className="flex-1 mt-0.5 min-w-0">
+                  <h3 className="text-[12px] font-semibold opacity-90 mb-1 truncate">{title}</h3>
+                  <div className="text-[26px] font-extrabold leading-none tracking-tight">{value}</div>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 mt-5 relative z-10">
+                <span className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[11px] font-bold bg-white/25">↑ 12%</span>
+                <span className="text-[11px] font-medium opacity-75 truncate">{hint}</span>
+              </div>
+              <div className="absolute right-0 bottom-0 w-24 h-16 pointer-events-none opacity-50">
+                <svg viewBox="0 0 100 50" preserveAspectRatio="none" className="w-full h-full">
+                  <defs>
+                    <linearGradient id={`grograd-${index}`} x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#ffffff" stopOpacity="0.4" />
+                      <stop offset="100%" stopColor="#ffffff" stopOpacity="0.0" />
+                    </linearGradient>
+                  </defs>
+                  <path d="M0,50 L0,40 Q25,30 50,40 T100,20 L100,50 Z" fill={`url(#grograd-${index})`} />
+                  <path d="M0,40 Q25,30 50,40 T100,20" fill="none" stroke="#ffffff" strokeWidth="2.5" />
+                </svg>
+              </div>
+            </article>
+          ))}
         </div>
-      }>
         <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-          <div className="mb-4 flex items-center justify-between gap-3">
-            <div className="relative w-full max-w-md">
-              <Search size={16} className="absolute left-3 top-3 text-slate-400" />
-              <input value={search} onChange={(e) => setSearch(e.target.value)} className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2.5 pl-9 text-sm text-slate-700 outline-none focus:border-[#1a3c36]" placeholder="Search groceries" />
+          <div className="mb-4 flex flex-col gap-3 xl:flex-row xl:items-center">
+            <label className="relative block w-full xl:max-w-[340px] xl:flex-1">
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+              <input
+                type="search"
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
+                className="h-[46px] w-full rounded-xl border border-slate-200 bg-slate-50 pl-10 pr-3 text-sm text-slate-700 outline-none placeholder:text-slate-400 focus:border-[#1a3c36]"
+                placeholder="Search groceries by name, SKU or barcode..."
+              />
+            </label>
+            <div className="flex flex-wrap items-center gap-3 xl:ml-auto">
+              <select
+                aria-label="Filter by category"
+                value={selectedCategory}
+                onChange={(event) => setSelectedCategory(event.target.value)}
+                className="h-[46px] min-w-36 rounded-xl border border-slate-200 bg-slate-50 px-3 text-sm font-medium text-slate-700 outline-none focus:border-[#1a3c36]"
+              >
+                <option value="All Categories">All Categories</option>
+                {categories.map((category) => (
+                  <option key={category.category_id} value={String(category.category_id)}>
+                    {category.category_name}
+                  </option>
+                ))}
+              </select>
+              <select
+                aria-label="Filter by status"
+                value={selectedStatus}
+                onChange={(event) => setSelectedStatus(event.target.value)}
+                className="h-[46px] min-w-36 rounded-xl border border-slate-200 bg-slate-50 px-3 text-sm font-medium text-slate-700 outline-none focus:border-[#1a3c36]"
+              >
+                <option value="All Status">All Status</option>
+                <option value="Active">Active</option>
+                <option value="Inactive">Inactive</option>
+              </select>
+              <select
+                aria-label="Filter by stock level"
+                value={selectedStockLevel}
+                onChange={(event) => setSelectedStockLevel(event.target.value)}
+                className="h-[46px] min-w-36 rounded-xl border border-slate-200 bg-slate-50 px-3 text-sm font-medium text-slate-700 outline-none focus:border-[#1a3c36]"
+              >
+                <option value="All Stock">All Stock</option>
+                <option value="In Stock">In Stock</option>
+                <option value="Low Stock">Low Stock</option>
+                <option value="Out of Stock">Out of Stock</option>
+              </select>
+              <select
+                aria-label="Sort groceries"
+                value={sortBy}
+                onChange={(event) => setSortBy(event.target.value)}
+                className="h-[46px] rounded-xl border border-slate-200 bg-slate-50 px-3 text-sm font-medium text-slate-700 outline-none focus:border-[#1a3c36]"
+              >
+                <option value="latest">Sort by: Latest</option>
+                <option value="name">Name: A to Z</option>
+                <option value="stock-low">Stock: Low to High</option>
+                <option value="stock-high">Stock: High to Low</option>
+              </select>
+              <div className="flex h-[46px] items-center overflow-hidden rounded-xl border border-slate-200 bg-slate-50">
+                <button
+                  type="button"
+                  onClick={() => setViewMode('card')}
+                  aria-label="Card view"
+                  aria-pressed={viewMode === 'card'}
+                  title="Card view"
+                  className={`flex h-[46px] w-[46px] items-center justify-center transition ${viewMode === 'card' ? 'bg-[#1a3c36] text-white' : 'text-slate-600 hover:bg-white'}`}
+                >
+                  <LayoutGrid className="h-4 w-4" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setViewMode('table')}
+                  aria-label="Table view"
+                  aria-pressed={viewMode === 'table'}
+                  title="Table view"
+                  className={`flex h-[46px] w-[46px] items-center justify-center transition ${viewMode === 'table' ? 'bg-[#1a3c36] text-white' : 'text-slate-600 hover:bg-white'}`}
+                >
+                  <Table2 className="h-4 w-4" />
+                </button>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsAddModalOpen(true)}
+                className="inline-flex h-[46px] items-center gap-2 rounded-xl bg-[#1a3c36] px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-[#214a42]"
+              >
+                <Plus className="h-4 w-4" />
+                Add Grocery
+              </button>
             </div>
           </div>
-          <InventoryTable columns={columns} rows={filtered} emptyText="No groceries found." />
+          {viewMode === 'table' ? (
+            <InventoryTable columns={columns} rows={filtered} emptyText="No groceries found." />
+          ) : filtered.length ? (
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+              {filtered.map((product) => (
+                <article key={product.product_id} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex min-w-0 items-center gap-3">
+                      <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-500">
+                        <Package size={18} />
+                      </div>
+                      <div className="min-w-0">
+                        <h3 className="truncate font-semibold text-slate-900">{product.product_name}</h3>
+                        <p className="mt-1 truncate text-xs text-slate-500">{product.category_name || 'Uncategorized'}</p>
+                      </div>
+                    </div>
+                    <StatusBadge value={product.status || 'Active'} />
+                  </div>
+                  <dl className="mt-4 grid grid-cols-2 gap-3 text-sm">
+                    <div><dt className="text-xs text-slate-500">SKU</dt><dd className="mt-1 font-medium text-slate-800">{product.sku || '—'}</dd></div>
+                    <div><dt className="text-xs text-slate-500">Current Stock</dt><dd className="mt-1 font-medium text-slate-800">{product.current_stock ?? 0}</dd></div>
+                    <div><dt className="text-xs text-slate-500">Reorder Level</dt><dd className="mt-1 font-medium text-slate-800">{product.reorder_level ?? 0}</dd></div>
+                    <div><dt className="text-xs text-slate-500">Purchase Price</dt><dd className="mt-1 font-medium text-slate-800">{formatCurrency(product.purchase_price)}</dd></div>
+                  </dl>
+                </article>
+              ))}
+            </div>
+          ) : (
+            <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-8 text-center text-sm text-slate-500">No groceries found.</div>
+          )}
         </div>
-      </InventoryCrudPage>
+      </div>
 
       {isAddModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/45 p-4">
@@ -552,7 +726,37 @@ function UnitsPage() {
 function SuppliersPage() {
   const { suppliers, loadData } = useInventoryContext();
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [search, setSearch] = useState('');
+  const [selectedCompany, setSelectedCompany] = useState('All Companies');
+  const [selectedStatus, setSelectedStatus] = useState('All Status');
+  const [sortBy, setSortBy] = useState('latest');
+  const [viewMode, setViewMode] = useState('table');
   const [form, setForm] = useState({ supplier_name: '', company_name: '', phone: '', email: '', address: '', gst_number: '', payment_terms: '', opening_balance: '0', status: 'Active' });
+
+  const visibleSuppliers = [...suppliers]
+    .filter((supplier) => {
+      const searchTerm = search.trim().toLowerCase();
+      const matchesSearch = [
+        supplier.supplier_id,
+        supplier.supplier_name,
+        supplier.company_name,
+        supplier.phone,
+        supplier.email,
+        supplier.gst_number,
+      ].some((field) => String(field || '').toLowerCase().includes(searchTerm));
+      const matchesCompany = selectedCompany === 'All Companies' || supplier.company_name === selectedCompany;
+      const matchesStatus = selectedStatus === 'All Status' ||
+        String(supplier.status || 'Active').toLowerCase() === selectedStatus.toLowerCase();
+      return matchesSearch && matchesCompany && matchesStatus;
+    })
+    .sort((first, second) => {
+      if (sortBy === 'name') return String(first.supplier_name || '').localeCompare(String(second.supplier_name || ''));
+      if (sortBy === 'name-desc') return String(second.supplier_name || '').localeCompare(String(first.supplier_name || ''));
+      return new Date(second.created_at || 0) - new Date(first.created_at || 0);
+    });
+
+  const supplierCompanies = [...new Set(suppliers.map((supplier) => supplier.company_name).filter(Boolean))]
+    .sort((first, second) => first.localeCompare(second));
 
   const handleSubmit = async (event) => {
     event.preventDefault();
@@ -567,19 +771,169 @@ function SuppliersPage() {
     }
   };
 
+  const activeSuppliers = suppliers.filter(s => (s.status || 'Active') === 'Active').length;
+  const inactiveSuppliers = suppliers.filter(s => s.status === 'Inactive').length;
+  const withGst = suppliers.filter(s => s.gst_number).length;
+
+  const supplierCards = [
+    { title: "Total Suppliers", value: suppliers.length, icon: Truck, bg: "bg-[#22c55e]", hint: "Registered vendors" },
+    { title: "Active Suppliers", value: activeSuppliers, icon: ShoppingCart, bg: "bg-[#3b82f6]", hint: "Currently active" },
+    { title: "Inactive Suppliers", value: inactiveSuppliers, icon: TrendingDown, bg: inactiveSuppliers > 0 ? "bg-[#f59e0b]" : "bg-[#8b5cf6]", hint: "Paused or disabled" },
+    { title: "GST Registered", value: withGst, icon: Tag, bg: "bg-[#06b6d4]", hint: "With GST number" },
+  ];
+
   return (
     <>
-      <InventoryCrudPage title="Suppliers" subtitle="Track supplier contacts, balances and purchase history." actions={<button className="rounded-xl bg-[#1a3c36] px-4 py-2 text-sm font-semibold text-white" onClick={() => setIsAddModalOpen(true)}>Add Supplier</button>}>
-        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-          <InventoryTable columns={[
-            { key: 'supplier_name', label: 'Supplier' },
-            { key: 'company_name', label: 'Company' },
-            { key: 'phone', label: 'Phone' },
-            { key: 'email', label: 'Email' },
-            { key: 'status', label: 'Status', render: (row) => <StatusBadge value={row.status || 'Active'} /> },
-          ]} rows={suppliers} emptyText="No suppliers added." />
+      <div>
+
+        <div className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+          {supplierCards.map(({ title, value, icon: Icon, bg, hint }, index) => (
+            <article key={title} className={`relative min-w-0 overflow-hidden rounded-xl border border-transparent p-4 sm:p-5 shadow-[0_2px_10px_rgba(20,56,34,0.08)] flex flex-col justify-between min-h-[140px] ${bg} text-white`}>
+              <div className="flex items-start gap-3 relative z-10">
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg shadow-sm bg-white/20">
+                  <Icon size={24} strokeWidth={2.2} className="text-white" />
+                </div>
+                <div className="flex-1 mt-0.5 min-w-0">
+                  <h3 className="text-[12px] font-semibold opacity-90 mb-1 truncate">{title}</h3>
+                  <div className="text-[26px] font-extrabold leading-none tracking-tight">{value}</div>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 mt-5 relative z-10">
+                <span className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[11px] font-bold bg-white/25">↑ 12%</span>
+                <span className="text-[11px] font-medium opacity-75 truncate">{hint}</span>
+              </div>
+              <div className="absolute right-0 bottom-0 w-24 h-16 pointer-events-none opacity-50">
+                <svg viewBox="0 0 100 50" preserveAspectRatio="none" className="w-full h-full">
+                  <defs>
+                    <linearGradient id={`supgrad-${index}`} x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#ffffff" stopOpacity="0.4" />
+                      <stop offset="100%" stopColor="#ffffff" stopOpacity="0.0" />
+                    </linearGradient>
+                  </defs>
+                  <path d="M0,50 L0,40 Q25,30 50,40 T100,20 L100,50 Z" fill={`url(#supgrad-${index})`} />
+                  <path d="M0,40 Q25,30 50,40 T100,20" fill="none" stroke="#ffffff" strokeWidth="2.5" />
+                </svg>
+              </div>
+            </article>
+          ))}
         </div>
-      </InventoryCrudPage>
+
+        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+          <div className="mb-4 flex flex-col gap-3 xl:flex-row xl:items-center">
+            <label className="relative block w-full xl:max-w-[340px] xl:flex-1">
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+              <input
+                type="search"
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
+                className="h-[46px] w-full rounded-xl border border-slate-200 bg-slate-50 pl-10 pr-3 text-sm text-slate-700 outline-none placeholder:text-slate-400 focus:border-[#1a3c36]"
+                placeholder="Search suppliers by name, company, phone or ID..."
+                aria-label="Search suppliers"
+              />
+            </label>
+            <div className="flex flex-wrap items-center gap-3 xl:ml-auto">
+              <select
+                aria-label="Filter by company"
+                value={selectedCompany}
+                onChange={(event) => setSelectedCompany(event.target.value)}
+                className="h-[46px] min-w-36 rounded-xl border border-slate-200 bg-slate-50 px-3 text-sm font-medium text-slate-700 outline-none focus:border-[#1a3c36]"
+              >
+                <option value="All Companies">All Companies</option>
+                {supplierCompanies.map((company) => (
+                  <option key={company} value={company}>{company}</option>
+                ))}
+              </select>
+              <select
+                aria-label="Filter by status"
+                value={selectedStatus}
+                onChange={(event) => setSelectedStatus(event.target.value)}
+                className="h-[46px] min-w-36 rounded-xl border border-slate-200 bg-slate-50 px-3 text-sm font-medium text-slate-700 outline-none focus:border-[#1a3c36]"
+              >
+                <option value="All Status">All Status</option>
+                <option value="Active">Active</option>
+                <option value="Inactive">Inactive</option>
+              </select>
+              <select
+                aria-label="Sort suppliers"
+                value={sortBy}
+                onChange={(event) => setSortBy(event.target.value)}
+                className="h-[46px] rounded-xl border border-slate-200 bg-slate-50 px-3 text-sm font-medium text-slate-700 outline-none focus:border-[#1a3c36]"
+              >
+                <option value="latest">Sort by: Latest</option>
+                <option value="name">Name: A to Z</option>
+                <option value="name-desc">Name: Z to A</option>
+              </select>
+              <div className="flex h-[46px] items-center overflow-hidden rounded-xl border border-slate-200 bg-slate-50">
+                <button
+                  type="button"
+                  onClick={() => setViewMode('card')}
+                  aria-label="Card view"
+                  aria-pressed={viewMode === 'card'}
+                  title="Card view"
+                  className={`flex h-[46px] w-[46px] items-center justify-center transition ${viewMode === 'card' ? 'bg-[#1a3c36] text-white' : 'text-slate-600 hover:bg-white'}`}
+                >
+                  <LayoutGrid className="h-4 w-4" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setViewMode('table')}
+                  aria-label="Table view"
+                  aria-pressed={viewMode === 'table'}
+                  title="Table view"
+                  className={`flex h-[46px] w-[46px] items-center justify-center transition ${viewMode === 'table' ? 'bg-[#1a3c36] text-white' : 'text-slate-600 hover:bg-white'}`}
+                >
+                  <Table2 className="h-4 w-4" />
+                </button>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsAddModalOpen(true)}
+                className="inline-flex h-[46px] items-center gap-2 rounded-xl bg-[#1a3c36] px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-[#214a42]"
+              >
+                <Plus className="h-4 w-4" />
+                Add Supplier
+              </button>
+            </div>
+          </div>
+          {viewMode === 'table' ? (
+            <InventoryTable columns={[
+              { key: 'supplier_name', label: 'Supplier' },
+              { key: 'company_name', label: 'Company' },
+              { key: 'phone', label: 'Phone' },
+              { key: 'email', label: 'Email' },
+              { key: 'status', label: 'Status', render: (row) => <StatusBadge value={row.status || 'Active'} /> },
+            ]} rows={visibleSuppliers} emptyText="No suppliers match these filters." />
+          ) : visibleSuppliers.length ? (
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+              {visibleSuppliers.map((supplier) => (
+                <article key={supplier.supplier_id} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <h3 className="truncate font-semibold text-slate-900">{supplier.supplier_name}</h3>
+                      <p className="mt-1 truncate text-sm text-slate-500">{supplier.company_name || 'No company listed'}</p>
+                    </div>
+                    <StatusBadge value={supplier.status || 'Active'} />
+                  </div>
+                  <dl className="mt-4 space-y-2 border-t border-slate-100 pt-3 text-sm">
+                    <div className="flex justify-between gap-3">
+                      <dt className="text-slate-500">Phone</dt>
+                      <dd className="truncate text-right text-slate-700">{supplier.phone || '—'}</dd>
+                    </div>
+                    <div className="flex justify-between gap-3">
+                      <dt className="text-slate-500">Email</dt>
+                      <dd className="truncate text-right text-slate-700">{supplier.email || '—'}</dd>
+                    </div>
+                  </dl>
+                </article>
+              ))}
+            </div>
+          ) : (
+            <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-8 text-center text-sm text-slate-500">
+              No suppliers match these filters.
+            </div>
+          )}
+        </div>
+      </div>
 
       {isAddModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/45 p-4">
@@ -663,7 +1017,7 @@ function PurchasesPage() {
   };
 
   return (
-    <InventoryCrudPage title="Purchases" subtitle="Record new purchases and update stock automatically.">
+    <div>
       <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
         <form className="space-y-4" onSubmit={handleSubmit}>
           <div className="grid gap-3 md:grid-cols-3">
@@ -720,7 +1074,7 @@ function PurchasesPage() {
           <button type="submit" className="rounded-xl bg-[#1a3c36] px-5 py-2.5 text-sm font-semibold text-white">Save Purchase</button>
         </form>
       </div>
-    </InventoryCrudPage>
+    </div>
   );
 }
 
@@ -921,6 +1275,11 @@ function ReportsPage() {
 function KitchenRequestsPage() {
   const { products, loadData } = useInventoryContext();
   const [requests, setRequests] = useState([]);
+  const [requestSearch, setRequestSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState('All');
+  const [priorityFilter, setPriorityFilter] = useState('All');
+  const [requestSort, setRequestSort] = useState('latest');
+  const [requestView, setRequestView] = useState('table');
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [form, setForm] = useState({
     request_number: `KR-${Date.now()}`,
@@ -1061,21 +1420,179 @@ function KitchenRequestsPage() {
     return <span className="text-xs text-slate-500">No action</span>;
   };
 
+  const pendingCount = requests.filter(r => (r.status || 'Pending') === 'Pending').length;
+  const approvedCount = requests.filter(r => r.status === 'Approved').length;
+  const completedCount = requests.filter(r => r.status === 'Completed').length;
+  const filteredRequests = requests.filter((request) => {
+    const searchValue = requestSearch.trim().toLowerCase();
+    const matchesSearch = !searchValue || [request.request_number, request.requested_by, request.notes]
+      .some((value) => String(value || '').toLowerCase().includes(searchValue));
+    const matchesStatus = statusFilter === 'All' || (request.status || 'Pending') === statusFilter;
+    const matchesPriority = priorityFilter === 'All' || (request.priority || 'Normal') === priorityFilter;
+    return matchesSearch && matchesStatus && matchesPriority;
+  }).sort((first, second) => {
+    const dateDifference = String(first.request_date || '').localeCompare(String(second.request_date || ''));
+    return requestSort === 'latest' ? -dateDifference : dateDifference;
+  });
+
+  const kitchenCards = [
+    { title: "Total Requests", value: requests.length, icon: ClipboardList, bg: "bg-[#22c55e]", hint: "All kitchen requests" },
+    { title: "Pending", value: pendingCount, icon: CalendarClock, bg: "bg-[#f59e0b]", hint: "Awaiting approval" },
+    { title: "Approved", value: approvedCount, icon: UtensilsCrossed, bg: "bg-[#3b82f6]", hint: "Ready to issue stock" },
+    { title: "Completed", value: completedCount, icon: Boxes, bg: "bg-[#8b5cf6]", hint: "Fulfilled requests" },
+  ];
+
   return (
     <>
-      <InventoryCrudPage title="Kitchen Requests" subtitle="Send ingredient and production requests to the kitchen team and track stock usage." actions={<button className="rounded-xl bg-[#1a3c36] px-4 py-2 text-sm font-semibold text-white" onClick={() => setIsAddModalOpen(true)}>Add Kitchen Request</button>}>
-        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-          <InventoryTable columns={[
-            { key: 'request_number', label: 'Request No.' },
-            { key: 'requested_by', label: 'Requested By' },
-            { key: 'request_date', label: 'Date' },
-            { key: 'priority', label: 'Priority' },
-            { key: 'status', label: 'Status', render: (row) => <StatusBadge value={row.status || 'Pending'} /> },
-            { key: 'notes', label: 'Notes', render: (row) => <span className="max-w-xs text-slate-600">{row.notes || '—'}</span> },
-            { key: 'actions', label: 'Action', render: (row) => getRequestActions(row) },
-          ]} rows={requests} emptyText="No kitchen requests created yet." />
+      <div>
+
+        <div className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+          {kitchenCards.map(({ title, value, icon: Icon, bg, hint }, index) => (
+            <article key={title} className={`relative min-w-0 overflow-hidden rounded-xl border border-transparent p-4 sm:p-5 shadow-[0_2px_10px_rgba(20,56,34,0.08)] flex flex-col justify-between min-h-[140px] ${bg} text-white`}>
+              <div className="flex items-start gap-3 relative z-10">
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg shadow-sm bg-white/20">
+                  <Icon size={24} strokeWidth={2.2} className="text-white" />
+                </div>
+                <div className="flex-1 mt-0.5 min-w-0">
+                  <h3 className="text-[12px] font-semibold opacity-90 mb-1 truncate">{title}</h3>
+                  <div className="text-[26px] font-extrabold leading-none tracking-tight">{value}</div>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 mt-5 relative z-10">
+                <span className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[11px] font-bold bg-white/25">↑ Live</span>
+                <span className="text-[11px] font-medium opacity-75 truncate">{hint}</span>
+              </div>
+              <div className="absolute right-0 bottom-0 w-24 h-16 pointer-events-none opacity-50">
+                <svg viewBox="0 0 100 50" preserveAspectRatio="none" className="w-full h-full">
+                  <defs>
+                    <linearGradient id={`krgrad-${index}`} x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#ffffff" stopOpacity="0.4" />
+                      <stop offset="100%" stopColor="#ffffff" stopOpacity="0.0" />
+                    </linearGradient>
+                  </defs>
+                  <path d="M0,50 L0,40 Q25,30 50,40 T100,20 L100,50 Z" fill={`url(#krgrad-${index})`} />
+                  <path d="M0,40 Q25,30 50,40 T100,20" fill="none" stroke="#ffffff" strokeWidth="2.5" />
+                </svg>
+              </div>
+            </article>
+          ))}
         </div>
-      </InventoryCrudPage>
+
+        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+          <div className="mb-4 flex flex-col gap-3 xl:flex-row xl:items-center">
+            <label className="relative block min-w-0 flex-1">
+              <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+              <input
+                type="search"
+                value={requestSearch}
+                onChange={(event) => setRequestSearch(event.target.value)}
+                placeholder="Search request number, requester, or notes..."
+                aria-label="Search kitchen requests"
+                className="h-[52px] w-full rounded-xl border border-slate-200 bg-slate-50 pl-11 pr-3 text-sm outline-none focus:border-[#1a3c36]"
+              />
+            </label>
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:flex">
+              <select
+                value={priorityFilter}
+                onChange={(event) => setPriorityFilter(event.target.value)}
+                aria-label="Filter by priority"
+                className="h-[52px] min-w-0 rounded-xl border border-slate-200 bg-white px-4 text-sm text-slate-700 outline-none focus:border-[#1a3c36] xl:w-[170px]"
+              >
+                <option value="All">All Priorities</option>
+                <option value="Low">Low</option>
+                <option value="Normal">Normal</option>
+                <option value="High">High</option>
+                <option value="Urgent">Urgent</option>
+              </select>
+              <select
+                value={statusFilter}
+                onChange={(event) => setStatusFilter(event.target.value)}
+                aria-label="Filter by status"
+                className="h-[52px] min-w-0 rounded-xl border border-slate-200 bg-white px-4 text-sm text-slate-700 outline-none focus:border-[#1a3c36] xl:w-[170px]"
+              >
+                <option value="All">All Status</option>
+                <option value="Pending">Pending</option>
+                <option value="Approved">Approved</option>
+                <option value="Rejected">Rejected</option>
+                <option value="Issued">Issued</option>
+                <option value="Completed">Completed</option>
+              </select>
+              <select
+                value={requestSort}
+                onChange={(event) => setRequestSort(event.target.value)}
+                aria-label="Sort kitchen requests"
+                className="col-span-2 h-[52px] min-w-0 rounded-xl border border-slate-200 bg-white px-4 text-sm text-slate-700 outline-none focus:border-[#1a3c36] sm:col-span-1 xl:w-[180px]"
+              >
+                <option value="latest">Sort by: Latest</option>
+                <option value="oldest">Sort by: Oldest</option>
+              </select>
+            </div>
+            <div className="flex h-[52px] shrink-0 items-stretch overflow-hidden rounded-xl border border-slate-200" role="group" aria-label="Request display mode">
+              <button
+                type="button"
+                onClick={() => setRequestView('grid')}
+                aria-label="Grid view"
+                aria-pressed={requestView === 'grid'}
+                className={`flex w-14 items-center justify-center ${requestView === 'grid' ? 'bg-[#1a3c36] text-white' : 'bg-white text-slate-600 hover:bg-slate-50'}`}
+              >
+                <LayoutGrid size={19} />
+              </button>
+              <button
+                type="button"
+                onClick={() => setRequestView('table')}
+                aria-label="Table view"
+                aria-pressed={requestView === 'table'}
+                className={`flex w-14 items-center justify-center border-l border-slate-200 ${requestView === 'table' ? 'bg-[#1a3c36] text-white' : 'bg-white text-slate-600 hover:bg-slate-50'}`}
+              >
+                <Table2 size={19} />
+              </button>
+            </div>
+            <button
+              type="button"
+              onClick={() => setIsAddModalOpen(true)}
+              className="inline-flex h-[52px] shrink-0 items-center justify-center gap-2 rounded-xl bg-[#1a3c36] px-5 text-sm font-semibold text-white hover:bg-[#244e45]"
+            >
+              <Plus size={18} />
+              Add Kitchen Request
+            </button>
+          </div>
+          {requestView === 'table' ? (
+            <InventoryTable columns={[
+              { key: 'request_number', label: 'Request No.' },
+              { key: 'requested_by', label: 'Requested By' },
+              { key: 'request_date', label: 'Date' },
+              { key: 'priority', label: 'Priority' },
+              { key: 'status', label: 'Status', render: (row) => <StatusBadge value={row.status || 'Pending'} /> },
+              { key: 'notes', label: 'Notes', render: (row) => <span className="max-w-xs text-slate-600">{row.notes || '—'}</span> },
+              { key: 'actions', label: 'Action', render: (row) => getRequestActions(row) },
+            ]} rows={filteredRequests} emptyText={requests.length ? 'No requests match these filters.' : 'No kitchen requests created yet.'} />
+          ) : filteredRequests.length ? (
+            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+              {filteredRequests.map((request) => (
+                <article key={request.id} className="flex min-w-0 flex-col rounded-xl border border-slate-200 bg-white p-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <h2 className="truncate font-semibold text-slate-900">{request.request_number}</h2>
+                      <p className="mt-1 text-sm text-slate-500">{request.requested_by || 'Unknown requester'}</p>
+                    </div>
+                    <StatusBadge value={request.status || 'Pending'} />
+                  </div>
+                  <dl className="mt-4 grid grid-cols-2 gap-3 text-sm">
+                    <div><dt className="text-xs text-slate-500">Request date</dt><dd className="mt-1 text-slate-800">{String(request.request_date || '').slice(0, 10) || '—'}</dd></div>
+                    <div><dt className="text-xs text-slate-500">Priority</dt><dd className="mt-1 text-slate-800">{request.priority || 'Normal'}</dd></div>
+                  </dl>
+                  <p className="mt-3 min-h-10 text-sm text-slate-600">{request.notes || 'No notes'}</p>
+                  <div className="mt-4 border-t border-slate-100 pt-3">{getRequestActions(request)}</div>
+                </article>
+              ))}
+            </div>
+          ) : (
+            <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-8 text-center text-sm text-slate-500">
+              {requests.length ? 'No requests match these filters.' : 'No kitchen requests created yet.'}
+            </div>
+          )}
+        </div>
+      </div>
 
       {isAddModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/45 p-4">
@@ -1230,7 +1747,7 @@ function useInventoryContext() {
 function InventoryRoutes() {
   return (
     <Routes>
-      <Route path="/" element={<InventoryFallbackPage />} />
+      
       <Route path="dashboard" element={<InventoryDashboard />} />
       <Route path="products" element={<ProductsPage />} />
       <Route path="categories" element={<CategoriesPage />} />

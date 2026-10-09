@@ -77,7 +77,7 @@ const formatTimeAgo = (dateValue) => {
   return `${diffHours}h ${diffMins % 60}m ago`;
 };
 
-const ChefKitchenOrders = ({ defaultViewMode = "card" }) => {
+const ChefKitchenOrders = ({ defaultViewMode = "card", orderTypeFilter = "" }) => {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -90,7 +90,9 @@ const ChefKitchenOrders = ({ defaultViewMode = "card" }) => {
   const fetchOrders = useCallback(async (showLoading = false) => {
     if (showLoading) setLoading(true);
     try {
-      const response = await api.get("/kitchen-orders");
+      const response = await api.get("/kitchen-orders", {
+        params: orderTypeFilter ? { order_type: orderTypeFilter } : undefined,
+      });
       const list = Array.isArray(response.data?.orders) ? response.data.orders : [];
       setOrders(list);
       setError("");
@@ -99,7 +101,7 @@ const ChefKitchenOrders = ({ defaultViewMode = "card" }) => {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [orderTypeFilter]);
 
   useEffect(() => {
     fetchOrders(true);
