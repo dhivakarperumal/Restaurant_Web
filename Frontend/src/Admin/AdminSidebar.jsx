@@ -123,6 +123,11 @@ const navItems = [
     label: "Kitchen Orders",
     icon: UtensilsCrossed,
   },
+  {
+    path: "/admin/reservations",
+    label: "Reservations",
+    icon: CalendarDays,
+  },
 
  
 

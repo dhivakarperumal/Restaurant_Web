@@ -2,6 +2,12 @@ import { useEffect, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import {
   ChevronRight,
+  CalendarDays,
+  ArrowRight,
+  CheckCircle2,
+  CookingPot,
+  Truck,
+  CircleX,
   Eye,
   EyeOff,
   Gift,
@@ -19,7 +25,7 @@ import {
   UserRound,
 } from "lucide-react";
 import toast from "react-hot-toast";
-import api from "../../api";
+import api, { API_URL } from "../../api";
 import PageContainer from "../../CommonComponents/PageContainer";
 import { useAuth } from "../../PrivateRouter/AuthContext";
 import OrderDetailsModal from "./OrderDetailsModal";
@@ -49,17 +55,54 @@ const normalizeAddress = (value = {}) => ({
 });
 
 const statusClass = {
-  placed: "bg-[#fef3c7] text-[#92400e] border border-[#fde68a]",
-  preparing: "bg-[#fef3c7] text-[#92400e] border border-[#fde68a]",
-  ready: "bg-[#e1f2e8] text-[#28724a] border border-[#c3e6d1]",
-  completed: "bg-[#e1f2e8] text-[#28724a] border border-[#c3e6d1]",
-  delivered: "bg-[#e1f2e8] text-[#28724a] border border-[#c3e6d1]",
-  cancelled: "bg-[#fae5e2] text-[#a43e32] border border-[#f5c6cb]",
-  payment_failed: "bg-[#fae5e2] text-[#a43e32] border border-[#f5c6cb]",
-  Delivered: "bg-[#e1f2e8] text-[#28724a] border border-[#c3e6d1]",
-  Cancelled: "bg-[#fae5e2] text-[#a43e32] border border-[#f5c6cb]",
-  Shipped: "bg-[#e3edf7] text-[#35688e] border border-[#b8daff]",
-  Processing: "bg-[#fef3c7] text-[#92400e] border border-[#fde68a]",
+  placed: "bg-[#eaf4e4] text-[#075b20] border border-[#cfe3c4]",
+  preparing: "bg-[#fff6d8] text-[#a85b00] border border-[#f1d889]",
+  ready: "bg-[#fff6d8] text-[#a85b00] border border-[#f1d889]",
+  completed: "bg-[#eaf4e4] text-[#075b20] border border-[#cfe3c4]",
+  delivered: "bg-[#eaf4e4] text-[#075b20] border border-[#cfe3c4]",
+  cancelled: "bg-[#fff0f2] text-[#c51d42] border border-[#f6d1d9]",
+  payment_failed: "bg-[#fff0f2] text-[#c51d42] border border-[#f6d1d9]",
+  Delivered: "bg-[#eaf4e4] text-[#075b20] border border-[#cfe3c4]",
+  Cancelled: "bg-[#fff0f2] text-[#c51d42] border border-[#f6d1d9]",
+  Shipped: "bg-[#edf3ff] text-[#1749c6] border border-[#cfddff]",
+  Processing: "bg-[#fff6d8] text-[#a85b00] border border-[#f1d889]",
+};
+
+const ORDER_FILTERS = ["All Orders", "Processing", "Preparing", "Out for Delivery", "Delivered", "Cancelled"];
+const ORDERS_PER_PAGE = 5;
+const ORDER_STATUS_BADGE_CLASSES = {
+  Processing: "bg-[#fff6d8] text-[#a85b00] border border-[#f1d889]",
+  Preparing: "bg-[#fff6d8] text-[#a85b00] border border-[#f1d889]",
+  "Out for Delivery": "bg-[#edf3ff] text-[#1749c6] border border-[#cfddff]",
+  Delivered: "bg-[#eaf4e4] text-[#075b20] border border-[#cfe3c4]",
+  Cancelled: "bg-[#fff0f2] text-[#c51d42] border border-[#f6d1d9]",
+};
+
+const getOrderFilterGroup = (status) => {
+  const normalized = String(status || "processing").trim().toLowerCase().replaceAll("_", " ");
+  if (["cancelled", "returned", "payment failed"].includes(normalized)) return "Cancelled";
+  if (["delivered", "completed"].includes(normalized)) return "Delivered";
+  if (["out for delivery", "shipped"].includes(normalized)) return "Out for Delivery";
+  if (["preparing", "ready"].includes(normalized)) return "Preparing";
+  return "Processing";
+};
+
+const getOrderDateValue = (value) => {
+  if (!value) return "";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+};
+
+const resolveOrderImage = (value) => {
+  if (!value || typeof value !== "string") return "";
+  const image = value.trim();
+  if (/^(data:|blob:|https?:\/\/)/i.test(image)) return image;
+  const baseUrl = API_URL.replace(/\/api\/?$/, "");
+  return `${baseUrl}${image.startsWith("/") ? image : `/${image}`}`;
 };
 
 const TAB_CONFIG = [
@@ -113,7 +156,10 @@ const Account = () => {
   });
   const [saving, setSaving] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState(null);
-  const [trackingOrderId, setTrackingOrderId] = useState("");
+  const [ordersSearchQuery, setOrdersSearchQuery] = useState("");
+  const [ordersDateFilter, setOrdersDateFilter] = useState("");
+  const [ordersStatusFilter, setOrdersStatusFilter] = useState("All Orders");
+  const [ordersPage, setOrdersPage] = useState(1);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
   // Tab handling
@@ -121,6 +167,32 @@ const Account = () => {
   const orderIdFromUrl = searchParams.get("orderId");
   const validTabIds = TAB_CONFIG.map((t) => t.id);
   const activeTab = validTabIds.includes(tabFromUrl) ? tabFromUrl : "profile";
+  const normalizedOrderSearch = ordersSearchQuery.trim().toLowerCase();
+  const filteredOrders = orders.filter((order) => {
+    const orderStatusGroup = getOrderFilterGroup(order.order_status);
+    const matchesStatus =
+      ordersStatusFilter === "All Orders" || orderStatusGroup === ordersStatusFilter;
+    const orderDate = order.created_at || order.order_date;
+    const matchesDate =
+      !ordersDateFilter || getOrderDateValue(orderDate) === ordersDateFilter;
+    const searchableOrderText = [
+      order.order_id,
+      order.order_number,
+      ...(order.items || []).map((item) => item.product_name || item.food_name || ""),
+    ].join(" ").toLowerCase();
+    const matchesSearch =
+      !normalizedOrderSearch || searchableOrderText.includes(normalizedOrderSearch);
+    return matchesStatus && matchesDate && matchesSearch;
+  });
+  const orderPageCount = Math.max(1, Math.ceil(filteredOrders.length / ORDERS_PER_PAGE));
+  const visibleOrders = filteredOrders.slice(
+    (ordersPage - 1) * ORDERS_PER_PAGE,
+    ordersPage * ORDERS_PER_PAGE,
+  );
+  const paginationPages = [...new Set(
+    [1, ordersPage - 1, ordersPage, ordersPage + 1, orderPageCount]
+      .filter((page) => page >= 1 && page <= orderPageCount),
+  )].sort((first, second) => first - second);
 
   const handleTabSelect = (tabId) => {
     setSearchParams((prev) => {
@@ -145,33 +217,20 @@ const Account = () => {
     });
   };
 
-  const handleTrackOrder = (event) => {
-    event.preventDefault();
-    const requestedOrderId = trackingOrderId.trim().replace(/^#/, "");
-
-    if (!requestedOrderId) {
-      toast.error("Please enter an order ID");
-      return;
-    }
-
-    const matchedOrder = orders.find(
-      (order) =>
-        String(order.order_id || "").toLowerCase() === requestedOrderId.toLowerCase() ||
-        String(order.id || "").toLowerCase() === requestedOrderId.toLowerCase(),
-    );
-
-    if (!matchedOrder) {
-      toast.error("No order found with that order ID");
-      return;
-    }
-
-    handleOpenOrder(matchedOrder);
-  };
-
   const handleCloseOrderModal = () => {
     setSelectedOrder(null);
     setSearchParams((prev) => {
       const next = new URLSearchParams(prev);
+      next.delete("orderId");
+      return next;
+    });
+  };
+
+  const handleEditOrderAddress = () => {
+    setSelectedOrder(null);
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      next.set("tab", "address");
       next.delete("orderId");
       return next;
     });
@@ -359,9 +418,8 @@ const Account = () => {
       <main className="min-h-screen bg-[#f7f7f3] pb-16 pt-2 sm:pt-4">
         <PageContainer className="max-w-[1500px]">
           <section className="relative mb-4 min-h-[300px] overflow-hidden rounded-[26px] bg-[#002d1c] text-white shadow-lg sm:min-h-[322px]">
-            <img src="/images/tab.png" alt="" aria-hidden="true" className="absolute inset-y-0 right-0 h-full w-full object-cover object-center opacity-65 sm:w-[68%] sm:object-[center_44%]" />
-            <div className="absolute inset-0 bg-gradient-to-r from-[#002b1a] via-[#00351f]/95 to-[#002b1a]/15" />
-            <div className="absolute inset-0 bg-gradient-to-t from-[#001d12]/90 via-transparent to-[#001d12]/10" />
+            <img src="/images/header.png" alt="" aria-hidden="true" className="absolute inset-0 h-full w-full object-cover object-center opacity-90 sm:object-[center_44%]" />
+            <div className="absolute inset-0 bg-[#002b1a]/40" />
             <div className="relative flex min-h-[235px] flex-col justify-center gap-5 px-5 pb-6 pt-7 sm:min-h-[242px] sm:flex-row sm:items-center sm:gap-8 sm:px-10 sm:pb-10">
               <div className="flex shrink-0 items-center gap-4 sm:gap-6">
                 <div className="relative flex h-[82px] w-[82px] shrink-0 items-center justify-center rounded-full border-[4px] border-[#FEB914] bg-[#146b3a] text-4xl font-bold text-white shadow-xl sm:h-[112px] sm:w-[112px] sm:text-5xl">
@@ -420,8 +478,8 @@ const Account = () => {
             </div>
           </section>
 
-          <div className={`grid items-stretch gap-3 ${activeTab === "address" ? "lg:grid-cols-[minmax(225px,0.78fr)_minmax(0,1.55fr)_minmax(290px,0.95fr)]" : "lg:grid-cols-[minmax(225px,0.78fr)_minmax(0,1.55fr)_minmax(205px,0.64fr)]"}`}>
-            <aside className="relative overflow-hidden rounded-[22px] bg-[#00351f] text-white shadow-md">
+          <div className={`grid ${activeTab === "orders" ? "items-start" : "items-stretch"} gap-3 ${activeTab === "address" ? "lg:grid-cols-[minmax(225px,0.78fr)_minmax(0,1.55fr)_minmax(290px,0.95fr)]" : "lg:grid-cols-[minmax(225px,0.78fr)_minmax(0,1.55fr)_minmax(205px,0.64fr)]"}`}>
+            <aside className={`relative self-start overflow-hidden rounded-[22px] bg-[#00351f] text-white shadow-md ${activeTab === "orders" ? "lg:sticky lg:top-24" : ""}`}>
               <img src="/images/tab.png" alt="" aria-hidden="true" className="absolute inset-0 h-full w-full object-cover opacity-35" />
               <div className="absolute inset-0 bg-gradient-to-b from-[#00351f]/95 via-[#00351f]/80 to-[#001f14]/95" />
               <div className="relative flex h-full flex-col p-4 sm:p-5">
@@ -658,9 +716,9 @@ const Account = () => {
                 {/* TAB 3: YOUR ORDERS */}
                 {activeTab === "orders" && (
                   <div>
-                    <div className="mb-7 flex items-center justify-between border-b border-[#E8EDE6] pb-5">
+                    <div className="mb-4 flex flex-wrap items-center justify-between gap-4 border-b border-[#E8EDE6] pb-4">
                       <div className="flex items-center gap-3">
-                        <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-[#EFF5E9] text-[#FD5E02]">
+                        <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#EFF5E9] text-[#396F0B] shadow-sm">
                           <Package size={20} />
                         </span>
                         <div>
@@ -668,127 +726,198 @@ const Account = () => {
                             Your Orders
                           </h2>
                           <p className="text-xs text-[#7b8580]">
-                            Review your recent restaurant orders and delivery status.
+                            Your meals, payments and delivery updates.
                           </p>
                         </div>
                       </div>
-                      <span className="rounded-full bg-[#EFF5E9] px-3 py-1 text-xs font-bold uppercase tracking-wider text-[#FD5E02]">
+                      <span className="inline-flex items-center gap-2 rounded-full border border-[#dce8d5] bg-[#f3f8ef] px-3.5 py-2 text-xs font-bold text-[#396F0B]">
+                        <ShoppingBag size={14} />
                         {orders.length} {orders.length === 1 ? "order" : "orders"}
                       </span>
                     </div>
 
-                    <form
-                      onSubmit={handleTrackOrder}
-                      className="mb-6 flex flex-col gap-2 rounded-xl border border-[#E2E8DF] bg-[#F5F7F3] p-4 sm:flex-row sm:items-end"
-                    >
-                      <label className="min-w-0 flex-1">
-                        <span className="mb-1.5 block text-xs font-semibold text-[#071C18]">
-                          Track an order
-                        </span>
+                    <nav className="scrollbar-hide mb-3 flex gap-2 overflow-x-auto pb-1" aria-label="Filter orders by status">
+                      {ORDER_FILTERS.map((filter) => {
+                        const count = filter === "All Orders"
+                          ? orders.length
+                          : orders.filter((order) => getOrderFilterGroup(order.order_status) === filter).length;
+                        const isSelected = ordersStatusFilter === filter;
+                        return (
+                          <button
+                            key={filter}
+                            type="button"
+                            onClick={() => {
+                              setOrdersStatusFilter(filter);
+                              setOrdersPage(1);
+                            }}
+                            aria-pressed={isSelected}
+                            className={`shrink-0 rounded-full border px-3.5 py-2 text-[11px] font-semibold transition sm:px-4 ${
+                              isSelected
+                                ? "border-[#075b2b] bg-[#075b2b] text-white shadow-sm"
+                                : "border-[#e7e9e6] bg-white text-[#344035] hover:border-[#a9c69a] hover:bg-[#f6faf3]"
+                            }`}
+                          >
+                            {filter} ({count})
+                          </button>
+                        );
+                      })}
+                    </nav>
+
+                    <div className="mb-4 grid gap-2 sm:grid-cols-[minmax(0,1fr)_180px]">
+                      <label className="relative block min-w-0">
+                        <Search size={17} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[#59645e]" />
                         <input
                           type="text"
-                          value={trackingOrderId}
-                          onChange={(event) => setTrackingOrderId(event.target.value)}
-                          placeholder="Enter order ID, e.g. ORD-20260909-A6FY"
-                          className="h-11 w-full rounded-lg border border-[#E2E8DF] bg-white px-3 text-sm text-[#071C18] outline-none transition placeholder:text-[#a39a90] focus:border-[#FD5E02] focus:ring-2 focus:ring-[#FD5E02]/15"
+                          value={ordersSearchQuery}
+                          onChange={(event) => {
+                            setOrdersSearchQuery(event.target.value);
+                            setOrdersPage(1);
+                          }}
+                          placeholder="Search by Order ID, dish name..."
+                          aria-label="Search orders by order ID or dish name"
+                          className="h-10 w-full rounded-lg border border-[#e2e5e2] bg-white pl-10 pr-3 text-xs text-[#071C18] outline-none transition placeholder:text-[#778078] focus:border-[#396F0B] focus:ring-2 focus:ring-[#396F0B]/10"
                         />
                       </label>
-                      <button
-                        type="submit"
-                        className="inline-flex h-11 items-center justify-center gap-2 rounded-lg bg-[#071C18] px-5 text-xs font-bold text-white transition hover:bg-[#FD5E02]"
-                      >
-                        <Search size={15} />
-                        Track Order
-                      </button>
-                    </form>
+                      <label className="relative block">
+                        <CalendarDays size={16} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[#59645e]" />
+                        <input
+                          type="date"
+                          value={ordersDateFilter}
+                          onChange={(event) => {
+                            setOrdersDateFilter(event.target.value);
+                            setOrdersPage(1);
+                          }}
+                          aria-label="Filter orders by date"
+                          className="h-10 w-full rounded-lg border border-[#e2e5e2] bg-white pl-10 pr-2 text-xs text-[#4b5563] outline-none transition focus:border-[#396F0B] focus:ring-2 focus:ring-[#396F0B]/10"
+                        />
+                      </label>
+                    </div>
 
-                    {orders.length > 0 ? (
-                      <div className="divide-y divide-[#E8EDE6]">
-                        {orders.map((order) => {
+                    {visibleOrders.length > 0 ? (
+                      <div className="space-y-2.5">
+                        {visibleOrders.map((order) => {
                           const dateStr = order.created_at || order.order_date;
-                          const formattedDate = dateStr
-                            ? new Date(dateStr).toLocaleDateString("en-IN", {
-                              year: "numeric",
-                              month: "short",
-                              day: "numeric",
-                            })
+                          const parsedDate = dateStr ? new Date(dateStr) : null;
+                          const formattedDate = parsedDate && !Number.isNaN(parsedDate.getTime())
+                            ? parsedDate.toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })
                             : "Recent";
-
+                          const formattedTime = parsedDate && !Number.isNaN(parsedDate.getTime())
+                            ? parsedDate.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })
+                            : "";
                           const status = order.order_status || "Processing";
-                          const displayStatus = String(status).replaceAll("_", " ");
+                          const statusGroup = getOrderFilterGroup(status);
+                          const displayStatus = statusGroup;
+                          const StatusIcon = statusGroup === "Delivered"
+                            ? CheckCircle2
+                            : statusGroup === "Out for Delivery"
+                              ? Truck
+                              : statusGroup === "Cancelled"
+                                ? CircleX
+                                : CookingPot;
+                          const itemImages = (order.items || [])
+                            .map((item) => resolveOrderImage(item.product_image || item.image || item.food_images?.[0]))
+                            .filter(Boolean);
+                          const orderImage = itemImages[0];
 
                           return (
-                            <div
+                            <button
                               key={order.order_id}
+                              type="button"
                               onClick={() => handleOpenOrder(order)}
-                              className="group flex flex-col gap-4 py-5 sm:flex-row sm:items-center sm:justify-between hover:bg-[#F5F7F3] px-3.5 rounded-xl transition-all cursor-pointer border border-transparent hover:border-[#E2E8DF] hover:shadow-xs"
+                              className="group grid w-full grid-cols-[76px_minmax(0,1fr)] gap-x-3 gap-y-2.5 rounded-xl border border-[#eeefec] bg-white p-2.5 text-left shadow-[0_4px_14px_rgba(26,37,27,0.06)] transition-all hover:border-[#b8cfac] hover:shadow-md sm:grid-cols-[144px_minmax(0,1fr)_minmax(110px,auto)_130px] sm:items-center sm:gap-x-4 sm:gap-y-0 sm:p-3"
                             >
-                              <div className="space-y-1.5 min-w-0">
-                                <div className="flex items-center gap-2">
-                                  <p className="font-semibold text-[#071C18] text-base tracking-wide group-hover:text-[#FD5E02] transition-colors">
-                                    #{order.order_id}
-                                  </p>
-                                  <span className="text-[11px] font-medium text-[#FD5E02] bg-[#EFF5E9] px-2 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity hidden sm:inline-block">
-                                    Click to view details
-                                  </span>
-                                </div>
-                                <div className="flex flex-wrap items-center gap-2 text-xs text-[#7b8580]">
-                                  <span>{formattedDate}</span>
-                                  <span>•</span>
-                                  <span>
-                                    {order.item_count || 1}{" "}
-                                    {(order.item_count || 1) === 1
-                                      ? "item"
-                                      : "items"}
-                                  </span>
-                                  {order.payment_method && (
-                                    <>
-                                      <span>•</span>
-                                      <span>{order.payment_method}</span>
-                                    </>
-                                  )}
-                                </div>
+                              <div className="relative h-[68px] overflow-hidden rounded-lg bg-[#EFF5E9] sm:h-[96px]">
+                                {orderImage ? (
+                                  <img src={orderImage} alt={order.items?.[0]?.product_name || "Order item"} className="h-full w-full object-cover transition duration-300 group-hover:scale-105" />
+                                ) : (
+                                  <span className="flex h-full items-center justify-center text-[#396F0B]"><Utensils size={24} /></span>
+                                )}
                               </div>
 
-                              <div className="flex items-center justify-between sm:justify-end gap-3.5">
+                              <div className="flex min-w-0 flex-col justify-center">
+                                <p className="truncate text-xs font-extrabold text-[#101820] sm:text-sm">
+                                  #{order.order_id}
+                                </p>
+                                <p className="mt-0.5 truncate text-[10px] text-[#697386] sm:text-xs">
+                                  {formattedDate}{formattedTime && ` • ${formattedTime}`}
+                                </p>
+                                <p className="mt-0.5 text-[10px] text-[#697386] sm:text-xs">
+                                  {order.item_count || order.items?.length || 1} {(order.item_count || order.items?.length || 1) === 1 ? "item" : "items"}
+                                </p>
+                                {itemImages.length > 0 && (
+                                  <div className="mt-1 flex items-center gap-1">
+                                    {itemImages.slice(0, 3).map((image, index) => (
+                                      <img key={`${order.order_id}-${index}`} src={image} alt="" className="h-6 w-6 rounded-md border border-white object-cover shadow-sm sm:h-8 sm:w-8" />
+                                    ))}
+                                    {itemImages.length > 3 && (
+                                      <span className="flex h-6 min-w-7 items-center justify-center rounded-md bg-[#f2f4f6] px-1 text-[9px] font-semibold text-[#4b5563] sm:h-8 sm:min-w-8 sm:text-[10px]">
+                                        +{itemImages.length - 3}
+                                      </span>
+                                    )}
+                                  </div>
+                                )}
+                              </div>
+
+                              <div className="col-span-2 flex items-center justify-between gap-3 sm:col-span-1 sm:flex-col sm:justify-center">
                                 <span
-                                  className={`rounded-md px-3 py-1 text-xs font-bold uppercase tracking-wide ${
-                                    statusClass[String(status).toLowerCase()] || statusClass[displayStatus] ||
-                                    "bg-[#f3eee7] text-[#396F0B] border border-[#E2E8DF]"
+                                  className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[10px] font-bold ${
+                                    ORDER_STATUS_BADGE_CLASSES[statusGroup] || statusClass[String(status).toLowerCase()] || "bg-[#f3f8ef] text-[#396F0B] border border-[#E2E8DF]"
                                   }`}
                                 >
+                                  <StatusIcon size={13} />
                                   {displayStatus}
                                 </span>
-                                <strong className="text-base font-bold text-[#071C18]">
-                                  ₹
-                                  {Number(
-                                    order.total_amount || 0
-                                  ).toLocaleString("en-IN")}
+                                <strong className="text-sm font-extrabold text-[#111827] sm:text-base">
+                                  ₹{Number(order.total_amount || 0).toLocaleString("en-IN")}
                                 </strong>
-                                
                               </div>
-                            </div>
+
+                              <span className="col-span-2 inline-flex h-9 items-center justify-center gap-2 rounded-lg border border-[#FD5E02] px-3 text-[11px] font-bold text-[#e94616] transition group-hover:bg-[#FD5E02] group-hover:text-white sm:col-span-1 sm:h-9">
+                                View Details <ArrowRight size={14} />
+                              </span>
+                            </button>
                           );
                         })}
                       </div>
                     ) : (
-                      <div className="py-14 text-center">
-                        <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-[#EFF5E9] text-[#FD5E02]">
+                      <div className="rounded-2xl border border-dashed border-[#dce8d5] bg-[#fbfcf9] py-14 text-center">
+                        <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-[#EFF5E9] text-[#396F0B]">
                           <ShoppingBag size={26} />
                         </div>
-                        <h4 className="mt-4 text-base font-semibold text-[#071C18]">
-                          No orders yet
+                        <h4 className="mt-4 text-lg font-semibold text-[#071C18]">
+                          {orders.length ? "No matching orders" : "No orders yet"}
                         </h4>
                         <p className="mx-auto mt-1 max-w-sm text-xs text-[#7b8580]">
-                          Your orders will appear here after your first purchase.
+                          {orders.length ? "Try changing your search or filters." : "Your orders will appear here after your first purchase."}
                         </p>
-                        <Link
-                          to="/shop"
-                          className="mt-5 inline-flex items-center gap-2 rounded-lg bg-[#071C18] px-6 py-2.5 text-xs font-bold uppercase tracking-wider text-white hover:bg-[#FD5E02] transition"
-                        >
-                          Browse the menu
-                        </Link>
+                        {!orders.length && (
+                          <Link
+                            to="/shop"
+                            className="mt-5 inline-flex items-center gap-2 rounded-xl bg-[#071C18] px-6 py-3 text-xs font-bold uppercase tracking-wider text-white transition hover:bg-[#396F0B]"
+                          >
+                            Browse the menu
+                          </Link>
+                        )}
                       </div>
+                    )}
+
+                    {filteredOrders.length > ORDERS_PER_PAGE && (
+                      <nav className="mt-3 flex items-center justify-center gap-1.5" aria-label="Orders pagination">
+                        <button type="button" onClick={() => setOrdersPage((page) => Math.max(1, page - 1))} disabled={ordersPage === 1} aria-label="Previous orders page" className="flex h-8 w-8 items-center justify-center rounded-lg border border-[#e8ebe7] bg-white text-[#344035] transition hover:border-[#a9c69a] disabled:cursor-not-allowed disabled:opacity-40">
+                          <ChevronRight size={15} className="rotate-180" />
+                        </button>
+                        {paginationPages.map((page, index) => (
+                          <span key={page} className="flex items-center gap-1.5">
+                            {index > 0 && paginationPages[index - 1] < page - 1 && <span className="px-0.5 text-xs text-[#697386]">...</span>}
+                            <button type="button" onClick={() => setOrdersPage(page)} aria-current={ordersPage === page ? "page" : undefined} className={`h-8 min-w-8 rounded-lg px-2 text-xs font-semibold transition ${ordersPage === page ? "bg-[#075b2b] text-white shadow-sm" : "text-[#344035] hover:bg-[#f2f7ef]"}`}>
+                              {page}
+                            </button>
+                          </span>
+                        ))}
+                        <button type="button" onClick={() => setOrdersPage((page) => Math.min(orderPageCount, page + 1))} disabled={ordersPage === orderPageCount} aria-label="Next orders page" className="flex h-8 w-8 items-center justify-center rounded-lg border border-[#e8ebe7] bg-white text-[#344035] transition hover:border-[#a9c69a] disabled:cursor-not-allowed disabled:opacity-40">
+                          <ChevronRight size={15} />
+                        </button>
+                      </nav>
                     )}
                   </div>
                 )}
@@ -940,7 +1069,7 @@ const Account = () => {
                 )}
             </div>
           </section>
-          <aside className={`${activeTab === "address" ? "hidden" : "rounded-[22px] border border-[#eeeae0] bg-white p-4 shadow-sm sm:p-5"}`}>
+          <aside className={`${activeTab === "address" ? "hidden" : `self-start rounded-[22px] border border-[#eeeae0] bg-white p-4 shadow-sm sm:p-5 ${activeTab === "orders" ? "lg:sticky lg:top-24" : ""}`}`}>
             <div className="relative h-40 overflow-hidden rounded-[18px] bg-[#00351f]">
               <img src="/images/tab.png" alt="A selection of restaurant dishes" className="h-full w-full object-cover object-[center_38%]" />
               <div className="absolute inset-0 bg-gradient-to-t from-[#002817]/60 via-transparent to-transparent" />
@@ -974,6 +1103,7 @@ const Account = () => {
         orderId={selectedOrder?.order_id || selectedOrder?.id}
         isOpen={Boolean(selectedOrder)}
         onClose={handleCloseOrderModal}
+        onEditAddress={handleEditOrderAddress}
       />
       {showLogoutConfirm && (
         <LogoutConfirmModal

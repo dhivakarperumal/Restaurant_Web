@@ -65,6 +65,17 @@ const listReviews = async (productId = null) => {
   return rows.map(parseReview);
 };
 
+const listPublishedReviews = async () => {
+  const [rows] = await db.query(
+    `SELECT reviewer_name, rating, title, comment, review_photo, product_name, created_at
+     FROM reviews
+     WHERE status = 'Published'
+     ORDER BY created_at DESC, id DESC
+     LIMIT 12`
+  );
+  return rows.map(parseReview);
+};
+
 const findReviewById = async (id) => {
   const [rows] = await db.execute('SELECT * FROM reviews WHERE id = ? LIMIT 1', [id]);
   return parseReview(rows[0]);
@@ -160,6 +171,7 @@ module.exports = {
   initializeReviewSchema,
   getNextReviewId,
   listReviews,
+  listPublishedReviews,
   findReviewById,
   createReview,
   updateReview,
