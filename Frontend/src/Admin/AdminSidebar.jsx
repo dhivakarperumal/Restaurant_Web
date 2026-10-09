@@ -158,6 +158,12 @@ const navItems = [
   },
 
   {
+    path: "/admin/expenses",
+    label: "Expenses",
+    icon: DollarSign,
+  },
+
+  {
     path: "/admin/reviews",
     label: "Reviews",
     icon: Star,

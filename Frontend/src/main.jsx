@@ -46,6 +46,7 @@ import PointOfSale from './Admin/Billings/PointOfSale.jsx'
 import Billing from './Admin/Billings/Billing.jsx'
 import NewBilling from './Admin/Billings/NewBilling.jsx'
 import OrderDetails from './Admin/Billings/OrderDetails.jsx'
+import ExpensesPage from './Admin/Expenses/ExpensesPage.jsx'
 const RevenuePage = lazy(() => import('./Admin/RevenuePage.jsx'))
 
 
@@ -293,6 +294,10 @@ const router = createHashRouter([
           {
             path: 'revenue',
             element: <RevenuePage />,
+          },
+          {
+            path: 'expenses',
+            element: <ExpensesPage />,
           },
           {
             path: 'billing',

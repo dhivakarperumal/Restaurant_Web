@@ -13,6 +13,7 @@ import {
   Layers,
   LayoutGrid,
   Loader2,
+  List,
   Plus,
   Printer,
   RefreshCw,
@@ -60,7 +61,8 @@ export default function ServerTables() {
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [assignmentFilter, setAssignmentFilter] = useState("all");
-  const [viewMode, setViewMode] = useState(isAdminTablesPage ? "table" : "grid");
+  const [viewMode, setViewMode] = useState("table");
+  const [sortOrder, setSortOrder] = useState("latest");
   const [kitchenOrders, setKitchenOrders] = useState([]);
   const [updatingOrderId, setUpdatingOrderId] = useState("");
   const [activeBills, setActiveBills] = useState([]);
@@ -445,20 +447,26 @@ export default function ServerTables() {
   // Filtered tables
   const filteredTables = useMemo(() => {
     return baseTables.filter((table) => {
+      const activeOrder = getTableActiveOrder(table);
+      const activeBill = getTableActiveBill(table);
+      const searchableValues = [
+        table.table_number,
+        table.table_id,
+        table.assigned_server_name,
+        table.created_by,
+        activeOrder?.order_id,
+        activeOrder?.kitchen_order_id,
+        activeBill?.bill_number,
+        activeBill?.bill_id,
+        ...(activeOrder?.items || []).flatMap((item) => [item.food_name, item.name]),
+        ...(activeBill?.items || []).flatMap((item) => [item.food_name, item.name]),
+      ];
+      const normalizedSearchQuery = searchQuery.trim().toLowerCase();
       const matchesSearch =
-        !searchQuery ||
-        String(table.table_number || "")
-          .toLowerCase()
-          .includes(searchQuery.toLowerCase()) ||
-        String(table.table_id || "")
-          .toLowerCase()
-          .includes(searchQuery.toLowerCase()) ||
-        String(table.assigned_server_name || "")
-          .toLowerCase()
-          .includes(searchQuery.toLowerCase()) ||
-        String(table.created_by || "")
-          .toLowerCase()
-          .includes(searchQuery.toLowerCase());
+        !normalizedSearchQuery ||
+        searchableValues.some((value) =>
+          String(value || "").toLowerCase().includes(normalizedSearchQuery)
+        );
 
       const matchesStatus =
         statusFilter === "all" ||
@@ -474,7 +482,30 @@ export default function ServerTables() {
 
       return matchesSearch && matchesStatus && matchesAssignment;
     });
-  }, [baseTables, searchQuery, statusFilter, assignmentFilter, isAdminTablesPage, userProfile]);
+  }, [baseTables, searchQuery, statusFilter, assignmentFilter, isAdminTablesPage, userProfile, kitchenOrders, activeBills]);
+
+  const sortedTables = useMemo(() => {
+    if (isAdminTablesPage) return filteredTables;
+
+    const getSortValue = (table) => {
+      const activeOrder = getTableActiveOrder(table);
+      const activeBill = getTableActiveBill(table);
+      const timestamp = Date.parse(
+        activeOrder?.created_at ||
+        activeBill?.created_at ||
+        table.created_at ||
+        ""
+      );
+      return Number.isFinite(timestamp)
+        ? timestamp
+        : Number(table.id || table.table_id) || 0;
+    };
+
+    return [...filteredTables].sort((a, b) => {
+      const difference = getSortValue(a) - getSortValue(b);
+      return sortOrder === "latest" ? -difference : difference;
+    });
+  }, [filteredTables, sortOrder, kitchenOrders, activeBills, isAdminTablesPage]);
 
   // Statistics
   const stats = useMemo(() => {
@@ -562,96 +593,98 @@ export default function ServerTables() {
       )}
 
       {/* Stats Cards */}
-      <div className={isAdminTablesPage ? "mb-6 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4" : "grid grid-cols-2 lg:grid-cols-4 gap-4"}>
+      <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {[
           {
             title: isAdminTablesPage ? "Total Tables" : "My Assigned Tables",
             value: stats.total,
             icon: Layers,
-            iconBg: "bg-[#22c55e]",
-            waveColor: "#22c55e",
-            description: isAdminTablesPage ? "Dining tables" : "Assigned to your station",
+            bg: "bg-[#22c55e]",
+            hint: isAdminTablesPage ? "Dining tables" : "Assigned to station",
           },
           {
             title: "Available",
             value: stats.available,
             icon: CheckCircle2,
-            iconBg: "bg-[#f59e0b]",
-            waveColor: "#f59e0b",
-            description: "Ready for guests",
+            bg: "bg-[#3b82f6]",
+            hint: "Ready for guests",
           },
           {
             title: "Occupied",
             value: stats.occupied,
             icon: Clock,
-            iconBg: "bg-[#06b6d4]",
-            waveColor: "#06b6d4",
-            description: "Currently in use",
+            bg: "bg-[#f59e0b]",
+            hint: "Currently in use",
           },
           {
             title: "Total Seats",
             value: stats.totalSeats,
             icon: Armchair,
-            iconBg: "bg-[#a855f7]",
-            waveColor: "#a855f7",
-            description: "Dining capacity",
+            bg: "bg-[#8b5cf6]",
+            hint: "Dining capacity",
           },
-        ].map(({ title, value, icon: Icon, iconBg, waveColor, description }) => (
-          <div key={title} className={isAdminTablesPage ? "relative flex h-full min-h-[170px] flex-col overflow-hidden rounded-xl border border-gray-100 bg-white p-5 shadow-sm" : "bg-white p-4 rounded-xl border border-gray-100 shadow-sm flex items-center gap-4"}>
-            {isAdminTablesPage ? (
-              <div className="flex flex-1 items-start gap-4">
-                <div className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-full ${iconBg} text-white`}>
-                  <Icon className="h-7 w-7" />
-                </div>
-                <div>
-                  <p className="mb-1 text-xs font-medium text-gray-600">{title}</p>
-                  <h3 className="mb-3 text-2xl font-bold text-gray-900">{value}</h3>
-                  <p className="text-[10px] text-gray-400">{description}</p>
-                </div>
+        ].map(({ title, value, icon: Icon, bg, hint }, index) => (
+          <article
+            key={title}
+            className={`relative min-w-0 overflow-hidden rounded-xl border border-transparent p-4 sm:p-5 shadow-[0_2px_10px_rgba(20,56,34,0.08)] flex flex-col justify-between min-h-[140px] ${bg} text-white`}
+          >
+            <div className="flex items-start gap-3 relative z-10">
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg shadow-sm bg-white/20">
+                <Icon size={24} strokeWidth={2.2} className="text-white" />
               </div>
-            ) : (
-              <>
-                <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl ${iconBg} text-white`}>
-                  <Icon className="w-6 h-6" />
-                </div>
-                <div>
-                  <p className="text-xs font-medium text-gray-500">{title}</p>
-                  <h3 className="text-2xl font-bold text-gray-900">{value}</h3>
-                </div>
-              </>
-            )}
-            {isAdminTablesPage && (
-              <div className="pointer-events-none absolute bottom-0 left-0 h-8 w-full overflow-hidden">
-                <svg viewBox="0 0 100 20" preserveAspectRatio="none" className="h-full w-full opacity-40" style={{ color: waveColor }} fill="currentColor">
-                  <path d="M0,10 C30,25 70,0 100,10 L100,20 L0,20 Z" />
-                </svg>
+              <div className="flex-1 mt-0.5 min-w-0">
+                <h3 className="text-[12px] font-semibold opacity-90 mb-1 truncate">{title}</h3>
+                <div className="text-[26px] font-extrabold leading-none tracking-tight">{value}</div>
               </div>
-            )}
-          </div>
+            </div>
+            <div className="flex items-center gap-2 mt-5 relative z-10">
+              <span className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[11px] font-bold bg-white/25">
+                Live
+              </span>
+              <span className="text-[11px] font-medium opacity-75 truncate">{hint}</span>
+            </div>
+            <div className="absolute right-0 bottom-0 w-24 h-16 pointer-events-none opacity-50">
+              <svg viewBox="0 0 100 50" preserveAspectRatio="none" className="w-full h-full">
+                <defs>
+                  <linearGradient id={`tbl-grad-${index}`} x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#ffffff" stopOpacity="0.4" />
+                    <stop offset="100%" stopColor="#ffffff" stopOpacity="0.0" />
+                  </linearGradient>
+                </defs>
+                <path d="M0,50 L0,40 Q25,30 50,40 T100,20 L100,50 Z" fill={`url(#tbl-grad-${index})`} />
+                <path d="M0,40 Q25,30 50,40 T100,20" fill="none" stroke="#ffffff" strokeWidth="2.5" />
+              </svg>
+            </div>
+          </article>
         ))}
       </div>
 
       {/* Filter and Search Bar */}
       <div className={isAdminTablesPage ? "flex flex-col gap-3 rounded-[18px] border border-[#e7e0d8] bg-white p-4 shadow-[0_1px_0_rgba(16,24,40,0.02)] sm:flex-row sm:items-center sm:justify-between" : "flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-white p-4 rounded-xl border border-gray-100 shadow-sm"}>
-        <div className="relative flex-1 max-w-md">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+        <div className={`relative flex-1 ${isAdminTablesPage ? "max-w-md" : "min-w-0 sm:max-w-[480px]"}`}>
+          <Search className={`absolute top-1/2 -translate-y-1/2 text-gray-400 ${isAdminTablesPage ? "left-3 w-4 h-4" : "left-4 w-5 h-5"}`} />
           <input
             type="text"
-            placeholder={isAdminTablesPage ? "Search by table number or server..." : "Search by table number..."}
+            placeholder={isAdminTablesPage ? "Search by table number or server..." : "Search table, ticket, food..."}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className={isAdminTablesPage ? "h-[46px] w-full rounded-xl border border-[#dfe2e5] bg-[#faf9f8] pl-10 pr-3 text-[14px] text-[#2d2d2d] outline-none placeholder:text-[#8a8a8a] focus:border-[#d2bc8a]" : "w-full pl-9 pr-4 py-2 text-sm bg-gray-50 rounded-lg border border-gray-200 focus:outline-none focus:border-[#d4a843] focus:bg-white transition"}
+            className={isAdminTablesPage ? "h-[46px] w-full rounded-xl border border-[#dfe2e5] bg-[#faf9f8] pl-10 pr-3 text-[14px] text-[#2d2d2d] outline-none placeholder:text-[#8a8a8a] focus:border-[#d2bc8a]" : "h-[58px] w-full rounded-2xl border border-[#dfe2e5] bg-[#faf9f8] pl-12 pr-4 text-[15px] text-[#2d2d2d] outline-none placeholder:text-[#8a8a8a] focus:border-[#d2bc8a]"}
           />
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
+          {!isAdminTablesPage && (
+            <span className="mr-2 whitespace-nowrap text-sm font-medium text-[#51605c]" aria-live="polite">
+              {filteredTables.length} of {baseTables.length}
+            </span>
+          )}
           {/* Status filter tabs */}
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className={isAdminTablesPage ? "h-[46px] rounded-xl border border-[#dfe2e5] bg-[#faf9f8] px-3 text-[14px] font-medium text-[#2d2d2d] outline-none focus:border-[#d2bc8a]" : "px-3 py-2 text-xs sm:text-sm bg-gray-50 border border-gray-200 rounded-lg text-gray-700 outline-none focus:border-[#d4a843]"}
+            className={isAdminTablesPage ? "h-[46px] rounded-xl border border-[#dfe2e5] bg-[#faf9f8] px-3 text-[14px] font-medium text-[#2d2d2d] outline-none focus:border-[#d2bc8a]" : "h-[58px] min-w-[180px] rounded-2xl border border-[#dfe2e5] bg-white px-4 text-[15px] font-medium text-[#2d2d2d] outline-none focus:border-[#d2bc8a]"}
           >
-            <option value="all">All Statuses ({baseTables.length})</option>
+            <option value="all">{isAdminTablesPage ? "All Statuses" : "All Status"} ({baseTables.length})</option>
             <option value="Available">Available ({stats.available})</option>
             <option value="Occupied">Occupied ({stats.occupied})</option>
             <option value="Reserved">Reserved ({stats.reserved})</option>
@@ -671,31 +704,43 @@ export default function ServerTables() {
             </select>
           )}
 
+          {!isAdminTablesPage && (
+            <select
+              value={sortOrder}
+              onChange={(e) => setSortOrder(e.target.value)}
+              className="h-[58px] min-w-[170px] rounded-2xl border border-[#dfe2e5] bg-white px-4 text-[15px] font-medium text-[#2d2d2d] outline-none focus:border-[#d2bc8a]"
+              aria-label="Sort tables"
+            >
+              <option value="latest">Sort by: Latest</option>
+              <option value="oldest">Sort by: Oldest</option>
+            </select>
+          )}
+
           {/* View mode toggle */}
-          <div className={isAdminTablesPage ? "flex h-[46px] items-center overflow-hidden rounded-xl border border-[#dfe2e5] bg-[#faf9f8]" : "flex items-center rounded-lg border border-gray-200 p-0.5 bg-gray-50"}>
+          <div className={isAdminTablesPage ? "flex h-[46px] items-center overflow-hidden rounded-xl border border-[#dfe2e5] bg-[#faf9f8]" : "flex h-[58px] items-center overflow-hidden rounded-2xl border border-[#dfe2e5] bg-white"}>
             <button
               type="button"
-              onClick={() => setViewMode("grid")}
+              onClick={() => setViewMode(isAdminTablesPage ? "grid" : "table")}
               className={isAdminTablesPage
                 ? `flex h-[46px] w-[46px] cursor-pointer items-center justify-center transition ${viewMode === "grid" ? "bg-[#1a3c36] text-white" : "text-[#4d4d4d] hover:bg-white"}`
-                : `cursor-pointer rounded-md p-1.5 text-xs transition ${viewMode === "grid" ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-900"}`}
-              aria-label="Card view"
-              aria-pressed={viewMode === "grid"}
-              title="Card view"
+                : `h-full w-[54px] cursor-pointer transition ${viewMode === "table" ? "bg-[#1a3c36] text-white" : "text-[#4d4d4d] hover:bg-[#faf9f8]"}`}
+              aria-label={isAdminTablesPage ? "Card view" : "List view"}
+              aria-pressed={isAdminTablesPage ? viewMode === "grid" : viewMode === "table"}
+              title={isAdminTablesPage ? "Card view" : "List view"}
             >
-              <LayoutGrid className="w-4 h-4" />
+              {isAdminTablesPage ? <LayoutGrid className="w-4 h-4" /> : <List className="mx-auto w-5 h-5" />}
             </button>
             <button
               type="button"
-              onClick={() => setViewMode("table")}
+              onClick={() => setViewMode(isAdminTablesPage ? "table" : "grid")}
               className={isAdminTablesPage
                 ? `flex h-[46px] w-[46px] cursor-pointer items-center justify-center border-l border-[#dfe2e5] transition ${viewMode === "table" ? "bg-[#1a3c36] text-white" : "text-[#4d4d4d] hover:bg-white"}`
-                : `cursor-pointer rounded-md p-1.5 text-xs transition ${viewMode === "table" ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-900"}`}
-              aria-label="Table view"
-              aria-pressed={viewMode === "table"}
-              title="Table view"
+                : `h-full w-[54px] border-l border-[#dfe2e5] cursor-pointer transition ${viewMode === "grid" ? "bg-[#1a3c36] text-white" : "text-[#4d4d4d] hover:bg-[#faf9f8]"}`}
+              aria-label={isAdminTablesPage ? "Table view" : "Grid view"}
+              aria-pressed={isAdminTablesPage ? viewMode === "table" : viewMode === "grid"}
+              title={isAdminTablesPage ? "Table view" : "Grid view"}
             >
-              <Table2 className="w-4 h-4" />
+              {isAdminTablesPage ? <Table2 className="w-4 h-4" /> : <LayoutGrid className="mx-auto w-5 h-5" />}
             </button>
           </div>
         </div>
@@ -739,7 +784,7 @@ export default function ServerTables() {
       ) : viewMode === "grid" ? (
         /* GRID VIEW */
         <div className={`grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 ${isAdminTablesPage ? "rounded-[18px]" : ""}`}>
-          {filteredTables.map((table) => {
+          {sortedTables.map((table) => {
             const config = statusConfig[table.status] || statusConfig.Available;
             const activeOrder = getTableActiveOrder(table);
             const activeBill = getTableActiveBill(table);
@@ -1008,7 +1053,7 @@ export default function ServerTables() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
-                {filteredTables.map((table) => {
+                {sortedTables.map((table) => {
                   const config = statusConfig[table.status] || statusConfig.Available;
                   return (
                     <tr
