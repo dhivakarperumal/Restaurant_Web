@@ -6,10 +6,6 @@ import PageHeader from "../CommonComponents/PageHeader";
 import api from "../api";
 import { useAuth } from "../PrivateRouter/AuthContext";
 
-const timeSlots = Array.from({ length: 13 }, (_, index) => {
-  const hour = index + 10;
-  return `${String(hour).padStart(2, "0")}:00`;
-});
 const minimumReservationDate = (() => {
   const today = new Date();
   const localDate = new Date(today.getTime() - today.getTimezoneOffset() * 60000);
@@ -56,7 +52,10 @@ const Reservation = () => {
 
   useEffect(() => {
     let active = true;
-    if (!date || !time || !guests) return () => { active = false; };
+    const guestCount = Number(guests);
+    if (!date || !time || !Number.isInteger(guestCount) || guestCount < 1 || guestCount > 20) {
+      return () => { active = false; };
+    }
 
     api.get("/reservations/available-tables", { params: { date, time, guests } })
       .then(({ data }) => {
@@ -103,7 +102,15 @@ const Reservation = () => {
     setTables([]);
     setSelectedTable("");
     setErrorMessage("");
-    setTablesLoading(Boolean(update.date ?? date) && Boolean(update.time ?? time));
+    const nextGuests = update.guests ?? guests;
+    const guestCount = Number(nextGuests);
+    setTablesLoading(
+      Boolean(update.date ?? date) &&
+      Boolean(update.time ?? time) &&
+      Number.isInteger(guestCount) &&
+      guestCount >= 1 &&
+      guestCount <= 20
+    );
     if (update.date !== undefined) setDate(update.date);
     if (update.time !== undefined) setTime(update.time);
     if (update.guests !== undefined) setGuests(update.guests);
@@ -196,18 +203,11 @@ const Reservation = () => {
                 </label>
                 <label className="text-sm font-semibold text-slate-700">
                   Time
-                  <select name="time" required value={time} onChange={(event) => updateAvailability({ time: event.target.value })} className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-3 font-normal outline-none transition focus:border-[#1a3c36] focus:ring-2 focus:ring-[#1a3c36]/10">
-                    <option value="" disabled>Select time</option>
-                    {timeSlots.map((slot) => <option key={slot} value={slot}>{formatTime(slot)}</option>)}
-                  </select>
+                  <input name="time" type="time" min="10:00" max="22:00" step="3600" required value={time} onChange={(event) => updateAvailability({ time: event.target.value })} className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-3 font-normal outline-none transition focus:border-[#1a3c36] focus:ring-2 focus:ring-[#1a3c36]/10" />
                 </label>
                 <label className="text-sm font-semibold text-slate-700">
                   Guests
-                  <select name="guests" required value={guests} onChange={(event) => updateAvailability({ guests: event.target.value })} className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-3 font-normal outline-none transition focus:border-[#1a3c36] focus:ring-2 focus:ring-[#1a3c36]/10">
-                    {Array.from({ length: 20 }, (_, index) => index + 1).map((count) => (
-                      <option key={count} value={count}>{count} {count === 1 ? "guest" : "guests"}</option>
-                    ))}
-                  </select>
+                  <input name="guests" type="number" min="1" max="20" step="1" required value={guests} onChange={(event) => updateAvailability({ guests: event.target.value })} className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-3 font-normal outline-none transition focus:border-[#1a3c36] focus:ring-2 focus:ring-[#1a3c36]/10" />
                 </label>
               </div>
 
