@@ -30,6 +30,7 @@ const inventoryRouter = require('./inventory');
 const { changeKitchenOrderStatus, getKitchenOrders, submitKitchenOrder } = require('../controllers/kitchenOrderController');
 const {
   getDeliveryPartnerDashboard,
+  getDeliveryPartnerEarnings,
   listAssignedDeliveryOrders,
   listDeliveryPartners,
   updateAssignedDeliveryOrderStatus,
@@ -231,6 +232,7 @@ router.delete('/users/:userId', requireAdmin, removeUser);
 router.get('/delivery-partner/profile', requireDeliveryPartner, getDeliveryPartnerProfile);
 router.get('/delivery-partners', requireKitchenRole(['chef', 'super admin', 'admin']), listDeliveryPartners);
 router.get('/delivery-partner/dashboard', requireDeliveryPartner, getDeliveryPartnerDashboard);
+router.get('/delivery-partner/earnings', requireDeliveryPartner, getDeliveryPartnerEarnings);
 router.patch('/delivery-partner/availability', requireDeliveryPartner, updateDeliveryPartnerAvailability);
 router.put('/delivery-partner/availability', requireDeliveryPartner, updateDeliveryPartnerAvailability);
 router.get('/delivery-partner/orders', requireDeliveryPartner, listAssignedDeliveryOrders);

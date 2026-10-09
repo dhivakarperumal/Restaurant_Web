@@ -420,6 +420,80 @@ const getDeliveryPartnerDashboard = async (req, res) => {
   }
 };
 
+const getDeliveryPartnerEarnings = async (req, res) => {
+  const employeeId = req.auth.employee_id;
+  const { range = 'this-month', from, to } = req.query || {};
+  const today = new Date();
+  const startOfDay = (date) => new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  const shiftDays = (date, days) => new Date(date.getFullYear(), date.getMonth(), date.getDate() + days);
+  const dateKey = (date) => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+  const currentDay = startOfDay(today);
+  let startDate;
+  let endDate;
+
+  switch (range) {
+    case 'today': startDate = currentDay; endDate = shiftDays(currentDay, 1); break;
+    case 'yesterday': startDate = shiftDays(currentDay, -1); endDate = currentDay; break;
+    case 'this-week': startDate = shiftDays(currentDay, -((currentDay.getDay() + 6) % 7)); endDate = shiftDays(currentDay, 1); break;
+    case 'last-week': endDate = shiftDays(currentDay, -((currentDay.getDay() + 6) % 7)); startDate = shiftDays(endDate, -7); break;
+    case 'this-month': startDate = new Date(currentDay.getFullYear(), currentDay.getMonth(), 1); endDate = shiftDays(currentDay, 1); break;
+    case 'last-month': startDate = new Date(currentDay.getFullYear(), currentDay.getMonth() - 1, 1); endDate = new Date(currentDay.getFullYear(), currentDay.getMonth(), 1); break;
+    case 'this-year': startDate = new Date(currentDay.getFullYear(), 0, 1); endDate = shiftDays(currentDay, 1); break;
+    case 'last-year': startDate = new Date(currentDay.getFullYear() - 1, 0, 1); endDate = new Date(currentDay.getFullYear(), 0, 1); break;
+    case 'custom': {
+      const validDate = (value) => /^\d{4}-\d{2}-\d{2}$/.test(value || '')
+        && dateKey(new Date(`${value}T00:00:00`)) === value;
+      if (!from || !to) break;
+      if (!validDate(from) || !validDate(to) || from > to) {
+        return res.status(400).json({ success: false, message: 'Choose a valid earnings date range.' });
+      }
+      startDate = new Date(`${from}T00:00:00`);
+      endDate = shiftDays(new Date(`${to}T00:00:00`), 1);
+      break;
+    }
+    default:
+      return res.status(400).json({ success: false, message: 'Choose a valid earnings date range.' });
+  }
+
+  const conditions = [
+    'assigned_delivery_partner_id = ?',
+    "order_type = 'home_delivery'",
+    "order_status IN ('delivered', 'completed')",
+  ];
+  const params = [employeeId];
+  if (startDate && endDate) {
+    conditions.push('updated_at >= ? AND updated_at < ?');
+    params.push(dateKey(startDate), dateKey(endDate));
+  }
+  const where = conditions.join(' AND ');
+
+  try {
+    const [summaryRows] = await db.execute(
+      `SELECT COUNT(*) AS completed_deliveries,
+              COALESCE(SUM(total_amount), 0) AS total_earnings,
+              COALESCE(SUM(CASE WHEN DATE(updated_at) = CURDATE() THEN total_amount ELSE 0 END), 0) AS today_earnings,
+              COALESCE(SUM(CASE WHEN YEARWEEK(updated_at, 3) = YEARWEEK(CURDATE(), 3) THEN total_amount ELSE 0 END), 0) AS week_earnings,
+              COALESCE(SUM(CASE WHEN YEAR(updated_at) = YEAR(CURDATE()) AND MONTH(updated_at) = MONTH(CURDATE()) THEN total_amount ELSE 0 END), 0) AS month_earnings,
+              COALESCE(SUM(CASE WHEN LOWER(payment_method) = 'cod' THEN total_amount ELSE 0 END), 0) AS cash_collected
+       FROM orders WHERE ${where}`,
+      params
+    );
+    const [entries] = await db.execute(
+      `SELECT order_number AS order_id, customer_name, updated_at AS date,
+              total_amount AS total_earnings, payment_method,
+              payment_status, NULL AS distance_km, NULL AS base_charge,
+              NULL AS extra_charge, NULL AS incentive
+       FROM orders WHERE ${where}
+       ORDER BY updated_at DESC, id DESC LIMIT 500`,
+      params
+    );
+    return res.json({ success: true, data: { summary: summaryRows[0] || {}, entries } });
+  } catch (error) {
+    console.error('Failed to load delivery partner earnings:', error.message);
+    return res.status(500).json({ success: false, message: 'Delivery partner earnings could not be loaded.' });
+  }
+};
+
 const updateDeliveryPartnerAvailability = async (req, res) => {
   const employeeId = req.auth.employee_id;
   const isOnlineRequested = Boolean(req.body?.is_online);
@@ -466,6 +540,7 @@ const updateDeliveryPartnerAvailability = async (req, res) => {
 
 module.exports = {
   getDeliveryPartnerDashboard,
+  getDeliveryPartnerEarnings,
   listCustomerOrders: (req, res) => getOrders(req, res, false),
   listMyOrders: (req, res) => getOrders(req, res, true),
   getMyOrder: (req, res) => getOrders(req, res, true, req.params.orderNumber),

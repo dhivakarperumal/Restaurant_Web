@@ -206,11 +206,8 @@ export default function EmployeeSalary() {
   const [showForm, setShowForm] = useState(false);
   const [employeeSearch, setEmployeeSearch] = useState('');
   const [historyMonthFilter, setHistoryMonthFilter] = useState('all');
-  const [historyYearFilter, setHistoryYearFilter] = useState(String(new Date().getFullYear()));
-  const [selectedEmployeeId, setSelectedEmployeeId] = useState('');
-  const payslipRef = useRef();
-  const [employeeViewMode, setEmployeeViewMode] = useState("card");
   const [historyViewMode, setHistoryViewMode] = useState("table");
+  const payslipRef = useRef();
 
   const handlePrint = useReactToPrint({
     contentRef: payslipRef,
@@ -426,64 +423,23 @@ export default function EmployeeSalary() {
     setError('');
   };
 
-  const filteredEmployees = useMemo(() => {
-    const search = employeeSearch.trim().toLowerCase();
-    return employees
-      .filter((emp) => (emp.status || emp.employment_status) === 'Active')
-      .filter((emp) => {
-        if (!search) return true;
-        const fullName = getEmployeeName(emp).toLowerCase();
-        const code = getEmployeeCode(emp).toLowerCase();
-        return fullName.includes(search) || code.includes(search);
-      });
-  }, [employees, employeeSearch]);
-
-  const filteredSalaryHistory = useMemo(() => {
-    return history.filter((record) => {
-      const employee = employees.find((item) => item.employee_id === record.employee_id);
-      const fullName = `${employee?.first_name || ''} ${employee?.last_name || ''}`.toLowerCase();
-      const code = (employee?.employee_code || '').toLowerCase();
-      const search = employeeSearch.trim().toLowerCase();
-      const matchesSearch = !search || fullName.includes(search) || code.includes(search);
-      const matchesMonth = historyMonthFilter === 'all' || Number(record.salary_month) === Number(historyMonthFilter);
-      const matchesYear = historyYearFilter === 'all' || Number(record.salary_year) === Number(historyYearFilter);
-      return matchesSearch && matchesMonth && matchesYear;
-    });
-  }, [history, employees, employeeSearch, historyMonthFilter, historyYearFilter]);
-
-  const selectedEmployeeHistory = useMemo(() => {
-    if (!selectedEmployeeId) return filteredSalaryHistory;
-    return filteredSalaryHistory.filter((record) => record.employee_id === selectedEmployeeId);
-  }, [filteredSalaryHistory, selectedEmployeeId]);
-
   const filteredHistory = useMemo(() => {
     return history.filter((record) => {
-      const employeeName =
-        `${record.first_name || ''} ${record.last_name || ''}`.toLowerCase();
-
-      const employeeCode =
-        (record.employee_code || '').toLowerCase();
-
+      const employeeName = `${record.first_name || ''} ${record.last_name || ''}`.toLowerCase();
+      const employeeCode = (record.employee_code || '').toLowerCase();
       const search = employeeSearch.trim().toLowerCase();
-
-      const matchesEmployee =
-        !search ||
-        employeeName.includes(search) ||
-        employeeCode.includes(search);
-
-      const matchesMonth =
-        historyMonthFilter === 'all' ||
-        Number(record.salary_month) === Number(historyMonthFilter);
-
+      const matchesEmployee = !search || employeeName.includes(search) || employeeCode.includes(search);
+      const matchesMonth = historyMonthFilter === 'all'
+        || Number(record.salary_month) === Number(historyMonthFilter);
       return matchesEmployee && matchesMonth;
     });
   }, [history, employeeSearch, historyMonthFilter]);
 
   const selectedEmployeeSalaryHistory = useMemo(() => {
     if (!selectedSalaryEmployee) return [];
-
     return history.filter((record) => record.employee_id === selectedSalaryEmployee.employee_id);
   }, [history, selectedSalaryEmployee]);
+
   const selectedFormEmployee = employees.find((employee) => employee.employee_id === formData.employee_id);
 
   return (
@@ -532,6 +488,80 @@ export default function EmployeeSalary() {
           <Plus size={15} />
           {showForm ? "Close Form" : "Record Payment"}
         </button>
+      </div>
+
+      {/* ── Top Level Stats Overview ── */}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        {[
+          {
+            title: "Total Payroll Paid",
+            value: `₹${history.reduce((sum, r) => sum + parseFloat(r.total_salary || 0), 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+            hint: "Cumulative salary disbursed",
+            icon: DollarSign,
+            bg: "bg-[#22c55e]",
+          },
+          {
+            title: "Active Staff",
+            value: employees.filter(e => (e.status || e.employment_status) === 'Active').length,
+            hint: "On restaurant payroll",
+            icon: Users,
+            bg: "bg-[#3b82f6]",
+          },
+          {
+            title: "Processed Slips",
+            value: history.length,
+            hint: "Total salary records",
+            icon: FileText,
+            bg: "bg-[#f59e0b]",
+          },
+          {
+            title: "Average Salary",
+            value: history.length > 0 ? `₹${(history.reduce((sum, r) => sum + parseFloat(r.total_salary || 0), 0) / history.length).toLocaleString('en-IN', { maximumFractionDigits: 0 })}` : "₹0",
+            hint: "Per processed payout",
+            icon: Briefcase,
+            bg: "bg-[#8b5cf6]",
+          },
+        ].map((stat, index) => {
+          const Icon = stat.icon;
+          return (
+            <article
+              key={stat.title}
+              className={`relative min-w-0 overflow-hidden rounded-xl border border-transparent p-4 sm:p-5 shadow-[0_2px_10px_rgba(20,56,34,0.08)] flex flex-col justify-between min-h-[140px] ${stat.bg} text-white`}
+            >
+              <div className="flex items-start gap-3 relative z-10">
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg shadow-sm bg-white/20">
+                  <Icon size={24} strokeWidth={2.2} className="text-white" />
+                </div>
+                <div className="flex-1 mt-0.5 min-w-0">
+                  <h3 className="text-[12px] font-semibold opacity-90 mb-1 truncate">{stat.title}</h3>
+                  <div className="text-[22px] sm:text-[24px] font-extrabold leading-tight tracking-tight truncate">
+                    {stat.value}
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2 mt-4 relative z-10">
+                <span className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[11px] font-bold bg-white/25">
+                  Live
+                </span>
+                <span className="text-[11px] font-medium opacity-75 truncate">{stat.hint}</span>
+              </div>
+
+              <div className="absolute right-0 bottom-0 w-24 h-16 pointer-events-none opacity-50">
+                <svg viewBox="0 0 100 50" preserveAspectRatio="none" className="w-full h-full">
+                  <defs>
+                    <linearGradient id={`sal-grad-${index}`} x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#ffffff" stopOpacity="0.4" />
+                      <stop offset="100%" stopColor="#ffffff" stopOpacity="0.0" />
+                    </linearGradient>
+                  </defs>
+                  <path d="M0,50 L0,40 Q25,30 50,40 T100,20 L100,50 Z" fill={`url(#sal-grad-${index})`} />
+                  <path d="M0,40 Q25,30 50,40 T100,20" fill="none" stroke="#ffffff" strokeWidth="2.5" />
+                </svg>
+              </div>
+            </article>
+          );
+        })}
       </div>
 
       <Modal open={showForm} onClose={resetForm} title={editId ? 'Edit Salary Payment' : 'Record Salary Payment'}>
@@ -704,174 +734,7 @@ export default function EmployeeSalary() {
         </form>
       </Modal>
 
-      {/* <section className={sectionClass}>
-        <div className="mb-5 flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
-          <div>
-            <div className="mb-2 inline-flex items-center gap-2 rounded-full border border-[#1f3228]/20 bg-[#1f3228]/10 px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-[#28523c]">
-              <Users size={11} /> Employee Overview
-            </div>
-            <h2 className="text-base font-bold text-[#1f3228]">Employee cards & salary history</h2>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            <div className="relative">
-              <Search size={14} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[#818a83]" />
-              <input
-                type="text"
-                value={employeeSearch}
-                onChange={(e) => setEmployeeSearch(e.target.value)}
-                placeholder="Search employee"
-                className="w-48 rounded-xl border border-[#e7e0d8] bg-[#f8f7f4] py-2 pl-9 pr-3 text-sm text-[#1f3228] outline-none focus:border-[#d4a843]"
-              />
-            </div>
-            <Select
-              options={[
-                { value: 'all', label: 'All Months' },
-                ...Array.from({ length: 12 }, (_, i) => i + 1).map(month => ({
-                  value: month, label: new Date(0, month - 1).toLocaleString('default', { month: 'long' })
-                }))
-              ]}
-              value={{ value: historyMonthFilter, label: historyMonthFilter === 'all' ? 'All Months' : new Date(0, historyMonthFilter - 1).toLocaleString('default', { month: 'long' }) }}
-              onChange={(option) => setHistoryMonthFilter(option ? option.value : 'all')}
-              styles={customSelectStyles}
-              className="w-40"
-              isSearchable={false}
-            />
-            <Select
-              options={[
-                { value: 'all', label: 'All Years' },
-                ...Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - i).map(year => ({
-                  value: year, label: String(year)
-                }))
-              ]}
-              value={{ value: historyYearFilter, label: historyYearFilter === 'all' ? 'All Years' : String(historyYearFilter) }}
-              onChange={(option) => setHistoryYearFilter(option ? option.value : 'all')}
-              styles={customSelectStyles}
-              className="w-40"
-              isSearchable={false}
-            />
-            <div className="flex items-center rounded-xl border border-[#e7e0d8] bg-[#f8f7f4] p-1">
-              <button onClick={() => {
-                setEmployeeViewMode("table");
-                setSelectedEmployeeId(""); // optional reset
-              }} className={`rounded-lg p-2 transition ${employeeViewMode === "table" ? 'bg-[#d4a843] text-[#1f3228]' : 'text-[#56645b] hover:text-[#1f3228]'}`} title="Table view"><List size={15} /></button>
-              <button onClick={() => setEmployeeViewMode('card')} className={`rounded-lg p-2 transition ${employeeViewMode === 'card' ? 'bg-[#d4a843] text-[#1f3228]' : 'text-[#56645b] hover:text-[#1f3228]'}`} title="Card view"><LayoutGrid size={15} /></button>
-            </div>
-          </div>
-        </div>
 
-        {employeeViewMode === "table" ? (
-          <div className="overflow-x-auto rounded-2xl border border-[#e7e0d8] bg-[#f8f7f4]">
-            <table className="min-w-full text-sm">
-              <thead className="bg-[#d4a843] text-white">
-                <tr>
-                  <th className="px-4 py-4 text-left">S.No</th>
-                  <th className="px-4 py-4 text-left">Employee</th>
-                  <th className="px-4 py-4 text-left">Code</th>
-                  <th className="px-4 py-4 text-left">Pays</th>
-                  <th className="px-4 py-4 text-left">Total Salary</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-[#e7e0d8] text-[#44534a]">
-                {filteredEmployees.length === 0 ? (
-                  <tr><td colSpan="5" className="px-3 py-4 text-center text-[#748078]">No employees match this search.</td></tr>
-                ) : filteredEmployees.map((emp, i) => {
-                  const employeeName = `${emp.first_name || ''} ${emp.last_name || ''}`.trim();
-                  const employeeHistory = history.filter((item) => item.employee_id === emp.employee_id);
-                  const totalPaid = employeeHistory.reduce((sum, item) => sum + parseFloat(item.total_salary || 0), 0);
-                  return (
-                    <tr
-                      key={emp.employee_id}
-                      onClick={() => setSelectedEmployeeId(emp.employee_id)}
-                      className={`cursor-pointer transition ${selectedEmployeeId === emp.employee_id
-                          ? "bg-[#d4a843]/15"
-                          : "hover:bg-[#f8f7f4]"
-                        }`}
-                    >
-                      <td className="px-3 py-2 text-[#56645b]">{i + 1}</td>
-                      <td className="px-3 py-2 font-medium text-[#1f3228]">{employeeName || emp.employee_code || 'Unnamed Employee'}</td>
-                      <td className="px-3 py-2">{emp.employee_code || 'No code'}</td>
-                      <td className="px-3 py-2">{employeeHistory.length}</td>
-                      <td className="px-3 py-2 font-semibold text-[#1f3228]">₹{totalPaid.toLocaleString('en-IN')}</td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        ) : (
-          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-            {filteredEmployees.length === 0 ? (
-              <div className="md:col-span-2 xl:col-span-3 rounded-2xl border border-[#e7e0d8] bg-[#f8f7f4] p-4 text-sm text-[#56645b]">No employees match this search.</div>
-            ) : (
-              filteredEmployees.map((emp) => {
-                const employeeName = `${emp.first_name || ''} ${emp.last_name || ''}`.trim();
-                const employeeHistory = history.filter((item) => item.employee_id === emp.employee_id);
-                const totalPaid = employeeHistory.reduce((sum, item) => sum + parseFloat(item.total_salary || 0), 0);
-                const isActive = selectedEmployeeId === emp.employee_id;
-                return (
-                  <button
-                    key={emp.employee_id}
-                    type="button"
-                    onClick={() => setSelectedEmployeeId(emp.employee_id)}
-                    className={`rounded-2xl border p-4 text-left transition ${isActive ? 'border-[#d4a843]/50 bg-[#d4a843]/15' : 'border-[#e7e0d8] bg-[#f8f7f4] hover:bg-[#f2f3f0]'}`}
-                  >
-                    <div className="flex items-center justify-between gap-2">
-                      <div>
-                        <p className="text-sm font-semibold text-[#1f3228]">{employeeName || emp.employee_code || 'Unnamed Employee'}</p>
-                        <p className="text-xs text-[#748078]">{emp.employee_code || 'No code'}</p>
-                      </div>
-                      <div className="rounded-full bg-[#f2f3f0] px-2.5 py-1 text-[10px] font-semibold uppercase tracking-widest text-[#56645b]">{employeeHistory.length} pays</div>
-                    </div>
-                    <div className="mt-3 flex items-center justify-between text-sm">
-                      <span className="text-[#56645b]">Total salary</span>
-                      <span className="font-semibold text-[#1f3228]">₹{totalPaid.toLocaleString('en-IN')}</span>
-                    </div>
-                  </button>
-                );
-              })
-            )}
-          </div>
-        )}
-
-        <div className="mt-6 rounded-2xl border border-[#e7e0d8] bg-[#f8f7f4] p-4">
-          <div className="mb-3 flex items-center justify-between">
-            <h3 className="text-sm font-semibold text-[#1f3228]">Salary history {selectedEmployeeId ? 'for selected employee' : 'for current filters'}</h3>
-            <span className="text-xs text-[#748078]">{selectedEmployeeHistory.length} record(s)</span>
-          </div>
-          <div className="overflow-x-auto">
-            <table className="min-w-full text-sm">
-              <thead className="bg-[#d4a843] text-white">
-                <tr>
-                  <th className="px-4 py-4 text-left">Employee</th>
-                  <th className="px-4 py-4 text-left">Month</th>
-                  <th className="px-4 py-4 text-left">Year</th>
-                  <th className="px-4 py-4 text-left">Total Salary</th>
-                  <th className="px-4 py-4 text-left">Present / Leave</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-[#e7e0d8] text-[#44534a]">
-                {selectedEmployeeHistory.length === 0 ? (
-                  <tr><td colSpan="5" className="px-3 py-4 text-center text-[#748078]">No salary records found.</td></tr>
-                ) : (
-                  selectedEmployeeHistory.map((record) => {
-                    const emp = employees.find((item) => item.employee_id === record.employee_id);
-                    const employeeLabel = `${emp?.first_name || ''} ${emp?.last_name || ''}`.trim() || emp?.employee_code || 'Unknown';
-                    return (
-                      <tr key={record.id} className="hover:bg-[#f8f7f4]">
-                        <td className="px-3 py-2 font-medium text-[#1f3228]">{employeeLabel}</td>
-                        <td className="px-3 py-2">{new Date(0, Number(record.salary_month) - 1).toLocaleString('default', { month: 'long' })}</td>
-                        <td className="px-3 py-2">{record.salary_year}</td>
-                        <td className="px-3 py-2 font-semibold text-[#1f3228]">₹{parseFloat(record.total_salary || 0).toLocaleString('en-IN')}</td>
-                        <td className="px-3 py-2">{record.present_days}/{record.leave_days}</td>
-                      </tr>
-                    );
-                  })
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </section> */}
 
       {success && (
         <div className="flex items-center gap-3 bg-[#1f3228]/10 border border-[#1f3228]/20 text-[#1f3228] text-sm px-5 py-3.5 rounded-2xl">
@@ -886,30 +749,13 @@ export default function EmployeeSalary() {
 
       {/* Salary History Table */}
       <section className={`${sectionClass} mt-10`}>
-        <div className="mb-5 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+        <div className="mb-5 space-y-4">
 
-          {/* Title */}
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-xl bg-[#d4a843]/15 flex items-center justify-center">
-              <History size={15} className="text-[#a98026]" />
-            </div>
+        
 
-            <div>
-              <h2 className="text-base font-bold text-[#1f3228]">
-                Salary History
-              </h2>
-
-              <p className="text-xs text-[#748078] mt-0.5">
-                View and manage employee salary records
-              </p>
-            </div>
-          </div>
-
-          {/* Filters + View */}
-          <div className="flex flex-wrap items-center gap-2">
-
-            {/* Employee Filter */}
-            <div className="relative">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            {/* Employee Search */}
+            <div className="relative w-full sm:max-w-xs">
               <Search
                 size={14}
                 className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[#818a83]"
@@ -920,10 +766,12 @@ export default function EmployeeSalary() {
                 value={employeeSearch}
                 onChange={(e) => setEmployeeSearch(e.target.value)}
                 placeholder="Search employee..."
-                className="w-52 rounded-xl border border-[#e7e0d8] bg-[#f8f7f4] py-2.5 pl-9 pr-3 text-sm text-[#1f3228] outline-none focus:border-[#d4a843] transition placeholder:text-[#929b94]"
+                className="w-full rounded-xl border border-[#e7e0d8] bg-[#f8f7f4] py-2.5 pl-9 pr-3 text-sm text-[#1f3228] outline-none focus:border-[#d4a843] transition placeholder:text-[#929b94]"
               />
             </div>
 
+            {/* Filters + View */}
+            <div className="flex flex-wrap items-center gap-2 sm:justify-end">
             {/* Month Filter */}
             <Select
               options={[
@@ -991,6 +839,7 @@ export default function EmployeeSalary() {
             </div>
 
           </div>
+          </div>
         </div>
 
         {historyViewMode === "card" ? (
@@ -1010,7 +859,7 @@ export default function EmployeeSalary() {
                 </div>
                 <div className="mt-3 flex items-center justify-between text-sm">
                   <span className="text-[#56645b]">Net Salary</span>
-                  <span className="font-semibold text-[#1f3228]">₹{parseFloat(record.total_salary).toLocaleString('en-IN')}</span>
+                  <span className="font-semibold text-[#1f3228]">Γé╣{parseFloat(record.total_salary).toLocaleString('en-IN')}</span>
                 </div>
                 <div className="mt-2 flex items-center justify-between text-sm">
                   <span className="text-[#56645b]">Paid On</span>
@@ -1039,8 +888,8 @@ export default function EmployeeSalary() {
                 <tr>
                   <th className="px-4 py-4 rounded-l-lg font-medium">Employee</th>
                   <th className="px-4 py-4 font-medium">Period</th>
-                  <th className="px-4 py-4 font-medium">Basic (₹)</th>
-                  <th className="px-4 py-4 font-medium">Net Salary (₹)</th>
+                  <th className="px-4 py-4 font-medium">Basic</th>
+                  <th className="px-4 py-4 font-medium">Net Salary</th>
                   <th className="px-4 py-4 font-medium">Paid On</th>
                   <th className="px-4 py-4 rounded-r-lg font-medium text-right">Action</th>
                 </tr>
@@ -1151,7 +1000,7 @@ export default function EmployeeSalary() {
                 </p>
 
                 <p className="mt-1 text-xl font-bold text-[#1f3228]">
-                  ₹
+                  Γé╣
                   {selectedEmployeeSalaryHistory
                     .reduce(
                       (sum, record) =>
@@ -1251,7 +1100,7 @@ export default function EmployeeSalary() {
                               </p>
 
                               <p className="text-base font-bold text-[#1f3228]">
-                                ₹
+                                Γé╣
                                 {parseFloat(
                                   record.total_salary || 0
                                 ).toLocaleString('en-IN')}
@@ -1269,7 +1118,7 @@ export default function EmployeeSalary() {
                               </p>
 
                               <p className="mt-1 text-sm font-semibold text-[#1f3228]">
-                                ₹
+                                Γé╣
                                 {parseFloat(
                                   record.basic_salary || 0
                                 ).toLocaleString('en-IN')}
@@ -1302,7 +1151,7 @@ export default function EmployeeSalary() {
                               </p>
 
                               <p className="mt-1 text-sm font-semibold text-[#28523c]">
-                                ₹
+                                Γé╣
                                 {parseFloat(
                                   record.incentive_amount || 0
                                 ).toLocaleString('en-IN')}
@@ -1317,7 +1166,7 @@ export default function EmployeeSalary() {
                             <span className="text-[#748078]">
                               Leave Deduction:{' '}
                               <span className="text-rose-700">
-                                ₹
+                                Γé╣
                                 {parseFloat(
                                   record.leave_deduction || 0
                                 ).toLocaleString('en-IN')}
@@ -1327,7 +1176,7 @@ export default function EmployeeSalary() {
                             <span className="text-[#748078]">
                               Additional Deduction:{' '}
                               <span className="text-rose-700">
-                                ₹
+                                Γé╣
                                 {parseFloat(
                                   record.additional_deduction || 0
                                 ).toLocaleString('en-IN')}

@@ -30,7 +30,6 @@ const metrics = [
   { key: "newOrders", label: "New orders", icon: Clock3, tone: "pink", caption: "Awaiting action" },
   { key: "assignedOrders", label: "Assigned", icon: Bike, tone: "violet", caption: "Assigned to you" },
   { key: "pickupPending", label: "Pickup pending", icon: MapPin, tone: "amber", caption: "Pickup stage" },
-  { key: "outForDelivery", label: "Out for delivery", icon: Route, tone: "blue", caption: "In progress" },
   { key: "deliveredOrders", label: "Delivered", icon: CheckCircle2, tone: "green", caption: "Completed" },
   { key: "cancelledOrders", label: "Cancelled", icon: XCircle, tone: "rose", caption: "Closed" },
 ];

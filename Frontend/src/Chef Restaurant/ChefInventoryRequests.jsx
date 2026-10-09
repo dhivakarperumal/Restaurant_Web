@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { Plus, X } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { Plus, X, ClipboardList, Clock3, CheckCircle2, AlertCircle } from "lucide-react";
 import toast from "react-hot-toast";
 import api from "../api";
 import { useAuth } from "../PrivateRouter/AuthContext";
@@ -94,6 +94,17 @@ const ChefInventoryRequests = () => {
     }
   };
 
+  const pendingCount = useMemo(() => requests.filter((r) => String(r.status || "Pending").toLowerCase() === "pending").length, [requests]);
+  const approvedCount = useMemo(() => requests.filter((r) => String(r.status || "").toLowerCase() === "approved").length, [requests]);
+  const completedCount = useMemo(() => requests.filter((r) => String(r.status || "").toLowerCase() === "completed").length, [requests]);
+
+  const statCards = [
+    { title: "Total Requests", value: requests.length, hint: "All kitchen stock tickets", icon: ClipboardList, bg: "bg-[#22c55e]" },
+    { title: "Pending", value: pendingCount, hint: "Awaiting store review", icon: Clock3, bg: "bg-[#f59e0b]" },
+    { title: "Approved", value: approvedCount, hint: "Stock being allocated", icon: AlertCircle, bg: "bg-[#3b82f6]" },
+    { title: "Completed", value: completedCount, hint: "Issued to kitchen", icon: CheckCircle2, bg: "bg-[#8b5cf6]" },
+  ];
+
   return (
     <div className="space-y-5">
       <header className="flex flex-col gap-4 border-b border-slate-200 pb-5 sm:flex-row sm:items-center sm:justify-between">
@@ -114,6 +125,51 @@ const ChefInventoryRequests = () => {
           Add New Request
         </button>
       </header>
+
+      {/* ── Stats Overview ── */}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        {statCards.map((stat, index) => {
+          const Icon = stat.icon;
+          return (
+            <article
+              key={stat.title}
+              className={`relative min-w-0 overflow-hidden rounded-xl border border-transparent p-4 sm:p-5 shadow-[0_2px_10px_rgba(20,56,34,0.08)] flex flex-col justify-between min-h-[140px] ${stat.bg} text-white`}
+            >
+              <div className="flex items-start gap-3 relative z-10">
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg shadow-sm bg-white/20">
+                  <Icon size={24} strokeWidth={2.2} className="text-white" />
+                </div>
+                <div className="flex-1 mt-0.5 min-w-0">
+                  <h3 className="text-[12px] font-semibold opacity-90 mb-1 truncate">{stat.title}</h3>
+                  <div className="text-[26px] font-extrabold leading-none tracking-tight">
+                    {isLoading ? "..." : stat.value}
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2 mt-5 relative z-10">
+                <span className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[11px] font-bold bg-white/25">
+                  Live
+                </span>
+                <span className="text-[11px] font-medium opacity-75 truncate">{stat.hint}</span>
+              </div>
+
+              <div className="absolute right-0 bottom-0 w-24 h-16 pointer-events-none opacity-50">
+                <svg viewBox="0 0 100 50" preserveAspectRatio="none" className="w-full h-full">
+                  <defs>
+                    <linearGradient id={`req-grad-${index}`} x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#ffffff" stopOpacity="0.4" />
+                      <stop offset="100%" stopColor="#ffffff" stopOpacity="0.0" />
+                    </linearGradient>
+                  </defs>
+                  <path d="M0,50 L0,40 Q25,30 50,40 T100,20 L100,50 Z" fill={`url(#req-grad-${index})`} />
+                  <path d="M0,40 Q25,30 50,40 T100,20" fill="none" stroke="#ffffff" strokeWidth="2.5" />
+                </svg>
+              </div>
+            </article>
+          );
+        })}
+      </div>
 
       <div className="overflow-hidden rounded-xl border border-slate-200 bg-white">
         <div className="overflow-x-auto">
