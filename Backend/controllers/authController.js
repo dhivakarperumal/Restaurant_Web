@@ -1,4 +1,5 @@
 const {
+  changeUserPassword: changeUserPasswordRecord,
   createSession,
   createUser,
   deleteUser: deleteUserRecord,
@@ -155,6 +156,25 @@ async function updateProfile(req, res) {
   }
 }
 
+async function changePassword(req, res) {
+  const currentPassword = String(req.body.currentPassword || '');
+  const newPassword = String(req.body.newPassword || '');
+  if (!currentPassword || newPassword.length < 8 || newPassword.length > 128) {
+    return res.status(400).json({ success: false, message: 'Enter your current password and a new password of 8 to 128 characters.' });
+  }
+
+  try {
+    const updated = await changeUserPasswordRecord(req.auth.user_id, currentPassword, newPassword);
+    if (!updated) {
+      return res.status(400).json({ success: false, message: 'Your current password is incorrect.' });
+    }
+    return res.json({ success: true, message: 'Password changed successfully.' });
+  } catch (error) {
+    console.error('Failed to change customer password:', error.message);
+    return res.status(500).json({ success: false, message: 'Unable to change password.' });
+  }
+}
+
 async function removeUser(req, res) {
   if (!/^\d+$/.test(req.params.userId)) {
     return res.status(400).json({ success: false, message: 'A valid user ID is required.' });
@@ -217,4 +237,14 @@ async function googleLogin(req, res) {
   }
 }
 
-module.exports = { getProfile, googleLogin, listUsers, login, register, removeUser, updateProfile, updateUser };
+module.exports = {
+  changePassword,
+  getProfile,
+  googleLogin,
+  listUsers,
+  login,
+  register,
+  removeUser,
+  updateProfile,
+  updateUser,
+};

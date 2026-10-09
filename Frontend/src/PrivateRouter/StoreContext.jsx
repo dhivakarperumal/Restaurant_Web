@@ -131,18 +131,30 @@ export const StoreProvider = ({ children }) => {
             return;
         }
         try {
-            const res = await api.get(`/orders/user/${activeUserId}`);
+            const res = await api.get('/orders/mine');
             const orders = Array.isArray(res.data?.data)
                 ? res.data.data
                 : Array.isArray(res.data)
                 ? res.data
                 : [];
-            const count = orders.filter((o) => {
+            const uniqueOrders = new Map();
+            for (const order of orders) {
+                const orderNumber = String(order?.order_number || order?.order_id || order?.id || "");
+                if (orderNumber && !uniqueOrders.has(orderNumber)) {
+                    uniqueOrders.set(orderNumber, order);
+                }
+            }
+            const count = [...uniqueOrders.values()].filter((o) => {
                 const s = String(o?.order_status || o?.status || "").trim().toUpperCase();
-                return s !== "DELIVERED" && s !== "COMPLETED" && s !== "CANCELLED" && s !== "RETURNED";
+                return s !== "DELIVERED"
+                    && s !== "COMPLETED"
+                    && s !== "CANCELLED"
+                    && s !== "RETURNED"
+                    && s !== "PAYMENT_FAILED";
             }).length;
             setUndeliveredOrdersCount(count);
         } catch (err) {
+            console.error("Could not load the customer's active orders:", err);
             setUndeliveredOrdersCount(0);
         }
     }, [user?.user_id, user?.id]);

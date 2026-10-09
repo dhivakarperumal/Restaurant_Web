@@ -37,7 +37,6 @@ import PageContainer from "./PageContainer";
 import LogoutConfirmModal from "./LogoutConfirmModal";
 
 const Navbar = () => {
-  const [openMenu, setOpenMenu] = useState(null);
   const [mobileMenu, setMobileMenu] = useState(false);
   const [mobileSubMenu, setMobileSubMenu] = useState(null);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
@@ -47,7 +46,6 @@ const Navbar = () => {
   const [cartDropdown, setCartDropdown] = useState(false);
   const [cartItems, setCartItems] = useState([]);
   const [favoriteItems, setFavoriteItems] = useState([]);
-  const dropdownRef = useRef(null);
   const profileRef = useRef(null);
   const location = useLocation();
   const navigate = useNavigate();
@@ -139,16 +137,12 @@ const Navbar = () => {
   };
 
   useEffect(() => {
-    setOpenMenu(null);
     setMobileSubMenu(null);
     setMobileMenu(false);
   }, [location.pathname]);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
-        setOpenMenu(null);
-      }
       if (profileRef.current && !profileRef.current.contains(event.target)) {
         setProfileDropdown(false);
         setFavoritesDropdown(false);
@@ -159,10 +153,6 @@ const Navbar = () => {
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
-
-  const toggleMenu = (menu) => {
-    setOpenMenu((current) => (current === menu ? null : menu));
-  };
 
   const isServicesActive =
     location.pathname === "/services" ||
@@ -312,63 +302,16 @@ const Navbar = () => {
                 </NavLink>
 
                 <NavLink
-                  to="/contact?type=reservation"
+                  to="/reservation"
                   className={({ isActive }) =>
                     desktopLinkClass({ isActive })
                   }
                 >
                   Reservation
                 </NavLink>
-                <div ref={dropdownRef} className="relative">
-                  <button
-                    type="button"
-                    onClick={() => toggleMenu("pages")}
-                    aria-expanded={openMenu === "pages"}
-                    aria-haspopup="menu"
-                    className={`flex items-center gap-1 text-sm font-semibold transition ${openMenu === "pages" || isPagesRoute ? "text-gold" : "text-brand-text hover:text-gold"}`}
-                  >
-                    Offers
-                    <FiChevronDown
-                      className={`transition-transform ${openMenu === "pages" ? "rotate-180" : ""}`}
-                    />
-                  </button>
-                  {openMenu === "pages" && (
-                    <div className="absolute left-1/2 top-[calc(100%+20px)] z-50 w-48 -translate-x-1/2 rounded-xl border border-[#ede5da] bg-white p-2 shadow-[0_16px_35px_rgba(15,23,42,0.14)]">
-                      <NavLink
-                        to="/gallery"
-                        className={({ isActive }) =>
-                          `block rounded-lg px-3 py-2.5 text-sm font-medium transition ${isActive ? "bg-[#f8f1e6] text-[#d79d4a]" : "text-[#2d2d2d] hover:bg-[#faf7f3] hover:text-[#d79d4a]"}`
-                        }
-                      >
-                        Gallery
-                      </NavLink>
-                      <NavLink
-                        to="/about"
-                        className={({ isActive }) =>
-                          `block rounded-lg px-3 py-2.5 text-sm font-medium transition ${isActive ? "bg-[#f8f1e6] text-[#d79d4a]" : "text-[#2d2d2d] hover:bg-[#faf7f3] hover:text-[#d79d4a]"}`
-                        }
-                      >
-                        About Us
-                      </NavLink>
-                      <NavLink
-                        to="/contact"
-                        className={({ isActive }) =>
-                          `block rounded-lg px-3 py-2.5 text-sm font-medium transition ${isActive ? "bg-[#f8f1e6] text-[#d79d4a]" : "text-[#2d2d2d] hover:bg-[#faf7f3] hover:text-[#d79d4a]"}`
-                        }
-                      >
-                        Contact Us
-                      </NavLink>
-                      <NavLink
-                        to="/privacy-policy"
-                        className={({ isActive }) =>
-                          `block rounded-lg px-3 py-2.5 text-sm font-medium transition ${isActive ? "bg-[#f8f1e6] text-[#d79d4a]" : "text-[#2d2d2d] hover:bg-[#faf7f3] hover:text-[#d79d4a]"}`
-                        }
-                      >
-                        Privacy Policy
-                      </NavLink>
-                    </div>
-                  )}
-                </div>
+                <NavLink to="/offers" className={desktopLinkClass}>
+                  Offers
+                </NavLink>
                 <NavLink to="/contact" className={desktopLinkClass}>
                   Contact
                 </NavLink>
@@ -532,8 +475,11 @@ const Navbar = () => {
                 <NavLink to="/gallery" onClick={() => setMobileMenu(false)} className={mobileLinkClass}>
                   Gallery
                 </NavLink>
-                <NavLink to="/contact?type=reservation" onClick={() => setMobileMenu(false)} className={mobileLinkClass}>
+                <NavLink to="/reservation" onClick={() => setMobileMenu(false)} className={mobileLinkClass}>
                   Reservation
+                </NavLink>
+                <NavLink to="/offers" onClick={() => setMobileMenu(false)} className={mobileLinkClass}>
+                  Offers
                 </NavLink>
 
                 <button

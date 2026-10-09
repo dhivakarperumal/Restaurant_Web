@@ -49,12 +49,33 @@ const initializeOrderSchema = async () => {
       order_status VARCHAR(32) NOT NULL DEFAULT 'placed',
       razorpay_order_id VARCHAR(64) NULL,
       razorpay_payment_id VARCHAR(64) NULL,
+      idempotency_key VARCHAR(64) NULL,
       created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
       updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
       INDEX orders_user_created_idx (user_id, created_at),
+      UNIQUE KEY orders_user_idempotency_unique (user_id, idempotency_key),
       INDEX orders_status_idx (order_status)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
   `);
+
+  const [idempotencyColumn] = await db.execute(
+    `SELECT COLUMN_NAME FROM information_schema.COLUMNS
+     WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'orders'
+       AND COLUMN_NAME = 'idempotency_key'`
+  );
+  if (idempotencyColumn.length === 0) {
+    await db.query('ALTER TABLE orders ADD COLUMN idempotency_key VARCHAR(64) NULL');
+  }
+  const [idempotencyIndex] = await db.execute(
+    `SELECT INDEX_NAME FROM information_schema.STATISTICS
+     WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'orders'
+       AND INDEX_NAME = 'orders_user_idempotency_unique'`
+  );
+  if (idempotencyIndex.length === 0) {
+    await db.query(
+      'ALTER TABLE orders ADD UNIQUE KEY orders_user_idempotency_unique (user_id, idempotency_key)'
+    );
+  }
 
   const [orderTypeColumns] = await db.execute(
     `SELECT COLUMN_NAME FROM information_schema.COLUMNS
@@ -143,10 +164,110 @@ const getUserAddresses = async (userId) => {
   return rows;
 };
 
-const createOrderFromCart = async ({ userId, customer, fulfillmentType, orderType, address, paymentMethod }) => {
+const createUserAddress = async (userId, address) => {
+  const normalizedAddress = normalizeAddress(address);
+  const hash = addressHash(normalizedAddress);
+  const [insertResult] = await db.execute(
+    `INSERT IGNORE INTO \`address\`
+      (user_id, address_line, area_locality, city, state, pincode, landmark, address_hash)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+    [
+      userId,
+      normalizedAddress.address_line,
+      normalizedAddress.area_locality,
+      normalizedAddress.city,
+      normalizedAddress.state,
+      normalizedAddress.pincode,
+      normalizedAddress.landmark || null,
+      hash,
+    ]
+  );
+  const [rows] = await db.execute(
+    `SELECT id, address_line, area_locality, city, state, pincode, landmark
+     FROM \`address\` WHERE user_id = ? AND address_hash = ? LIMIT 1`,
+    [userId, hash]
+  );
+  return { address: rows[0] || null, created: insertResult.affectedRows === 1 };
+};
+
+const updateUserAddress = async (userId, addressId, address) => {
+  const normalizedAddress = normalizeAddress(address);
+  const hash = addressHash(normalizedAddress);
+  const [result] = await db.execute(
+    `UPDATE \`address\`
+     SET address_line = ?, area_locality = ?, city = ?, state = ?, pincode = ?,
+         landmark = ?, address_hash = ?
+     WHERE id = ? AND user_id = ?`,
+    [
+      normalizedAddress.address_line,
+      normalizedAddress.area_locality,
+      normalizedAddress.city,
+      normalizedAddress.state,
+      normalizedAddress.pincode,
+      normalizedAddress.landmark || null,
+      hash,
+      addressId,
+      userId,
+    ]
+  );
+  if (result.affectedRows > 0) {
+    const [rows] = await db.execute(
+      `SELECT id, address_line, area_locality, city, state, pincode, landmark
+       FROM \`address\` WHERE id = ? AND user_id = ? LIMIT 1`,
+      [addressId, userId]
+    );
+    return rows[0] || null;
+  }
+  const [rows] = await db.execute(
+    `SELECT id, address_line, area_locality, city, state, pincode, landmark
+     FROM \`address\` WHERE id = ? AND user_id = ? LIMIT 1`,
+    [addressId, userId]
+  );
+  return rows[0] || null;
+};
+
+const deleteUserAddress = async (userId, addressId) => {
+  const [result] = await db.execute(
+    'DELETE FROM `address` WHERE id = ? AND user_id = ?',
+    [addressId, userId]
+  );
+  return result.affectedRows > 0;
+};
+
+const createOrderFromCart = async ({
+  userId,
+  customer,
+  fulfillmentType,
+  orderType,
+  address,
+  paymentMethod,
+  idempotencyKey,
+}) => {
   const connection = await db.getConnection();
   try {
     await connection.beginTransaction();
+    await connection.execute(
+      'SELECT id FROM users WHERE user_id = ? FOR UPDATE',
+      [userId]
+    );
+    const [existingOrders] = await connection.execute(
+      `SELECT order_number, total_amount, payment_method, payment_status, razorpay_order_id
+       FROM orders WHERE user_id = ? AND idempotency_key = ? LIMIT 1 FOR UPDATE`,
+      [userId, idempotencyKey]
+    );
+    if (existingOrders.length) {
+      const existing = existingOrders[0];
+      await connection.commit();
+      return {
+        orderNumber: existing.order_number,
+        subtotal: Number(existing.total_amount),
+        paymentMethod: existing.payment_method,
+        paymentStatus: existing.payment_status,
+        razorpayOrderId: existing.razorpay_order_id,
+        existing: true,
+      };
+    }
+
     const [cartRows] = await connection.execute(
       'SELECT * FROM cart WHERE user_id = ? ORDER BY id FOR UPDATE',
       [userId]
@@ -290,8 +411,8 @@ const createOrderFromCart = async ({ userId, customer, fulfillmentType, orderTyp
       `INSERT INTO orders
         (order_number, user_id, customer_name, customer_email, customer_phone,
          order_type, address_id, subtotal, total_amount, payment_method,
-         payment_status, order_status)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?)`,
+         payment_status, order_status, idempotency_key)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?, ?)`,
       [
         orderNumber,
         userId,
@@ -304,6 +425,7 @@ const createOrderFromCart = async ({ userId, customer, fulfillmentType, orderTyp
         subtotal,
         paymentMethod,
         paymentMethod === 'online' ? 'awaiting_payment' : 'placed',
+        idempotencyKey,
       ]
     );
     for (const item of items) {
@@ -332,7 +454,14 @@ const createOrderFromCart = async ({ userId, customer, fulfillmentType, orderTyp
       await connection.execute('DELETE FROM cart WHERE user_id = ?', [userId]);
     }
     await connection.commit();
-    return { orderNumber, subtotal, items };
+    return {
+      orderNumber,
+      subtotal,
+      items,
+      paymentMethod,
+      paymentStatus: 'pending',
+      existing: false,
+    };
   } catch (error) {
     await connection.rollback();
     throw error;
@@ -343,8 +472,10 @@ const createOrderFromCart = async ({ userId, customer, fulfillmentType, orderTyp
 
 const attachRazorpayOrder = async (orderNumber, userId, razorpayOrderId) => {
   await db.execute(
-    `UPDATE orders SET razorpay_order_id = ?
-     WHERE order_number = ? AND user_id = ? AND payment_method = 'online'`,
+    `UPDATE orders
+     SET razorpay_order_id = ?, payment_status = 'pending', order_status = 'awaiting_payment'
+     WHERE order_number = ? AND user_id = ? AND payment_method = 'online'
+       AND payment_status != 'paid'`,
     [razorpayOrderId, orderNumber, userId]
   );
 };
@@ -386,8 +517,11 @@ module.exports = {
   clearUserCart,
   completeOnlinePayment,
   createOrderFromCart,
+  createUserAddress,
+  deleteUserAddress,
   failOnlineOrder,
   findOrderForPayment,
   getUserAddresses,
   initializeOrderSchema,
+  updateUserAddress,
 };

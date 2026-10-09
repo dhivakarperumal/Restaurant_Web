@@ -175,6 +175,12 @@ const OrderDetailsModal = ({ order: initialOrder, orderId, isOpen, onClose }) =>
   useEffect(() => {
     if (!isOpen || !activeOrderId) return;
 
+    if (Array.isArray(initialOrder?.items)) {
+      setOrderDetails(initialOrder);
+      setLoading(false);
+      return undefined;
+    }
+
     let isMounted = true;
     setLoading(true);
 
