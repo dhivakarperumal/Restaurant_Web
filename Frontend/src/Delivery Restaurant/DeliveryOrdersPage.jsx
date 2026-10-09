@@ -52,6 +52,7 @@ const getItems = (order) => {
 };
 
 const orderId = (order) => order.order_id || order.id || "Order";
+const canMarkDelivered = (order) => normalizeStatus(order.order_status) === "REACHED_CUSTOMER";
 
 const DeliveryOrdersPage = ({ view = "all" }) => {
   const [orders, setOrders] = useState([]);
@@ -139,12 +140,24 @@ const DeliveryOrdersPage = ({ view = "all" }) => {
     ? `https://www.google.com/maps/dir/?api=1&destination=${latitude},${longitude}`
     : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address || "")}`;
 
+  const requestDeliveryCompletion = (order) => {
+    setSelectedOrder(order);
+    setPendingStatus("DELIVERED");
+  };
+
   const renderOrderCard = (order) => (
-    <button key={orderId(order)} type="button" onClick={() => setSelectedOrder(order)} className="w-full rounded-xl border border-[#e3eae4] bg-white p-4 text-left shadow-sm transition hover:border-[#a8c5ae]">
-      <div className="flex items-start justify-between gap-3"><div><p className="text-xs font-semibold text-gray-500">{orderId(order)}</p><p className="mt-1 text-sm font-semibold text-gray-900">{order.customer_name || order.customer?.name || "Customer"}</p></div><span className={`rounded-full px-2.5 py-1 text-[11px] font-semibold ${statusClass(order.order_status)}`}>{statusLabels[normalizeStatus(order.order_status)] || order.order_status || "New"}</span></div>
-      <div className="mt-4 space-y-2 border-l border-[#d9e5db] pl-3 text-xs text-gray-600"><p><span className="font-semibold text-gray-800">Pickup</span> · {order.restaurant_name || order.chef_name || order.pickup_address || "Pickup location pending"}</p><p><span className="font-semibold text-gray-800">Drop-off</span> · {order.delivery_address || order.dropoff_address || "Delivery location pending"}</p></div>
-      <div className="mt-4 flex items-center justify-between text-xs"><span className="text-gray-500">{formatDate(order.order_date || order.created_at)}</span><span className="font-semibold text-[#21643a]">₹{Number(order.delivery_charge || 0).toLocaleString("en-IN")} delivery</span></div>
-    </button>
+    <article key={orderId(order)} className="rounded-xl border border-[#e3eae4] bg-white p-4 text-left shadow-sm transition hover:border-[#a8c5ae]">
+      <button type="button" onClick={() => setSelectedOrder(order)} className="w-full text-left">
+        <div className="flex items-start justify-between gap-3"><div><p className="text-xs font-semibold text-gray-500">{orderId(order)}</p><p className="mt-1 text-sm font-semibold text-gray-900">{order.customer_name || order.customer?.name || "Customer"}</p></div><span className={`rounded-full px-2.5 py-1 text-[11px] font-semibold ${statusClass(order.order_status)}`}>{statusLabels[normalizeStatus(order.order_status)] || order.order_status || "New"}</span></div>
+        <div className="mt-4 space-y-2 border-l border-[#d9e5db] pl-3 text-xs text-gray-600"><p><span className="font-semibold text-gray-800">Pickup</span> · {order.restaurant_name || order.chef_name || order.pickup_address || "Pickup location pending"}</p><p><span className="font-semibold text-gray-800">Drop-off</span> · {order.delivery_address || order.dropoff_address || "Delivery location pending"}</p></div>
+        <div className="mt-4 flex items-center justify-between text-xs"><span className="text-gray-500">{formatDate(order.order_date || order.created_at)}</span><span className="font-semibold text-[#21643a]">₹{Number(order.delivery_charge || 0).toLocaleString("en-IN")} delivery</span></div>
+      </button>
+      {canMarkDelivered(order) && (
+        <button type="button" onClick={() => requestDeliveryCompletion(order)} className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-lg bg-[#1f6a3b] px-3 py-2.5 text-sm font-semibold text-white transition hover:bg-[#195a31]">
+          <CheckCircle2 size={16} /> Mark delivered
+        </button>
+      )}
+    </article>
   );
 
   return (
@@ -223,7 +236,16 @@ const DeliveryOrdersPage = ({ view = "all" }) => {
                 <td className="whitespace-nowrap px-4 py-3 text-gray-500">{formatDate(order.order_date || order.created_at)}</td>
                 <td className="whitespace-nowrap px-4 py-3 font-medium text-gray-800">₹{Number(order.total_amount || 0).toLocaleString("en-IN")}</td>
                 <td className="px-4 py-3"><span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${statusClass(order.order_status)}`}>{statusLabels[normalizeStatus(order.order_status)] || order.order_status || "New"}</span></td>
-                <td className="px-4 py-3"><button type="button" onClick={() => setSelectedOrder(order)} className="rounded-lg px-3 py-1.5 text-xs font-semibold text-[#21643a] hover:bg-[#edf5ef]">View order</button></td>
+                <td className="px-4 py-3">
+                  <div className="flex items-center gap-2">
+                    <button type="button" onClick={() => setSelectedOrder(order)} className="rounded-lg px-3 py-1.5 text-xs font-semibold text-[#21643a] hover:bg-[#edf5ef]">View order</button>
+                    {canMarkDelivered(order) && (
+                      <button type="button" onClick={() => requestDeliveryCompletion(order)} className="inline-flex items-center gap-1.5 rounded-lg bg-[#1f6a3b] px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-[#195a31]">
+                        <CheckCircle2 size={14} /> Mark delivered
+                      </button>
+                    )}
+                  </div>
+                </td>
               </tr>)}
             </tbody>
           </table>
