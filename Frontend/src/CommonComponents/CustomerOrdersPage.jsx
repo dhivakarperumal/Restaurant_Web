@@ -58,6 +58,7 @@ function CustomerOrdersPage({ audience = 'admin', view = 'all', showOrderFilters
   const [layout, setLayout] = useState('table');
   const isCustomer = audience === 'customer';
   const showChefDeliveryTable = audience === 'chef' && view === 'delivery';
+  const showOrderSummary = audience === 'admin' || showChefDeliveryTable;
   const title = isCustomer
     ? 'My Orders'
     : audience === 'chef' && view === 'delivery' ? 'Home Delivery Orders'
@@ -155,7 +156,7 @@ function CustomerOrdersPage({ audience = 'admin', view = 'all', showOrderFilters
       <div className="mx-auto max-w-[1500px] space-y-6">
        
 
-        {!isCustomer && audience === 'admin' && (
+        {!isCustomer && showOrderSummary && (
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
             {[
               { title: 'Total Orders', value: orders.length, icon: UtensilsCrossed, bg: 'bg-[#22c55e]', hint: 'All orders in view' },

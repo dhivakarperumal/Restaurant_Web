@@ -361,7 +361,7 @@ const router = createHashRouter([
           },
           {
             path: 'customer-orders/homedelivery',
-            element: <CustomerOrdersPage audience="chef" view="delivery" />,
+            element: <CustomerOrdersPage audience="chef" view="delivery" showOrderFilters />,
           },
           {
             path: 'customer-orders/pickup',
