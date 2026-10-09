@@ -10,6 +10,7 @@ import {
   PackageCheck,
   PlusSquare,
   ShoppingCart,
+  CalendarCheck,
   X,
   XCircle,
   ChevronDown,
@@ -36,6 +37,7 @@ const navItems = [
   },
   { path: "/delivery/earnings", label: "Earnings", icon: IndianRupee },
   { path: "/delivery/history", label: "Delivery History", icon: History },
+  { path: "/delivery/attendance", label: "Attendance", icon: CalendarCheck },
   { path: "/delivery/profile", label: "Profile", icon: UserRound },
   { path: "/delivery/support", label: "Support", icon: LifeBuoy },
 ];

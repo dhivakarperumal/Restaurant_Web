@@ -14,6 +14,7 @@ import {
   BarChart3,
   CalendarDays,
   CalendarClock,
+  CalendarCheck,
   X,
   ChevronDown,
   ChevronLeft,
@@ -96,18 +97,11 @@ const navItems = [
       { path: "/chef/customer-orders/cancelled", label: "Cancelled Orders", icon: XCircle },
     ],
   },
-
- 
-
-
- 
-
-
-
-
-
-
-
+  {
+    path: "/chef/attendance",
+    label: "Attendance",
+    icon: CalendarCheck,
+  },
 ];
 
 /* ================= SIDEBAR ================= */

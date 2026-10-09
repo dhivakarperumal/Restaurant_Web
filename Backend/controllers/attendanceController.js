@@ -25,7 +25,17 @@ async function getTodayAttendance(req, res) {
     }
 
     const attendance = await fetchTodayAttendance(employeeId);
-    return res.json({ success: true, data: attendance });
+    const [empRows] = await db.execute(
+      'SELECT employee_id, full_name, employee_type, phone_number, email, start_time, end_time, profile_photo FROM employees WHERE employee_id = ? LIMIT 1',
+      [employeeId]
+    );
+
+    return res.json({
+      success: true,
+      data: attendance,
+      employee: empRows[0] || null,
+      shift: empRows[0] ? { start_time: empRows[0].start_time, end_time: empRows[0].end_time } : null,
+    });
   } catch (error) {
     console.error('Failed to get today attendance:', error.message);
     return res.status(500).json({ success: false, message: 'Unable to retrieve today attendance.' });

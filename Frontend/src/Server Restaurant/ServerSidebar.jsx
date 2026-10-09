@@ -14,6 +14,7 @@ import {
   BarChart3,
   CalendarDays,
   CalendarClock,
+  CalendarCheck,
   X,
   ChevronDown,
   ChevronLeft,
@@ -76,9 +77,12 @@ const navItems = [
     label: "Foods",
     icon: Package,
   },
-
-
-
+  /* ---- ATTENDANCE ---- */
+  {
+    path: "/server/attendance",
+    label: "Attendance",
+    icon: CalendarCheck,
+  },
 ];
 
 /* ================= SIDEBAR ================= */

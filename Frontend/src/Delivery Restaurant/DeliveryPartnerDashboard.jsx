@@ -4,6 +4,7 @@ import {
   ArrowRight,
   Bike,
   Calendar,
+  CalendarCheck,
   CheckCircle2,
   Clock3,
   History,
@@ -320,6 +321,14 @@ const DeliveryPartnerDashboard = () => {
                 Clock Out
               </button>
 
+              <Link
+                to="/delivery/attendance"
+                className="inline-flex items-center gap-1.5 rounded-xl border border-white/20 bg-white/10 hover:bg-white/20 px-3 py-2.5 text-xs font-semibold text-white transition shadow-sm"
+              >
+                <CalendarCheck size={15} />
+                Attendance Page
+              </Link>
+
               <button
                 type="button"
                 onClick={loadHistory}
@@ -376,6 +385,14 @@ const DeliveryPartnerDashboard = () => {
                 Clock Out
               </button>
 
+              <Link
+                to="/delivery/attendance"
+                className="inline-flex items-center gap-1.5 rounded-xl border border-white/20 bg-white/10 hover:bg-white/20 px-3 py-2.5 text-xs font-semibold text-white transition"
+              >
+                <CalendarCheck size={15} />
+                Attendance Page
+              </Link>
+
               <button
                 type="button"
                 onClick={loadHistory}
@@ -425,6 +442,14 @@ const DeliveryPartnerDashboard = () => {
                 <Zap size={18} className="text-yellow-300 animate-bounce" />
                 {attendance?.check_out ? "Resume Shift & Go Online" : "⚡ Go Online & Check In"}
               </button>
+
+              <Link
+                to="/delivery/attendance"
+                className="inline-flex items-center gap-1.5 rounded-xl border border-white/20 bg-white/10 hover:bg-white/20 px-3.5 py-3 text-xs font-semibold text-white transition"
+              >
+                <CalendarCheck size={15} />
+                Attendance Page
+              </Link>
 
               <button
                 type="button"

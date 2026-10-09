@@ -57,11 +57,14 @@ const RevenuePage = lazy(() => import('./Admin/RevenuePage.jsx'))
 import ChefDashboard from './Chef Restaurant/ChefDashboard.jsx'
 import ChefKitchenOrders from './Chef Restaurant/ChefKitchenOrders.jsx'
 import ChefLayout from './Chef Restaurant/Chefpanel.jsx'
+import ChefAttendance from './Chef Restaurant/ChefAttendance.jsx'
 import ServerDashboard from './Server Restaurant/ServerDashboard.jsx'
 import ServerFood from './Server Restaurant/ServerFood/ServerFood.jsx'
 import ServerTables from './Server Restaurant/ServerTables/ServerTables.jsx'
 import ServerLayout from './Server Restaurant/Serverpanel.jsx'
+import ServerAttendance from './Server Restaurant/ServerAttendance.jsx'
 import DeliveryLayout from './Delivery Restaurant/Deliverypanel.jsx'
+import DeliveryAttendance from './Delivery Restaurant/DeliveryAttendance.jsx'
 import { DeliveryOrdersPage, DeliveryPartnerDashboard, DeliveryPartnerPages } from './Delivery Restaurant/DeliveryRoutePages.jsx'
 
 import { AuthProvider } from './PrivateRouter/AuthContext.jsx'
@@ -398,6 +401,10 @@ const router = createHashRouter([
             path: 'customer-orders/cancelled',
             element: <CustomerOrdersPage key="chef-orders-cancelled" audience="chef" view="cancelled" showOrderFilters />,
           },
+          {
+            path: 'attendance',
+            element: <ChefAttendance />,
+          },
         ],
       },
 
@@ -421,6 +428,10 @@ const router = createHashRouter([
           {
             path: 'tables',
             element: <ServerTables />,
+          },
+          {
+            path: 'attendance',
+            element: <ServerAttendance />,
           },
         ],
       },
@@ -447,6 +458,7 @@ const router = createHashRouter([
           { path: 'orders/cancelled', element: <DeliveryOrdersPage view="cancelled" /> },
           { path: 'earnings', element: <DeliveryPartnerPages section="earnings" /> },
           { path: 'history', element: <DeliveryPartnerPages section="history" /> },
+          { path: 'attendance', element: <DeliveryAttendance /> },
           { path: 'notifications', element: <Navigate to="/delivery" replace /> },
           { path: 'profile', element: <DeliveryPartnerPages section="profile" /> },
           { path: 'support', element: <DeliveryPartnerPages section="support" /> },

@@ -1,8 +1,11 @@
 import React, { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import {
   Calendar,
+  CalendarCheck,
   CheckCircle2,
   Clock,
+  ExternalLink,
   History,
   LogOut,
   Play,
@@ -17,7 +20,7 @@ import api from "../api";
 import { useAuth } from "../PrivateRouter/AuthContext";
 
 export default function AttendanceWidget({ variant = "header", onAttendanceChange }) {
-  const { user } = useAuth();
+  const { user, userProfile } = useAuth();
   const [attendance, setAttendance] = useState(null);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
@@ -145,6 +148,15 @@ export default function AttendanceWidget({ variant = "header", onAttendanceChang
 
   const isWorking = Boolean(attendance?.check_in && !attendance?.check_out);
   const isCompleted = Boolean(attendance?.check_in && attendance?.check_out);
+
+  const userRole = String(user?.role || userProfile?.role || "").toLowerCase();
+  const attendancePageRoute = userRole.includes("chef")
+    ? "/chef/attendance"
+    : userRole.includes("delivery")
+    ? "/delivery/attendance"
+    : userRole.includes("admin")
+    ? "/admin/attendance"
+    : "/server/attendance";
 
   if (loading) {
     return (
@@ -312,6 +324,14 @@ export default function AttendanceWidget({ variant = "header", onAttendanceChang
               Clock In Now
             </button>
           )}
+
+          <Link
+            to={attendancePageRoute}
+            className="inline-flex items-center gap-1.5 rounded-xl border border-white/20 bg-white/10 px-3.5 py-2.5 text-xs font-semibold text-white transition hover:bg-white/20"
+          >
+            <CalendarCheck size={14} />
+            Attendance Page
+          </Link>
 
           <button
             onClick={loadHistory}

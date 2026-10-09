@@ -184,8 +184,13 @@ async function getTodayAttendance(employeeId) {
 
   const [rows] = await db.execute(
     `SELECT a.*, 
-            TIMESTAMPDIFF(SECOND, a.check_in, COALESCE(a.check_out, NOW())) AS duration_seconds
+            TIMESTAMPDIFF(SECOND, a.check_in, COALESCE(a.check_out, NOW())) AS duration_seconds,
+            e.full_name,
+            e.employee_type,
+            e.start_time,
+            e.end_time
      FROM employee_attendance a
+     LEFT JOIN employees e ON a.employee_id = e.employee_id
      WHERE a.employee_id = ? AND a.date = CURDATE()
      LIMIT 1`,
     [employeeId]
@@ -193,17 +198,22 @@ async function getTodayAttendance(employeeId) {
   return rows[0] || null;
 }
 
-async function getStaffAttendanceHistory(employeeId, limit = 30) {
+async function getStaffAttendanceHistory(employeeId, limit = 60) {
   if (!employeeId) return [];
 
   const [rows] = await db.execute(
     `SELECT a.*,
-            TIMESTAMPDIFF(SECOND, a.check_in, COALESCE(a.check_out, NOW())) AS duration_seconds
+            TIMESTAMPDIFF(SECOND, a.check_in, COALESCE(a.check_out, NOW())) AS duration_seconds,
+            e.full_name,
+            e.employee_type,
+            e.start_time,
+            e.end_time
      FROM employee_attendance a
+     LEFT JOIN employees e ON a.employee_id = e.employee_id
      WHERE a.employee_id = ?
      ORDER BY a.date DESC, a.check_in DESC
      LIMIT ?`,
-    [employeeId, Number(limit) || 30]
+    [employeeId, Number(limit) || 60]
   );
   return rows;
 }
