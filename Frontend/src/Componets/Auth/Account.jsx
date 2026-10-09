@@ -420,7 +420,7 @@ const Account = () => {
             </div>
           </section>
 
-          <div className={`grid items-stretch gap-3 ${activeTab === "address" ? "lg:grid-cols-[minmax(225px,0.78fr)_minmax(0,2.19fr)]" : "lg:grid-cols-[minmax(225px,0.78fr)_minmax(0,1.55fr)_minmax(205px,0.64fr)]"}`}>
+          <div className={`grid items-stretch gap-3 ${activeTab === "address" ? "lg:grid-cols-[minmax(225px,0.78fr)_minmax(0,1.55fr)_minmax(290px,0.95fr)]" : "lg:grid-cols-[minmax(225px,0.78fr)_minmax(0,1.55fr)_minmax(205px,0.64fr)]"}`}>
             <aside className="relative overflow-hidden rounded-[22px] bg-[#00351f] text-white shadow-md">
               <img src="/images/tab.png" alt="" aria-hidden="true" className="absolute inset-0 h-full w-full object-cover opacity-35" />
               <div className="absolute inset-0 bg-gradient-to-b from-[#00351f]/95 via-[#00351f]/80 to-[#001f14]/95" />
@@ -459,8 +459,8 @@ const Account = () => {
               </div>
             </aside>
 
-            <section className="min-w-0">
-              <div className={`account-content h-full ${activeTab === "address" ? "min-h-0" : "min-h-[460px] rounded-[22px] border border-[#ecece5] bg-white p-5 shadow-sm sm:p-7 lg:p-8"}`}>
+            <section className={`${activeTab === "address" ? "contents" : "min-w-0"}`}>
+              <div className={`account-content h-full ${activeTab === "address" ? "contents" : "min-h-[460px] rounded-[22px] border border-[#ecece5] bg-white p-5 shadow-sm sm:p-7 lg:p-8"}`}>
                 {/* TAB 1: PROFILE DETAILS */}
                 {activeTab === "profile" && (
                   <div>
@@ -543,7 +543,7 @@ const Account = () => {
 
                 {/* TAB 2: SAVED ADDRESS */}
                 {activeTab === "address" && (
-                  <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,1.55fr)_minmax(290px,0.95fr)]">
+                  <div className="contents">
                     <section className="min-w-0">
                       <div className="mb-4">
                         <span className="mb-1 block h-0.5 w-8 rounded-full bg-[#FD5E02]" />
