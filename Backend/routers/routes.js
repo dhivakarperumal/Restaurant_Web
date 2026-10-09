@@ -32,6 +32,8 @@ const { getActiveBill, getAllBills, getBill, settleBill } = require('../controll
 const ordersRouter = require('./orders');
 const revenueRouter = require('./revenue');
 const reservationsRouter = require('./reservations');
+const expensesRouter = require('./expenses');
+const { getFund, updateFund } = require('../controllers/expenseController');
 
 const router = express.Router();
 const uploadDirectory = path.join(__dirname, '..', 'upload');
@@ -230,6 +232,9 @@ router.use(
   ordersRouter
 );
 router.use('/revenue', requireAdmin, revenueRouter);
+router.get('/fund', requireAdmin, getFund);
+router.post('/fund', requireAdmin, updateFund);
+router.use('/expenses', requireAdmin, expensesRouter);
 router.use('/categories', categoriesRouter);
 router.use('/cuisines', cuisinesRouter);
 router.use('/foods', foodsRouter);
