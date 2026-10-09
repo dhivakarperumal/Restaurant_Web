@@ -496,15 +496,78 @@ const AdminDashboardOverview = () => {
         </article>
       </section>
 
-      <section className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+      <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {[
-          { title: 'Total Foods', value: loading ? '—' : snapshot.foods.length.toLocaleString('en-IN'), detail: 'Items in menu', icon: CookingPot, tone: 'bg-[#eaf7ed] text-[#269448]', path: '/admin/products' },
-          { title: 'Low Stock Items', value: loading ? '—' : Number(snapshot.inventory.lowStock || 0).toLocaleString('en-IN'), detail: 'Needs restocking', icon: AlertTriangle, tone: 'bg-[#fff0ed] text-[#e95045]', path: '/admin/inventory/products' },
-          { title: 'Open Table Bills', value: loading ? '—' : openBillsCount.toLocaleString('en-IN'), detail: 'Awaiting settlement', icon: Table2, tone: 'bg-[#eaf2ff] text-[#2675d5]', path: '/admin/billing/history' },
-          { title: 'Kitchen Requests', value: loading ? '—' : pendingKitchenCount.toLocaleString('en-IN'), detail: 'Pending or approved', icon: ChefHat, tone: 'bg-[#fff5df] text-[#e99b00]', path: '/admin/inventory/kitchen-requests' },
-        ].map(({ title, value, detail, icon: Icon, tone, path }) => <button type="button" key={title} onClick={() => navigate(path)} className="flex min-w-0 items-center gap-3 border border-[#e5ece6] bg-white p-4 text-left shadow-[0_2px_10px_rgba(20,56,34,0.04)] transition hover:border-[#cbd9ce]">
-          <span className={`grid h-11 w-11 shrink-0 place-items-center ${tone}`}><Icon size={20} /></span><span className="min-w-0"><span className="block text-[11px] font-medium text-[#657269]">{title}</span><strong className="mt-0.5 block text-lg leading-tight text-[#1e2c22]">{value}</strong><span className="mt-1 block truncate text-[10px] text-[#89948c]">{detail}</span></span>
-        </button>)}
+          {
+            title: 'Total Foods',
+            value: loading ? '—' : snapshot.foods.length.toLocaleString('en-IN'),
+            detail: 'Items in menu',
+            icon: CookingPot,
+            bg: 'bg-[#22c55e]',
+            path: '/admin/products',
+          },
+          {
+            title: 'Low Stock Items',
+            value: loading ? '—' : Number(snapshot.inventory.lowStock || 0).toLocaleString('en-IN'),
+            detail: 'Needs restocking',
+            icon: AlertTriangle,
+            bg: Number(snapshot.inventory.lowStock || 0) > 0 ? 'bg-[#ef4444]' : 'bg-[#f59e0b]',
+            path: '/admin/inventory/products',
+          },
+          {
+            title: 'Open Table Bills',
+            value: loading ? '—' : openBillsCount.toLocaleString('en-IN'),
+            detail: 'Awaiting settlement',
+            icon: Table2,
+            bg: 'bg-[#3b82f6]',
+            path: '/admin/billing/history',
+          },
+          {
+            title: 'Kitchen Requests',
+            value: loading ? '—' : pendingKitchenCount.toLocaleString('en-IN'),
+            detail: 'Pending or approved',
+            icon: ChefHat,
+            bg: 'bg-[#8b5cf6]',
+            path: '/admin/inventory/kitchen-requests',
+          },
+        ].map(({ title, value, detail, icon: Icon, bg, path }, index) => (
+          <button
+            type="button"
+            key={title}
+            onClick={() => navigate(path)}
+            className={`relative min-w-0 overflow-hidden rounded-xl border border-transparent p-4 sm:p-5 shadow-[0_2px_10px_rgba(20,56,34,0.08)] flex flex-col justify-between min-h-[140px] ${bg} text-white text-left transition hover:opacity-95 hover:scale-[1.01] active:scale-[0.99]`}
+          >
+            <div className="flex items-start gap-3 relative z-10">
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg shadow-sm bg-white/20">
+                <Icon size={24} strokeWidth={2.2} className="text-white" />
+              </div>
+              <div className="flex-1 mt-0.5 min-w-0">
+                <h3 className="text-[12px] font-semibold opacity-90 mb-1 truncate">{title}</h3>
+                <div className="text-[26px] font-extrabold leading-none tracking-tight">{value}</div>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 mt-5 relative z-10">
+              <span className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[11px] font-bold bg-white/25">
+                Live
+              </span>
+              <span className="text-[11px] font-medium opacity-75 truncate">{detail}</span>
+            </div>
+
+            <div className="absolute right-0 bottom-0 w-24 h-16 pointer-events-none opacity-50">
+              <svg viewBox="0 0 100 50" preserveAspectRatio="none" className="w-full h-full">
+                <defs>
+                  <linearGradient id={`dash-bottom-grad-${index}`} x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#ffffff" stopOpacity="0.4" />
+                    <stop offset="100%" stopColor="#ffffff" stopOpacity="0.0" />
+                  </linearGradient>
+                </defs>
+                <path d="M0,50 L0,40 Q25,30 50,40 T100,20 L100,50 Z" fill={`url(#dash-bottom-grad-${index})`} />
+                <path d="M0,40 Q25,30 50,40 T100,20" fill="none" stroke="#ffffff" strokeWidth="2.5" />
+              </svg>
+            </div>
+          </button>
+        ))}
       </section>
     </main>
   );
