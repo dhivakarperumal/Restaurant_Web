@@ -479,8 +479,8 @@ const Account = () => {
             </div>
           </section>
 
-          <div className={`grid items-stretch gap-3 ${activeTab === "address" ? "lg:grid-cols-[minmax(225px,0.78fr)_minmax(0,1.55fr)_minmax(290px,0.95fr)]" : "lg:grid-cols-[minmax(225px,0.78fr)_minmax(0,1.55fr)_minmax(205px,0.64fr)]"}`}>
-            <aside className="relative overflow-hidden rounded-[22px] bg-[#00351f] text-white shadow-md">
+          <div className={`grid ${activeTab === "orders" ? "items-start" : "items-stretch"} gap-3 ${activeTab === "address" ? "lg:grid-cols-[minmax(225px,0.78fr)_minmax(0,1.55fr)_minmax(290px,0.95fr)]" : "lg:grid-cols-[minmax(225px,0.78fr)_minmax(0,1.55fr)_minmax(205px,0.64fr)]"}`}>
+            <aside className="relative self-start overflow-hidden rounded-[22px] bg-[#00351f] text-white shadow-md">
               <img src="/images/tab.png" alt="" aria-hidden="true" className="absolute inset-0 h-full w-full object-cover opacity-35" />
               <div className="absolute inset-0 bg-gradient-to-b from-[#00351f]/95 via-[#00351f]/80 to-[#001f14]/95" />
               <div className="relative flex h-full flex-col p-4 sm:p-5">
@@ -1070,7 +1070,7 @@ const Account = () => {
                 )}
             </div>
           </section>
-          <aside className={`${activeTab === "address" ? "hidden" : "rounded-[22px] border border-[#eeeae0] bg-white p-4 shadow-sm sm:p-5"}`}>
+          <aside className={`${activeTab === "address" ? "hidden" : "self-start rounded-[22px] border border-[#eeeae0] bg-white p-4 shadow-sm sm:p-5"}`}>
             <div className="relative h-40 overflow-hidden rounded-[18px] bg-[#00351f]">
               <img src="/images/tab.png" alt="A selection of restaurant dishes" className="h-full w-full object-cover object-[center_38%]" />
               <div className="absolute inset-0 bg-gradient-to-t from-[#002817]/60 via-transparent to-transparent" />
