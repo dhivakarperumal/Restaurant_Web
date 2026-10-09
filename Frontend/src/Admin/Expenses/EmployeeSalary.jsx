@@ -753,13 +753,13 @@ export default function EmployeeSalary() {
         {employeeViewMode === "table" ? (
           <div className="overflow-x-auto rounded-2xl border border-[#e7e0d8] bg-[#f8f7f4]">
             <table className="min-w-full text-sm">
-              <thead className="bg-[#f8f7f4] text-[#748078]">
+              <thead className="bg-[#d4a843] text-white">
                 <tr>
-                  <th className="px-3 py-2 text-left">S.No</th>
-                  <th className="px-3 py-2 text-left">Employee</th>
-                  <th className="px-3 py-2 text-left">Code</th>
-                  <th className="px-3 py-2 text-left">Pays</th>
-                  <th className="px-3 py-2 text-left">Total Salary</th>
+                  <th className="px-4 py-4 text-left">S.No</th>
+                  <th className="px-4 py-4 text-left">Employee</th>
+                  <th className="px-4 py-4 text-left">Code</th>
+                  <th className="px-4 py-4 text-left">Pays</th>
+                  <th className="px-4 py-4 text-left">Total Salary</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#e7e0d8] text-[#44534a]">
@@ -831,13 +831,13 @@ export default function EmployeeSalary() {
           </div>
           <div className="overflow-x-auto">
             <table className="min-w-full text-sm">
-              <thead className="bg-[#f8f7f4] text-[#748078]">
+              <thead className="bg-[#d4a843] text-white">
                 <tr>
-                  <th className="px-3 py-2 text-left">Employee</th>
-                  <th className="px-3 py-2 text-left">Month</th>
-                  <th className="px-3 py-2 text-left">Year</th>
-                  <th className="px-3 py-2 text-left">Total Salary</th>
-                  <th className="px-3 py-2 text-left">Present / Leave</th>
+                  <th className="px-4 py-4 text-left">Employee</th>
+                  <th className="px-4 py-4 text-left">Month</th>
+                  <th className="px-4 py-4 text-left">Year</th>
+                  <th className="px-4 py-4 text-left">Total Salary</th>
+                  <th className="px-4 py-4 text-left">Present / Leave</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#e7e0d8] text-[#44534a]">
@@ -1026,14 +1026,14 @@ export default function EmployeeSalary() {
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm text-[#44534a]">
-              <thead className="bg-[#f8f7f4] text-[#56645b]">
+              <thead className="bg-[#d4a843] text-white">
                 <tr>
-                  <th className="px-4 py-3 rounded-l-lg font-medium">Employee</th>
-                  <th className="px-4 py-3 font-medium">Period</th>
-                  <th className="px-4 py-3 font-medium">Basic (₹)</th>
-                  <th className="px-4 py-3 font-medium">Net Salary (₹)</th>
-                  <th className="px-4 py-3 font-medium">Paid On</th>
-                  <th className="px-4 py-3 rounded-r-lg font-medium text-right">Action</th>
+                  <th className="px-4 py-4 rounded-l-lg font-medium">Employee</th>
+                  <th className="px-4 py-4 font-medium">Period</th>
+                  <th className="px-4 py-4 font-medium">Basic (₹)</th>
+                  <th className="px-4 py-4 font-medium">Net Salary (₹)</th>
+                  <th className="px-4 py-4 font-medium">Paid On</th>
+                  <th className="px-4 py-4 rounded-r-lg font-medium text-right">Action</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#f0ede7]">
