@@ -177,6 +177,16 @@ const Account = () => {
     });
   };
 
+  const handleEditOrderAddress = () => {
+    setSelectedOrder(null);
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      next.set("tab", "address");
+      next.delete("orderId");
+      return next;
+    });
+  };
+
   useEffect(() => {
     if (orderIdFromUrl && orders.length > 0) {
       const matched = orders.find(
@@ -981,6 +991,7 @@ const Account = () => {
         orderId={selectedOrder?.order_id || selectedOrder?.id}
         isOpen={Boolean(selectedOrder)}
         onClose={handleCloseOrderModal}
+        onEditAddress={handleEditOrderAddress}
       />
       {showLogoutConfirm && (
         <LogoutConfirmModal
