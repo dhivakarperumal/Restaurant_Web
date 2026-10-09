@@ -411,7 +411,7 @@ export default function ServerFood() {
   };
 
   return (
-    <div className={`space-y-6 ${selectedTable ? "pb-[45vh]" : ""}`}>
+    <div className="space-y-6">
       {/* Top Banner / Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-white p-5 rounded-2xl border border-gray-100 shadow-sm">
         <div className="flex items-center gap-3">
@@ -568,6 +568,30 @@ export default function ServerFood() {
         ))}
       </div>
 
+      {selectedTable && (
+        <div className="flex flex-col gap-3 rounded-2xl border border-[#d8e5da] bg-white p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#1a3c36] text-white">
+              <Table2 className="h-5 w-5" />
+            </div>
+            <div>
+              <p className="text-xs font-medium text-gray-500">Selected table</p>
+              <p className="text-sm font-bold text-gray-900">
+                {selectedTable.table_number}
+                {selectedTable.no_of_seats ? ` · ${selectedTable.no_of_seats} seats` : ""}
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => navigate("/server/tables")}
+            className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-[#dfe2e5] bg-[#faf9f8] px-4 py-2.5 text-sm font-semibold text-[#2d2d2d] transition hover:bg-white"
+          >
+            Change Table
+          </button>
+        </div>
+      )}
+
       {/* Search and Filters Bar */}
       <div className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm space-y-3">
         <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
@@ -685,6 +709,8 @@ export default function ServerFood() {
         </div>
       </div>
 
+      <div className={selectedTable ? "grid items-start gap-5 xl:grid-cols-[minmax(0,1fr)_380px]" : ""}>
+      <div className="min-w-0">
       {/* Main Content Area */}
       {loading ? (
         <div className="bg-white p-14 rounded-2xl border border-gray-100 flex flex-col items-center justify-center gap-3">
@@ -717,7 +743,7 @@ export default function ServerFood() {
         </div>
       ) : viewMode === "grid" ? (
         /* GRID (CARD) VIEW */
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
+        <div className={`grid gap-5 ${selectedTable ? "grid-cols-1 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3" : "grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4"}`}>
           {filteredFoods.map((food) => {
             const isVeg =
               String(food.food_type || "").trim().toLowerCase() === "veg";
@@ -1046,34 +1072,10 @@ export default function ServerFood() {
           </div>
         </div>
       )}
-
-      
-      {selectedTable && (
-        <div className="flex flex-col gap-3 rounded-2xl border border-[#d8e5da] bg-white p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#1a3c36] text-white">
-              <Table2 className="h-5 w-5" />
-            </div>
-            <div>
-              <p className="text-xs font-medium text-gray-500">Selected table</p>
-              <p className="text-sm font-bold text-gray-900">
-                {selectedTable.table_number}
-                {selectedTable.no_of_seats ? ` · ${selectedTable.no_of_seats} seats` : ""}
-              </p>
-            </div>
-          </div>
-          <button
-            type="button"
-            onClick={() => navigate("/server/tables")}
-            className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-[#dfe2e5] bg-[#faf9f8] px-4 py-2.5 text-sm font-semibold text-[#2d2d2d] transition hover:bg-white"
-          >
-            Change Table
-          </button>
-        </div>
-      )}
+      </div>
 
       {selectedTable && (
-        <section aria-label="Current table order" className="fixed bottom-3 right-3 z-50 flex max-h-[45vh] w-[calc(100vw-1.5rem)] max-w-2xl flex-col overflow-hidden rounded-2xl border border-[#b8cbbd] bg-white p-4 shadow-[0_12px_40px_rgba(16,40,24,0.24)] sm:bottom-5 sm:right-5 sm:p-5">
+        <section aria-label="Current table order" className="flex max-h-[calc(100vh-12rem)] flex-col overflow-hidden rounded-2xl border border-[#b8cbbd] bg-white p-4 shadow-[0_8px_28px_rgba(16,40,24,0.12)] sm:p-5 xl:sticky xl:top-4">
           <div className="mb-3 flex shrink-0 flex-col gap-3 border-b border-gray-100 pb-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-center gap-3">
               <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#1a3c36] text-white">
@@ -1155,6 +1157,7 @@ export default function ServerFood() {
           )}
         </section>
       )}
+      </div>
 
       {/* VIEW-ONLY FOOD DETAILS MODAL */}
       {viewingFood && (
