@@ -8,7 +8,7 @@ import {
   XCircle,
 } from 'lucide-react';
 import {
-  Area, AreaChart, CartesianGrid, Cell, Line, LineChart, Pie, PieChart,
+  Bar, CartesianGrid, Cell, ComposedChart, Line, Pie, PieChart,
   ResponsiveContainer, Tooltip, XAxis, YAxis,
 } from 'recharts';
 import api, { BACKEND_BASE_URL } from '../api';
@@ -143,7 +143,7 @@ function MetricCard({ title, value, icon: Icon, tone, hint, surface, waveColor, 
 const AdminDashboardOverview = () => {
   const navigate = useNavigate();
   const { userProfile } = useAuth();
-  const [period, setPeriod] = useState('today');
+  const [period, setPeriod] = useState('year');
   const [customFrom, setCustomFrom] = useState('');
   const [customTo, setCustomTo] = useState('');
   const [includeOrders, setIncludeOrders] = useState(true);
@@ -202,7 +202,7 @@ const AdminDashboardOverview = () => {
     setReportLoading(true);
     Promise.all([
       api.get('/revenue/summary', { params, signal: controller.signal }),
-      api.get('/revenue/trend', { params: { ...params, trend: ['year', 'lastYear', 'this-year', 'last-year'].includes(period) ? 'year' : 'month' }, signal: controller.signal }),
+      api.get('/revenue/trend', { params: { ...params, trend: ['year', 'lastYear', 'this-year', 'last-year'].includes(period) ? 'year' : 'month', dateBasis: 'delivered' }, signal: controller.signal }),
       api.get('/revenue/status', { params, signal: controller.signal }),
     ]).then(([summaryResponse, trendResponse, statusResponse]) => {
       setReport({ summary: summaryResponse.data.data, trend: trendResponse.data.data, statuses: statusResponse.data.data });
@@ -216,7 +216,6 @@ const AdminDashboardOverview = () => {
 
   const dateRangeOrders = snapshot.orders.filter((order) => inRange(order.created_at || order.order_date, period, customFrom, customTo));
   const dateRangeBills = snapshot.bills.filter((bill) => inRange(bill.created_at, period, customFrom, customTo));
-  const dateRangeCustomers = snapshot.users.filter((user) => customerRole(user.role) && inRange(user.created_at, period, customFrom, customTo));
   const activeDeliveryCount = dateRangeOrders.filter((order) => order.order_type === 'home_delivery' && !terminalOrder(order.order_status)).length;
   const customerCount = snapshot.users.filter((user) => customerRole(user.role)).length;
   const statusTotal = report.statuses.reduce((sum, item) => sum + Number(item.count || 0), 0);
@@ -299,10 +298,22 @@ const AdminDashboardOverview = () => {
     ...item,
     color: STATUS_COLORS[String(item.status).toLowerCase()] || '#8a9690',
   }));
-  const chartData = report.trend.map((entry) => ({
-    ...entry,
-    label: formatDate(entry.date, ['year', 'lastYear', 'this-year', 'last-year'].includes(period) ? { month: 'short', year: '2-digit' } : { day: '2-digit', month: 'short' }),
-  }));
+  const chartData = period === 'year'
+    ? Array.from({ length: 12 }, (_, monthIndex) => {
+      const monthDate = new Date(new Date().getFullYear(), monthIndex, 1);
+      const monthKey = `${monthDate.getFullYear()}-${String(monthIndex + 1).padStart(2, '0')}`;
+      const entry = report.trend.find((item) => String(item.date).slice(0, 7) === monthKey);
+      return {
+        date: monthKey,
+        revenue: Number(entry?.revenue || 0),
+        orders: Number(entry?.orders || 0),
+        label: formatDate(monthDate, { month: 'short' }),
+      };
+    })
+    : report.trend.map((entry) => ({
+      ...entry,
+      label: formatDate(entry.date, ['lastYear', 'this-year', 'last-year'].includes(period) ? { month: 'short', year: '2-digit' } : { day: '2-digit', month: 'short' }),
+    }));
   const name = userProfile?.displayName?.split(' ')[0] || 'Admin';
   const periodLabel = PERIODS.find(([key]) => (PERIOD_API[key] || key) === apiRange)?.[1] || 'Today';
   const quickActions = [
@@ -380,7 +391,7 @@ const AdminDashboardOverview = () => {
       </section>
 
       <section className="grid gap-3 xl:grid-cols-[minmax(0,1.55fr)_minmax(260px,0.95fr)_minmax(260px,0.85fr)]">
-        <article className="min-w-0 border border-[#e6ebe7] bg-white p-4 sm:p-5">
+        <article className="min-w-0 border border-[#e1e5e2] bg-[#f5f5f5] p-4 sm:p-5">
           <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
             <div><h2 className="text-sm font-bold text-[#1c2c22] sm:text-base">Sales &amp; Orders Overview</h2><p className="mt-0.5 text-[11px] text-[#7d8981]">Delivered revenue · {dateLabel}</p></div>
             <div className="flex gap-1.5 text-[10px]">
@@ -388,18 +399,17 @@ const AdminDashboardOverview = () => {
               <button type="button" aria-pressed={includeOrders} onClick={() => setIncludeOrders((value) => !value)} className={`inline-flex items-center gap-1.5 border px-2 py-1 ${includeOrders ? 'border-[#d9eadc] bg-[#f3faf4] text-[#506056]' : 'border-[#e5ebe6] text-[#879189]'}`}><span className={`h-2 w-2 rounded-full ${includeOrders ? 'bg-[#b8edc2]' : 'bg-[#cdd4cf]'}`} />Orders</button>
             </div>
           </div>
-          <div className="h-[230px] sm:h-[250px]">
-            {reportLoading ? <div className="h-full animate-pulse bg-[#f1f5f1]" /> : chartData.length ? <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={chartData} margin={{ top: 8, right: 6, left: -17, bottom: 0 }}>
-                <defs><linearGradient id="salesArea" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#22a341" stopOpacity={0.2} /><stop offset="100%" stopColor="#22a341" stopOpacity={0} /></linearGradient></defs>
-                <CartesianGrid stroke="#edf1ed" vertical={false} />
-                <XAxis dataKey="label" tickLine={false} axisLine={false} tick={{ fontSize: 10, fill: '#647268' }} />
-                <YAxis yAxisId="revenue" tickLine={false} axisLine={false} tick={{ fontSize: 9, fill: '#6c786f' }} tickFormatter={(value) => value >= 1000 ? `${Math.round(value / 1000)}k` : value} />
+          <div className="h-[300px] sm:h-[340px]">
+            {reportLoading ? <div className="h-full animate-pulse bg-[#eceeed]" /> : chartData.length ? <ResponsiveContainer width="100%" height="100%">
+              <ComposedChart data={chartData} margin={{ top: 12, right: 12, left: 8, bottom: 14 }}>
+                <CartesianGrid stroke="#dfe3e1" vertical={false} />
+                <XAxis dataKey="label" tickLine={false} axisLine={false} tick={{ fontSize: 11, fontWeight: 600, fill: '#202824' }} label={{ value: period === 'year' ? 'Month' : 'Date', position: 'insideBottom', offset: -8, fontSize: 11, fontWeight: 600, fill: '#202824' }} />
+                <YAxis yAxisId="revenue" tickLine={false} axisLine={false} tick={{ fontSize: 10, fontWeight: 600, fill: '#202824' }} tickFormatter={(value) => money(value)} label={{ value: 'Delivered Revenue (₹)', angle: -90, position: 'insideLeft', fontSize: 11, fontWeight: 600, fill: '#202824' }} />
                 {includeOrders && <YAxis yAxisId="orders" orientation="right" hide domain={[0, 'dataMax + 4']} />}
                 <Tooltip formatter={(value, name) => [name === 'Revenue' ? money(value) : Number(value), name]} labelFormatter={(label) => label} />
-                <Area yAxisId="revenue" type="monotone" dataKey="revenue" name="Revenue" stroke="#20a342" strokeWidth={2.5} fill="url(#salesArea)" activeDot={{ r: 4 }} />
-                {includeOrders && <Line yAxisId="orders" type="monotone" dataKey="orders" name="Orders" stroke="#83dfa0" strokeWidth={2} dot={{ r: 2.5, fill: '#83dfa0' }} activeDot={{ r: 4 }} />}
-              </LineChart>
+                <Bar yAxisId="revenue" dataKey="revenue" name="Revenue" fill="#159bd5" maxBarSize={68} radius={[4, 4, 0, 0]} />
+                {includeOrders && <Line yAxisId="orders" type="monotone" dataKey="orders" name="Orders" stroke="#83dfa0" strokeWidth={2} dot={{ r: 3, fill: '#83dfa0' }} activeDot={{ r: 5 }} />}
+              </ComposedChart>
             </ResponsiveContainer> : <div className="grid h-full place-items-center text-xs text-[#819087]">No delivered revenue recorded in this range.</div>}
           </div>
         </article>
@@ -460,7 +470,7 @@ const AdminDashboardOverview = () => {
 
       <section className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
         {[
-          { title: 'Total Customers', value: loading ? '—' : customerCount.toLocaleString('en-IN'), detail: 'Registered customers', icon: Users, tone: 'bg-[#eaf7ed] text-[#269448]', path: '/admin/customers' },
+          { title: 'Total Foods', value: loading ? '—' : snapshot.foods.length.toLocaleString('en-IN'), detail: 'Items in menu', icon: CookingPot, tone: 'bg-[#eaf7ed] text-[#269448]', path: '/admin/products' },
           { title: 'Low Stock Items', value: loading ? '—' : Number(snapshot.inventory.lowStock || 0).toLocaleString('en-IN'), detail: 'Needs restocking', icon: AlertTriangle, tone: 'bg-[#fff0ed] text-[#e95045]', path: '/admin/inventory/products' },
           { title: 'Open Table Bills', value: loading ? '—' : openBillsCount.toLocaleString('en-IN'), detail: 'Awaiting settlement', icon: Table2, tone: 'bg-[#eaf2ff] text-[#2675d5]', path: '/admin/billing/history' },
           { title: 'Kitchen Requests', value: loading ? '—' : pendingKitchenCount.toLocaleString('en-IN'), detail: 'Pending or approved', icon: ChefHat, tone: 'bg-[#fff5df] text-[#e99b00]', path: '/admin/inventory/kitchen-requests' },

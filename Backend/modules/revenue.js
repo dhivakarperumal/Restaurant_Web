@@ -168,8 +168,9 @@ const buildFilters = (filters = {}) => {
   const clauses = [];
   const params = [];
   const bounds = getDateBounds(filters);
+  const dateColumn = filters.dateBasis === 'delivered' ? 'revenue_order.delivered_at' : 'revenue_order.order_date';
   if (bounds) {
-    clauses.push('revenue_order.order_date >= ? AND revenue_order.order_date < ?');
+    clauses.push(`${dateColumn} >= ? AND ${dateColumn} < ?`);
     params.push(bounds.start, bounds.end);
   }
   if (filters.type === 'dining') clauses.push("revenue_order.source = 'dining'");
@@ -229,11 +230,12 @@ const getSummary = async (filters = {}) => {
 
 const getTrend = async (filters = {}) => {
   const { where, params } = buildFilters(filters);
+  const dateColumn = filters.dateBasis === 'delivered' ? 'revenue_order.delivered_at' : 'revenue_order.order_date';
   const group = filters.trend === 'year' ? 'month'
     : ['today', 'week', 'month'].includes(filters.trend) ? 'day' : 'month';
   const bucket = group === 'day'
-    ? 'DATE_FORMAT(revenue_order.order_date, \'%Y-%m-%d\')'
-    : 'DATE_FORMAT(revenue_order.order_date, \'%Y-%m\')';
+    ? `DATE_FORMAT(${dateColumn}, '%Y-%m-%d')`
+    : `DATE_FORMAT(${dateColumn}, '%Y-%m')`;
   const [rows] = await queryRevenue(
     `SELECT ${bucket} AS date, COALESCE(SUM(revenue_order.total_amount), 0) AS revenue,
             COUNT(*) AS orders

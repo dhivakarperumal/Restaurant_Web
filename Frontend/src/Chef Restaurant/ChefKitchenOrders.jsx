@@ -77,7 +77,7 @@ const formatTimeAgo = (dateValue) => {
   return `${diffHours}h ${diffMins % 60}m ago`;
 };
 
-const ChefKitchenOrders = ({ defaultViewMode = "card", orderTypeFilter = "" }) => {
+const ChefKitchenOrders = ({ defaultViewMode = "table", orderTypeFilter = "" }) => {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");

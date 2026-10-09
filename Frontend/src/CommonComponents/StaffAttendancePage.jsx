@@ -592,71 +592,84 @@ export default function StaffAttendancePage({
       </div>
 
       {/* KPI METRIC CARDS */}
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
-        <div className="rounded-2xl border border-gray-200/80 bg-white p-4 shadow-sm transition hover:shadow">
-          <div className="flex items-center justify-between text-gray-500">
-            <span className="text-[11px] font-bold uppercase tracking-wider">Days Present</span>
-            <div className="grid h-8 w-8 place-items-center rounded-lg bg-emerald-50 text-emerald-700">
-              <Calendar size={16} />
-            </div>
-          </div>
-          <p className="mt-2 text-2xl font-extrabold text-gray-900 tabular-nums">
-            {stats.totalDays}
-          </p>
-          <p className="mt-0.5 text-[10px] text-gray-400">Total recorded shifts</p>
-        </div>
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
+        {[
+          {
+            title: "Days Present",
+            value: stats.totalDays,
+            hint: "Total recorded shifts",
+            icon: Calendar,
+            bg: "bg-[#22c55e]",
+          },
+          {
+            title: "Total Hours",
+            value: `${stats.totalHours} hrs`,
+            hint: "Logged on duty",
+            icon: Clock,
+            bg: "bg-[#3b82f6]",
+          },
+          {
+            title: "Avg Shift",
+            value: `${stats.avgHours} hrs`,
+            hint: "Per logged shift",
+            icon: Timer,
+            bg: "bg-[#8b5cf6]",
+          },
+          {
+            title: "On-Time Rate",
+            value: `${stats.onTimeRate}%`,
+            hint: "Punctuality score",
+            icon: CheckCircle2,
+            bg: "bg-[#10b981]",
+          },
+          {
+            title: "Late Arrivals",
+            value: stats.lateCount,
+            hint: ">15m past scheduled shift",
+            icon: AlertCircle,
+            bg: Number(stats.lateCount) > 0 ? "bg-[#f59e0b]" : "bg-[#06b6d4]",
+          },
+        ].map((stat, index) => {
+          const Icon = stat.icon;
+          return (
+            <article
+              key={stat.title}
+              className={`relative min-w-0 overflow-hidden rounded-xl border border-transparent p-4 sm:p-5 shadow-[0_2px_10px_rgba(20,56,34,0.08)] flex flex-col justify-between min-h-[140px] ${stat.bg} text-white`}
+            >
+              <div className="flex items-start gap-3 relative z-10">
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg shadow-sm bg-white/20">
+                  <Icon size={24} strokeWidth={2.2} className="text-white" />
+                </div>
+                <div className="flex-1 mt-0.5 min-w-0">
+                  <h3 className="text-[12px] font-semibold opacity-90 mb-1 truncate">{stat.title}</h3>
+                  <div className="text-[24px] sm:text-[26px] font-extrabold leading-none tracking-tight truncate">
+                    {stat.value}
+                  </div>
+                </div>
+              </div>
 
-        <div className="rounded-2xl border border-gray-200/80 bg-white p-4 shadow-sm transition hover:shadow">
-          <div className="flex items-center justify-between text-gray-500">
-            <span className="text-[11px] font-bold uppercase tracking-wider">Total Hours</span>
-            <div className="grid h-8 w-8 place-items-center rounded-lg bg-blue-50 text-blue-700">
-              <Clock size={16} />
-            </div>
-          </div>
-          <p className="mt-2 text-2xl font-extrabold text-gray-900 tabular-nums">
-            {stats.totalHours} <span className="text-xs font-semibold text-gray-500">hrs</span>
-          </p>
-          <p className="mt-0.5 text-[10px] text-gray-400">Logged on duty</p>
-        </div>
+              <div className="flex items-center gap-2 mt-5 relative z-10">
+                <span className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[11px] font-bold bg-white/25">
+                  Live
+                </span>
+                <span className="text-[11px] font-medium opacity-75 truncate">{stat.hint}</span>
+              </div>
 
-        <div className="rounded-2xl border border-gray-200/80 bg-white p-4 shadow-sm transition hover:shadow">
-          <div className="flex items-center justify-between text-gray-500">
-            <span className="text-[11px] font-bold uppercase tracking-wider">Avg Shift</span>
-            <div className="grid h-8 w-8 place-items-center rounded-lg bg-purple-50 text-purple-700">
-              <Timer size={16} />
-            </div>
-          </div>
-          <p className="mt-2 text-2xl font-extrabold text-gray-900 tabular-nums">
-            {stats.avgHours} <span className="text-xs font-semibold text-gray-500">hrs</span>
-          </p>
-          <p className="mt-0.5 text-[10px] text-gray-400">Per logged shift</p>
-        </div>
-
-        <div className="rounded-2xl border border-gray-200/80 bg-white p-4 shadow-sm transition hover:shadow">
-          <div className="flex items-center justify-between text-gray-500">
-            <span className="text-[11px] font-bold uppercase tracking-wider">On-Time Rate</span>
-            <div className="grid h-8 w-8 place-items-center rounded-lg bg-teal-50 text-teal-700">
-              <CheckCircle2 size={16} />
-            </div>
-          </div>
-          <p className="mt-2 text-2xl font-extrabold text-emerald-700 tabular-nums">
-            {stats.onTimeRate}%
-          </p>
-          <p className="mt-0.5 text-[10px] text-gray-400">Punctuality score</p>
-        </div>
-
-        <div className="rounded-2xl border border-gray-200/80 bg-white p-4 shadow-sm transition hover:shadow col-span-2 sm:col-span-1">
-          <div className="flex items-center justify-between text-gray-500">
-            <span className="text-[11px] font-bold uppercase tracking-wider">Late Arrivals</span>
-            <div className="grid h-8 w-8 place-items-center rounded-lg bg-amber-50 text-amber-700">
-              <AlertCircle size={16} />
-            </div>
-          </div>
-          <p className="mt-2 text-2xl font-extrabold text-amber-700 tabular-nums">
-            {stats.lateCount}
-          </p>
-          <p className="mt-0.5 text-[10px] text-gray-400">&gt;15m past scheduled shift</p>
-        </div>
+              <div className="absolute right-0 bottom-0 w-24 h-16 pointer-events-none opacity-50">
+                <svg viewBox="0 0 100 50" preserveAspectRatio="none" className="w-full h-full">
+                  <defs>
+                    <linearGradient id={`staff-att-grad-${index}`} x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#ffffff" stopOpacity="0.4" />
+                      <stop offset="100%" stopColor="#ffffff" stopOpacity="0.0" />
+                    </linearGradient>
+                  </defs>
+                  <path d="M0,50 L0,40 Q25,30 50,40 T100,20 L100,50 Z" fill={`url(#staff-att-grad-${index})`} />
+                  <path d="M0,40 Q25,30 50,40 T100,20" fill="none" stroke="#ffffff" strokeWidth="2.5" />
+                </svg>
+              </div>
+            </article>
+          );
+        })}
       </div>
 
       {/* ATTENDANCE HISTORY SECTION */}
