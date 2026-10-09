@@ -126,7 +126,7 @@ const CustomerReviews = () => {
 
                 return (
                   <SwiperSlide key={`${review.reviewer_name}-${review.created_at}-${index}`} className="!h-auto">
-                    <article className="group relative flex h-full min-h-[230px] flex-col overflow-hidden rounded-[22px] border border-[#e8ede5] bg-gradient-to-br from-white via-white to-[#f6f9f3] p-5 shadow-[0_8px_26px_rgba(24,40,28,0.07)] transition duration-300 hover:-translate-y-1 hover:border-[#c7d9bd] hover:shadow-[0_14px_34px_rgba(24,40,28,0.13)] sm:p-6">
+                    <article className="group relative flex h-full min-h-[230px] -translate-y-1 flex-col overflow-hidden rounded-[22px] border border-[#c7d9bd] bg-gradient-to-br from-white via-white to-[#f6f9f3] p-5 shadow-[0_14px_34px_rgba(24,40,28,0.13)] transition duration-300 hover:translate-y-0 hover:border-[#e8ede5] hover:bg-white hover:shadow-[0_5px_18px_rgba(24,40,28,0.06)] sm:p-6">
                       <span aria-hidden="true" className="absolute -right-7 -top-9 h-24 w-24 rounded-full border-[16px] border-[#eff5e9]/80 transition-transform duration-300 group-hover:scale-110" />
                       <div className="relative flex items-center gap-3.5">
                         <span className="flex h-[58px] w-[58px] shrink-0 items-center justify-center overflow-hidden rounded-full border-[3px] border-white bg-[#eaf3e5] text-base font-extrabold uppercase text-[#075b2b] shadow-[0_3px_12px_rgba(7,91,43,0.16)] ring-1 ring-[#dce8d5]">
