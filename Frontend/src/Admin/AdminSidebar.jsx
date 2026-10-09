@@ -139,6 +139,7 @@ const navItems = [
       { path: "/admin/employees", label: "All Employee", icon: Users },
       { path: "/admin/employees/attendance", label: "Attendance", icon: CalendarCheck },
       { path: "/admin/employees/add", label: "Add Employee", icon: UserRoundPlus },
+      { path: "/admin/employee-salary", label: "Employee Salary", icon: DollarSign },
       { path: "/admin/servers", label: "Manage Server", icon: UtensilsCrossed },
       { path: "/admin/delivery-partners", label: "Manage Delivery Partner", icon: Bike },
       // { path: "/admin/employees/add/chef", label: "Add Chef", icon: UserRoundPlus },
@@ -162,6 +163,12 @@ const navItems = [
     path: "/admin/revenue",
     label: "Revenue",
     icon: CircleDollarSign,
+  },
+
+  {
+    path: "/admin/expenses",
+    label: "Expenses",
+    icon: DollarSign,
   },
 
   {

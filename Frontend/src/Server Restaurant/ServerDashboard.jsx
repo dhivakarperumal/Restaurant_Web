@@ -178,7 +178,7 @@ export default function ServerDashboard() {
   };
 
   return (
-    <main className="min-h-screen bg-[#f8faf8] p-4 md:p-6 lg:p-8">
+    <main className="min-h-screen bg-[#f8faf8] p-2 md:p-2 lg:p-2">
       <div className="mx-auto max-w-[1400px] space-y-6">
         {/* Welcome Banner */}
         <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-[#1a3c36] via-[#214a42] to-[#16332e] p-6 text-white shadow-xl md:p-8">
@@ -249,66 +249,74 @@ export default function ServerDashboard() {
         )}
 
         {/* Stats Grid */}
-        <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-          <div className="relative flex flex-col justify-between overflow-hidden rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
-            <div className="flex items-start justify-between">
-              <div>
-                <p className="text-xs font-medium text-gray-500">My Tables</p>
-                <h3 className="mt-1 font-serif text-2xl font-bold text-gray-900 md:text-3xl">
-                  {tables.length}
-                </h3>
-              </div>
-              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-[#1a3c36]/10 text-[#1a3c36]">
-                <Table2 className="h-6 w-6" />
-              </div>
-            </div>
-            <p className="mt-3 text-[11px] text-gray-400">Total station tables</p>
-          </div>
-
-          <div className="relative flex flex-col justify-between overflow-hidden rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
-            <div className="flex items-start justify-between">
-              <div>
-                <p className="text-xs font-medium text-gray-500">Available Tables</p>
-                <h3 className="mt-1 font-serif text-2xl font-bold text-emerald-600 md:text-3xl">
-                  {availableTables.length}
-                </h3>
-              </div>
-              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600">
-                <CheckCircle2 className="h-6 w-6" />
-              </div>
-            </div>
-            <p className="mt-3 text-[11px] text-gray-400">Ready for guest seating</p>
-          </div>
-
-          <div className="relative flex flex-col justify-between overflow-hidden rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
-            <div className="flex items-start justify-between">
-              <div>
-                <p className="text-xs font-medium text-gray-500">Kitchen Cooking</p>
-                <h3 className="mt-1 font-serif text-2xl font-bold text-blue-600 md:text-3xl">
-                  {preparingOrders.length}
-                </h3>
-              </div>
-              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
-                <Flame className="h-6 w-6 animate-pulse" />
-              </div>
-            </div>
-            <p className="mt-3 text-[11px] text-gray-400">Orders currently in kitchen</p>
-          </div>
-
-          <div className="relative flex flex-col justify-between overflow-hidden rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
-            <div className="flex items-start justify-between">
-              <div>
-                <p className="text-xs font-medium text-gray-500">Ready to Serve</p>
-                <h3 className={`mt-1 font-serif text-2xl font-bold md:text-3xl ${readyOrders.length > 0 ? "text-emerald-600 animate-pulse" : "text-gray-900"}`}>
-                  {readyOrders.length}
-                </h3>
-              </div>
-              <div className={`flex h-12 w-12 items-center justify-center rounded-xl ${readyOrders.length > 0 ? "bg-emerald-100 text-emerald-700" : "bg-purple-50 text-purple-600"}`}>
-                <Bell className={`h-6 w-6 ${readyOrders.length > 0 ? "animate-bounce" : ""}`} />
-              </div>
-            </div>
-            <p className="mt-3 text-[11px] text-gray-400">Waiting at pickup counter</p>
-          </div>
+        {/* Stats Grid */}
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {[
+            {
+              title: "My Tables",
+              value: tables.length,
+              hint: "Total station tables",
+              icon: Table2,
+              bg: "bg-[#22c55e]",
+            },
+            {
+              title: "Available Tables",
+              value: availableTables.length,
+              hint: "Ready for guest seating",
+              icon: CheckCircle2,
+              bg: "bg-[#3b82f6]",
+            },
+            {
+              title: "Kitchen Cooking",
+              value: preparingOrders.length,
+              hint: "Orders currently in kitchen",
+              icon: Flame,
+              bg: "bg-[#f59e0b]",
+            },
+            {
+              title: "Ready to Serve",
+              value: readyOrders.length,
+              hint: "Waiting at pickup counter",
+              icon: Bell,
+              bg: readyOrders.length > 0 ? "bg-[#ec4899]" : "bg-[#8b5cf6]",
+            },
+          ].map((stat, index) => {
+            const Icon = stat.icon;
+            return (
+              <article
+                key={stat.title}
+                className={`relative min-w-0 overflow-hidden rounded-xl border border-transparent p-4 sm:p-5 shadow-[0_2px_10px_rgba(20,56,34,0.08)] flex flex-col justify-between min-h-[140px] ${stat.bg} text-white`}
+              >
+                <div className="flex items-start gap-3 relative z-10">
+                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg shadow-sm bg-white/20">
+                    <Icon size={24} strokeWidth={2.2} className="text-white" />
+                  </div>
+                  <div className="flex-1 mt-0.5 min-w-0">
+                    <h3 className="text-[12px] font-semibold opacity-90 mb-1 truncate">{stat.title}</h3>
+                    <div className="text-[26px] font-extrabold leading-none tracking-tight">{stat.value}</div>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2 mt-5 relative z-10">
+                  <span className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[11px] font-bold bg-white/25">
+                    Live
+                  </span>
+                  <span className="text-[11px] font-medium opacity-75 truncate">{stat.hint}</span>
+                </div>
+                <div className="absolute right-0 bottom-0 w-24 h-16 pointer-events-none opacity-50">
+                  <svg viewBox="0 0 100 50" preserveAspectRatio="none" className="w-full h-full">
+                    <defs>
+                      <linearGradient id={`server-grad-${index}`} x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="#ffffff" stopOpacity="0.4" />
+                        <stop offset="100%" stopColor="#ffffff" stopOpacity="0.0" />
+                      </linearGradient>
+                    </defs>
+                    <path d="M0,50 L0,40 Q25,30 50,40 T100,20 L100,50 Z" fill={`url(#server-grad-${index})`} />
+                    <path d="M0,40 Q25,30 50,40 T100,20" fill="none" stroke="#ffffff" strokeWidth="2.5" />
+                  </svg>
+                </div>
+              </article>
+            );
+          })}
         </div>
 
         {/* LIVE KITCHEN ORDERS TRACKER */}

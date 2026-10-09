@@ -52,7 +52,7 @@ import {
 } from "lucide-react";
 
 import { useAuth } from "../PrivateRouter/AuthContext";
-const Logo = "/favicon.svg";
+const Logo = "/images/logo.png";
 
 /* ================= NAV ITEMS ================= */
 const navItems = [
@@ -77,55 +77,6 @@ const navItems = [
     icon: Package,
   },
 
-
-
-
-
-
-  {
-    label: "Orders",
-    icon: ShoppingCart,
-    children: [
-      { path: "/admin/orders/new", label: "New Order", icon: PlusSquare },
-      { path: "/admin/orders", label: "All Orders", icon: List },
-      { path: "/admin/orders/delivery", label: "Delivery Orders", icon: Package },
-      { path: "/admin/orders/cancelled", label: "Cancelled Orders", icon: XCircle },
-    ],
-  },
-
- 
-
-  {
-    path: "/admin/customers",
-    label: "Customers",
-    icon: Users,
-  },
-
- 
-
-  {
-    path: "/admin/billing",
-    label: "Billing",
-    icon: Receipt,
-  },
-
-  {
-    path: "/admin/reviews",
-    label: "Reviews",
-    icon: Star,
-  },
-
-  /* ---- MARKETING ---- */
-  {
-    label: "Marketing",
-    icon: TrendingUp,
-    children: [
-      { path: "/admin/banners", label: "Banners", icon: Image },
-      { path: "/admin/videos", label: "Videos Management", icon: Image },
-      { path: "/admin/gallery", label: "Gallery", icon: Image },
-      { path: "/admin/coupons", label: "Coupons & Offers", icon: Tag },
-    ],
-  },
 
 
 ];
@@ -200,7 +151,7 @@ const ServerSidebar = ({ isOpen, onClose, collapsed, onToggleCollapse }) => {
         {/* ========== LOGO ========== */}
         <div className={`flex items-center gap-3 border-b border-[#1f3228] shrink-0 ${collapsed ? "px-3 py-5 justify-center" : "px-5 py-5"}`}>
           <div className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0 p-1 border border-[#d4a843]/30 bg-white">
-            <img src={Logo} alt="Logo" className="w-full h-full object-cover drop-shadow-lg" />
+            <img src={Logo} alt="Foodie Restaurant" className="w-full h-full object-contain drop-shadow-lg" />
           </div>
 
           {!collapsed && (

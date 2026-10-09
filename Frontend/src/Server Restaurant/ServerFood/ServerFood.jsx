@@ -44,6 +44,22 @@ const resolveImageUrl = (img) => {
   return `http://localhost:5000${cleanPath}`;
 };
 
+const isEnabled = (value, fallback = false) => {
+  if (typeof value === "boolean") return value;
+  if (typeof value === "number") return value !== 0;
+  if (typeof value === "string") {
+    const normalized = value.trim().toLowerCase();
+    if (!normalized) return fallback;
+    return !["0", "false", "no", "inactive"].includes(normalized);
+  }
+  return fallback;
+};
+
+const isFoodAvailable = (food, hasSelectedTable = false) =>
+  isEnabled(food.is_available) &&
+  String(food.status || "Active").trim().toLowerCase() === "active" &&
+  (!hasSelectedTable || isEnabled(food.dining_available, true));
+
 export default function ServerFood() {
   const { userProfile } = useAuth();
   const location = useLocation();
@@ -73,6 +89,7 @@ export default function ServerFood() {
   const [customAddonRequests, setCustomAddonRequests] = useState("");
   const [customizationRequest, setCustomizationRequest] = useState("");
   const [customizeQuantity, setCustomizeQuantity] = useState(1);
+  const hasSelectedTable = Boolean(selectedTable);
 
   const fetchActiveBill = async () => {
     if (!selectedTable?.table_id) return;
@@ -132,22 +149,22 @@ export default function ServerFood() {
 
   // Filtered & Sorted Foods
   const filteredFoods = useMemo(() => {
+    const normalizedSearchQuery = searchQuery.trim().toLowerCase();
     return foods
       .filter((food) => {
+        const searchableValues = [
+          food.food_name,
+          food.food_id,
+          food.category_name,
+          food.cuisine_name,
+          food.subcategory_name,
+          food.description,
+        ];
         const nameMatch =
-          !searchQuery ||
-          String(food.food_name || "")
-            .toLowerCase()
-            .includes(searchQuery.toLowerCase()) ||
-          String(food.food_id || "")
-            .toLowerCase()
-            .includes(searchQuery.toLowerCase()) ||
-          String(food.category_name || "")
-            .toLowerCase()
-            .includes(searchQuery.toLowerCase()) ||
-          String(food.cuisine_name || "")
-            .toLowerCase()
-            .includes(searchQuery.toLowerCase());
+          !normalizedSearchQuery ||
+          searchableValues.some((value) =>
+            String(value || "").toLowerCase().includes(normalizedSearchQuery)
+          );
 
         const categoryMatch =
           selectedCategory === "all" ||
@@ -158,14 +175,11 @@ export default function ServerFood() {
         const typeMatch =
           selectedType === "all" ||
           (selectedType === "veg" &&
-            String(food.food_type || "").toLowerCase() === "veg") ||
+            String(food.food_type || "").trim().toLowerCase() === "veg") ||
           (selectedType === "non-veg" &&
-            String(food.food_type || "").toLowerCase().includes("non"));
+            String(food.food_type || "").trim().toLowerCase().includes("non"));
 
-        const isAvailable =
-          Boolean(food.is_available) &&
-          String(food.status || "Active").toLowerCase() === "active" &&
-          (!selectedTable || food.dining_available !== false);
+        const isAvailable = isFoodAvailable(food, hasSelectedTable);
 
         const statusMatch =
           selectedStatus === "all" ||
@@ -176,7 +190,10 @@ export default function ServerFood() {
       })
       .sort((a, b) => {
         if (sortBy === "latest") {
-          return new Date(b.created_at || 0) - new Date(a.created_at || 0);
+          const dateA = Date.parse(a.created_at || "");
+          const dateB = Date.parse(b.created_at || "");
+          return (Number.isFinite(dateB) ? dateB : 0) -
+            (Number.isFinite(dateA) ? dateA : 0);
         }
         if (sortBy === "price-low") {
           return Number(a.final_price || 0) - Number(b.final_price || 0);
@@ -203,21 +220,20 @@ export default function ServerFood() {
     selectedType,
     selectedStatus,
     sortBy,
+    hasSelectedTable,
   ]);
 
   // Statistics Summary
   const stats = useMemo(() => {
     const total = foods.length;
-    const available = foods.filter(
-      (f) =>
-        Boolean(f.is_available) &&
-        String(f.status || "Active").toLowerCase() === "active"
+    const available = foods.filter((food) =>
+      isFoodAvailable(food, hasSelectedTable)
     ).length;
     const vegCount = foods.filter(
-      (f) => String(f.food_type || "").toLowerCase() === "veg"
+      (f) => String(f.food_type || "").trim().toLowerCase() === "veg"
     ).length;
     const nonVegCount = foods.filter((f) =>
-      String(f.food_type || "").toLowerCase().includes("non")
+      String(f.food_type || "").trim().toLowerCase().includes("non")
     ).length;
 
     const uniqueCategories = new Set(
@@ -225,7 +241,20 @@ export default function ServerFood() {
     ).size;
 
     return { total, available, vegCount, nonVegCount, uniqueCategories };
-  }, [foods]);
+  }, [foods, hasSelectedTable]);
+
+  const hasActiveFilters =
+    searchQuery.trim() !== "" ||
+    selectedCategory !== "all" ||
+    selectedType !== "all" ||
+    selectedStatus !== "all";
+
+  const clearFilters = () => {
+    setSearchQuery("");
+    setSelectedCategory("all");
+    setSelectedType("all");
+    setSelectedStatus("all");
+  };
 
   const handleOpenDetails = (food) => {
     setViewingFood(food);
@@ -473,54 +502,69 @@ export default function ServerFood() {
       )}
 
       {/* Stats Summary Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-4">
         {[
           {
             title: "Total Dishes",
             value: stats.total,
-            desc: "Configured by admin",
+            hint: "Configured by admin",
             icon: UtensilsCrossed,
-            iconBg: "bg-[#1f3228] text-[#d4a843]",
+            bg: "bg-[#22c55e]",
           },
           {
             title: "Available Today",
             value: stats.available,
-            desc: "Ready to serve",
+            hint: "Ready to serve",
             icon: CheckCircle2,
-            iconBg: "bg-emerald-500 text-white",
+            bg: "bg-[#3b82f6]",
           },
           {
             title: "Pure Veg Items",
             value: stats.vegCount,
-            desc: "Vegetarian selections",
+            hint: "Vegetarian selections",
             icon: Sparkles,
-            iconBg: "bg-green-600 text-white",
+            bg: "bg-[#10b981]",
           },
           {
             title: "Non-Veg Dishes",
             value: stats.nonVegCount,
-            desc: "Meat & poultry specialties",
+            hint: "Meat & poultry specialties",
             icon: Flame,
-            iconBg: "bg-rose-500 text-white",
+            bg: "bg-[#f43f5e]",
           },
-        ].map(({ title, value, desc, icon: Icon, iconBg }) => (
-          <div
+        ].map(({ title, value, hint, icon: Icon, bg }, index) => (
+          <article
             key={title}
-            className="bg-white p-4.5 rounded-2xl border border-gray-100 shadow-sm flex items-center gap-3.5 transition hover:shadow-md"
+            className={`relative min-w-0 overflow-hidden rounded-xl border border-transparent p-4 sm:p-5 shadow-[0_2px_10px_rgba(20,56,34,0.08)] flex flex-col justify-between min-h-[140px] ${bg} text-white`}
           >
-            <div
-              className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 ${iconBg} shadow-sm`}
-            >
-              <Icon className="w-6 h-6" />
+            <div className="flex items-start gap-3 relative z-10">
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg shadow-sm bg-white/20">
+                <Icon size={24} strokeWidth={2.2} className="text-white" />
+              </div>
+              <div className="flex-1 mt-0.5 min-w-0">
+                <h3 className="text-[12px] font-semibold opacity-90 mb-1 truncate">{title}</h3>
+                <div className="text-[26px] font-extrabold leading-none tracking-tight">{value}</div>
+              </div>
             </div>
-            <div>
-              <p className="text-xs font-medium text-gray-500">{title}</p>
-              <h3 className="text-2xl font-bold text-gray-900 leading-tight">
-                {value}
-              </h3>
-              <p className="text-[11px] text-gray-400 mt-0.5">{desc}</p>
+            <div className="flex items-center gap-2 mt-5 relative z-10">
+              <span className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[11px] font-bold bg-white/25">
+                Live
+              </span>
+              <span className="text-[11px] font-medium opacity-75 truncate">{hint}</span>
             </div>
-          </div>
+            <div className="absolute right-0 bottom-0 w-24 h-16 pointer-events-none opacity-50">
+              <svg viewBox="0 0 100 50" preserveAspectRatio="none" className="w-full h-full">
+                <defs>
+                  <linearGradient id={`food-grad-${index}`} x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#ffffff" stopOpacity="0.4" />
+                    <stop offset="100%" stopColor="#ffffff" stopOpacity="0.0" />
+                  </linearGradient>
+                </defs>
+                <path d="M0,50 L0,40 Q25,30 50,40 T100,20 L100,50 Z" fill={`url(#food-grad-${index})`} />
+                <path d="M0,40 Q25,30 50,40 T100,20" fill="none" stroke="#ffffff" strokeWidth="2.5" />
+              </svg>
+            </div>
+          </article>
         ))}
       </div>
 
@@ -549,6 +593,12 @@ export default function ServerFood() {
 
           {/* Filter Dropdowns and View Mode */}
           <div className="flex flex-wrap items-center gap-2">
+            <span
+              className="mr-1 whitespace-nowrap text-xs font-medium text-gray-500"
+              aria-live="polite"
+            >
+              {filteredFoods.length} of {foods.length}
+            </span>
             {/* Category Dropdown */}
             <select
               value={selectedCategory}
@@ -622,6 +672,15 @@ export default function ServerFood() {
                 <Table2 className="w-4 h-4" />
               </button>
             </div>
+            {hasActiveFilters && (
+              <button
+                type="button"
+                onClick={clearFilters}
+                className="rounded-lg px-2.5 py-2 text-xs font-semibold text-[#1f3228] hover:bg-gray-100"
+              >
+                Clear filters
+              </button>
+            )}
           </div>
         </div>
       </div>
@@ -642,25 +701,14 @@ export default function ServerFood() {
           <div>
             <h3 className="text-lg font-bold text-gray-800">No dishes found</h3>
             <p className="text-sm text-gray-500 max-w-sm mx-auto mt-1">
-              {searchQuery ||
-              selectedCategory !== "all" ||
-              selectedType !== "all" ||
-              selectedStatus !== "all"
+              {hasActiveFilters
                 ? "No food items match your filter criteria. Try clearing search or filters."
                 : "No dishes have been added by the administrator yet."}
             </p>
           </div>
-          {(searchQuery ||
-            selectedCategory !== "all" ||
-            selectedType !== "all" ||
-            selectedStatus !== "all") && (
+          {hasActiveFilters && (
             <button
-              onClick={() => {
-                setSearchQuery("");
-                setSelectedCategory("all");
-                setSelectedType("all");
-                setSelectedStatus("all");
-              }}
+              onClick={clearFilters}
               className="inline-flex items-center gap-1.5 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl text-xs font-semibold transition"
             >
               Reset Filters
@@ -671,11 +719,9 @@ export default function ServerFood() {
         /* GRID (CARD) VIEW */
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
           {filteredFoods.map((food) => {
-            const isVeg = String(food.food_type || "").toLowerCase() === "veg";
-            const isAvailable =
-              Boolean(food.is_available) &&
-              String(food.status || "Active").toLowerCase() === "active" &&
-              (!selectedTable || food.dining_available !== false);
+            const isVeg =
+              String(food.food_type || "").trim().toLowerCase() === "veg";
+            const isAvailable = isFoodAvailable(food, hasSelectedTable);
             const primaryImage =
               Array.isArray(food.food_images) && food.food_images.length > 0
                 ? food.food_images[0]
@@ -846,9 +892,7 @@ export default function ServerFood() {
                 {filteredFoods.map((food) => {
                   const isVeg =
                     String(food.food_type || "").toLowerCase() === "veg";
-                  const isAvailable =
-                    Boolean(food.is_available) &&
-                    String(food.status || "Active").toLowerCase() === "active";
+                  const isAvailable = isFoodAvailable(food, hasSelectedTable);
                   const primaryImage =
                     Array.isArray(food.food_images) &&
                     food.food_images.length > 0
@@ -1228,25 +1272,19 @@ export default function ServerFood() {
               <div className="flex items-center gap-2">
                 <span
                   className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold ${
-                    Boolean(viewingFood.is_available) &&
-                    String(viewingFood.status || "Active").toLowerCase() ===
-                      "active"
+                    isFoodAvailable(viewingFood, hasSelectedTable)
                       ? "bg-emerald-50 text-emerald-800 border border-emerald-200"
                       : "bg-gray-200 text-gray-700"
                   }`}
                 >
                   <span
                     className={`w-2 h-2 rounded-full ${
-                      Boolean(viewingFood.is_available) &&
-                      String(viewingFood.status || "Active").toLowerCase() ===
-                        "active"
+                      isFoodAvailable(viewingFood, hasSelectedTable)
                         ? "bg-emerald-500"
                         : "bg-gray-400"
                     }`}
                   />
-                  {Boolean(viewingFood.is_available) &&
-                  String(viewingFood.status || "Active").toLowerCase() ===
-                    "active"
+                  {isFoodAvailable(viewingFood, hasSelectedTable)
                     ? "Available in Kitchen"
                     : "Currently Unavailable"}
                 </span>
@@ -1282,7 +1320,7 @@ export default function ServerFood() {
               <div className="p-3 rounded-xl bg-gray-50 border border-gray-100">
                 <span className="text-gray-400 font-medium">Dining Option</span>
                 <p className="font-bold text-emerald-700 text-sm mt-0.5">
-                  {viewingFood.dining_available !== false
+                  {isEnabled(viewingFood.dining_available, true)
                     ? "✓ Dine-in Available"
                     : "✗ No Dine-in"}
                 </p>
@@ -1291,7 +1329,7 @@ export default function ServerFood() {
               <div className="p-3 rounded-xl bg-gray-50 border border-gray-100">
                 <span className="text-gray-400 font-medium">Takeaway</span>
                 <p className="font-bold text-blue-700 text-sm mt-0.5">
-                  {viewingFood.takeaway_available !== false
+                  {isEnabled(viewingFood.takeaway_available, true)
                     ? "✓ Takeaway Allowed"
                     : "✗ No Takeaway"}
                 </p>
@@ -1300,7 +1338,7 @@ export default function ServerFood() {
               <div className="p-3 rounded-xl bg-gray-50 border border-gray-100">
                 <span className="text-gray-400 font-medium">Delivery</span>
                 <p className="font-bold text-purple-700 text-sm mt-0.5">
-                  {viewingFood.delivery_available !== false
+                  {isEnabled(viewingFood.delivery_available, true)
                     ? "✓ Delivery Available"
                     : "✗ No Delivery"}
                 </p>
