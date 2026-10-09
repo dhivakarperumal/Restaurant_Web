@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Search, UtensilsCrossed, CheckCircle2, Eye, EyeOff, X } from "lucide-react";
+import { Search, UtensilsCrossed, CheckCircle2, Eye, EyeOff, X, List, LayoutGrid } from "lucide-react";
 import toast from "react-hot-toast";
 import api from "../api";
 
@@ -13,6 +13,7 @@ const ChefProducts = () => {
   const [foods, setFoods] = useState([]);
   const [search, setSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
+  const [viewMode, setViewMode] = useState("table");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [updatingFoodId, setUpdatingFoodId] = useState("");
@@ -169,7 +170,7 @@ const ChefProducts = () => {
         })}
       </div>
 
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-col gap-3 rounded-xl border border-slate-200 bg-white p-3 shadow-md sm:flex-row sm:items-center sm:justify-between">
         <div className="relative w-full sm:max-w-md">
           <Search size={16} className="absolute left-3 top-3 text-slate-400" />
           <input
@@ -181,18 +182,43 @@ const ChefProducts = () => {
             className="w-full rounded-lg border border-slate-300 bg-white py-2.5 pl-9 pr-3 text-sm text-slate-800 outline-none focus:border-emerald-700"
           />
         </div>
-        <select
-          value={categoryFilter}
-          onChange={(event) => setCategoryFilter(event.target.value)}
-          aria-label="Filter foods by category"
-          className="min-h-10 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 outline-none focus:border-emerald-700 sm:w-52"
-        >
-          <option value="all">All categories</option>
-          {categories.map((category) => <option key={category} value={category}>{category}</option>)}
-        </select>
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+          <select
+            value={categoryFilter}
+            onChange={(event) => setCategoryFilter(event.target.value)}
+            aria-label="Filter foods by category"
+            className="min-h-10 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 outline-none focus:border-emerald-700 sm:w-52"
+          >
+            <option value="all">All categories</option>
+            {categories.map((category) => <option key={category} value={category}>{category}</option>)}
+          </select>
+          <div role="group" aria-label="Food display mode" className="flex h-10 shrink-0 items-center rounded-lg border border-slate-300 bg-white p-1">
+            <button
+              type="button"
+              onClick={() => setViewMode("table")}
+              aria-label="Table view"
+              aria-pressed={viewMode === "table"}
+              title="Table view"
+              className={`grid h-8 w-9 place-items-center rounded-md transition ${viewMode === "table" ? "bg-emerald-800 text-white" : "text-slate-600 hover:bg-slate-100"}`}
+            >
+              <List size={17} />
+            </button>
+            <button
+              type="button"
+              onClick={() => setViewMode("card")}
+              aria-label="Card view"
+              aria-pressed={viewMode === "card"}
+              title="Card view"
+              className={`grid h-8 w-9 place-items-center rounded-md transition ${viewMode === "card" ? "bg-emerald-800 text-white" : "text-slate-600 hover:bg-slate-100"}`}
+            >
+              <LayoutGrid size={17} />
+            </button>
+          </div>
+        </div>
       </div>
 
-      <div className="overflow-hidden rounded-xl border border-slate-200 bg-white">
+      {viewMode === "table" ? (
+      <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
         <div className="overflow-x-auto">
           <table className="min-w-full text-left text-sm">
             <thead className="bg-[#d4a843] text-xs uppercase tracking-wide text-white">
@@ -259,6 +285,66 @@ const ChefProducts = () => {
           </table>
         </div>
       </div>
+      ) : (
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
+          {loading ? (
+            <div className="col-span-full rounded-xl border border-slate-200 bg-white px-4 py-10 text-center text-slate-500">Loading foods...</div>
+          ) : error ? (
+            <div className="col-span-full rounded-xl border border-slate-200 bg-white px-4 py-10 text-center text-rose-700">
+              <p role="alert">{error}</p>
+              <button type="button" onClick={loadFoods} className="mt-2 font-semibold underline">Try again</button>
+            </div>
+          ) : filteredFoods.length ? filteredFoods.map((food, index) => (
+            <article key={food.food_id} className="min-w-0 rounded-xl border border-slate-200 bg-white p-4 shadow-[0_4px_16px_rgba(15,23,42,0.08)] transition-shadow hover:shadow-md">
+              <div className="flex items-start gap-3">
+                <input
+                  type="checkbox"
+                  checked={food.is_menu_visible !== false}
+                  disabled={bulkUpdating || updatingFoodId === food.food_id}
+                  onChange={() => toggleMenuVisibility(food)}
+                  aria-label={`Show ${food.food_name} to customers and billing`}
+                  className="mt-1 h-4 w-4 shrink-0 accent-emerald-700"
+                />
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-start justify-between gap-2">
+                    <h2 className="truncate font-semibold text-slate-900">{food.food_name || "Unnamed food"}</h2>
+                    <span className="shrink-0 text-xs text-slate-500">#{index + 1}</span>
+                  </div>
+                  <p className="mt-1 truncate text-sm text-slate-600">{food.category_name || "Uncategorized"}</p>
+                </div>
+              </div>
+              <dl className="mt-4 grid grid-cols-2 gap-3 border-t border-slate-100 pt-3 text-sm">
+                <div>
+                  <dt className="text-xs text-slate-500">Preparation</dt>
+                  <dd className="mt-1 font-medium text-slate-700">{food.preparation_time ? `${food.preparation_time} min` : "-"}</dd>
+                </div>
+                <div>
+                  <dt className="text-xs text-slate-500">Price</dt>
+                  <dd className="mt-1 font-medium text-slate-800">{formatPrice(food.final_price)}</dd>
+                </div>
+                <div>
+                  <dt className="text-xs text-slate-500">Status</dt>
+                  <dd className="mt-1">
+                    <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${food.status === "Active" ? "bg-emerald-100 text-emerald-800" : "bg-slate-100 text-slate-700"}`}>
+                      {food.status || "Active"}
+                    </span>
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-xs text-slate-500">Customer & Billing</dt>
+                  <dd className="mt-1">
+                    <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${food.is_menu_visible === false ? "bg-slate-100 text-slate-700" : "bg-emerald-100 text-emerald-800"}`}>
+                      {food.is_menu_visible === false ? "Hidden" : "Shown"}
+                    </span>
+                  </dd>
+                </div>
+              </dl>
+            </article>
+          )) : (
+            <div className="col-span-full rounded-xl border border-slate-200 bg-white px-4 py-10 text-center text-slate-500">{foods.length ? "No foods match this search." : "No foods have been added yet."}</div>
+          )}
+        </div>
+      )}
 
       {showVisibilityPopup && (
         <div
