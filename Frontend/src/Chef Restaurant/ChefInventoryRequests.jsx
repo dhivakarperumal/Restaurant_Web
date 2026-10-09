@@ -176,12 +176,12 @@ const ChefInventoryRequests = () => {
           <table className="min-w-full text-left text-sm">
             <thead className="bg-[#d4a843] text-xs uppercase tracking-wide text-white">
               <tr>
-                <th className="px-3 py-3 font-semibold">Request No.</th>
-                <th className="px-3 py-3 font-semibold">Items</th>
-                <th className="px-3 py-3 font-semibold">Date</th>
-                <th className="px-3 py-3 font-semibold">Priority</th>
-                <th className="px-3 py-3 font-semibold">Status</th>
-                <th className="px-3 py-3 font-semibold">Notes</th>
+                <th className="px-4 py-4 font-semibold">Request No.</th>
+                <th className="px-4 py-4 font-semibold">Items</th>
+                <th className="px-4 py-4 font-semibold">Date</th>
+                <th className="px-4 py-4 font-semibold">Priority</th>
+                <th className="px-4 py-4 font-semibold">Status</th>
+                <th className="px-4 py-4 font-semibold">Notes</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -189,20 +189,20 @@ const ChefInventoryRequests = () => {
                 <tr><td colSpan="6" className="px-4 py-10 text-center text-slate-500">Loading requests...</td></tr>
               ) : requests.length ? requests.map((request) => (
                 <tr key={request.id}>
-                  <td className="whitespace-nowrap px-4 py-3 font-semibold text-slate-800">{request.request_number}</td>
-                  <td className="min-w-48 px-4 py-3 text-slate-700">
+                  <td className="whitespace-nowrap px-4 py-4 font-semibold text-slate-800">{request.request_number}</td>
+                  <td className="min-w-48 px-4 py-4 text-slate-700">
                     {request.items?.length
                       ? request.items.map((item) => `${item.item_name || item.product_name || "Item"} (${item.quantity} ${item.unit || "pcs"})`).join(", ")
                       : "No items"}
                   </td>
-                  <td className="whitespace-nowrap px-4 py-3 text-slate-600">{String(request.request_date || "").slice(0, 10) || "-"}</td>
-                  <td className="px-4 py-3 text-slate-600">{request.priority || "Normal"}</td>
-                  <td className="px-4 py-3">
+                  <td className="whitespace-nowrap px-4 py-4 text-slate-600">{String(request.request_date || "").slice(0, 10) || "-"}</td>
+                  <td className="px-4 py-4 text-slate-600">{request.priority || "Normal"}</td>
+                  <td className="px-4 py-4">
                     <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${request.status === "Approved" || request.status === "Completed" ? "bg-emerald-100 text-emerald-800" : request.status === "Rejected" ? "bg-rose-100 text-rose-800" : "bg-amber-100 text-amber-800"}`}>
                       {request.status || "Pending"}
                     </span>
                   </td>
-                  <td className="max-w-xs px-4 py-3 text-slate-600">{request.notes || "-"}</td>
+                  <td className="max-w-xs px-4 py-4 text-slate-600">{request.notes || "-"}</td>
                 </tr>
               )) : (
                 <tr><td colSpan="6" className="px-4 py-12 text-center text-slate-500">No kitchen requests yet.</td></tr>
