@@ -221,15 +221,15 @@ const ChefSidebar = ({ isOpen, onClose, collapsed, onToggleCollapse }) => {
                       w-full flex items-center gap-3 px-3 py-3 rounded-xl text-sm
                       transition-all duration-200 group
                       ${isAnyChildActive
-                        ? "bg-slate-50 text-slate-700 border-l-2 border-slate-400"
+                        ? "bg-[#1f3228] text-white border-l-2 border-white"
                         : "text-white hover:text-white hover:bg-[#1f3228]/70"
                       }
                     `}
                   >
-                    <Icon className={`w-[17px] h-[17px] shrink-0 ${isAnyChildActive ? "text-slate-600" : "text-white"}`} />
+                    <Icon className={`w-[17px] h-[17px] shrink-0 ${isAnyChildActive ? "text-white" : "text-white"}`} />
                     {!collapsed && (
                       <>
-                        <span className={`flex-1 text-left font-medium truncate ${isAnyChildActive ? "text-slate-700" : "text-white"}`}>{item.label}</span>
+                        <span className="flex-1 text-left font-medium truncate text-white">{item.label}</span>
                         <ChevronDown
                           className={`w-3.5 h-3.5 transition-transform duration-200 ${isMenuOpen ? "rotate-180" : ""}`}
                         />
@@ -264,7 +264,7 @@ const ChefSidebar = ({ isOpen, onClose, collapsed, onToggleCollapse }) => {
                               flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-xs
                               transition-all duration-200
                               ${isActive
-                                ? "bg-slate-50 text-slate-700 font-semibold"
+                                ? "bg-[#d4a843] text-[#162420] font-semibold"
                                 : "text-white hover:text-white hover:bg-[#1f3228]"
                               }
                             `}
@@ -299,7 +299,7 @@ const ChefSidebar = ({ isOpen, onClose, collapsed, onToggleCollapse }) => {
                   flex items-center gap-3 px-3 py-3 rounded-xl text-sm
                   transition-all duration-200
                   ${isActive
-                    ? "bg-slate-50 text-slate-700 font-semibold shadow-md"
+                    ? "bg-[#d4a843] text-[#162420] font-semibold shadow-md"
                     : "text-white hover:text-white hover:bg-[#1f3228]/70"
                   }
                   ${collapsed ? "justify-center" : ""}
