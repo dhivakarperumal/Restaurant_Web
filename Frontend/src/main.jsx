@@ -353,11 +353,11 @@ const router = createHashRouter([
           },
           {
             path: 'customer-orders',
-            element: <CustomerOrdersPage audience="chef" view="all" />,
+            element: <CustomerOrdersPage audience="chef" view="all" showOrderFilters />,
           },
           {
             path: 'customer-orders/new',
-            element: <CustomerOrdersPage audience="chef" view="new" />,
+            element: <CustomerOrdersPage audience="chef" view="new" showOrderFilters />,
           },
           {
             path: 'customer-orders/homedelivery',
@@ -365,7 +365,7 @@ const router = createHashRouter([
           },
           {
             path: 'customer-orders/pickup',
-            element: <CustomerOrdersPage audience="chef" view="pickup" />,
+            element: <CustomerOrdersPage audience="chef" view="pickup" showOrderFilters />,
           },
           {
             path: 'customer-orders/dining',
@@ -377,7 +377,7 @@ const router = createHashRouter([
           },
           {
             path: 'customer-orders/cancelled',
-            element: <CustomerOrdersPage audience="chef" view="cancelled" />,
+            element: <CustomerOrdersPage audience="chef" view="cancelled" showOrderFilters />,
           },
         ],
       },

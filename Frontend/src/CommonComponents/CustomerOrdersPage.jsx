@@ -58,11 +58,14 @@ function CustomerOrdersPage({ audience = 'admin', view = 'all', showOrderFilters
   const [layout, setLayout] = useState('table');
   const isCustomer = audience === 'customer';
   const showChefDeliveryTable = audience === 'chef' && view === 'delivery';
-  const showOrderSummary = audience === 'admin' || showChefDeliveryTable;
+  const showOrderSummary = audience === 'admin' || (audience === 'chef' && showOrderFilters);
   const title = isCustomer
     ? 'My Orders'
     : audience === 'chef' && view === 'delivery' ? 'Home Delivery Orders'
-      : audience === 'chef' ? 'Customer Kitchen Orders'
+      : audience === 'chef' && view === 'new' ? 'New Customer Orders'
+        : audience === 'chef' && view === 'pickup' ? 'Pickup Orders'
+          : audience === 'chef' && view === 'cancelled' ? 'Cancelled Orders'
+            : audience === 'chef' ? 'All Customer Orders'
       : view === 'new' ? 'New Orders'
         : view === 'pickup' ? 'Pickup Orders'
       : view === 'cancelled' ? 'Cancelled Orders'
