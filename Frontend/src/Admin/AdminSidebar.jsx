@@ -136,6 +136,7 @@ const navItems = [
     icon: Users,
     children: [
       { path: "/admin/employees", label: "All Employee", icon: Users },
+      { path: "/admin/employees/attendance", label: "Attendance", icon: CalendarCheck },
       { path: "/admin/employees/add", label: "Add Employee", icon: UserRoundPlus },
       { path: "/admin/servers", label: "Manage Server", icon: UtensilsCrossed },
       { path: "/admin/delivery-partners", label: "Manage Delivery Partner", icon: Bike },

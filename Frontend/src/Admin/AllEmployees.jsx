@@ -241,14 +241,15 @@ const AllEmployees = () => {
                   <th className="px-4 py-4">Employee Type</th>
                   <th className="px-4 py-4">Phone Number</th>
                   <th className="px-4 py-4">Status</th>
+                  <th className="px-4 py-4">Today's Attendance</th>
                   <th className="px-4 py-4">Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {loading ? (
-                  <tr><td colSpan={6} className="px-5 py-12 text-center text-sm text-[#777]">Loading employees...</td></tr>
+                  <tr><td colSpan={7} className="px-5 py-12 text-center text-sm text-[#777]">Loading employees...</td></tr>
                 ) : error ? (
-                  <tr><td colSpan={6} role="alert" className="px-5 py-12 text-center text-sm text-[#a13e30]">{error}</td></tr>
+                  <tr><td colSpan={7} role="alert" className="px-5 py-12 text-center text-sm text-[#a13e30]">{error}</td></tr>
                 ) : visibleEmployees.length > 0 ? visibleEmployees.map((employee, index) => (
                   <tr key={employee.employee_id} className="border-t border-[#f0ebe6] align-middle text-sm text-[#4d4d4d]">
                     <td className="px-4 py-4 font-medium text-xs">{index + 1}</td>
@@ -279,6 +280,29 @@ const AllEmployees = () => {
                         <span className={`h-2 w-2 rounded-full ${employee.status === "Active" ? "bg-[#2d7b5a]" : "bg-[#929892]"}`} />
                         {employee.status}
                       </span>
+                    </td>
+                    <td className="px-4 py-4">
+                      {employee.today_check_in ? (
+                        <div className="flex flex-col gap-0.5">
+                          <span className={`inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[11px] font-bold w-fit ${
+                            employee.today_check_out
+                              ? "bg-blue-50 text-blue-800 border border-blue-200"
+                              : "bg-emerald-50 text-emerald-800 border border-emerald-200"
+                          }`}>
+                            <span className={`h-1.5 w-1.5 rounded-full ${employee.today_check_out ? "bg-blue-600" : "bg-emerald-600 animate-ping"}`} />
+                            {employee.today_check_out ? "Completed Shift" : "Clocked In"}
+                          </span>
+                          <span className="text-[10px] text-gray-500 font-mono">
+                            {new Date(employee.today_check_in).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            {employee.today_check_out ? ` - ${new Date(employee.today_check_out).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}` : ''}
+                          </span>
+                        </div>
+                      ) : (
+                        <span className="inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[11px] font-medium bg-gray-100 text-gray-500 w-fit">
+                          <span className="h-1.5 w-1.5 rounded-full bg-gray-400" />
+                          Not Clocked In
+                        </span>
+                      )}
                     </td>
                     <td className="px-4 py-4">
                       <div className="flex items-center gap-2">
@@ -359,6 +383,23 @@ const AllEmployees = () => {
                   <div className="flex items-center justify-between gap-3">
                     <span className="text-xs text-[#849087]">Phone</span>
                     <span className="text-right text-sm text-[#34443b]">{employee.phone_number}</span>
+                  </div>
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="text-xs text-[#849087]">Today's Attendance</span>
+                    <span className="text-right text-xs">
+                      {employee.today_check_in ? (
+                        <span className={`inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[10px] font-bold ${
+                          employee.today_check_out
+                            ? "bg-blue-50 text-blue-800 border border-blue-200"
+                            : "bg-emerald-50 text-emerald-800 border border-emerald-200"
+                        }`}>
+                          <span className={`h-1.5 w-1.5 rounded-full ${employee.today_check_out ? "bg-blue-600" : "bg-emerald-600 animate-ping"}`} />
+                          {employee.today_check_out ? "Done" : "In"} ({new Date(employee.today_check_in).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })})
+                        </span>
+                      ) : (
+                        <span className="text-gray-400 text-[11px]">Not Clocked In</span>
+                      )}
+                    </span>
                   </div>
                 </div>
                 <div className="flex items-center justify-end gap-2">

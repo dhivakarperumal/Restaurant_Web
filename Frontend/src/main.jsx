@@ -27,6 +27,7 @@ import ChefInventoryRequests from './Chef Restaurant/ChefInventoryRequests.jsx'
 import ChefProducts from './Chef Restaurant/ChefProducts.jsx'
 import AddEmployee from './Admin/AddEmployee.jsx'
 import AllEmployees from './Admin/AllEmployees.jsx'
+import AdminAttendance from './Admin/AdminAttendance.jsx'
 import ManageServers from './Admin/ManageServers.jsx'
 import ManageDeliveryPartners from './Admin/ManageDeliveryPartners.jsx'
 import AdminCustomers from './Admin/AdminCustomers.jsx'
@@ -158,6 +159,14 @@ const router = createHashRouter([
           {
             path: 'employees',
             element: <AllEmployees />,
+          },
+          {
+            path: 'employees/attendance',
+            element: <AdminAttendance />,
+          },
+          {
+            path: 'attendance',
+            element: <AdminAttendance />,
           },
           {
             path: 'servers',

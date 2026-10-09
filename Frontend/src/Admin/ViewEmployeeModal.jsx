@@ -268,6 +268,17 @@ const ViewEmployeeModal = ({
                         {serverTableCount} {serverTableCount === 1 ? "Table" : "Tables"}
                       </span>
                     )}
+                    {employee.today_check_in ? (
+                      <span className="inline-flex items-center gap-1 rounded-lg bg-emerald-400/20 px-2 py-0.5 text-xs font-semibold text-emerald-200">
+                        <CheckCircle2 className="h-3.5 w-3.5 text-emerald-300" />
+                        {employee.today_check_out ? "Shift Completed" : "Clocked In"} (
+                        {new Date(employee.today_check_in).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })})
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1 rounded-lg bg-white/10 px-2 py-0.5 text-xs font-semibold text-white/70">
+                        <Clock className="h-3.5 w-3.5" /> Not Clocked In Today
+                      </span>
+                    )}
                   </div>
 
                   <h2

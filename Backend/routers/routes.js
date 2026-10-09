@@ -37,6 +37,7 @@ const { getActiveBill, getAllBills, getBill, settleBill } = require('../controll
 const ordersRouter = require('./orders');
 const revenueRouter = require('./revenue');
 const reservationsRouter = require('./reservations');
+const attendanceRouter = require('./attendance');
 
 const router = express.Router();
 const uploadDirectory = path.join(__dirname, '..', 'upload');
@@ -291,6 +292,7 @@ router.put('/employees/:employeeId/status', optionalAuth, requireEmployeeAdmin, 
 router.put('/employees/:employeeId', optionalAuth, requireEmployeeAdmin, employeeUpload.any(), updateEmployee);
 router.delete('/employees/:employeeId', optionalAuth, requireEmployeeAdmin, deleteEmployee);
 router.post('/employees', optionalAuth, requireEmployeeAdmin, employeeUpload.any(), createEmployee);
+router.use('/attendance', attendanceRouter);
 
 router.use('/server-tables', optionalAuth, serverTableRouter);
 router.use('/tables', optionalAuth, serverTableRouter);

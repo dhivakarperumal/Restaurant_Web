@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { ArrowRight, Bike, CheckCircle2, Clock3, IndianRupee, MapPin, PackageCheck, Power, RefreshCw, Route, XCircle } from "lucide-react";
 import api from "../api";
 import toast from "react-hot-toast";
+import AttendanceWidget from "../CommonComponents/AttendanceWidget";
 
 const metrics = [
   { key: "todayDeliveries", label: "Today's deliveries", icon: PackageCheck, tone: "mint", caption: "Today" },
@@ -81,6 +82,9 @@ const DeliveryPartnerDashboard = () => {
           <button type="button" onClick={toggleAvailability} disabled={availabilityBusy || loading || Boolean(error)} aria-pressed={isOnline} className={`inline-flex min-w-36 items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-bold text-white transition disabled:cursor-not-allowed disabled:opacity-55 ${isOnline ? "bg-[#248148] hover:bg-[#1e713d]" : "bg-gray-700 hover:bg-gray-800"}`}><Power size={16} />{availabilityBusy ? "Updating..." : isOnline ? "Go offline" : "Go online"}</button>
         </div>
       </header>
+
+      {/* Delivery Partner Attendance Banner */}
+      <AttendanceWidget variant="dashboard" />
 
       <div className={`flex items-center gap-3 rounded-xl border px-4 py-3 ${isOnline ? "border-emerald-200 bg-emerald-50" : "border-gray-200 bg-white"}`}>
         <span className={`h-2.5 w-2.5 rounded-full ${isOnline ? "bg-emerald-500" : "bg-gray-400"}`} />

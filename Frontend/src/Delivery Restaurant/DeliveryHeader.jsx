@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "../PrivateRouter/AuthContext";
 import LogoutConfirmModal from "../CommonComponents/LogoutConfirmModal";
+import AttendanceWidget from "../CommonComponents/AttendanceWidget";
 
 const pageTitles = {
   "/delivery": "Dashboard",
@@ -79,6 +80,7 @@ const DeliveryHeader = ({ onMenuClick }) => {
         </div>
       </div>
       <div className="flex items-center gap-3">
+        <AttendanceWidget variant="header" />
         <div ref={profileMenuRef} className="relative">
           <button type="button" onClick={() => setProfileMenuOpen((open) => !open)} aria-expanded={profileMenuOpen} aria-haspopup="menu" aria-label="Open profile menu" className="flex items-center gap-2 rounded-full p-1 transition hover:bg-gray-50">
             <div className="hidden max-w-44 text-right sm:block">

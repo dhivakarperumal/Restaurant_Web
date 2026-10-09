@@ -174,15 +174,30 @@ async function createEmployeeWithUser({ employeeData, createdBy, password }) {
 }
 
 async function findEmployees(employeeType) {
+  const selectSql = `
+    SELECT employees.*,
+           a.check_in AS today_check_in,
+           a.check_out AS today_check_out,
+           a.status AS today_attendance_status,
+           a.total_hours AS today_total_hours,
+           CASE
+             WHEN a.check_in IS NOT NULL AND a.check_out IS NULL THEN 'Working'
+             WHEN a.check_in IS NOT NULL AND a.check_out IS NOT NULL THEN 'Completed'
+             ELSE 'Absent'
+           END AS today_shift_state
+    FROM employees
+    LEFT JOIN employee_attendance a 
+      ON a.employee_id = employees.employee_id AND a.date = CURDATE()
+  `;
   if (employeeType) {
     const [rows] = await db.execute(
-      `SELECT * FROM employees WHERE employee_type = ? ORDER BY created_at DESC`,
+      `${selectSql} WHERE employees.employee_type = ? ORDER BY employees.created_at DESC`,
       [employeeType]
     );
     return rows;
   }
   const [rows] = await db.execute(
-    `SELECT * FROM employees ORDER BY created_at DESC`
+    `${selectSql} ORDER BY employees.created_at DESC`
   );
   return rows;
 }
@@ -232,7 +247,15 @@ async function updateEmployeeQuickStatus(employeeId, { status, available_for_del
 
 async function findEmployeeById(employeeId) {
   const [rows] = await db.execute(
-    'SELECT * FROM employees WHERE employee_id = ? LIMIT 1',
+    `SELECT employees.*,
+            a.check_in AS today_check_in,
+            a.check_out AS today_check_out,
+            a.status AS today_attendance_status,
+            a.total_hours AS today_total_hours
+     FROM employees
+     LEFT JOIN employee_attendance a 
+       ON a.employee_id = employees.employee_id AND a.date = CURDATE()
+     WHERE employees.employee_id = ? LIMIT 1`,
     [employeeId]
   );
   return rows[0] || null;
