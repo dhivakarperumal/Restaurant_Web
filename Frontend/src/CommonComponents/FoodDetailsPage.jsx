@@ -1,5 +1,5 @@
 import { useContext, useEffect, useState } from 'react';
-import { ArrowLeft, BadgeCheck, CheckCircle2, Clock3, Flame, Heart, Info, Leaf, Minus, Plus, ShoppingCart, Star, Truck, UtensilsCrossed } from 'lucide-react';
+import { ArrowLeft, BadgeCheck, CheckCircle2, ChevronLeft, ChevronRight, Clock3, Flame, Heart, Leaf, Minus, Plus, ShoppingCart, Star, Truck, UtensilsCrossed } from 'lucide-react';
 import { Link, useLocation, useParams } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import api, { BACKEND_BASE_URL } from '../api';
@@ -31,6 +31,7 @@ function FoodDetailsPage() {
   const [customizing, setCustomizing] = useState(false);
   const [quantity, setQuantity] = useState(1);
   const [zoomPosition, setZoomPosition] = useState(null);
+  const [activeDetailsTab, setActiveDetailsTab] = useState('overview');
 
   useEffect(() => {
     if (food && String(food.food_id || food.id) === String(foodId)) return undefined;
@@ -92,6 +93,13 @@ function FoodDetailsPage() {
   const images = Array.isArray(food?.food_images) ? food.food_images.filter(Boolean) : [];
   const addons = Array.isArray(food?.addons) ? food.addons : [];
   const customizations = Array.isArray(food?.customizations) ? food.customizations : [];
+  const detailTabs = [
+    { id: 'overview', label: 'Overview' },
+    { id: 'food-details', label: 'Food Details' },
+    ...(addons.length ? [{ id: 'add-ons', label: 'Add-ons' }] : []),
+    ...(customizations.length ? [{ id: 'customization', label: 'Customization' }] : []),
+    ...(Number(food?.rating) > 0 ? [{ id: 'reviews', label: 'Reviews' }] : []),
+  ];
   const price = Number(food?.final_price || food?.mrp || 0);
   const mrp = Number(food?.mrp || 0);
   const hasDiscount = Number(food?.discount || 0) > 0 && mrp > price;
@@ -237,109 +245,6 @@ function FoodDetailsPage() {
                 </p>
               </section>
 
-              <section id="food-details" className="scroll-mt-24 overflow-hidden rounded-[1.5rem] border border-[#e9e4d8] bg-white/90 shadow-[0_14px_40px_-30px_rgba(38,55,37,0.3)]">
-                <div className="border-b border-[#eee9de] bg-gradient-to-r from-[#f2f6ec] to-[#fffdf8] px-5 py-4 sm:px-6">
-                  <div className="flex items-center gap-3">
-                    <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#174a32] text-white">
-                      <Info className="h-5 w-5" />
-                    </span>
-                    <div>
-                      <h2 className="font-serif text-xl font-bold text-[#17241e]">Food details</h2>
-                      <p className="mt-0.5 text-xs text-slate-500">Serving, preparation, and ordering information</p>
-                    </div>
-                  </div>
-                </div>
-                <div className="grid gap-px bg-[#eeeae2] sm:grid-cols-2">
-                  {[
-                    ['Food ID', food.food_id || food.id],
-                    ['Cuisine', food.cuisine_name],
-                    ['Category', food.category_name],
-                    ['Subcategory', food.subcategory_name],
-                    ['Serving size', food.serving_size],
-                    ['Portion', food.portion_size],
-                    ['Preparation time', Number(food.preparation_time) > 0 ? `${food.preparation_time} minutes` : 'Not specified'],
-                    ['Available time', food.available_time],
-                    ['Menu status', String(food.status || 'Active')],
-                  ].filter(([, value]) => value !== undefined && value !== null && String(value).trim() !== '').map(([label, value]) => (
-                    <div key={label} className="bg-white px-5 py-3.5 sm:px-6">
-                      <p className="text-[10px] font-extrabold uppercase tracking-[0.14em] text-slate-400">{label}</p>
-                      <p className="mt-1.5 break-words text-sm font-semibold text-[#26362e]">{value}</p>
-                    </div>
-                  ))}
-                </div>
-                <div className="border-t border-[#eee9de] bg-[#fffefa] p-5 sm:p-6">
-                  <h3 className="text-xs font-extrabold uppercase tracking-[0.14em] text-slate-500">Ordering availability</h3>
-                  <div className="mt-3 grid gap-2 sm:grid-cols-3">
-                    {[
-                      ['Dine-in', food.dining_available],
-                      ['Takeaway', food.takeaway_available],
-                      ['Delivery', food.delivery_available],
-                    ].map(([label, available]) => (
-                      <div key={label} className={`flex items-center gap-2 rounded-xl border px-3 py-2.5 ${available ? 'border-emerald-100 bg-emerald-50/60 text-emerald-800' : 'border-slate-200 bg-slate-50 text-slate-500'}`}>
-                        <CheckCircle2 className="h-4 w-4 shrink-0" />
-                        <div>
-                          <p className="text-[11px] font-bold">{label}</p>
-                          <p className="mt-0.5 text-[10px]">{available ? 'Available' : 'Not available'}</p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </section>
-
-              {(addons.length > 0 || customizations.length > 0) && (
-                <section className="space-y-6">
-                  {addons.length > 0 && (
-                    <div id="add-ons" className="scroll-mt-24 overflow-hidden rounded-[1.5rem] border border-[#e9e4d8] bg-white/90 shadow-[0_14px_40px_-30px_rgba(38,55,37,0.3)]">
-                      <div className="border-b border-[#eee9de] bg-[#fffdf8] px-5 py-4 sm:px-6">
-                        <h2 className="font-serif text-lg font-bold text-[#17241e]">Add-ons</h2>
-                        <p className="mt-0.5 text-xs text-slate-500">Optional extras available with this dish</p>
-                      </div>
-                      <ul className="divide-y divide-[#f0ede6] px-5 sm:px-6">
-                        {addons.map((addon, index) => {
-                          const available = String(addon.status || 'Active').toLowerCase() === 'active';
-                          return (
-                            <li key={`${addon.addon_name || addon.name}-${index}`} className="flex items-center justify-between gap-3 py-3">
-                              <span className={`text-sm font-medium ${available ? 'text-slate-700' : 'text-slate-400 line-through'}`}>{addon.addon_name || addon.name}</span>
-                              <span className="shrink-0 text-sm font-bold text-[#1a3c36]">{Number(addon.price) > 0 ? `+₹${Number(addon.price).toFixed(2)}` : 'Included'}</span>
-                            </li>
-                          );
-                        })}
-                      </ul>
-                    </div>
-                  )}
-
-                  {customizations.length > 0 && (
-                    <div id="customization" className="scroll-mt-24 overflow-hidden rounded-[1.5rem] border border-[#e9e4d8] bg-white/90 shadow-[0_14px_40px_-30px_rgba(38,55,37,0.3)]">
-                      <div className="border-b border-[#eee9de] bg-[#fffdf8] px-5 py-4 sm:px-6">
-                        <h2 className="font-serif text-lg font-bold text-[#17241e]">Choose your options</h2>
-                        <p className="mt-0.5 text-xs text-slate-500">Customize this dish to your preference</p>
-                      </div>
-                      <div className="space-y-4 p-5 sm:p-6">
-                        {customizations.map((group, index) => (
-                          <div key={`${group.name}-${index}`}>
-                            <div className="flex flex-wrap items-center gap-2">
-                              <h3 className="text-sm font-bold text-slate-800">{group.name}</h3>
-                              <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-500">
-                                {group.selection_type === 'Multiple' ? 'Choose any' : 'Choose one'}
-                              </span>
-                              {group.required && <span className="text-[10px] font-bold text-rose-600">Required</span>}
-                            </div>
-                            <ul className="mt-2 flex flex-wrap gap-2">
-                              {(group.options || []).map((option, optionIndex) => (
-                                <li key={`${option.name}-${optionIndex}`} className="rounded-lg border border-[#e8eee5] bg-[#f8faf7] px-3 py-2 text-xs text-slate-700">
-                                  {option.name}
-                                  {Number(option.price) > 0 && <span className="ml-1 font-bold text-[#1a3c36]">+₹{Number(option.price).toFixed(2)}</span>}
-                                </li>
-                              ))}
-                            </ul>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </section>
-              )}
             </div>
 
             <aside className="order-1 lg:sticky lg:top-24 lg:order-1">
@@ -366,6 +271,26 @@ function FoodDetailsPage() {
                       <button type="button" onClick={() => toggleWishlist(food)} aria-label={isInWishlist ? 'Remove from favorites' : 'Add to favorites'} className={`absolute right-4 top-4 flex h-11 w-11 items-center justify-center rounded-full bg-white shadow-lg transition hover:scale-105 ${isInWishlist ? 'text-rose-600' : 'text-slate-500 hover:text-rose-600'}`}>
                         <Heart className={`h-5 w-5 ${isInWishlist ? 'fill-rose-600' : ''}`} />
                       </button>
+                    )}
+                    {images.length > 1 && (
+                      <>
+                        <button
+                          type="button"
+                          onClick={() => setActiveImage((current) => (current - 1 + images.length) % images.length)}
+                          aria-label="View previous food image"
+                          className="absolute left-3 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-white/80 bg-white/95 text-slate-800 shadow-lg transition hover:scale-105 hover:bg-white"
+                        >
+                          <ChevronLeft className="h-5 w-5" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setActiveImage((current) => (current + 1) % images.length)}
+                          aria-label="View next food image"
+                          className="absolute right-3 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-white/80 bg-white/95 text-slate-800 shadow-lg transition hover:scale-105 hover:bg-white"
+                        >
+                          <ChevronRight className="h-5 w-5" />
+                        </button>
+                      </>
                     )}
                     <span className="absolute bottom-4 left-4 inline-flex items-center gap-2 rounded-xl bg-white/95 px-3 py-2 text-[11px] font-bold text-slate-800 shadow-md backdrop-blur">
                       <span className={`h-2 w-2 rounded-full ${String(food.food_type || '').toLowerCase() === 'veg' ? 'bg-emerald-600' : 'bg-rose-600'}`} />
@@ -398,6 +323,172 @@ function FoodDetailsPage() {
               </div>
             </aside>
           </div>
+
+          <section className="mt-8 overflow-hidden rounded-[1.75rem] border border-[#e9e4d8] bg-white/90 shadow-[0_18px_55px_-36px_rgba(38,55,37,0.35)]">
+            <div className="border-b border-[#eee9de] bg-gradient-to-r from-white to-[#faf8f1] p-3 sm:px-5 sm:py-4">
+              <div role="tablist" aria-label="Food information" className="flex gap-2 overflow-x-auto scrollbar-hide">
+                {detailTabs.map((tab) => (
+                  <button
+                    key={tab.id}
+                    type="button"
+                    role="tab"
+                    id={`food-tab-${tab.id}`}
+                    aria-selected={activeDetailsTab === tab.id}
+                    aria-controls={`food-panel-${tab.id}`}
+                    onClick={() => setActiveDetailsTab(tab.id)}
+                    className={`min-w-fit flex-1 rounded-xl px-4 py-3 text-xs font-bold transition sm:text-sm ${activeDetailsTab === tab.id ? 'bg-gradient-to-r from-[#10482f] to-[#075b39] text-white shadow-md' : 'text-slate-600 hover:bg-[#f3f5ee] hover:text-[#174a32]'}`}
+                  >
+                    {tab.label}
+                    {tab.id === 'add-ons' && <span className="ml-1.5 opacity-75">({addons.length})</span>}
+                    {tab.id === 'customization' && <span className="ml-1.5 opacity-75">({customizations.length})</span>}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div
+              role="tabpanel"
+              id={`food-panel-${activeDetailsTab}`}
+              aria-labelledby={`food-tab-${activeDetailsTab}`}
+              className="min-h-56 p-5 sm:p-7"
+            >
+              {activeDetailsTab === 'overview' && (
+                <div className="grid items-center gap-6 md:grid-cols-[1.05fr_0.95fr]">
+                  <div>
+                    <p className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-emerald-700">Made fresh for you</p>
+                    <h2 className="mt-2 font-serif text-2xl font-bold leading-tight text-[#17241e] sm:text-3xl">
+                      A taste of <span className="font-dancing text-3xl font-bold text-orange-600 sm:text-4xl">tradition</span>
+                    </h2>
+                    <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-600">
+                      {food.description || `Our ${food.food_name} is prepared fresh to order with care, bringing together delicious ingredients and satisfying flavor in every serving.`}
+                    </p>
+                    <div className="mt-5 flex flex-wrap gap-2">
+                      {[
+                        ['Freshly prepared', BadgeCheck],
+                        [food.portion_size || 'Made to order', UtensilsCrossed],
+                        ...(Number(food.preparation_time) > 0 ? [[`Ready in ${food.preparation_time} min`, Clock3]] : []),
+                      ].map(([label, Icon]) => (
+                        <span key={label} className="inline-flex items-center gap-2 rounded-full border border-[#e7eee2] bg-[#f7faf4] px-3 py-2 text-[11px] font-semibold text-[#31543e]">
+                          <Icon className="h-4 w-4 text-emerald-700" />{label}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="relative min-h-52 overflow-hidden rounded-2xl bg-gradient-to-br from-[#e8efe2] via-[#f6f1e5] to-[#f8e8cf]">
+                    {images.length > 0 && <img src={imageUrl(images[activeImage] || images[0])} alt="" className="absolute inset-0 h-full w-full object-cover opacity-90" />}
+                    <div className="absolute inset-0 bg-gradient-to-r from-[#0d291d]/45 via-transparent to-transparent" />
+                    <div className="absolute bottom-4 left-4 rounded-xl bg-white/90 px-4 py-3 shadow-lg backdrop-blur">
+                      <p className="text-[10px] font-bold uppercase tracking-widest text-emerald-800">{food.cuisine_name || 'Restaurant favorite'}</p>
+                      <p className="mt-1 font-serif text-lg font-bold text-[#17241e]">{food.food_name}</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {activeDetailsTab === 'food-details' && (
+                <div>
+                  <div className="mb-5">
+                    <h2 className="font-serif text-2xl font-bold text-[#17241e]">Food details</h2>
+                    <p className="mt-1 text-sm text-slate-500">Serving, preparation, and ordering information.</p>
+                  </div>
+                  <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                    {[
+                      ['Food ID', food.food_id || food.id],
+                      ['Cuisine', food.cuisine_name],
+                      ['Category', food.category_name],
+                      ['Subcategory', food.subcategory_name],
+                      ['Serving size', food.serving_size],
+                      ['Portion', food.portion_size],
+                      ['Preparation time', Number(food.preparation_time) > 0 ? `${food.preparation_time} minutes` : 'Not specified'],
+                      ['Available time', food.available_time],
+                      ['Menu status', String(food.status || 'Active')],
+                    ].filter(([, value]) => value !== undefined && value !== null && String(value).trim() !== '').map(([label, value]) => (
+                      <div key={label} className="rounded-xl border border-[#eee9de] bg-[#fffefa] px-4 py-3">
+                        <p className="text-[10px] font-extrabold uppercase tracking-[0.14em] text-slate-400">{label}</p>
+                        <p className="mt-1.5 break-words text-sm font-semibold text-[#26362e]">{value}</p>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="mt-5 grid gap-3 sm:grid-cols-3">
+                    {[
+                      ['Dine-in', food.dining_available],
+                      ['Takeaway', food.takeaway_available],
+                      ['Delivery', food.delivery_available],
+                    ].map(([label, available]) => (
+                      <div key={label} className={`flex items-center gap-3 rounded-xl border px-4 py-3 ${available ? 'border-emerald-100 bg-emerald-50/60 text-emerald-800' : 'border-slate-200 bg-slate-50 text-slate-500'}`}>
+                        <CheckCircle2 className="h-5 w-5 shrink-0" />
+                        <div>
+                          <p className="text-xs font-bold">{label}</p>
+                          <p className="mt-0.5 text-[11px]">{available ? 'Available' : 'Not available'}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {activeDetailsTab === 'add-ons' && (
+                <div>
+                  <h2 className="font-serif text-2xl font-bold text-[#17241e]">Add something extra</h2>
+                  <p className="mt-1 text-sm text-slate-500">Optional extras available with this dish.</p>
+                  <ul className="mt-5 divide-y divide-[#eee9de]">
+                    {addons.map((addon, index) => {
+                      const available = String(addon.status || 'Active').toLowerCase() === 'active';
+                      return (
+                        <li key={`${addon.addon_name || addon.name}-${index}`} className="flex items-center justify-between gap-4 py-4">
+                          <span className={`text-sm font-semibold ${available ? 'text-slate-700' : 'text-slate-400 line-through'}`}>{addon.addon_name || addon.name}</span>
+                          <span className="shrink-0 rounded-lg bg-[#f2f6ec] px-3 py-1.5 text-sm font-bold text-[#174a32]">{Number(addon.price) > 0 ? `+₹${Number(addon.price).toFixed(2)}` : 'Included'}</span>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </div>
+              )}
+
+              {activeDetailsTab === 'customization' && (
+                <div>
+                  <h2 className="font-serif text-2xl font-bold text-[#17241e]">Make it your own</h2>
+                  <p className="mt-1 text-sm text-slate-500">Choose the options that suit your taste when you add this dish to your cart.</p>
+                  <div className="mt-5 grid gap-4 md:grid-cols-2">
+                    {customizations.map((group, index) => (
+                      <div key={`${group.name}-${index}`} className="rounded-2xl border border-[#eee9de] bg-[#fffefa] p-4">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <h3 className="text-sm font-bold text-slate-800">{group.name}</h3>
+                          <span className="rounded-full bg-slate-100 px-2 py-1 text-[10px] font-semibold text-slate-500">
+                            {group.selection_type === 'Multiple' ? 'Choose any' : 'Choose one'}
+                          </span>
+                          {group.required && <span className="text-[10px] font-bold text-rose-600">Required</span>}
+                        </div>
+                        <ul className="mt-3 flex flex-wrap gap-2">
+                          {(group.options || []).map((option, optionIndex) => (
+                            <li key={`${option.name}-${optionIndex}`} className="rounded-lg border border-[#e8eee5] bg-[#f8faf7] px-3 py-2 text-xs text-slate-700">
+                              {option.name}
+                              {Number(option.price) > 0 && <span className="ml-1 font-bold text-[#1a3c36]">+₹{Number(option.price).toFixed(2)}</span>}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {activeDetailsTab === 'reviews' && Number(food.rating) > 0 && (
+                <div className="flex flex-col gap-5 sm:flex-row sm:items-center">
+                  <div className="flex h-28 w-36 shrink-0 flex-col items-center justify-center rounded-2xl bg-[#fff5df]">
+                    <span className="font-serif text-4xl font-bold text-[#174a32]">{Number(food.rating).toFixed(1)}</span>
+                    <span className="mt-1 flex text-amber-500" aria-label={`${Number(food.rating).toFixed(1)} out of 5 stars`}>
+                      {[1, 2, 3, 4, 5].map((star) => <Star key={star} className={`h-3.5 w-3.5 ${Number(food.rating) >= star ? 'fill-current' : 'text-amber-200'}`} />)}
+                    </span>
+                  </div>
+                  <div>
+                    <h2 className="font-serif text-2xl font-bold text-[#17241e]">Customer rating</h2>
+                    <p className="mt-2 max-w-xl text-sm leading-6 text-slate-600">This is the current overall rating recorded for {food.food_name}.</p>
+                  </div>
+                </div>
+              )}
+            </div>
+          </section>
         </PageContainer>
       </main>
       {customizing && (
