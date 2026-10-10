@@ -243,6 +243,19 @@ function FoodDetailsPage() {
                   <span className={`h-2 w-2 rounded-full ${isAvailable ? 'bg-emerald-600' : 'bg-rose-500'}`} />
                   {isAvailable ? 'Available to order' : 'Currently unavailable'}
                 </p>
+                <div className="mt-4 grid grid-cols-3 gap-2">
+                  {[
+                    ['Dine-in', food.dining_available],
+                    ['Takeaway', food.takeaway_available],
+                    ['Delivery', food.delivery_available],
+                  ].map(([label, available]) => (
+                    <div key={label} className={`flex min-w-0 flex-col items-center gap-1 rounded-xl border px-2 py-3 text-center ${available ? 'border-emerald-100 bg-emerald-50/60 text-emerald-800' : 'border-slate-200 bg-slate-50 text-slate-500'}`}>
+                      {label === 'Delivery' ? <Truck className="h-5 w-5" /> : <CheckCircle2 className="h-5 w-5" />}
+                      <span className="text-[10px] font-bold leading-tight sm:text-[11px]">{label}</span>
+                      <span className="text-[9px] leading-tight sm:text-[10px]">{available ? 'Available' : 'Not available'}</span>
+                    </div>
+                  ))}
+                </div>
               </section>
 
             </div>
@@ -406,21 +419,6 @@ function FoodDetailsPage() {
                       <div key={label} className="rounded-xl border border-[#eee9de] bg-[#fffefa] px-4 py-3">
                         <p className="text-[10px] font-extrabold uppercase tracking-[0.14em] text-slate-400">{label}</p>
                         <p className="mt-1.5 break-words text-sm font-semibold text-[#26362e]">{value}</p>
-                      </div>
-                    ))}
-                  </div>
-                  <div className="mt-5 grid gap-3 sm:grid-cols-3">
-                    {[
-                      ['Dine-in', food.dining_available],
-                      ['Takeaway', food.takeaway_available],
-                      ['Delivery', food.delivery_available],
-                    ].map(([label, available]) => (
-                      <div key={label} className={`flex items-center gap-3 rounded-xl border px-4 py-3 ${available ? 'border-emerald-100 bg-emerald-50/60 text-emerald-800' : 'border-slate-200 bg-slate-50 text-slate-500'}`}>
-                        <CheckCircle2 className="h-5 w-5 shrink-0" />
-                        <div>
-                          <p className="text-xs font-bold">{label}</p>
-                          <p className="mt-0.5 text-[11px]">{available ? 'Available' : 'Not available'}</p>
-                        </div>
                       </div>
                     ))}
                   </div>
