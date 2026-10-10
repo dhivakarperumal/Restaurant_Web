@@ -1,5 +1,5 @@
 import { useContext, useEffect, useState } from 'react';
-import { ArrowLeft, CheckCircle2, Clock3, Flame, Heart, Info, ShoppingCart, Star, UtensilsCrossed } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, Clock3, Flame, Heart, Info, Minus, Plus, ShoppingCart, Star, UtensilsCrossed } from 'lucide-react';
 import { Link, useLocation, useParams } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import api, { BACKEND_BASE_URL } from '../api';
@@ -29,6 +29,7 @@ function FoodDetailsPage() {
   const [error, setError] = useState('');
   const [activeImage, setActiveImage] = useState(0);
   const [customizing, setCustomizing] = useState(false);
+  const [quantity, setQuantity] = useState(1);
 
   useEffect(() => {
     if (food && String(food.food_id || food.id) === String(foodId)) return undefined;
@@ -179,10 +180,33 @@ function FoodDetailsPage() {
                 <p className={`mt-2 text-xs font-semibold ${isAvailable ? 'text-emerald-700' : 'text-rose-600'}`}>{isAvailable ? 'Available to order' : 'Currently unavailable'}</p>
                 {food.featured && <span className="mt-3 inline-flex rounded-full bg-amber-50 px-3 py-1 text-xs font-bold text-amber-800">Featured dish</span>}
 
-                <button type="button" onClick={() => setCustomizing(true)} disabled={!isAvailable} className="mt-6 inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-[#1a3c36] px-6 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-[#245048] disabled:cursor-not-allowed disabled:bg-slate-300 sm:w-auto">
+                <div className="mt-6 flex flex-wrap items-center gap-3">
+                  <div className="inline-flex h-12 items-center rounded-xl border border-slate-200 bg-white">
+                    <button
+                      type="button"
+                      onClick={() => setQuantity((current) => Math.max(1, current - 1))}
+                      disabled={quantity <= 1}
+                      aria-label="Decrease quantity"
+                      className="flex h-full w-11 items-center justify-center rounded-l-xl text-slate-600 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
+                    >
+                      <Minus className="h-4 w-4" />
+                    </button>
+                    <span aria-live="polite" aria-label={`Quantity ${quantity}`} className="min-w-10 text-center text-sm font-bold text-slate-800">{quantity}</span>
+                    <button
+                      type="button"
+                      onClick={() => setQuantity((current) => Math.min(99, current + 1))}
+                      disabled={quantity >= 99}
+                      aria-label="Increase quantity"
+                      className="flex h-full w-11 items-center justify-center rounded-r-xl text-slate-600 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
+                    >
+                      <Plus className="h-4 w-4" />
+                    </button>
+                  </div>
+                  <button type="button" onClick={() => setCustomizing(true)} disabled={!isAvailable} className="inline-flex min-h-12 flex-1 items-center justify-center gap-2 rounded-xl bg-[#1a3c36] px-6 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-[#245048] disabled:cursor-not-allowed disabled:bg-slate-300 sm:flex-none">
                   {isAvailable ? <><ShoppingCart className="h-4 w-4" />Customize & add to cart</> : 'Unavailable'}
-                </button>
-                <p className="mt-3 text-xs text-slate-400">Choose your quantity and available customizations before adding.</p>
+                  </button>
+                </div>
+                <p className="mt-3 text-xs text-slate-400">Choose a quantity and customize this dish before adding it to your cart.</p>
               </section>
 
               <section className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
@@ -321,6 +345,7 @@ function FoodDetailsPage() {
         <FoodCustomizationModal
           key={food.food_id || food.id}
           food={food}
+          initialQuantity={quantity}
           onClose={() => setCustomizing(false)}
           onAdd={addSelectedFoodToCart}
         />
