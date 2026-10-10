@@ -365,8 +365,7 @@ function FoodDetailsPage() {
               className="min-h-56 p-5 sm:p-7"
             >
               {activeDetailsTab === 'overview' && (
-                <div className="grid items-center gap-6 md:grid-cols-[1.05fr_0.95fr]">
-                  <div>
+                <div className="max-w-3xl">
                     <p className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-emerald-700">Made fresh for you</p>
                     <h2 className="mt-2 font-serif text-2xl font-bold leading-tight text-[#17241e] sm:text-3xl">
                       A taste of <span className="font-dancing text-3xl font-bold text-orange-600 sm:text-4xl">tradition</span>
@@ -385,15 +384,6 @@ function FoodDetailsPage() {
                         </span>
                       ))}
                     </div>
-                  </div>
-                  <div className="relative min-h-52 overflow-hidden rounded-2xl bg-gradient-to-br from-[#e8efe2] via-[#f6f1e5] to-[#f8e8cf]">
-                    {images.length > 0 && <img src={imageUrl(images[activeImage] || images[0])} alt="" className="absolute inset-0 h-full w-full object-cover opacity-90" />}
-                    <div className="absolute inset-0 bg-gradient-to-r from-[#0d291d]/45 via-transparent to-transparent" />
-                    <div className="absolute bottom-4 left-4 rounded-xl bg-white/90 px-4 py-3 shadow-lg backdrop-blur">
-                      <p className="text-[10px] font-bold uppercase tracking-widest text-emerald-800">{food.cuisine_name || 'Restaurant favorite'}</p>
-                      <p className="mt-1 font-serif text-lg font-bold text-[#17241e]">{food.food_name}</p>
-                    </div>
-                  </div>
                 </div>
               )}
 
