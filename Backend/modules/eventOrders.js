@@ -189,7 +189,26 @@ const listEventOrders = async ({
     [...params, Number(limit) || 100, Number(offset) || 0]
   );
 
-  return orders;
+  if (!orders.length) return [];
+
+  const orderIds = orders.map((o) => o.id);
+  const [items] = await db.query(
+    `SELECT * FROM event_order_items WHERE event_order_id IN (${orderIds.map(() => '?').join(', ')}) ORDER BY id ASC`,
+    orderIds
+  );
+
+  const itemsByOrderId = new Map();
+  for (const item of items) {
+    if (!itemsByOrderId.has(item.event_order_id)) {
+      itemsByOrderId.set(item.event_order_id, []);
+    }
+    itemsByOrderId.get(item.event_order_id).push(item);
+  }
+
+  return orders.map((order) => ({
+    ...order,
+    items: itemsByOrderId.get(order.id) || [],
+  }));
 };
 
 const getEventOrderById = async (id) => {
