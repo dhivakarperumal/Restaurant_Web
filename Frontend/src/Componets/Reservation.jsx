@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import {
   Armchair,
+  ArrowRight,
   CalendarCheck2,
   CalendarDays,
   CheckCircle2,
@@ -285,8 +286,8 @@ const Reservation = () => {
 
             </div>
 
-            <div className="space-y-0 lg:col-start-2 lg:row-span-3 lg:row-start-1">
-            <section className="flex h-[430px] flex-col overflow-hidden rounded-3xl border border-[#e8e8e1] bg-white p-5 shadow-[0_8px_30px_rgba(25,45,34,0.05)] sm:p-6">
+            <div className="space-y-0 lg:col-start-2 lg:row-start-1">
+            <section className="flex h-[430px] flex-col overflow-hidden rounded-t-3xl border border-[#e8e8e1] bg-white p-5 shadow-[0_8px_30px_rgba(25,45,34,0.05)] sm:p-6">
                 <div className="mb-3 flex items-center justify-between gap-3">
                   <div className="flex items-center gap-3">
                     <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#e9f3df] text-[#155c3b]"><Armchair className="h-6 w-6" /></span>
@@ -352,14 +353,14 @@ const Reservation = () => {
               ))}
             </div>
 
-            <section className="relative overflow-hidden rounded-b-3xl bg-[#073b27] px-6 py-6 text-white shadow-sm sm:px-8">
-              <div className="absolute inset-0 bg-[url('/images/header.png')] bg-cover bg-center opacity-25" />
-              <div className="absolute inset-0 bg-gradient-to-r from-[#073b27] via-[#073b27]/90 to-[#073b27]/30" />
+            <section className="relative min-h-[190px] overflow-hidden rounded-b-3xl bg-[#073b27] px-6 py-6 text-white shadow-sm sm:px-8">
+              <div className="absolute inset-0 bg-[url('/images/offerbanner.png')] bg-cover bg-[position:70%_center]" />
+              <div className="absolute inset-0 bg-gradient-to-r from-[#073b27] via-[#073b27]/90 to-[#073b27]/20" />
               <div className="relative max-w-md">
                 <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.15em] text-[#d8c28d]"><Sparkles className="h-4 w-4" /> Make it memorable</p>
                 <h2 className="mt-2 font-serif text-2xl font-bold sm:text-3xl">Celebrate <span className="block italic text-[#f4b323]">Special Moments</span></h2>
                 <p className="mt-2 max-w-sm text-xs leading-5 text-white/80">Birthdays, anniversaries, family dinners and more. Let us make your evening special.</p>
-                <button type="button" onClick={() => document.querySelector("[name='notes']")?.focus()} className="mt-4 inline-flex items-center gap-2 rounded-lg bg-[#f2780b] px-4 py-2 text-xs font-bold text-white transition hover:bg-[#db6500]">Add a special request <Phone className="h-3.5 w-3.5" /></button>
+                <button type="button" onClick={() => document.querySelector("[name='date']")?.focus()} className="mt-4 inline-flex items-center gap-2 rounded-lg bg-[#f2780b] px-4 py-2 text-xs font-bold text-white transition hover:bg-[#db6500]">Book Now <ArrowRight className="h-3.5 w-3.5" /></button>
               </div>
             </section>
             </div>
