@@ -386,18 +386,21 @@ function FoodDetailsPage() {
                       ))}
                     </div>
                   </div>
-                  <div className="relative min-h-48 overflow-hidden rounded-2xl bg-gradient-to-br from-[#e8efe2] via-[#f6f1e5] to-[#f8e8cf]">
-                    {images.length > 0 && (
-                      <img
-                        src={imageUrl(images[0])}
-                        alt={food.food_name}
-                        className="absolute inset-0 h-full w-full object-cover"
-                      />
-                    )}
-                    <div className="absolute inset-0 bg-gradient-to-t from-[#0d291d]/70 via-transparent to-transparent" />
-                    <div className="absolute bottom-3 left-3 rounded-xl bg-white/90 px-3 py-2 shadow-lg backdrop-blur">
-                      <p className="text-[10px] font-bold uppercase tracking-widest text-emerald-800">{food.cuisine_name || 'Restaurant favorite'}</p>
-                      <p className="mt-0.5 font-serif text-base font-bold text-[#17241e]">{food.food_name}</p>
+                  <div className="relative flex min-h-48 flex-col justify-between overflow-hidden rounded-2xl border border-[#e8ecdf] bg-gradient-to-br from-[#f1f6e9] via-[#fffaf0] to-[#fbe8d5] p-5 sm:p-6">
+                    <span className="absolute -right-8 -top-10 h-36 w-36 rounded-full border-[22px] border-white/35" />
+                    <span className="absolute -bottom-14 -left-8 h-40 w-40 rounded-full border-[24px] border-[#dce9d4]/50" />
+                    <div className="relative z-10 flex items-start justify-between gap-3">
+                      <span className="inline-flex items-center gap-2 rounded-full border border-emerald-100 bg-white/80 px-3 py-1.5 text-[10px] font-extrabold uppercase tracking-wider text-emerald-800 shadow-sm">
+                        <BadgeCheck className="h-4 w-4" /> Made fresh
+                      </span>
+                      <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white/85 text-orange-600 shadow-sm">
+                        <UtensilsCrossed className="h-5 w-5" />
+                      </span>
+                    </div>
+                    <div className="relative z-10 mt-7">
+                      <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-emerald-800">{food.cuisine_name || 'Restaurant favorite'}</p>
+                      <p className="mt-1 font-serif text-xl font-bold text-[#17241e]">{food.food_name}</p>
+                      <p className="mt-2 max-w-xs text-xs leading-5 text-slate-600">Thoughtfully prepared with fresh ingredients and served with care.</p>
                     </div>
                   </div>
                 </div>
