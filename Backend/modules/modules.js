@@ -17,6 +17,7 @@ const { initializeReservationSchema } = require('./reservations');
 const { initializeAttendanceSchema } = require('./attendance');
 const { initializeExpenseSchema } = require('./expenses');
 const { initializeSalarySchema } = require('./salaries');
+const { initializeEventOrderSchema } = require('./eventOrders');
 const {
   initializeServerTableSchema,
   createServerTable,
@@ -35,6 +36,7 @@ module.exports = {
   initializeFoodSchema,
   initializeKitchenOrderSchema,
   initializeOrderSchema,
+  initializeEventOrderSchema,
   initializeWishlistSchema,
   initializeReservationSchema,
   initializeAttendanceSchema,

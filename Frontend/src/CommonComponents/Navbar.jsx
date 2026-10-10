@@ -309,6 +309,14 @@ const Navbar = () => {
                 >
                   Reservation
                 </NavLink>
+                <NavLink
+                  to="/bulk-order"
+                  className={({ isActive }) =>
+                    desktopLinkClass({ isActive })
+                  }
+                >
+                  Bulk Order
+                </NavLink>
                 <NavLink to="/offers" className={desktopLinkClass}>
                   Offers
                 </NavLink>
@@ -477,6 +485,9 @@ const Navbar = () => {
                 </NavLink> */}
                 <NavLink to="/reservation" onClick={() => setMobileMenu(false)} className={mobileLinkClass}>
                   Reservation
+                </NavLink>
+                <NavLink to="/bulk-order" onClick={() => setMobileMenu(false)} className={mobileLinkClass}>
+                  Bulk Order
                 </NavLink>
                 <NavLink to="/offers" onClick={() => setMobileMenu(false)} className={mobileLinkClass}>
                   Offers

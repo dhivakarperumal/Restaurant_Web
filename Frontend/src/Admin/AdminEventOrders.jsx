@@ -1,0 +1,517 @@
+import { useCallback, useEffect, useMemo, useState } from "react";
+import {
+  CalendarDays,
+  CheckCircle2,
+  Clock,
+  Eye,
+  Filter,
+  Info,
+  MapPin,
+  Package,
+  PartyPopper,
+  Phone,
+  RefreshCw,
+  Search,
+  Trash2,
+  UserRound,
+  Users,
+  Utensils,
+  UtensilsCrossed,
+  X,
+} from "lucide-react";
+import toast from "react-hot-toast";
+import api, { BACKEND_BASE_URL } from "../api";
+
+const STATUS_OPTIONS = ["All", "Pending", "Confirmed", "Preparing", "Ready", "Completed", "Cancelled"];
+
+const STATUS_BADGES = {
+  Pending: "bg-amber-100 text-amber-800 border-amber-300",
+  Confirmed: "bg-blue-100 text-blue-800 border-blue-300",
+  Preparing: "bg-purple-100 text-purple-800 border-purple-300",
+  Ready: "bg-indigo-100 text-indigo-800 border-indigo-300",
+  Completed: "bg-emerald-100 text-emerald-800 border-emerald-300",
+  Cancelled: "bg-rose-100 text-rose-800 border-rose-300",
+};
+
+const resolveImageUrl = (image) => {
+  if (!image || typeof image !== "string") return "";
+  if (/^(https?:\/\/|data:)/i.test(image)) return image;
+  return `${BACKEND_BASE_URL}${image.startsWith("/") ? image : `/${image}`}`;
+};
+
+export default function AdminEventOrders() {
+  const [orders, setOrders] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [activeStatus, setActiveStatus] = useState("All");
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedOrder, setSelectedOrder] = useState(null);
+  const [updatingStatus, setUpdatingStatus] = useState(false);
+  const [adminNotes, setAdminNotes] = useState("");
+
+  const fetchEventOrders = useCallback(async (showLoading = false) => {
+    try {
+      if (showLoading) setLoading(true);
+      const res = await api.get("/event-orders", {
+        params: { status: activeStatus === "All" ? undefined : activeStatus },
+      });
+      if (res.data?.success && Array.isArray(res.data.data)) {
+        setOrders(res.data.data);
+      } else {
+        setOrders([]);
+      }
+    } catch (err) {
+      console.error("Failed to fetch event orders:", err);
+      toast.error("Could not load event orders.");
+      setOrders([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [activeStatus]);
+
+  useEffect(() => {
+    fetchEventOrders(true);
+    const interval = setInterval(() => fetchEventOrders(false), 15000);
+    return () => clearInterval(interval);
+  }, [fetchEventOrders]);
+
+  // View full details of a specific order
+  const handleViewDetails = async (orderId) => {
+    try {
+      const res = await api.get(`/event-orders/${orderId}`);
+      if (res.data?.success && res.data.data) {
+        setSelectedOrder(res.data.data);
+        setAdminNotes(res.data.data.admin_notes || "");
+      }
+    } catch (err) {
+      console.error("Failed to get order details:", err);
+      toast.error("Could not load order details.");
+    }
+  };
+
+  // Status update
+  const handleUpdateStatus = async (orderId, newStatus) => {
+    try {
+      setUpdatingStatus(true);
+      const res = await api.patch(`/event-orders/${orderId}/status`, {
+        status: newStatus,
+        admin_notes: adminNotes,
+      });
+      if (res.data?.success) {
+        toast.success(`Order marked as ${newStatus}`);
+        setOrders((prev) =>
+          prev.map((o) => (o.id === orderId || o.event_order_number === orderId ? { ...o, status: newStatus } : o))
+        );
+        if (selectedOrder) {
+          setSelectedOrder((prev) => ({ ...prev, status: newStatus, admin_notes: adminNotes }));
+        }
+      }
+    } catch (err) {
+      console.error("Status update error:", err);
+      toast.error(err.response?.data?.message || "Failed to update status.");
+    } finally {
+      setUpdatingStatus(false);
+    }
+  };
+
+  // Delete Order
+  const handleDeleteOrder = async (orderId) => {
+    if (!window.confirm("Are you sure you want to permanently delete this event order?")) {
+      return;
+    }
+    try {
+      const res = await api.delete(`/event-orders/${orderId}`);
+      if (res.data?.success) {
+        toast.success("Event order deleted.");
+        setOrders((prev) => prev.filter((o) => o.id !== orderId && o.event_order_number !== orderId));
+        if (selectedOrder?.id === orderId || selectedOrder?.event_order_number === orderId) {
+          setSelectedOrder(null);
+        }
+      }
+    } catch (err) {
+      console.error("Delete order error:", err);
+      toast.error("Could not delete order.");
+    }
+  };
+
+  // Metrics
+  const metrics = useMemo(() => {
+    const total = orders.length;
+    const pending = orders.filter((o) => o.status === "Pending").length;
+    const confirmed = orders.filter((o) => o.status === "Confirmed").length;
+    const preparing = orders.filter((o) => o.status === "Preparing").length;
+    const completed = orders.filter((o) => o.status === "Completed").length;
+    return { total, pending, confirmed, preparing, completed };
+  }, [orders]);
+
+  // Filtered orders
+  const filteredOrders = useMemo(() => {
+    const q = searchTerm.trim().toLowerCase();
+    return orders.filter((order) => {
+      const matchesStatus = activeStatus === "All" || order.status === activeStatus;
+      if (!matchesStatus) return false;
+      if (!q) return true;
+      const haystack = [
+        order.event_order_number,
+        order.customer_name,
+        order.customer_phone,
+        order.customer_email,
+        order.event_type,
+        order.venue_address,
+      ].join(" ").toLowerCase();
+      return haystack.includes(q);
+    });
+  }, [orders, activeStatus, searchTerm]);
+
+  return (
+    <div className="p-4 sm:p-6 lg:p-8 space-y-6 bg-[#fbfaf7] min-h-screen">
+      {/* Page Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-black text-[#1a3c36] flex items-center gap-2.5">
+            <PartyPopper className="h-7 w-7 text-[#b07838]" />
+            Bulk &amp; Event Orders
+          </h1>
+          <p className="mt-1 text-xs sm:text-sm text-slate-500">
+            Manage catering requests, guest headcount, event menus, and approvals
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={() => fetchEventOrders(true)}
+          className="inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-4 py-2 text-xs font-bold text-slate-700 shadow-xs hover:bg-slate-50 transition"
+        >
+          <RefreshCw className="h-3.5 w-3.5" /> Refresh List
+        </button>
+      </div>
+
+      {/* Metrics Banner */}
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
+        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-xs">
+          <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Total Bookings</p>
+          <p className="mt-1 text-2xl font-black text-[#1a3c36]">{metrics.total}</p>
+        </div>
+        <div className="rounded-2xl border border-amber-200 bg-amber-50/60 p-4 shadow-xs">
+          <p className="text-[11px] font-bold uppercase tracking-wider text-amber-700">Pending Review</p>
+          <p className="mt-1 text-2xl font-black text-amber-800">{metrics.pending}</p>
+        </div>
+        <div className="rounded-2xl border border-blue-200 bg-blue-50/60 p-4 shadow-xs">
+          <p className="text-[11px] font-bold uppercase tracking-wider text-blue-700">Confirmed</p>
+          <p className="mt-1 text-2xl font-black text-blue-800">{metrics.confirmed}</p>
+        </div>
+        <div className="rounded-2xl border border-purple-200 bg-purple-50/60 p-4 shadow-xs">
+          <p className="text-[11px] font-bold uppercase tracking-wider text-purple-700">In Preparation</p>
+          <p className="mt-1 text-2xl font-black text-purple-800">{metrics.preparing}</p>
+        </div>
+        <div className="rounded-2xl border border-emerald-200 bg-emerald-50/60 p-4 shadow-xs col-span-2 sm:col-span-1">
+          <p className="text-[11px] font-bold uppercase tracking-wider text-emerald-700">Delivered / Done</p>
+          <p className="mt-1 text-2xl font-black text-emerald-800">{metrics.completed}</p>
+        </div>
+      </div>
+
+      {/* Filter Tabs & Search Bar */}
+      <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-4 rounded-2xl border border-slate-200 bg-white p-3 shadow-xs">
+        {/* Status Tabs */}
+        <div className="flex gap-1.5 overflow-x-auto pb-1 lg:pb-0 scrollbar-thin">
+          {STATUS_OPTIONS.map((status) => (
+            <button
+              key={status}
+              type="button"
+              onClick={() => setActiveStatus(status)}
+              className={`rounded-xl px-3.5 py-1.5 text-xs font-bold transition whitespace-nowrap ${
+                activeStatus === status
+                  ? "bg-[#1a3c36] text-white shadow-xs"
+                  : "text-slate-600 hover:bg-slate-100"
+              }`}
+            >
+              {status}
+            </button>
+          ))}
+        </div>
+
+        {/* Search */}
+        <div className="relative w-full lg:w-72">
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400" />
+          <input
+            type="text"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            placeholder="Search by ID, name, phone, event..."
+            className="w-full rounded-xl border border-slate-200 bg-slate-50 pl-9 pr-3 py-1.5 text-xs font-semibold text-slate-800 focus:border-[#1a3c36] focus:bg-white focus:outline-hidden"
+          />
+        </div>
+      </div>
+
+      {/* Orders Table */}
+      <div className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-xs">
+        {loading ? (
+          <div className="py-20 text-center">
+            <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-[#b07838] border-t-transparent" />
+            <p className="mt-3 text-xs font-bold text-slate-500">Loading bulk orders...</p>
+          </div>
+        ) : filteredOrders.length === 0 ? (
+          <div className="py-20 text-center text-slate-400">
+            <Package className="mx-auto h-12 w-12 text-slate-300 mb-2" />
+            <p className="text-sm font-bold text-slate-700">No event orders found</p>
+            <p className="mt-1 text-xs">When users place bulk catering requests, they will show up here.</p>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="min-w-full text-left text-xs">
+              <thead>
+                <tr className="border-b border-slate-200 bg-slate-50 font-bold uppercase tracking-wider text-slate-600">
+                  <th className="px-4 py-3.5">Order Ref</th>
+                  <th className="px-4 py-3.5">Customer</th>
+                  <th className="px-4 py-3.5">Event Details</th>
+                  <th className="px-4 py-3.5">Date &amp; Time</th>
+                  <th className="px-4 py-3.5">Dishes / Pax</th>
+                  <th className="px-4 py-3.5">Estimated Total</th>
+                  <th className="px-4 py-3.5">Status</th>
+                  <th className="px-4 py-3.5 text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 text-slate-700">
+                {filteredOrders.map((order) => (
+                  <tr key={order.id} className="hover:bg-slate-50/70 transition">
+                    <td className="px-4 py-3.5 font-mono font-bold text-[#1a3c36]">
+                      {order.event_order_number}
+                    </td>
+                    <td className="px-4 py-3.5">
+                      <p className="font-bold text-slate-900">{order.customer_name}</p>
+                      <p className="text-[11px] text-slate-500">{order.customer_phone}</p>
+                    </td>
+                    <td className="px-4 py-3.5">
+                      <span className="inline-block rounded-md bg-amber-50 px-2 py-0.5 text-[11px] font-bold text-amber-800 border border-amber-200">
+                        {order.event_type}
+                      </span>
+                      <p className="mt-0.5 text-[11px] text-slate-500 truncate max-w-44" title={order.venue_address}>
+                        {order.venue_address}
+                      </p>
+                    </td>
+                    <td className="px-4 py-3.5 whitespace-nowrap">
+                      <p className="font-bold text-slate-800">
+                        {order.event_date ? new Date(order.event_date).toLocaleDateString("en-IN") : "--"}
+                      </p>
+                      <p className="text-[11px] text-slate-500">{order.event_time}</p>
+                    </td>
+                    <td className="px-4 py-3.5">
+                      <p className="font-bold text-slate-800">{order.guest_count} Pax</p>
+                      <p className="text-[11px] text-slate-500">
+                        {order.total_items || 0} dishes ({order.total_quantity || 0} portions)
+                      </p>
+                    </td>
+                    <td className="px-4 py-3.5 font-black text-[#1a3c36] text-sm">
+                      ₹{Number(order.total_estimated_amount || 0).toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+                    </td>
+                    <td className="px-4 py-3.5">
+                      <span
+                        className={`inline-block rounded-full border px-2.5 py-0.5 text-[11px] font-bold ${
+                          STATUS_BADGES[order.status] || "bg-slate-100 text-slate-700 border-slate-300"
+                        }`}
+                      >
+                        {order.status}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3.5 text-right whitespace-nowrap">
+                      <div className="inline-flex items-center gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => handleViewDetails(order.id)}
+                          className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-xs font-bold text-[#1a3c36] hover:bg-slate-100 transition"
+                          title="View Order Details"
+                        >
+                          <Eye className="h-3.5 w-3.5" /> View
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteOrder(order.id)}
+                          className="flex h-7 w-7 items-center justify-center rounded-lg border border-rose-200 bg-rose-50 text-rose-600 hover:bg-rose-100 transition"
+                          title="Delete Order"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
+      {/* DETAILED MODAL */}
+      {selectedOrder && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-xs">
+          <div className="max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-3xl border border-slate-200 bg-white p-6 shadow-2xl sm:p-8">
+            {/* Modal Header */}
+            <div className="flex items-start justify-between border-b border-slate-100 pb-4">
+              <div>
+                <span className="rounded-full bg-[#f6eee2] px-3 py-1 font-mono text-xs font-black text-[#a85b00]">
+                  {selectedOrder.event_order_number}
+                </span>
+                <h2 className="mt-2 text-2xl font-black text-[#1a3c36]">
+                  {selectedOrder.event_type} · {selectedOrder.guest_count} Guests
+                </h2>
+                <p className="text-xs text-slate-500">
+                  Booked on {selectedOrder.created_at ? new Date(selectedOrder.created_at).toLocaleString("en-IN") : "--"}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSelectedOrder(null)}
+                className="rounded-xl border border-slate-200 p-2 text-slate-400 hover:bg-slate-100 transition"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="mt-6 space-y-6 text-xs sm:text-sm">
+              {/* Customer & Event Details */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 rounded-2xl bg-slate-50 p-4">
+                <div>
+                  <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Customer Info</p>
+                  <p className="mt-1 font-bold text-slate-900">{selectedOrder.customer_name}</p>
+                  <p className="text-slate-600 flex items-center gap-1.5 mt-0.5">
+                    <Phone className="h-3.5 w-3.5 text-slate-400" /> {selectedOrder.customer_phone}
+                  </p>
+                  {selectedOrder.customer_email && (
+                    <p className="text-slate-600 mt-0.5">{selectedOrder.customer_email}</p>
+                  )}
+                </div>
+
+                <div>
+                  <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Event Schedule</p>
+                  <p className="mt-1 font-bold text-slate-900">
+                    Date: {selectedOrder.event_date ? new Date(selectedOrder.event_date).toLocaleDateString("en-IN") : "--"}
+                  </p>
+                  <p className="text-slate-600">Serving Time: {selectedOrder.event_time}</p>
+                  <p className="text-slate-600">Dietary: {selectedOrder.dietary_preference || "Mixed"}</p>
+                </div>
+
+                <div className="sm:col-span-2 border-t border-slate-200/70 pt-3">
+                  <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Venue / Delivery Address</p>
+                  <p className="mt-1 font-medium text-slate-800 leading-relaxed">{selectedOrder.venue_address}</p>
+                </div>
+
+                {selectedOrder.special_requests && (
+                  <div className="sm:col-span-2 border-t border-slate-200/70 pt-3">
+                    <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Special Requests / Notes</p>
+                    <p className="mt-1 font-medium text-amber-900 bg-amber-50 p-2.5 rounded-xl border border-amber-200 leading-relaxed">
+                      {selectedOrder.special_requests}
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              {/* Menu Items Table */}
+              <div>
+                <h4 className="text-sm font-bold text-[#1a3c36] mb-2 flex items-center gap-2">
+                  <Utensils className="h-4 w-4 text-[#b07838]" /> Selected Event Menu Items
+                </h4>
+                <div className="overflow-hidden rounded-2xl border border-slate-200">
+                  <table className="min-w-full text-left text-xs">
+                    <thead>
+                      <tr className="border-b border-slate-200 bg-slate-50 font-bold uppercase text-slate-500">
+                        <th className="px-4 py-2.5">Item</th>
+                        <th className="px-4 py-2.5">Category</th>
+                        <th className="px-4 py-2.5">Portion</th>
+                        <th className="px-4 py-2.5 text-center">Quantity</th>
+                        <th className="px-4 py-2.5 text-right">Unit Price</th>
+                        <th className="px-4 py-2.5 text-right">Subtotal</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100 text-slate-700">
+                      {(selectedOrder.items || []).map((item) => (
+                        <tr key={item.id}>
+                          <td className="px-4 py-2.5 font-bold text-slate-900">{item.product_name}</td>
+                          <td className="px-4 py-2.5 text-slate-500">{item.category_name || "--"}</td>
+                          <td className="px-4 py-2.5 text-slate-500">{item.portion_size || "Standard"}</td>
+                          <td className="px-4 py-2.5 text-center font-bold">{item.quantity}</td>
+                          <td className="px-4 py-2.5 text-right">₹{Number(item.unit_price).toFixed(2)}</td>
+                          <td className="px-4 py-2.5 text-right font-black text-[#1a3c36]">
+                            ₹{Number(item.total_price).toFixed(2)}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                    <tfoot>
+                      <tr className="border-t border-slate-200 bg-slate-50 font-bold">
+                        <td colSpan="5" className="px-4 py-3 text-right text-slate-700">
+                          Total Estimated Amount:
+                        </td>
+                        <td className="px-4 py-3 text-right font-black text-base text-[#1a3c36]">
+                          ₹{Number(selectedOrder.total_estimated_amount || 0).toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+                        </td>
+                      </tr>
+                    </tfoot>
+                  </table>
+                </div>
+              </div>
+
+              {/* Status Management & Admin Notes */}
+              <div className="rounded-2xl border border-slate-200 bg-slate-50/50 p-4 space-y-4">
+                <h4 className="text-xs font-bold uppercase tracking-wider text-slate-600">
+                  Manage Booking Status &amp; Notes
+                </h4>
+
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="text-xs font-semibold text-slate-500">Update Status:</span>
+                  {["Pending", "Confirmed", "Preparing", "Ready", "Completed", "Cancelled"].map((st) => (
+                    <button
+                      key={st}
+                      type="button"
+                      disabled={updatingStatus}
+                      onClick={() => handleUpdateStatus(selectedOrder.id, st)}
+                      className={`rounded-xl px-3 py-1.5 text-xs font-bold transition ${
+                        selectedOrder.status === st
+                          ? "bg-[#1a3c36] text-white shadow-xs"
+                          : "border border-slate-200 bg-white text-slate-700 hover:bg-slate-100"
+                      }`}
+                    >
+                      {st}
+                    </button>
+                  ))}
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-600 mb-1">
+                    Internal Admin Notes / Customer Communications:
+                  </label>
+                  <textarea
+                    rows="2"
+                    value={adminNotes}
+                    onChange={(e) => setAdminNotes(e.target.value)}
+                    placeholder="e.g. Spoke with customer, confirmed 50 pax, advance ₹5000 received via UPI."
+                    className="w-full rounded-xl border border-slate-200 bg-white p-2.5 text-xs text-slate-800 focus:outline-hidden"
+                  />
+                  <div className="mt-2 flex justify-end">
+                    <button
+                      type="button"
+                      onClick={() => handleUpdateStatus(selectedOrder.id, selectedOrder.status)}
+                      disabled={updatingStatus}
+                      className="rounded-xl bg-[#1a3c36] px-4 py-1.5 text-xs font-bold text-white shadow-xs hover:bg-[#255248] transition"
+                    >
+                      Save Notes
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="mt-6 flex justify-end border-t border-slate-100 pt-4">
+              <button
+                type="button"
+                onClick={() => setSelectedOrder(null)}
+                className="rounded-xl border border-slate-300 bg-white px-5 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}

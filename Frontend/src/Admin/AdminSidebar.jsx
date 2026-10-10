@@ -56,6 +56,7 @@ import {
   Boxes,
   ArrowRightLeft,
   Wrench,
+  PartyPopper,
 } from "lucide-react";
 
 import { useAuth } from "../PrivateRouter/AuthContext";
@@ -116,6 +117,7 @@ const navItems = [
       { path: "/admin/orders", label: "All Orders", icon: List },
       { path: "/admin/orders/delivery", label: "Delivered Orders", icon: Package },
       { path: "/admin/orders/cancelled", label: "Cancelled Orders", icon: XCircle },
+      { path: "/admin/event-orders", label: "Event & Bulk Orders", icon: PartyPopper },
     ],
   },
 
@@ -128,6 +130,11 @@ const navItems = [
     path: "/admin/reservations",
     label: "Reservations",
     icon: CalendarDays,
+  },
+  {
+    path: "/admin/event-orders",
+    label: "Event & Bulk Orders",
+    icon: PartyPopper,
   },
 
  

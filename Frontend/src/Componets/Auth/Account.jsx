@@ -25,6 +25,7 @@ import {
   Utensils,
   UserRound,
   Users,
+  PartyPopper,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import api, { API_URL } from "../../api";
@@ -158,6 +159,12 @@ const TAB_CONFIG = [
     icon: CalendarDays,
   },
   {
+    id: "event-orders",
+    label: "Event & Bulk Orders",
+    desc: "Track catering & party requests",
+    icon: PartyPopper,
+  },
+  {
     id: "password",
     label: "Change Password",
     desc: "Security and account credentials",
@@ -176,6 +183,7 @@ const Account = () => {
   const [addresses, setAddresses] = useState([]);
   const [orders, setOrders] = useState([]);
   const [reservations, setReservations] = useState([]);
+  const [eventOrders, setEventOrders] = useState([]);
   const [editingAddress, setEditingAddress] = useState(false);
   const [editingAddressId, setEditingAddressId] = useState(null);
   const [password, setPassword] = useState({
@@ -295,6 +303,14 @@ const Account = () => {
       .catch((error) => {
         console.error("Could not load customer reservations:", error);
         toast.error(error.response?.data?.message || "We could not load your reservations");
+      });
+
+    api.get("/event-orders/mine")
+      .then((response) => {
+        setEventOrders(Array.isArray(response.data?.data) ? response.data.data : []);
+      })
+      .catch((error) => {
+        console.warn("Could not load customer event orders:", error?.message);
       });
 
     Promise.all([
@@ -1052,6 +1068,123 @@ const Account = () => {
                         <p className="mt-1 text-sm text-[#7b8580]">Your table bookings will appear here after you request a reservation.</p>
                         <Link to="/reservation" className="mt-5 inline-flex items-center gap-2 rounded-xl bg-[#071C18] px-5 py-3 text-xs font-bold uppercase tracking-wider text-white transition hover:bg-[#396F0B]">
                           Book a table <ArrowRight size={15} />
+                        </Link>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {activeTab === "event-orders" && (
+                  <div>
+                    <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#E8EDE6] pb-5">
+                      <div className="flex items-center gap-3">
+                        <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-[#EFF5E9] text-[#146b3a]">
+                          <PartyPopper size={20} />
+                        </span>
+                        <div>
+                          <h2 className="text-xl font-serif font-semibold text-[#071C18]">
+                            Event &amp; Bulk Orders
+                          </h2>
+                          <p className="text-xs text-[#7b8580]">
+                            Track your bulk party catering requests, guest headcount, and order status.
+                          </p>
+                        </div>
+                      </div>
+                      <Link
+                        to="/bulk-order"
+                        className="inline-flex items-center gap-1.5 self-start rounded-xl bg-[#071C18] px-4 py-2 text-xs font-bold text-white transition hover:bg-[#146b3a]"
+                      >
+                        <Plus size={14} /> New Bulk Order
+                      </Link>
+                    </div>
+
+                    {eventOrders.length > 0 ? (
+                      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                        {eventOrders.map((evt) => (
+                          <article
+                            key={evt.id || evt.event_order_number}
+                            className="flex flex-col rounded-2xl border border-[#edf0ea] bg-white p-5 shadow-xs transition hover:shadow-md"
+                          >
+                            <div className="flex items-start justify-between gap-2 border-b border-[#edf0ea] pb-3">
+                              <div>
+                                <span className="font-mono text-xs font-bold text-[#146b3a]">
+                                  {evt.event_order_number}
+                                </span>
+                                <h3 className="mt-0.5 text-base font-bold text-[#071C18]">
+                                  {evt.event_type}
+                                </h3>
+                              </div>
+                              <span
+                                className={`rounded-full border px-2.5 py-0.5 text-[11px] font-bold ${
+                                  evt.status === "Confirmed"
+                                    ? "border-blue-200 bg-blue-50 text-blue-800"
+                                    : evt.status === "Preparing"
+                                    ? "border-purple-200 bg-purple-50 text-purple-800"
+                                    : evt.status === "Completed"
+                                    ? "border-emerald-200 bg-emerald-50 text-emerald-800"
+                                    : evt.status === "Cancelled"
+                                    ? "border-rose-200 bg-rose-50 text-rose-800"
+                                    : "border-amber-200 bg-amber-50 text-amber-800"
+                                }`}
+                              >
+                                {evt.status || "Pending"}
+                              </span>
+                            </div>
+
+                            <div className="my-3 grid grid-cols-2 gap-2 text-xs">
+                              <div className="rounded-xl bg-[#f8faf6] p-2.5">
+                                <span className="text-[10px] uppercase font-bold text-slate-400">Event Date</span>
+                                <p className="font-bold text-slate-800">
+                                  {evt.event_date ? new Date(evt.event_date).toLocaleDateString("en-IN") : "--"}
+                                </p>
+                              </div>
+                              <div className="rounded-xl bg-[#f8faf6] p-2.5">
+                                <span className="text-[10px] uppercase font-bold text-slate-400">Serving Time</span>
+                                <p className="font-bold text-slate-800">{evt.event_time}</p>
+                              </div>
+                              <div className="rounded-xl bg-[#f8faf6] p-2.5">
+                                <span className="text-[10px] uppercase font-bold text-slate-400">Guest Count</span>
+                                <p className="font-bold text-slate-800">{evt.guest_count} Pax</p>
+                              </div>
+                              <div className="rounded-xl bg-[#f8faf6] p-2.5">
+                                <span className="text-[10px] uppercase font-bold text-slate-400">Estimated Total</span>
+                                <p className="font-black text-[#146b3a]">
+                                  ₹{Number(evt.total_estimated_amount || 0).toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+                                </p>
+                              </div>
+                            </div>
+
+                            <div className="space-y-1.5 text-xs text-slate-600">
+                              <p className="flex items-start gap-1.5">
+                                <MapPin size={14} className="shrink-0 text-slate-400 mt-0.5" />
+                                <span className="truncate" title={evt.venue_address}>{evt.venue_address}</span>
+                              </p>
+                              {evt.dietary_preference && (
+                                <p className="text-[11px] text-slate-500">
+                                  Dietary: <strong className="text-slate-700">{evt.dietary_preference}</strong>
+                                </p>
+                              )}
+                              {evt.admin_notes && (
+                                <p className="rounded-xl border border-blue-200 bg-blue-50/70 p-2 text-[11px] text-blue-900 leading-relaxed">
+                                  <strong>Kitchen Note:</strong> {evt.admin_notes}
+                                </p>
+                              )}
+                            </div>
+                          </article>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="rounded-2xl border-2 border-dashed border-[#e1e8dd] bg-[#fafcf9] px-5 py-12 text-center">
+                        <PartyPopper className="mx-auto h-10 w-10 text-[#9aab9a]" />
+                        <h3 className="mt-3 text-base font-bold text-[#071C18]">No bulk or event orders yet</h3>
+                        <p className="mt-1 text-sm text-[#7b8580]">
+                          Hosting a birthday, wedding, or office party? Select your dishes and book bulk catering in advance.
+                        </p>
+                        <Link
+                          to="/bulk-order"
+                          className="mt-5 inline-flex items-center gap-2 rounded-xl bg-[#071C18] px-5 py-3 text-xs font-bold uppercase tracking-wider text-white transition hover:bg-[#396F0B]"
+                        >
+                          Place a Bulk Order <ArrowRight size={15} />
                         </Link>
                       </div>
                     )}

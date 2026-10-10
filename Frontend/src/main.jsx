@@ -11,6 +11,7 @@ import About from './Componets/About.jsx'
 import Gallery from './Componets/Gallery.jsx'
 import Contact from './Componets/Contact.jsx'
 import Reservation from './Componets/Reservation.jsx'
+import BulkOrder from './Componets/BulkOrder/BulkOrder.jsx'
 
 import Login from './Componets/Auth/Login.jsx'
 import Register from './Componets/Auth/Register.jsx'
@@ -44,6 +45,7 @@ import AddFood from './Admin/AdminProducts/AddFood.jsx'
 import InventoryModule from './Admin/InventoryModule.jsx'
 import AdminReviews from './Admin/AdminReviews/AdminReviews.jsx'
 import AdminReservations from './Admin/AdminReservations.jsx'
+import AdminEventOrders from './Admin/AdminEventOrders.jsx'
 import PointOfSale from './Admin/Billings/PointOfSale.jsx'
 import Billing from './Admin/Billings/Billing.jsx'
 import NewBilling from './Admin/Billings/NewBilling.jsx'
@@ -119,6 +121,14 @@ const router = createHashRouter([
       {
         path: 'reservation',
         element: <Reservation />,
+      },
+      {
+        path: 'bulk-order',
+        element: <BulkOrder />,
+      },
+      {
+        path: 'event-order',
+        element: <BulkOrder />,
       },
       {
         path: 'food/:foodId',
@@ -217,6 +227,14 @@ const router = createHashRouter([
           {
             path: 'reservations',
             element: <AdminReservations />,
+          },
+          {
+            path: 'event-orders',
+            element: <AdminEventOrders />,
+          },
+          {
+            path: 'bulk-orders',
+            element: <AdminEventOrders />,
           },
           {
             path: 'customers',

@@ -42,6 +42,7 @@ const revenueRouter = require('./revenue');
 const reservationsRouter = require('./reservations');
 const expensesRouter = require('./expenses');
 const salariesRouter = require('./salaries');
+const eventOrdersRouter = require('./eventOrdersRouter');
 const { getFund, updateFund } = require('../controllers/expenseController');
 const attendanceRouter = require('./attendance');
 
@@ -276,6 +277,13 @@ router.use('/reservations', (req, res, next) => {
   }
   return requireAdmin(req, res, next);
 }, reservationsRouter);
+router.use('/event-orders', (req, res, next) => {
+  if (req.path === '/menu') return next();
+  if (req.method === 'POST' && req.path === '/') return optionalAuth(req, res, next);
+  if (req.path === '/mine') return requireAuthenticatedUser(req, res, next);
+  if (req.method === 'GET' && req.path !== '/') return optionalAuth(req, res, next);
+  return requireAdmin(req, res, next);
+}, eventOrdersRouter);
 router.use('/inventory', requireInventoryAccess, inventoryRouter);
 router.get('/employees', optionalAuth, requireEmployeeAdmin, listEmployees);
 router.get('/employees/documents/:filename', optionalAuth, requireEmployeeAdmin, (req, res) => {
