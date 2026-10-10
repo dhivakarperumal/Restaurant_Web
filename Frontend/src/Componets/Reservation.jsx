@@ -388,27 +388,53 @@ const Reservation = () => {
           </form>
 
           {isCustomer && (
-            <section className="mx-auto mt-10 max-w-6xl">
-              <h3 className="mb-4 font-serif text-2xl font-bold text-[#203129]">Your reservation requests</h3>
+            <section className="mx-auto mt-8 max-w-[1500px] rounded-3xl border border-[#e8e8e1] bg-white p-5 shadow-[0_8px_30px_rgba(25,45,34,0.05)] sm:p-6">
+              <div className="mb-4 flex items-center gap-4 border-b border-slate-100 pb-4">
+                <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#e9f3df] text-[#155c3b]">
+                  <Clock3 className="h-6 w-6" />
+                </span>
+                <div>
+                  <h2 className="text-xl font-bold text-[#18251f]">Your Reservations</h2>
+                  <p className="text-xs text-slate-500">View your upcoming and past reservation requests.</p>
+                </div>
+                <span className="ml-auto hidden rounded-lg bg-slate-100 px-3 py-2 text-xs font-semibold text-slate-600 sm:block">
+                  {reservations.length} {reservations.length === 1 ? "reservation" : "reservations"}
+                </span>
+              </div>
               {reservations.length ? (
-                <div className="grid gap-4 md:grid-cols-2">
-                  {reservations.map((reservation) => (
-                    <article key={reservation.reservation_id} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-                      <div className="flex flex-wrap items-start justify-between gap-3">
-                        <div>
-                          <p className="font-bold text-[#203129]">Table {reservation.table_number}</p>
-                          <p className="mt-1 text-sm text-slate-500">{formatDate(reservation.reservation_date)} · {formatTime(reservation.start_time)}</p>
-                          <p className="mt-1 text-xs text-slate-500">{reservation.guests} guests</p>
+                <div className="space-y-2.5">
+                  {reservations.map((reservation) => {
+                    const statusClass = reservation.status === "Confirmed"
+                      ? "bg-emerald-100 text-emerald-800"
+                      : reservation.status === "Pending"
+                        ? "bg-amber-100 text-amber-800"
+                        : reservation.status === "Cancelled" || reservation.status === "Declined"
+                          ? "bg-rose-100 text-rose-800"
+                          : "bg-slate-100 text-slate-700";
+                    const imageUrl = resolveTableImageUrl(reservation);
+                    return (
+                      <article key={reservation.reservation_id} className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-3 transition hover:border-[#cbd9cf] sm:flex-row sm:items-center sm:gap-4">
+                        {imageUrl ? (
+                          <img src={imageUrl} alt={`Table ${reservation.table_number}`} className="h-20 w-full shrink-0 rounded-xl object-cover sm:h-[58px] sm:w-28" />
+                        ) : (
+                          <div className="h-20 w-full shrink-0 rounded-xl bg-[url('/images/registre.png')] bg-cover bg-center sm:h-[58px] sm:w-28" role="img" aria-label="Restaurant table" />
+                        )}
+                        <div className="min-w-0 flex-1 sm:min-w-[115px]">
+                          <p className="truncate text-sm font-bold text-[#18251f]">{reservation.reservation_id}</p>
+                          <span className={`mt-1 inline-flex rounded-full px-2.5 py-1 text-[10px] font-bold ${statusClass}`}>{reservation.status}</span>
                         </div>
-                        <span className={`rounded-full px-3 py-1 text-xs font-bold ${reservation.status === "Confirmed" ? "bg-green-100 text-green-800" : reservation.status === "Pending" ? "bg-amber-100 text-amber-800" : "bg-slate-100 text-slate-600"}`}>
-                          {reservation.status}
-                        </span>
-                      </div>
-                    </article>
-                  ))}
+                        <div className="grid flex-1 grid-cols-2 gap-x-4 gap-y-2 text-xs text-slate-600 sm:flex sm:items-center sm:justify-between">
+                          <span className="flex items-center gap-1.5"><CalendarDays className="h-4 w-4 shrink-0 text-slate-700" />{formatDate(reservation.reservation_date)}</span>
+                          <span className="flex items-center gap-1.5"><Clock3 className="h-4 w-4 shrink-0 text-slate-700" />{formatTime(reservation.start_time)}</span>
+                          <span className="flex items-center gap-1.5"><Users className="h-4 w-4 shrink-0 text-slate-700" />{reservation.guests} Guests</span>
+                          <span className="flex items-center gap-1.5"><Armchair className="h-4 w-4 shrink-0 text-slate-700" />Table {reservation.table_number}</span>
+                        </div>
+                      </article>
+                    );
+                  })}
                 </div>
               ) : (
-                <p className="rounded-2xl border border-slate-200 bg-white px-5 py-6 text-sm text-slate-500">You have no reservation requests yet.</p>
+                <p className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-5 py-8 text-center text-sm text-slate-500">You have no reservation requests yet.</p>
               )}
             </section>
           )}

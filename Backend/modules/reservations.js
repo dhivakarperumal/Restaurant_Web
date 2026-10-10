@@ -150,12 +150,13 @@ async function createReservationRequest(input) {
 
 async function findReservationsForUser(userId) {
   const [rows] = await db.execute(
-    `SELECT reservation_id, table_number, customer_name, customer_email, customer_phone,
-            DATE_FORMAT(reservation_date, '%Y-%m-%d') AS reservation_date,
-            start_time, end_time, guests, notes, status, created_at
-     FROM reservations
-     WHERE user_id = ?
-     ORDER BY reservation_date DESC, start_time DESC, created_at DESC`,
+    `SELECT r.reservation_id, r.table_number, st.image_url, r.customer_name, r.customer_email, r.customer_phone,
+            DATE_FORMAT(r.reservation_date, '%Y-%m-%d') AS reservation_date,
+            r.start_time, r.end_time, r.guests, r.notes, r.status, r.created_at
+     FROM reservations r
+     LEFT JOIN server_table st ON st.table_id = r.table_id
+     WHERE r.user_id = ?
+     ORDER BY r.reservation_date DESC, r.start_time DESC, r.created_at DESC`,
     [userId]
   );
   return rows;
