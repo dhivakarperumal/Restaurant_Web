@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   CalendarDays,
+  Check,
   CheckCircle2,
   Clock,
   Eye,
@@ -9,9 +10,13 @@ import {
   MapPin,
   Package,
   PartyPopper,
+  Percent,
   Phone,
   RefreshCw,
   Search,
+  Send,
+  Sparkles,
+  Tag,
   Trash2,
   UserRound,
   Users,
@@ -22,14 +27,15 @@ import {
 import toast from "react-hot-toast";
 import api, { BACKEND_BASE_URL } from "../api";
 
-const STATUS_OPTIONS = ["All", "Pending", "Confirmed", "Preparing", "Ready", "Completed", "Cancelled"];
+const STATUS_OPTIONS = ["All", "Pending", "Quotation Sent", "Confirmed", "Preparing", "Ready", "Completed", "Cancelled"];
 
 const STATUS_BADGES = {
   Pending: "bg-amber-100 text-amber-800 border-amber-300",
-  Confirmed: "bg-blue-100 text-blue-800 border-blue-300",
+  "Quotation Sent": "bg-sky-100 text-sky-800 border-sky-300 font-bold",
+  Confirmed: "bg-emerald-100 text-emerald-800 border-emerald-300 font-bold",
   Preparing: "bg-purple-100 text-purple-800 border-purple-300",
   Ready: "bg-indigo-100 text-indigo-800 border-indigo-300",
-  Completed: "bg-emerald-100 text-emerald-800 border-emerald-300",
+  Completed: "bg-teal-100 text-teal-800 border-teal-300",
   Cancelled: "bg-rose-100 text-rose-800 border-rose-300",
 };
 
@@ -47,6 +53,13 @@ export default function AdminEventOrders() {
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [updatingStatus, setUpdatingStatus] = useState(false);
   const [adminNotes, setAdminNotes] = useState("");
+
+  // Quotation Editor State
+  const [quoteItemPrices, setQuoteItemPrices] = useState({});
+  const [quoteDiscountType, setQuoteDiscountType] = useState("fixed"); // "fixed" | "percentage"
+  const [quoteDiscountValue, setQuoteDiscountValue] = useState("");
+  const [quoteDeliveryFee, setQuoteDeliveryFee] = useState("");
+  const [sendingQuote, setSendingQuote] = useState(false);
 
   const fetchEventOrders = useCallback(async (showLoading = false) => {
     try {
@@ -79,12 +92,161 @@ export default function AdminEventOrders() {
     try {
       const res = await api.get(`/event-orders/${orderId}`);
       if (res.data?.success && res.data.data) {
-        setSelectedOrder(res.data.data);
-        setAdminNotes(res.data.data.admin_notes || "");
+        const orderData = res.data.data;
+        setSelectedOrder(orderData);
+        setAdminNotes(orderData.admin_notes || "");
+
+        // Prefill quotation inputs
+        const initialPrices = {};
+        (orderData.items || []).forEach((item) => {
+          initialPrices[item.id] =
+            item.discounted_unit_price !== null && item.discounted_unit_price !== undefined
+              ? Number(item.discounted_unit_price)
+              : Number(item.unit_price);
+        });
+        setQuoteItemPrices(initialPrices);
+        setQuoteDiscountType(orderData.discount_type || "fixed");
+        setQuoteDiscountValue(
+          orderData.discount_value !== null && orderData.discount_value !== undefined && Number(orderData.discount_value) > 0
+            ? String(orderData.discount_value)
+            : ""
+        );
+        setQuoteDeliveryFee(
+          orderData.delivery_fee !== null && orderData.delivery_fee !== undefined && Number(orderData.delivery_fee) > 0
+            ? String(orderData.delivery_fee)
+            : ""
+        );
       }
     } catch (err) {
       console.error("Failed to get order details:", err);
       toast.error("Could not load order details.");
+    }
+  };
+
+  // Live quotation calculations
+  const quoteCalculations = useMemo(() => {
+    if (!selectedOrder) {
+      return {
+        originalSubtotal: 0,
+        itemsDiscountedSubtotal: 0,
+        itemSavings: 0,
+        overallDiscountAmount: 0,
+        totalSavings: 0,
+        deliveryFee: 0,
+        finalQuotedTotal: 0,
+      };
+    }
+    const items = selectedOrder.items || [];
+    let originalSubtotal = 0;
+    let itemsDiscountedSubtotal = 0;
+
+    items.forEach((item) => {
+      const qty = Number(item.quantity) || 1;
+      const origUnit = Number(item.unit_price) || 0;
+      const quotedUnit =
+        quoteItemPrices[item.id] !== undefined && quoteItemPrices[item.id] !== ""
+          ? Math.max(0, Number(quoteItemPrices[item.id]))
+          : origUnit;
+      originalSubtotal += origUnit * qty;
+      itemsDiscountedSubtotal += quotedUnit * qty;
+    });
+
+    const itemSavings = Math.max(0, originalSubtotal - itemsDiscountedSubtotal);
+    const discVal = Math.max(0, Number(quoteDiscountValue) || 0);
+    let overallDiscountAmount = 0;
+    if (quoteDiscountType === "percentage") {
+      overallDiscountAmount = (itemsDiscountedSubtotal * Math.min(100, discVal)) / 100;
+    } else {
+      overallDiscountAmount = Math.min(itemsDiscountedSubtotal, discVal);
+    }
+
+    const totalSavings = itemSavings + overallDiscountAmount;
+    const deliveryFee = Math.max(0, Number(quoteDeliveryFee) || 0);
+    const finalQuotedTotal = Math.max(0, itemsDiscountedSubtotal - overallDiscountAmount + deliveryFee);
+
+    return {
+      originalSubtotal: Number(originalSubtotal.toFixed(2)),
+      itemsDiscountedSubtotal: Number(itemsDiscountedSubtotal.toFixed(2)),
+      itemSavings: Number(itemSavings.toFixed(2)),
+      overallDiscountAmount: Number(overallDiscountAmount.toFixed(2)),
+      totalSavings: Number(totalSavings.toFixed(2)),
+      deliveryFee: Number(deliveryFee.toFixed(2)),
+      finalQuotedTotal: Number(finalQuotedTotal.toFixed(2)),
+    };
+  }, [selectedOrder, quoteItemPrices, quoteDiscountType, quoteDiscountValue, quoteDeliveryFee]);
+
+  // Send Quotation Handler
+  const handleSendQuotation = async () => {
+    if (!selectedOrder) return;
+    try {
+      setSendingQuote(true);
+      const itemDiscounts = (selectedOrder.items || []).map((item) => {
+        const quotedUnit =
+          quoteItemPrices[item.id] !== undefined && quoteItemPrices[item.id] !== ""
+            ? Math.max(0, Number(quoteItemPrices[item.id]))
+            : Number(item.unit_price);
+        const discPerUnit = Math.max(0, Number(item.unit_price) - quotedUnit);
+        const totalItemDisc = discPerUnit * Number(item.quantity || 1);
+        return {
+          id: item.id,
+          discounted_unit_price: quotedUnit,
+          discount_amount: Number(totalItemDisc.toFixed(2)),
+        };
+      });
+
+      const payload = {
+        discount_type: quoteDiscountType,
+        discount_value: Number(quoteDiscountValue) || 0,
+        discount_amount: quoteCalculations.totalSavings,
+        delivery_fee: quoteCalculations.deliveryFee,
+        quoted_amount: quoteCalculations.finalQuotedTotal,
+        admin_notes: adminNotes,
+        item_discounts: itemDiscounts,
+      };
+
+      const res = await api.post(`/event-orders/${selectedOrder.id}/quote`, payload);
+      if (res.data?.success) {
+        toast.success(`Quotation of ₹${quoteCalculations.finalQuotedTotal.toLocaleString("en-IN")} sent to customer!`);
+        setOrders((prev) =>
+          prev.map((o) =>
+            o.id === selectedOrder.id || o.event_order_number === selectedOrder.id
+              ? {
+                  ...o,
+                  status: "Quotation Sent",
+                  quoted_amount: quoteCalculations.finalQuotedTotal,
+                  discount_amount: quoteCalculations.totalSavings,
+                }
+              : o
+          )
+        );
+        setSelectedOrder((prev) => ({
+          ...prev,
+          status: "Quotation Sent",
+          quoted_amount: quoteCalculations.finalQuotedTotal,
+          discount_type: quoteDiscountType,
+          discount_value: Number(quoteDiscountValue) || 0,
+          discount_amount: quoteCalculations.totalSavings,
+          delivery_fee: quoteCalculations.deliveryFee,
+          admin_notes: adminNotes,
+          customer_action: null,
+          customer_action_reason: null,
+          items: prev.items.map((it) => {
+            const found = itemDiscounts.find((d) => d.id === it.id);
+            return found
+              ? {
+                  ...it,
+                  discounted_unit_price: found.discounted_unit_price,
+                  discount_amount: found.discount_amount,
+                }
+              : it;
+          }),
+        }));
+      }
+    } catch (err) {
+      console.error("Failed to send quotation:", err);
+      toast.error(err.response?.data?.message || "Failed to send quotation.");
+    } finally {
+      setSendingQuote(false);
     }
   };
 
@@ -137,10 +299,11 @@ export default function AdminEventOrders() {
   const metrics = useMemo(() => {
     const total = orders.length;
     const pending = orders.filter((o) => o.status === "Pending").length;
+    const quotationSent = orders.filter((o) => o.status === "Quotation Sent").length;
     const confirmed = orders.filter((o) => o.status === "Confirmed").length;
     const preparing = orders.filter((o) => o.status === "Preparing").length;
     const completed = orders.filter((o) => o.status === "Completed").length;
-    return { total, pending, confirmed, preparing, completed };
+    return { total, pending, quotationSent, confirmed, preparing, completed };
   }, [orders]);
 
   // Filtered orders
@@ -299,8 +462,23 @@ export default function AdminEventOrders() {
                         {order.total_items || 0} dishes ({order.total_quantity || 0} portions)
                       </p>
                     </td>
-                    <td className="px-4 py-3.5 font-black text-[#1a3c36] text-sm">
-                      ₹{Number(order.total_estimated_amount || 0).toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+                    <td className="px-4 py-3.5">
+                      {order.status === "Quotation Sent" || order.quoted_amount ? (
+                        <div>
+                          <p className="font-black text-[#1a3c36] text-sm">
+                            ₹{Number(order.quoted_amount || order.total_estimated_amount).toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+                          </p>
+                          {Number(order.discount_amount || 0) > 0 && (
+                            <span className="inline-block rounded-md bg-emerald-50 px-1.5 py-0.2 text-[10px] font-bold text-emerald-700 border border-emerald-200">
+                              -₹{Number(order.discount_amount).toLocaleString("en-IN")} off
+                            </span>
+                          )}
+                        </div>
+                      ) : (
+                        <p className="font-black text-[#1a3c36] text-sm">
+                          ₹{Number(order.total_estimated_amount || 0).toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+                        </p>
+                      )}
                     </td>
                     <td className="px-4 py-3.5">
                       <span
@@ -316,10 +494,15 @@ export default function AdminEventOrders() {
                         <button
                           type="button"
                           onClick={() => handleViewDetails(order.id)}
-                          className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-xs font-bold text-[#1a3c36] hover:bg-slate-100 transition"
-                          title="View Order Details"
+                          className={`inline-flex items-center gap-1 rounded-lg border px-2.5 py-1 text-xs font-bold transition ${
+                            order.status === "Pending"
+                              ? "border-[#b07838] bg-[#fbf5ee] text-[#a85b00] hover:bg-[#f3e7d6]"
+                              : "border-slate-200 bg-white text-[#1a3c36] hover:bg-slate-100"
+                          }`}
+                          title={order.status === "Pending" ? "Review & Send Quotation" : "View Order Details"}
                         >
-                          <Eye className="h-3.5 w-3.5" /> View
+                          <Eye className="h-3.5 w-3.5" />
+                          {order.status === "Pending" ? "Review & Quote" : "View"}
                         </button>
                         <button
                           type="button"
@@ -342,7 +525,7 @@ export default function AdminEventOrders() {
       {/* DETAILED MODAL */}
       {selectedOrder && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-xs">
-          <div className="max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-3xl border border-slate-200 bg-white p-6 shadow-2xl sm:p-8">
+          <div className="max-h-[92vh] w-full max-w-4xl overflow-y-auto rounded-3xl border border-slate-200 bg-white p-6 shadow-2xl sm:p-8">
             {/* Modal Header */}
             <div className="flex items-start justify-between border-b border-slate-100 pb-4">
               <div>
@@ -367,6 +550,60 @@ export default function AdminEventOrders() {
 
             {/* Modal Body */}
             <div className="mt-6 space-y-6 text-xs sm:text-sm">
+              {/* QUOTATION STATUS ALERTS */}
+              {selectedOrder.customer_action === "accepted" && (
+                <div className="rounded-2xl border border-emerald-300 bg-emerald-50/90 p-4 text-emerald-900 flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <CheckCircle2 className="h-6 w-6 shrink-0 text-emerald-600" />
+                    <div>
+                      <p className="font-bold text-sm">Customer Accepted Quotation!</p>
+                      <p className="text-xs text-emerald-700">
+                        The customer has confirmed the discounted quotation of ₹{Number(selectedOrder.quoted_amount).toLocaleString("en-IN")}. Booking is confirmed.
+                      </p>
+                    </div>
+                  </div>
+                  <span className="rounded-full bg-emerald-200 px-3.5 py-1 text-xs font-black uppercase text-emerald-800">
+                    Confirmed
+                  </span>
+                </div>
+              )}
+
+              {selectedOrder.customer_action === "rejected" && (
+                <div className="rounded-2xl border border-rose-300 bg-rose-50/90 p-4 text-rose-900 flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <X className="h-6 w-6 shrink-0 text-rose-600" />
+                    <div>
+                      <p className="font-bold text-sm">Customer Rejected Quotation</p>
+                      <p className="text-xs text-rose-700">
+                        {selectedOrder.customer_action_reason
+                          ? `Reason given: "${selectedOrder.customer_action_reason}"`
+                          : "The customer declined the estimated quote. Order status is Cancelled."}
+                      </p>
+                    </div>
+                  </div>
+                  <span className="rounded-full bg-rose-200 px-3.5 py-1 text-xs font-black uppercase text-rose-800">
+                    Cancelled
+                  </span>
+                </div>
+              )}
+
+              {selectedOrder.status === "Quotation Sent" && !selectedOrder.customer_action && (
+                <div className="rounded-2xl border border-sky-300 bg-sky-50/90 p-4 text-sky-900 flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <Clock className="h-6 w-6 shrink-0 text-sky-600" />
+                    <div>
+                      <p className="font-bold text-sm">Quotation Sent to Customer (Awaiting Approval)</p>
+                      <p className="text-xs text-sky-700">
+                        Estimated amount of ₹{Number(selectedOrder.quoted_amount).toLocaleString("en-IN")} was sent. Waiting for customer to Accept or Reject in their account.
+                      </p>
+                    </div>
+                  </div>
+                  <span className="rounded-full bg-sky-200 px-3.5 py-1 text-xs font-black uppercase text-sky-800">
+                    Pending Response
+                  </span>
+                </div>
+              )}
+
               {/* Customer & Event Details */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 rounded-2xl bg-slate-50 p-4">
                 <div>
@@ -404,60 +641,270 @@ export default function AdminEventOrders() {
                 )}
               </div>
 
-              {/* Menu Items Table */}
-              <div>
-                <h4 className="text-sm font-bold text-[#1a3c36] mb-2 flex items-center gap-2">
-                  <Utensils className="h-4 w-4 text-[#b07838]" /> Selected Event Menu Items
-                </h4>
-                <div className="overflow-hidden rounded-2xl border border-slate-200">
+              {/* QUOTATION & PER-ITEM DISCOUNT BUILDER */}
+              <div className="rounded-3xl border-2 border-amber-200 bg-amber-50/30 p-5 space-y-5">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-amber-200/80 pb-3">
+                  <div className="flex items-center gap-2">
+                    <Tag className="h-5 w-5 text-[#b07838]" />
+                    <div>
+                      <h4 className="text-sm font-black text-[#1a3c36]">
+                        Bulk Quotation &amp; Discount Management
+                      </h4>
+                      <p className="text-[11px] text-slate-500">
+                        Adjust price per food item and/or apply an overall bulk order discount.
+                      </p>
+                    </div>
+                  </div>
+                  <span className="rounded-full bg-[#f6eee2] px-3 py-1 text-xs font-black text-[#a85b00]">
+                    {(selectedOrder.items || []).length} Menu Items
+                  </span>
+                </div>
+
+                {/* Menu Items Table with Per-Food Discount Inputs */}
+                <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
                   <table className="min-w-full text-left text-xs">
                     <thead>
                       <tr className="border-b border-slate-200 bg-slate-50 font-bold uppercase text-slate-500">
-                        <th className="px-4 py-2.5">Item</th>
-                        <th className="px-4 py-2.5">Category</th>
-                        <th className="px-4 py-2.5">Portion</th>
-                        <th className="px-4 py-2.5 text-center">Quantity</th>
-                        <th className="px-4 py-2.5 text-right">Unit Price</th>
-                        <th className="px-4 py-2.5 text-right">Subtotal</th>
+                        <th className="px-3.5 py-2.5">Item</th>
+                        <th className="px-3.5 py-2.5 text-center">Portion</th>
+                        <th className="px-3.5 py-2.5 text-center">Qty</th>
+                        <th className="px-3.5 py-2.5 text-right">Standard Price</th>
+                        <th className="px-3.5 py-2.5 text-center">Quoted Unit Price (₹)</th>
+                        <th className="px-3.5 py-2.5 text-right">Line Subtotal</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100 text-slate-700">
-                      {(selectedOrder.items || []).map((item) => (
-                        <tr key={item.id}>
-                          <td className="px-4 py-2.5 font-bold text-slate-900">{item.product_name}</td>
-                          <td className="px-4 py-2.5 text-slate-500">{item.category_name || "--"}</td>
-                          <td className="px-4 py-2.5 text-slate-500">{item.portion_size || "Standard"}</td>
-                          <td className="px-4 py-2.5 text-center font-bold">{item.quantity}</td>
-                          <td className="px-4 py-2.5 text-right">₹{Number(item.unit_price).toFixed(2)}</td>
-                          <td className="px-4 py-2.5 text-right font-black text-[#1a3c36]">
-                            ₹{Number(item.total_price).toFixed(2)}
-                          </td>
-                        </tr>
-                      ))}
+                      {(selectedOrder.items || []).map((item) => {
+                        const origPrice = Number(item.unit_price) || 0;
+                        const qty = Number(item.quantity) || 1;
+                        const quotedPrice =
+                          quoteItemPrices[item.id] !== undefined && quoteItemPrices[item.id] !== ""
+                            ? Math.max(0, Number(quoteItemPrices[item.id]))
+                            : origPrice;
+                        const isDiscounted = quotedPrice < origPrice;
+                        const diff = origPrice - quotedPrice;
+
+                        return (
+                          <tr key={item.id} className="hover:bg-slate-50/50">
+                            <td className="px-3.5 py-3">
+                              <p className="font-bold text-slate-900">{item.product_name}</p>
+                              <p className="text-[10px] text-slate-400">{item.category_name || "Food"}</p>
+                            </td>
+                            <td className="px-3.5 py-3 text-center text-slate-500">{item.portion_size || "Standard"}</td>
+                            <td className="px-3.5 py-3 text-center font-bold text-slate-800">{qty}</td>
+                            <td className="px-3.5 py-3 text-right font-medium text-slate-500">
+                              ₹{origPrice.toFixed(2)}
+                            </td>
+                            <td className="px-3.5 py-3">
+                              <div className="flex flex-col items-center gap-1">
+                                <div className="relative w-28">
+                                  <span className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400">
+                                    ₹
+                                  </span>
+                                  <input
+                                    type="number"
+                                    min="0"
+                                    step="1"
+                                    value={quoteItemPrices[item.id] ?? origPrice}
+                                    onChange={(e) => {
+                                      const val = e.target.value;
+                                      setQuoteItemPrices((prev) => ({
+                                        ...prev,
+                                        [item.id]: val === "" ? "" : Math.max(0, Number(val)),
+                                      }));
+                                    }}
+                                    className={`w-full rounded-lg border py-1 pl-6 pr-2 text-right text-xs font-bold focus:outline-hidden ${
+                                      isDiscounted
+                                        ? "border-emerald-500 bg-emerald-50 text-emerald-800"
+                                        : "border-slate-300 bg-slate-50 text-slate-800 focus:bg-white"
+                                    }`}
+                                  />
+                                </div>
+                                {isDiscounted && (
+                                  <span className="text-[10px] font-bold text-emerald-600">
+                                    -₹{diff.toFixed(2)} off / unit
+                                  </span>
+                                )}
+                              </div>
+                            </td>
+                            <td className="px-3.5 py-3 text-right">
+                              {isDiscounted && (
+                                <p className="text-[10px] text-slate-400 line-through">
+                                  ₹{(origPrice * qty).toFixed(2)}
+                                </p>
+                              )}
+                              <p className="font-black text-[#1a3c36] text-xs">
+                                ₹{(quotedPrice * qty).toFixed(2)}
+                              </p>
+                            </td>
+                          </tr>
+                        );
+                      })}
                     </tbody>
-                    <tfoot>
-                      <tr className="border-t border-slate-200 bg-slate-50 font-bold">
-                        <td colSpan="5" className="px-4 py-3 text-right text-slate-700">
-                          Total Estimated Amount:
-                        </td>
-                        <td className="px-4 py-3 text-right font-black text-base text-[#1a3c36]">
-                          ₹{Number(selectedOrder.total_estimated_amount || 0).toLocaleString("en-IN", { minimumFractionDigits: 2 })}
-                        </td>
-                      </tr>
-                    </tfoot>
                   </table>
+                </div>
+
+                {/* Overall Discount & Delivery Fee Row */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 rounded-2xl bg-white p-4 border border-slate-200">
+                  {/* Overall Discount Field */}
+                  <div>
+                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">
+                      Overall Bulk Order Discount
+                    </label>
+                    <div className="flex gap-2">
+                      <div className="inline-flex rounded-xl border border-slate-300 p-0.5 bg-slate-100">
+                        <button
+                          type="button"
+                          onClick={() => setQuoteDiscountType("fixed")}
+                          className={`rounded-lg px-2.5 py-1 text-xs font-bold transition ${
+                            quoteDiscountType === "fixed"
+                              ? "bg-[#1a3c36] text-white shadow-xs"
+                              : "text-slate-600 hover:text-slate-900"
+                          }`}
+                        >
+                          Flat ₹
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setQuoteDiscountType("percentage")}
+                          className={`rounded-lg px-2.5 py-1 text-xs font-bold transition ${
+                            quoteDiscountType === "percentage"
+                              ? "bg-[#1a3c36] text-white shadow-xs"
+                              : "text-slate-600 hover:text-slate-900"
+                          }`}
+                        >
+                          % Percent
+                        </button>
+                      </div>
+
+                      <div className="relative flex-1">
+                        <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400">
+                          {quoteDiscountType === "fixed" ? "₹" : "%"}
+                        </span>
+                        <input
+                          type="number"
+                          min="0"
+                          step={quoteDiscountType === "fixed" ? "10" : "1"}
+                          max={quoteDiscountType === "percentage" ? "100" : undefined}
+                          value={quoteDiscountValue}
+                          onChange={(e) => setQuoteDiscountValue(e.target.value)}
+                          placeholder={quoteDiscountType === "fixed" ? "e.g. 500" : "e.g. 10"}
+                          className="w-full rounded-xl border border-slate-300 bg-slate-50 pl-7 pr-3 py-1.5 text-xs font-bold text-slate-800 focus:bg-white focus:outline-hidden"
+                        />
+                      </div>
+                    </div>
+                    {quoteCalculations.overallDiscountAmount > 0 && (
+                      <p className="mt-1 text-[11px] font-bold text-emerald-600">
+                        Deducts ₹{quoteCalculations.overallDiscountAmount.toFixed(2)} from total
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Delivery / Event Logistics Fee */}
+                  <div>
+                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">
+                      Delivery / Setup Service Fee (Optional)
+                    </label>
+                    <div className="relative">
+                      <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400">
+                        ₹
+                      </span>
+                      <input
+                        type="number"
+                        min="0"
+                        step="50"
+                        value={quoteDeliveryFee}
+                        onChange={(e) => setQuoteDeliveryFee(e.target.value)}
+                        placeholder="0.00"
+                        className="w-full rounded-xl border border-slate-300 bg-slate-50 pl-7 pr-3 py-1.5 text-xs font-bold text-slate-800 focus:bg-white focus:outline-hidden"
+                      />
+                    </div>
+                    <p className="mt-1 text-[11px] text-slate-400">
+                      Added for buffet setup, transport, or server staff.
+                    </p>
+                  </div>
+                </div>
+
+                {/* LIVE QUOTATION BREAKDOWN & SEND CTA */}
+                <div className="rounded-2xl border border-emerald-200 bg-emerald-50/60 p-4">
+                  <div className="space-y-1.5 text-xs text-slate-700">
+                    <div className="flex justify-between">
+                      <span className="text-slate-500">Original Menu Total:</span>
+                      <span className="font-bold">₹{quoteCalculations.originalSubtotal.toFixed(2)}</span>
+                    </div>
+
+                    {quoteCalculations.itemSavings > 0 && (
+                      <div className="flex justify-between text-emerald-700">
+                        <span>Per-Dish Bulk Discount Savings:</span>
+                        <span className="font-bold">-₹{quoteCalculations.itemSavings.toFixed(2)}</span>
+                      </div>
+                    )}
+
+                    {quoteCalculations.overallDiscountAmount > 0 && (
+                      <div className="flex justify-between text-emerald-700">
+                        <span>Overall Bulk Discount ({quoteDiscountType === "percentage" ? `${quoteDiscountValue}%` : `Flat ₹${quoteDiscountValue}`}):</span>
+                        <span className="font-bold">-₹{quoteCalculations.overallDiscountAmount.toFixed(2)}</span>
+                      </div>
+                    )}
+
+                    {quoteCalculations.totalSavings > 0 && (
+                      <div className="flex justify-between text-emerald-800 font-bold border-t border-emerald-200/60 pt-1">
+                        <span>Total Discount Provided:</span>
+                        <span>-₹{quoteCalculations.totalSavings.toFixed(2)}</span>
+                      </div>
+                    )}
+
+                    {quoteCalculations.deliveryFee > 0 && (
+                      <div className="flex justify-between text-slate-600">
+                        <span>Delivery / Setup Fee:</span>
+                        <span className="font-bold">+₹{quoteCalculations.deliveryFee.toFixed(2)}</span>
+                      </div>
+                    )}
+
+                    <div className="flex justify-between items-baseline border-t border-emerald-300 pt-2 text-sm sm:text-base font-black text-[#1a3c36]">
+                      <span>Final Estimated Quoted Amount:</span>
+                      <span className="text-xl sm:text-2xl text-emerald-800">
+                        ₹{quoteCalculations.finalQuotedTotal.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Send Quotation Button */}
+                  <div className="mt-4 pt-3 border-t border-emerald-200 flex flex-col sm:flex-row items-center justify-between gap-3">
+                    <p className="text-[11px] text-slate-500">
+                      Sending the quotation will notify the customer. They can review and <strong>Accept or Reject</strong> from their account.
+                    </p>
+                    <button
+                      type="button"
+                      disabled={sendingQuote}
+                      onClick={handleSendQuotation}
+                      className="w-full sm:w-auto inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-[#1a3c36] px-6 text-xs font-black uppercase tracking-wider text-white shadow-md transition hover:bg-[#255248] disabled:opacity-50"
+                    >
+                      {sendingQuote ? (
+                        <span className="inline-flex items-center gap-1.5">
+                          <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                          Sending Quotation...
+                        </span>
+                      ) : (
+                        <>
+                          <Send className="h-4 w-4" />
+                          Send Quotation to Customer
+                        </>
+                      )}
+                    </button>
+                  </div>
                 </div>
               </div>
 
               {/* Status Management & Admin Notes */}
               <div className="rounded-2xl border border-slate-200 bg-slate-50/50 p-4 space-y-4">
                 <h4 className="text-xs font-bold uppercase tracking-wider text-slate-600">
-                  Manage Booking Status &amp; Notes
+                  Override Booking Status &amp; Communications
                 </h4>
 
                 <div className="flex flex-wrap items-center gap-2">
-                  <span className="text-xs font-semibold text-slate-500">Update Status:</span>
-                  {["Pending", "Confirmed", "Preparing", "Ready", "Completed", "Cancelled"].map((st) => (
+                  <span className="text-xs font-semibold text-slate-500">Current Status:</span>
+                  {["Pending", "Quotation Sent", "Confirmed", "Preparing", "Ready", "Completed", "Cancelled"].map((st) => (
                     <button
                       key={st}
                       type="button"
@@ -476,7 +923,7 @@ export default function AdminEventOrders() {
 
                 <div>
                   <label className="block text-xs font-bold text-slate-600 mb-1">
-                    Internal Admin Notes / Customer Communications:
+                    Internal Notes / Customer Communications:
                   </label>
                   <textarea
                     rows="2"

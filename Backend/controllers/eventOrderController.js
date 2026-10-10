@@ -5,6 +5,8 @@ const {
   updateEventOrderStatus,
   updateEventOrderDetails,
   deleteEventOrder,
+  sendEventOrderQuotation,
+  customerRespondToQuotation,
 } = require('../modules/eventOrders');
 const { listFoods } = require('../modules/foods');
 const { notifyAdmins, notifyUser } = require('../utils/notificationSocket');
@@ -186,7 +188,7 @@ const updateStatus = async (req, res) => {
     const { id } = req.params;
     const { status, admin_notes } = req.body;
 
-    const validStatuses = ['Pending', 'Confirmed', 'Preparing', 'Ready', 'Completed', 'Cancelled'];
+    const validStatuses = ['Pending', 'Quotation Sent', 'Confirmed', 'Preparing', 'Ready', 'Completed', 'Cancelled'];
     if (!status || !validStatuses.includes(status)) {
       return res.status(400).json({
         success: false,
@@ -222,6 +224,104 @@ const updateStatus = async (req, res) => {
   } catch (err) {
     console.error('Failed to update event order status:', err);
     return res.status(500).json({ success: false, message: 'Unable to update status.' });
+  }
+};
+
+const sendQuotation = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const {
+      discount_type,
+      discount_value,
+      discount_amount,
+      delivery_fee,
+      quoted_amount,
+      admin_notes,
+      item_discounts,
+    } = req.body;
+
+    const result = await sendEventOrderQuotation(id, {
+      discountType: discount_type || 'fixed',
+      discountValue: Number(discount_value || 0),
+      discountAmount: Number(discount_amount || 0),
+      deliveryFee: Number(delivery_fee || 0),
+      quotedAmount: Number(quoted_amount || 0),
+      adminNotes: admin_notes || '',
+      itemDiscounts: Array.isArray(item_discounts) ? item_discounts : [],
+    });
+
+    if (result.userId) {
+      notifyUser(result.userId, {
+        type: 'event_order_quote',
+        title: `Quotation Received for Event Order #${result.eventOrderNumber}`,
+        message: `We have prepared an estimated quote of ₹${result.quotedAmount.toLocaleString('en-IN')} for your bulk order! Please review and confirm.`,
+        link: '/account?tab=event-orders',
+        data: {
+          order_id: result.id,
+          order_number: result.eventOrderNumber,
+          quoted_amount: result.quotedAmount,
+        },
+      });
+    }
+
+    return res.json({
+      success: true,
+      message: 'Quotation sent to customer successfully.',
+      data: result,
+    });
+  } catch (err) {
+    console.error('Failed to send event order quotation:', err);
+    return res.status(err.statusCode || 500).json({
+      success: false,
+      message: err.message || 'Unable to send quotation.',
+    });
+  }
+};
+
+const respondToQuotation = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { action, reason } = req.body; // 'accept' | 'reject'
+    const userId = req.auth?.user_id;
+
+    if (!['accept', 'reject'].includes(action)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Action must be either accept or reject.',
+      });
+    }
+
+    const result = await customerRespondToQuotation(id, userId, {
+      action,
+      reason: reason || '',
+    });
+
+    notifyAdmins({
+      type: 'event_order_response',
+      title: `Event Order #${result.eventOrderNumber} Quotation ${result.customerAction === 'accepted' ? 'Accepted' : 'Rejected'}`,
+      message: `Customer ${result.customerAction} the quotation for bulk order #${result.eventOrderNumber}.${reason ? ` Reason: ${reason}` : ''}`,
+      link: '/admin/event-orders',
+      data: {
+        order_id: result.id,
+        order_number: result.eventOrderNumber,
+        status: result.status,
+        customer_action: result.customerAction,
+      },
+    });
+
+    return res.json({
+      success: true,
+      message: result.customerAction === 'accepted'
+        ? 'Quotation accepted! Your bulk order is now confirmed.'
+        : 'Quotation rejected. Your bulk order has been cancelled.',
+      data: result,
+    });
+  } catch (err) {
+    console.error('Failed to respond to event order quotation:', err);
+    return res.status(err.statusCode || 500).json({
+      success: false,
+      message: err.message || 'Unable to update quotation response.',
+    });
   }
 };
 
@@ -279,4 +379,6 @@ module.exports = {
   updateDetails,
   removeEventOrder,
   getBulkOrderMenu,
+  sendQuotation,
+  respondToQuotation,
 };

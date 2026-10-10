@@ -281,6 +281,7 @@ router.use('/event-orders', (req, res, next) => {
   if (req.path === '/menu') return next();
   if (req.method === 'POST' && req.path === '/') return optionalAuth(req, res, next);
   if (req.path === '/mine') return requireAuthenticatedUser(req, res, next);
+  if (req.method === 'POST' && req.path.endsWith('/respond')) return requireAuthenticatedUser(req, res, next);
   if (req.method === 'GET' && req.path !== '/') return optionalAuth(req, res, next);
   return requireAdmin(req, res, next);
 }, eventOrdersRouter);

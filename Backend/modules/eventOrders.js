@@ -48,6 +48,28 @@ const initializeEventOrderSchema = async () => {
         REFERENCES event_orders (id) ON DELETE CASCADE
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
   `);
+
+  const ensureColumn = async (table, col, def) => {
+    const [rows] = await db.execute(
+      `SELECT COLUMN_NAME FROM information_schema.COLUMNS
+       WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND COLUMN_NAME = ?`,
+      [table, col]
+    );
+    if (!rows.length) {
+      await db.query(`ALTER TABLE \`${table}\` ADD COLUMN \`${col}\` ${def}`);
+    }
+  };
+
+  await ensureColumn('event_orders', 'discount_type', "VARCHAR(20) DEFAULT 'fixed'");
+  await ensureColumn('event_orders', 'discount_value', "DECIMAL(10,2) DEFAULT 0.00");
+  await ensureColumn('event_orders', 'discount_amount', "DECIMAL(10,2) DEFAULT 0.00");
+  await ensureColumn('event_orders', 'delivery_fee', "DECIMAL(10,2) DEFAULT 0.00");
+  await ensureColumn('event_orders', 'quoted_amount', "DECIMAL(10,2) DEFAULT 0.00");
+  await ensureColumn('event_orders', 'customer_action', "VARCHAR(30) NULL");
+  await ensureColumn('event_orders', 'customer_action_reason', "TEXT NULL");
+
+  await ensureColumn('event_order_items', 'discounted_unit_price', "DECIMAL(10,2) NULL");
+  await ensureColumn('event_order_items', 'discount_amount', "DECIMAL(10,2) DEFAULT 0.00");
 };
 
 const generateEventOrderNumber = async (connection) => {
@@ -282,6 +304,139 @@ const deleteEventOrder = async (id) => {
   return result.affectedRows > 0;
 };
 
+const sendEventOrderQuotation = async (id, {
+  discountType = 'fixed',
+  discountValue = 0,
+  discountAmount = 0,
+  deliveryFee = 0,
+  quotedAmount = 0,
+  adminNotes = '',
+  itemDiscounts = [],
+}) => {
+  const connection = await db.getConnection();
+  try {
+    await connection.beginTransaction();
+
+    const [orders] = await connection.execute(
+      'SELECT id, event_order_number, user_id FROM event_orders WHERE id = ? OR event_order_number = ? LIMIT 1 FOR UPDATE',
+      [id, id]
+    );
+    if (!orders.length) {
+      const err = new Error('Event order not found');
+      err.statusCode = 404;
+      throw err;
+    }
+    const orderId = orders[0].id;
+
+    if (Array.isArray(itemDiscounts) && itemDiscounts.length > 0) {
+      for (const it of itemDiscounts) {
+        if (it.id) {
+          await connection.execute(
+            `UPDATE event_order_items
+             SET discounted_unit_price = ?, discount_amount = ?
+             WHERE id = ? AND event_order_id = ?`,
+            [
+              it.discounted_unit_price !== undefined && it.discounted_unit_price !== null ? Number(it.discounted_unit_price) : null,
+              Number(it.discount_amount || 0),
+              it.id,
+              orderId,
+            ]
+          );
+        }
+      }
+    }
+
+    await connection.execute(
+      `UPDATE event_orders
+       SET status = 'Quotation Sent',
+           discount_type = ?,
+           discount_value = ?,
+           discount_amount = ?,
+           delivery_fee = ?,
+           quoted_amount = ?,
+           admin_notes = ?,
+           customer_action = NULL,
+           customer_action_reason = NULL
+       WHERE id = ?`,
+      [
+        discountType,
+        Number(discountValue || 0),
+        Number(discountAmount || 0),
+        Number(deliveryFee || 0),
+        Number(quotedAmount || 0),
+        adminNotes || null,
+        orderId,
+      ]
+    );
+
+    await connection.commit();
+    return {
+      id: orderId,
+      eventOrderNumber: orders[0].event_order_number,
+      userId: orders[0].user_id,
+      quotedAmount: Number(quotedAmount || 0),
+    };
+  } catch (error) {
+    await connection.rollback();
+    throw error;
+  } finally {
+    connection.release();
+  }
+};
+
+const customerRespondToQuotation = async (id, userId, { action, reason = '' }) => {
+  const connection = await db.getConnection();
+  try {
+    await connection.beginTransaction();
+
+    const [orders] = await connection.execute(
+      'SELECT id, event_order_number, user_id, status FROM event_orders WHERE id = ? OR event_order_number = ? LIMIT 1 FOR UPDATE',
+      [id, id]
+    );
+    if (!orders.length) {
+      const err = new Error('Event order not found');
+      err.statusCode = 404;
+      throw err;
+    }
+    const order = orders[0];
+    if (order.user_id && (!userId || String(order.user_id) !== String(userId))) {
+      const err = new Error('Unauthorized to respond to this order');
+      err.statusCode = 403;
+      throw err;
+    }
+
+    const nextStatus = action === 'accept' ? 'Confirmed' : 'Cancelled';
+    const customerAction = action === 'accept' ? 'accepted' : 'rejected';
+
+    await connection.execute(
+      `UPDATE event_orders
+       SET status = ?,
+           customer_action = ?,
+           customer_action_reason = ?
+       WHERE id = ?`,
+      [
+        nextStatus,
+        customerAction,
+        reason || null,
+        order.id,
+      ]
+    );
+
+    await connection.commit();
+    return {
+      id: order.id,
+      eventOrderNumber: order.event_order_number,
+      status: nextStatus,
+      customerAction,
+    };
+  } catch (error) {
+    await connection.rollback();
+    throw error;
+  } finally {
+    connection.release();
+  }
+};
+
 module.exports = {
   initializeEventOrderSchema,
   createEventOrder,
@@ -290,4 +445,6 @@ module.exports = {
   updateEventOrderStatus,
   updateEventOrderDetails,
   deleteEventOrder,
+  sendEventOrderQuotation,
+  customerRespondToQuotation,
 };

@@ -27,6 +27,7 @@ import {
   Users,
   PartyPopper,
   Plus,
+  Sparkles,
   X,
 } from "lucide-react";
 import toast from "react-hot-toast";
@@ -206,6 +207,67 @@ const Account = () => {
   const [ordersStatusFilter, setOrdersStatusFilter] = useState("All Orders");
   const [ordersPage, setOrdersPage] = useState(1);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+
+  // Bulk Quotation response state
+  const [respondingToQuote, setRespondingToQuote] = useState(false);
+  const [rejectPromptOrder, setRejectPromptOrder] = useState(null);
+  const [rejectReason, setRejectReason] = useState("");
+
+  const handleRespondToQuotation = async (orderId, action, reason = "") => {
+    try {
+      setRespondingToQuote(true);
+      const res = await api.post(`/event-orders/${orderId}/respond`, {
+        action,
+        reason,
+      });
+      if (res.data?.success) {
+        const nextStatus = action === "accept" ? "Confirmed" : "Cancelled";
+        const nextAction = action === "accept" ? "accepted" : "rejected";
+        toast.success(
+          res.data.message ||
+            (action === "accept"
+              ? "Quotation accepted! Your bulk order is confirmed."
+              : "Quotation rejected. Bulk order cancelled.")
+        );
+        setEventOrders((prev) =>
+          prev.map((o) =>
+            o.id === orderId || o.event_order_number === orderId
+              ? {
+                  ...o,
+                  status: nextStatus,
+                  customer_action: nextAction,
+                  customer_action_reason: reason,
+                }
+              : o
+          )
+        );
+        if (
+          selectedEventOrder?.id === orderId ||
+          selectedEventOrder?.event_order_number === orderId
+        ) {
+          setSelectedEventOrder((prev) =>
+            prev
+              ? {
+                  ...prev,
+                  status: nextStatus,
+                  customer_action: nextAction,
+                  customer_action_reason: reason,
+                }
+              : null
+          );
+        }
+        setRejectPromptOrder(null);
+        setRejectReason("");
+      } else {
+        toast.error(res.data?.message || "Could not process your quotation response.");
+      }
+    } catch (err) {
+      console.error("Quotation response error:", err);
+      toast.error(err.response?.data?.message || "Failed to update quotation response.");
+    } finally {
+      setRespondingToQuote(false);
+    }
+  };
 
   // Tab handling
   const tabFromUrl = searchParams.get("tab");
@@ -1103,100 +1165,178 @@ const Account = () => {
 
                     {eventOrders.length > 0 ? (
                       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                        {eventOrders.map((evt) => (
-                          <article
-                            key={evt.id || evt.event_order_number}
-                            className="flex flex-col rounded-2xl border border-[#edf0ea] bg-white p-5 shadow-xs transition hover:shadow-md"
-                          >
-                            <div className="flex items-start justify-between gap-2 border-b border-[#edf0ea] pb-3">
-                              <div>
-                                <span className="font-mono text-xs font-bold text-[#146b3a]">
-                                  {evt.event_order_number}
-                                </span>
-                                <h3 className="mt-0.5 text-base font-bold text-[#071C18]">
-                                  {evt.event_type}
-                                </h3>
-                              </div>
-                              <span
-                                className={`rounded-full border px-2.5 py-0.5 text-[11px] font-bold ${
-                                  evt.status === "Confirmed"
-                                    ? "border-blue-200 bg-blue-50 text-blue-800"
-                                    : evt.status === "Preparing"
-                                    ? "border-purple-200 bg-purple-50 text-purple-800"
-                                    : evt.status === "Completed"
-                                    ? "border-emerald-200 bg-emerald-50 text-emerald-800"
-                                    : evt.status === "Cancelled"
-                                    ? "border-rose-200 bg-rose-50 text-rose-800"
-                                    : "border-amber-200 bg-amber-50 text-amber-800"
-                                }`}
-                              >
-                                {evt.status || "Pending"}
-                              </span>
-                            </div>
+                        {eventOrders.map((evt) => {
+                          const isQuoted = evt.status === "Quotation Sent" || Boolean(evt.quoted_amount);
+                          const isPendingQuote = evt.status === "Quotation Sent";
 
-                            <div className="my-3 grid grid-cols-2 gap-2 text-xs">
-                              <div className="rounded-xl bg-[#f8faf6] p-2.5">
-                                <span className="text-[10px] uppercase font-bold text-slate-400">Event Date</span>
-                                <p className="font-bold text-slate-800">
-                                  {evt.event_date ? new Date(evt.event_date).toLocaleDateString("en-IN") : "--"}
-                                </p>
-                              </div>
-                              <div className="rounded-xl bg-[#f8faf6] p-2.5">
-                                <span className="text-[10px] uppercase font-bold text-slate-400">Serving Time</span>
-                                <p className="font-bold text-slate-800">{evt.event_time}</p>
-                              </div>
-                              <div className="rounded-xl bg-[#f8faf6] p-2.5">
-                                <span className="text-[10px] uppercase font-bold text-slate-400">Guest Count</span>
-                                <p className="font-bold text-slate-800">{evt.guest_count} Pax</p>
-                              </div>
-                              <div className="rounded-xl bg-[#f8faf6] p-2.5">
-                                <span className="text-[10px] uppercase font-bold text-slate-400">Estimated Total</span>
-                                <p className="font-black text-[#146b3a]">
-                                  ₹{Number(evt.total_estimated_amount || 0).toLocaleString("en-IN", { minimumFractionDigits: 2 })}
-                                </p>
-                              </div>
-                            </div>
-
-                            <div className="space-y-1.5 text-xs text-slate-600">
-                              <p className="flex items-start gap-1.5">
-                                <MapPin size={14} className="shrink-0 text-slate-400 mt-0.5" />
-                                <span className="truncate" title={evt.venue_address}>{evt.venue_address}</span>
-                              </p>
-                              {evt.dietary_preference && (
-                                <p className="text-[11px] text-slate-500">
-                                  Dietary: <strong className="text-slate-700">{evt.dietary_preference}</strong>
-                                </p>
-                              )}
-                              {evt.admin_notes && (
-                                <p className="rounded-xl border border-blue-200 bg-blue-50/70 p-2 text-[11px] text-blue-900 leading-relaxed">
-                                  <strong>Kitchen Note:</strong> {evt.admin_notes}
-                                </p>
-                              )}
-                            </div>
-
-                            {/* View Details Button */}
-                            <button
-                              type="button"
-                              onClick={() => setSelectedEventOrder(evt)}
-                              className="mt-4 flex h-10 w-full items-center justify-center gap-1.5 rounded-xl border border-[#146b3a] bg-[#146b3a]/5 text-xs font-bold text-[#146b3a] transition hover:bg-[#146b3a] hover:text-white cursor-pointer"
+                          return (
+                            <article
+                              key={evt.id || evt.event_order_number}
+                              className={`flex flex-col rounded-2xl border bg-white p-5 shadow-xs transition hover:shadow-md ${
+                                isPendingQuote
+                                  ? "border-sky-300 ring-2 ring-sky-100"
+                                  : evt.customer_action === "accepted"
+                                  ? "border-emerald-200"
+                                  : evt.customer_action === "rejected"
+                                  ? "border-rose-200"
+                                  : "border-[#edf0ea]"
+                              }`}
                             >
-                              <Eye size={14} /> View Details &amp; Full Menu ({evt.items?.length || evt.total_items || 0} Foods)
-                            </button>
-                          </article>
-                        ))}
+                              <div className="flex items-start justify-between gap-2 border-b border-[#edf0ea] pb-3">
+                                <div>
+                                  <span className="font-mono text-xs font-bold text-[#146b3a]">
+                                    {evt.event_order_number}
+                                  </span>
+                                  <h3 className="mt-0.5 text-base font-bold text-[#071C18]">
+                                    {evt.event_type}
+                                  </h3>
+                                </div>
+                                <span
+                                  className={`rounded-full border px-2.5 py-0.5 text-[11px] font-bold ${
+                                    evt.customer_action === "accepted"
+                                      ? "border-emerald-300 bg-emerald-50 text-emerald-800 font-bold"
+                                      : evt.customer_action === "rejected"
+                                      ? "border-rose-300 bg-rose-50 text-rose-800 font-bold"
+                                      : evt.status === "Quotation Sent"
+                                      ? "border-sky-300 bg-sky-50 text-sky-800 font-bold animate-pulse"
+                                      : evt.status === "Confirmed"
+                                      ? "border-blue-200 bg-blue-50 text-blue-800 font-bold"
+                                      : evt.status === "Preparing"
+                                      ? "border-purple-200 bg-purple-50 text-purple-800"
+                                      : evt.status === "Completed"
+                                      ? "border-teal-200 bg-teal-50 text-teal-800 font-bold"
+                                      : evt.status === "Cancelled"
+                                      ? "border-rose-200 bg-rose-50 text-rose-800"
+                                      : "border-amber-200 bg-amber-50 text-amber-800"
+                                  }`}
+                                >
+                                  {evt.status === "Quotation Sent" ? "Quotation Received" : evt.status || "Pending"}
+                                </span>
+                              </div>
+
+                              <div className="my-3 grid grid-cols-2 gap-2 text-xs">
+                                <div className="rounded-xl bg-[#f8faf6] p-2.5">
+                                  <span className="text-[10px] uppercase font-bold text-slate-400">Event Date</span>
+                                  <p className="font-bold text-slate-800">
+                                    {evt.event_date ? new Date(evt.event_date).toLocaleDateString("en-IN") : "--"}
+                                  </p>
+                                </div>
+                                <div className="rounded-xl bg-[#f8faf6] p-2.5">
+                                  <span className="text-[10px] uppercase font-bold text-slate-400">Serving Time</span>
+                                  <p className="font-bold text-slate-800">{evt.event_time}</p>
+                                </div>
+                                <div className="rounded-xl bg-[#f8faf6] p-2.5">
+                                  <span className="text-[10px] uppercase font-bold text-slate-400">Guest Count</span>
+                                  <p className="font-bold text-slate-800">{evt.guest_count} Pax</p>
+                                </div>
+                                <div
+                                  className={`rounded-xl p-2.5 ${
+                                    isQuoted
+                                      ? "bg-emerald-50/80 border border-emerald-200"
+                                      : "bg-[#f8faf6]"
+                                  }`}
+                                >
+                                  <span
+                                    className={`text-[10px] uppercase font-bold ${
+                                      isQuoted ? "text-emerald-700" : "text-slate-400"
+                                    }`}
+                                  >
+                                    {isQuoted ? "Quoted Amount" : "Estimated Total"}
+                                  </span>
+                                  <p
+                                    className={`font-black ${
+                                      isQuoted ? "text-emerald-800 text-sm" : "text-[#146b3a]"
+                                    }`}
+                                  >
+                                    ₹
+                                    {Number(
+                                      evt.quoted_amount || evt.total_estimated_amount || 0
+                                    ).toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+                                  </p>
+                                  {Number(evt.discount_amount || 0) > 0 && (
+                                    <span className="text-[10px] font-bold text-emerald-600 block mt-0.5">
+                                      Saved ₹{Number(evt.discount_amount).toLocaleString("en-IN")}
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+
+                              <div className="space-y-1.5 text-xs text-slate-600">
+                                <p className="flex items-start gap-1.5">
+                                  <MapPin size={14} className="shrink-0 text-slate-400 mt-0.5" />
+                                  <span className="truncate" title={evt.venue_address}>{evt.venue_address}</span>
+                                </p>
+                                {evt.dietary_preference && (
+                                  <p className="text-[11px] text-slate-500">
+                                    Dietary: <strong className="text-slate-700">{evt.dietary_preference}</strong>
+                                  </p>
+                                )}
+                                {evt.admin_notes && (
+                                  <p className="rounded-xl border border-blue-200 bg-blue-50/70 p-2 text-[11px] text-blue-900 leading-relaxed">
+                                    <strong>Restaurant Note:</strong> {evt.admin_notes}
+                                  </p>
+                                )}
+                              </div>
+
+                              {/* QUOTATION ACTION BANNER (CARD LEVEL) */}
+                              {isPendingQuote && (
+                                <div className="mt-3 rounded-2xl border border-sky-300 bg-sky-50/90 p-3.5 text-xs space-y-2">
+                                  <div className="flex items-center gap-1.5 font-bold text-sky-900">
+                                    <Sparkles size={14} className="text-sky-600" />
+                                    <span>Special Bulk Quotation Received!</span>
+                                  </div>
+                                  <p className="text-[11px] text-slate-600 leading-relaxed">
+                                    Our team has reviewed your order and estimated the final discounted cost at{" "}
+                                    <strong className="text-emerald-800 text-xs">
+                                      ₹{Number(evt.quoted_amount).toLocaleString("en-IN")}
+                                    </strong>
+                                    . Please accept or reject this quote below.
+                                  </p>
+                                  <div className="flex gap-2 pt-1">
+                                    <button
+                                      type="button"
+                                      disabled={respondingToQuote}
+                                      onClick={() => handleRespondToQuotation(evt.id, "accept")}
+                                      className="flex-1 flex h-9 items-center justify-center gap-1.5 rounded-xl bg-emerald-700 text-xs font-bold text-white shadow-xs hover:bg-emerald-800 transition cursor-pointer disabled:opacity-50"
+                                    >
+                                      <CheckCircle2 size={14} /> Accept Quote
+                                    </button>
+                                    <button
+                                      type="button"
+                                      disabled={respondingToQuote}
+                                      onClick={() => setRejectPromptOrder(evt)}
+                                      className="flex-1 flex h-9 items-center justify-center gap-1.5 rounded-xl border border-rose-300 bg-white text-xs font-bold text-rose-700 hover:bg-rose-50 transition cursor-pointer disabled:opacity-50"
+                                    >
+                                      <X size={14} /> Reject Quote
+                                    </button>
+                                  </div>
+                                </div>
+                              )}
+
+                              {/* View Details Button */}
+                              <button
+                                type="button"
+                                onClick={() => setSelectedEventOrder(evt)}
+                                className="mt-4 flex h-10 w-full items-center justify-center gap-1.5 rounded-xl border border-[#146b3a] bg-[#146b3a]/5 text-xs font-bold text-[#146b3a] transition hover:bg-[#146b3a] hover:text-white cursor-pointer"
+                              >
+                                <Eye size={14} /> View Details &amp; Full Menu ({evt.items?.length || evt.total_items || 0} Foods)
+                              </button>
+                            </article>
+                          );
+                        })}
                       </div>
                     ) : (
                       <div className="rounded-2xl border-2 border-dashed border-[#e1e8dd] bg-[#fafcf9] px-5 py-12 text-center">
                         <PartyPopper className="mx-auto h-10 w-10 text-[#9aab9a]" />
                         <h3 className="mt-3 text-base font-bold text-[#071C18]">No bulk or event orders yet</h3>
                         <p className="mt-1 text-sm text-[#7b8580]">
-                          Hosting a birthday, wedding, or office party? Select your dishes and book bulk catering in advance.
+                          Hosting a birthday, wedding, or office party? Select your dishes and request a bulk quotation without upfront payment.
                         </p>
                         <Link
                           to="/bulk-order"
                           className="mt-5 inline-flex items-center gap-2 rounded-xl bg-[#071C18] px-5 py-3 text-xs font-bold uppercase tracking-wider text-white transition hover:bg-[#396F0B]"
                         >
-                          Place a Bulk Order <ArrowRight size={15} />
+                          Request Bulk Quotation <ArrowRight size={15} />
                         </Link>
                       </div>
                     )}
@@ -1204,7 +1344,7 @@ const Account = () => {
                     {/* EVENT ORDER DETAILS MODAL */}
                     {selectedEventOrder && (
                       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs">
-                        <div className="max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-3xl border border-[#e8ede6] bg-white p-6 shadow-2xl sm:p-8">
+                        <div className="max-h-[92vh] w-full max-w-3xl overflow-y-auto rounded-3xl border border-[#e8ede6] bg-white p-6 shadow-2xl sm:p-8">
                           {/* Modal Header */}
                           <div className="flex items-start justify-between border-b border-[#edf0ea] pb-4">
                             <div>
@@ -1215,24 +1355,30 @@ const Account = () => {
                                 {selectedEventOrder.event_type} Catering
                               </h3>
                               <p className="text-xs text-slate-500">
-                                Booked on {selectedEventOrder.created_at ? new Date(selectedEventOrder.created_at).toLocaleString("en-IN") : "--"}
+                                Requested on {selectedEventOrder.created_at ? new Date(selectedEventOrder.created_at).toLocaleString("en-IN") : "--"}
                               </p>
                             </div>
                             <div className="flex items-center gap-2">
                               <span
                                 className={`rounded-full border px-3 py-1 text-xs font-bold ${
-                                  selectedEventOrder.status === "Confirmed"
-                                    ? "border-blue-200 bg-blue-50 text-blue-800"
+                                  selectedEventOrder.customer_action === "accepted"
+                                    ? "border-emerald-300 bg-emerald-50 text-emerald-800 font-bold"
+                                    : selectedEventOrder.customer_action === "rejected"
+                                    ? "border-rose-300 bg-rose-50 text-rose-800 font-bold"
+                                    : selectedEventOrder.status === "Quotation Sent"
+                                    ? "border-sky-300 bg-sky-50 text-sky-800 font-bold"
+                                    : selectedEventOrder.status === "Confirmed"
+                                    ? "border-blue-200 bg-blue-50 text-blue-800 font-bold"
                                     : selectedEventOrder.status === "Preparing"
                                     ? "border-purple-200 bg-purple-50 text-purple-800"
                                     : selectedEventOrder.status === "Completed"
-                                    ? "border-emerald-200 bg-emerald-50 text-emerald-800"
+                                    ? "border-teal-200 bg-teal-50 text-teal-800 font-bold"
                                     : selectedEventOrder.status === "Cancelled"
                                     ? "border-rose-200 bg-rose-50 text-rose-800"
                                     : "border-amber-200 bg-amber-50 text-amber-800"
                                 }`}
                               >
-                                {selectedEventOrder.status || "Pending"}
+                                {selectedEventOrder.status === "Quotation Sent" ? "Quotation Received" : selectedEventOrder.status || "Pending"}
                               </span>
                               <button
                                 type="button"
@@ -1243,6 +1389,66 @@ const Account = () => {
                               </button>
                             </div>
                           </div>
+
+                          {/* Quotation Status Banners inside Modal */}
+                          {selectedEventOrder.status === "Quotation Sent" && (
+                            <div className="mt-4 rounded-2xl border-2 border-sky-300 bg-sky-50/90 p-4 space-y-3">
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-2">
+                                  <Sparkles size={18} className="text-sky-600" />
+                                  <h4 className="text-sm font-bold text-sky-950">
+                                    Special Bulk Quotation: ₹{Number(selectedEventOrder.quoted_amount).toLocaleString("en-IN")}
+                                  </h4>
+                                </div>
+                                <span className="rounded-full bg-sky-200 px-3 py-0.5 text-xs font-black uppercase text-sky-800">
+                                  Action Required
+                                </span>
+                              </div>
+                              <p className="text-xs text-slate-700 leading-relaxed">
+                                Our management has reviewed your request. We have applied bulk discounts to your menu.
+                                Please review the itemized breakdown below and confirm whether you would like to proceed.
+                              </p>
+                              <div className="flex flex-wrap gap-2 pt-1">
+                                <button
+                                  type="button"
+                                  disabled={respondingToQuote}
+                                  onClick={() => handleRespondToQuotation(selectedEventOrder.id, "accept")}
+                                  className="inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-emerald-700 px-5 text-xs font-bold text-white shadow-xs hover:bg-emerald-800 transition cursor-pointer disabled:opacity-50"
+                                >
+                                  <CheckCircle2 size={15} /> Accept &amp; Confirm Booking
+                                </button>
+                                <button
+                                  type="button"
+                                  disabled={respondingToQuote}
+                                  onClick={() => setRejectPromptOrder(selectedEventOrder)}
+                                  className="inline-flex h-10 items-center justify-center gap-2 rounded-xl border border-rose-300 bg-white px-5 text-xs font-bold text-rose-700 hover:bg-rose-50 transition cursor-pointer disabled:opacity-50"
+                                >
+                                  <X size={15} /> Decline / Reject Quote
+                                </button>
+                              </div>
+                            </div>
+                          )}
+
+                          {selectedEventOrder.customer_action === "accepted" && (
+                            <div className="mt-4 rounded-2xl border border-emerald-300 bg-emerald-50 p-3.5 text-xs text-emerald-900 flex items-center gap-2.5">
+                              <CheckCircle2 size={18} className="text-emerald-600 shrink-0" />
+                              <p>
+                                <strong>Quotation Accepted!</strong> You approved the discounted quote of ₹{Number(selectedEventOrder.quoted_amount).toLocaleString("en-IN")}. Your bulk event order is confirmed.
+                              </p>
+                            </div>
+                          )}
+
+                          {selectedEventOrder.customer_action === "rejected" && (
+                            <div className="mt-4 rounded-2xl border border-rose-300 bg-rose-50 p-3.5 text-xs text-rose-900 flex items-center gap-2.5">
+                              <X size={18} className="text-rose-600 shrink-0" />
+                              <p>
+                                <strong>Quotation Declined:</strong> This bulk event order was cancelled.
+                                {selectedEventOrder.customer_action_reason && (
+                                  <span> Reason: &quot;{selectedEventOrder.customer_action_reason}&quot;</span>
+                                )}
+                              </p>
+                            </div>
+                          )}
 
                           {/* Event Specs Grid */}
                           <div className="my-5 grid grid-cols-2 gap-3 rounded-2xl bg-[#f8faf6] p-4 text-xs sm:grid-cols-4">
@@ -1289,7 +1495,7 @@ const Account = () => {
                             )}
                           </div>
 
-                          {/* Itemized Food Menu Table with Count Details */}
+                          {/* Itemized Food Menu Table with Discount Details */}
                           <div>
                             <h4 className="text-sm font-bold text-[#071C18] mb-2.5 flex items-center gap-2">
                               <Utensils size={15} className="text-[#146b3a]" />
@@ -1308,47 +1514,70 @@ const Account = () => {
                                   </tr>
                                 </thead>
                                 <tbody className="divide-y divide-[#edf0ea] text-slate-700">
-                                  {(selectedEventOrder.items || []).map((item) => (
-                                    <tr key={item.id || item.food_id} className="hover:bg-slate-50 transition">
-                                      <td className="px-4 py-3">
-                                        <div className="flex items-center gap-2.5">
-                                          {item.product_image ? (
-                                            <img
-                                              src={resolveOrderImage(item.product_image)}
-                                              alt={item.product_name}
-                                              className="h-10 w-10 shrink-0 rounded-lg object-cover border border-slate-100"
-                                            />
-                                          ) : (
-                                            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-400">
-                                              <Utensils size={16} />
-                                            </span>
-                                          )}
-                                          <div>
-                                            <p className="font-bold text-slate-900">{item.product_name}</p>
-                                            {item.notes && (
-                                              <p className="text-[10px] text-slate-400 italic">{item.notes}</p>
+                                  {(selectedEventOrder.items || []).map((item) => {
+                                    const origUnit = Number(item.unit_price || 0);
+                                    const discountedUnit =
+                                      item.discounted_unit_price !== null &&
+                                      item.discounted_unit_price !== undefined
+                                        ? Number(item.discounted_unit_price)
+                                        : origUnit;
+                                    const hasItemDiscount = discountedUnit < origUnit;
+                                    const qty = Number(item.quantity || 1);
+                                    const lineTotal = discountedUnit * qty;
+
+                                    return (
+                                      <tr key={item.id || item.food_id} className="hover:bg-slate-50 transition">
+                                        <td className="px-4 py-3">
+                                          <div className="flex items-center gap-2.5">
+                                            {item.product_image ? (
+                                              <img
+                                                src={resolveOrderImage(item.product_image)}
+                                                alt={item.product_name}
+                                                className="h-10 w-10 shrink-0 rounded-lg object-cover border border-slate-100"
+                                              />
+                                            ) : (
+                                              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-400">
+                                                <Utensils size={16} />
+                                              </span>
                                             )}
+                                            <div>
+                                              <p className="font-bold text-slate-900">{item.product_name}</p>
+                                              {item.notes && (
+                                                <p className="text-[10px] text-slate-400 italic">{item.notes}</p>
+                                              )}
+                                            </div>
                                           </div>
-                                        </div>
-                                      </td>
-                                      <td className="px-4 py-3 text-slate-500">{item.category_name || "--"}</td>
-                                      <td className="px-4 py-3 text-center text-slate-500">{item.portion_size || "Standard"}</td>
-                                      <td className="px-4 py-3 text-center">
-                                        <span className="inline-block rounded-md bg-[#eef6ea] px-2.5 py-1 font-black text-[#146b3a] border border-[#d6ebd0]">
-                                          {item.quantity} Qty
-                                        </span>
-                                      </td>
-                                      <td className="px-4 py-3 text-right text-slate-600">
-                                        ₹{Number(item.unit_price || 0).toFixed(2)}
-                                      </td>
-                                      <td className="px-4 py-3 text-right font-black text-[#071C18]">
-                                        ₹{Number(item.total_price || (Number(item.unit_price || 0) * Number(item.quantity || 1))).toFixed(2)}
-                                      </td>
-                                    </tr>
-                                  ))}
+                                        </td>
+                                        <td className="px-4 py-3 text-slate-500">{item.category_name || "--"}</td>
+                                        <td className="px-4 py-3 text-center text-slate-500">{item.portion_size || "Standard"}</td>
+                                        <td className="px-4 py-3 text-center">
+                                          <span className="inline-block rounded-md bg-[#eef6ea] px-2.5 py-1 font-black text-[#146b3a] border border-[#d6ebd0]">
+                                            {qty} Qty
+                                          </span>
+                                        </td>
+                                        <td className="px-4 py-3 text-right">
+                                          {hasItemDiscount ? (
+                                            <div>
+                                              <span className="text-[10px] line-through text-slate-400 block">
+                                                ₹{origUnit.toFixed(2)}
+                                              </span>
+                                              <span className="font-bold text-emerald-700">
+                                                ₹{discountedUnit.toFixed(2)}
+                                              </span>
+                                            </div>
+                                          ) : (
+                                            <span className="text-slate-600">₹{origUnit.toFixed(2)}</span>
+                                          )}
+                                        </td>
+                                        <td className="px-4 py-3 text-right font-black text-[#071C18]">
+                                          ₹{lineTotal.toFixed(2)}
+                                        </td>
+                                      </tr>
+                                    );
+                                  })}
                                 </tbody>
                                 <tfoot>
-                                  <tr className="border-t border-[#edf0ea] bg-[#f8faf6] font-bold">
+                                  <tr className="border-t border-[#edf0ea] bg-[#f8faf6] font-bold text-xs">
                                     <td colSpan="3" className="px-4 py-3 text-slate-600">
                                       Total Dishes: <strong>{(selectedEventOrder.items || []).length}</strong>
                                     </td>
@@ -1356,10 +1585,43 @@ const Account = () => {
                                       {(selectedEventOrder.items || []).reduce((s, i) => s + Number(i.quantity || 1), 0)} Total Portions
                                     </td>
                                     <td className="px-4 py-3 text-right text-slate-600">
-                                      Grand Subtotal:
+                                      Original Menu Total:
                                     </td>
-                                    <td className="px-4 py-3 text-right font-black text-base text-[#146b3a]">
+                                    <td className="px-4 py-3 text-right font-bold text-slate-800">
                                       ₹{Number(selectedEventOrder.total_estimated_amount || 0).toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+                                    </td>
+                                  </tr>
+                                  {Number(selectedEventOrder.discount_amount || 0) > 0 && (
+                                    <tr className="bg-emerald-50/60 font-bold text-xs text-emerald-800">
+                                      <td colSpan="5" className="px-4 py-2 text-right">
+                                        Special Bulk Discount Savings:
+                                      </td>
+                                      <td className="px-4 py-2 text-right">
+                                        -₹{Number(selectedEventOrder.discount_amount).toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+                                      </td>
+                                    </tr>
+                                  )}
+                                  {Number(selectedEventOrder.delivery_fee || 0) > 0 && (
+                                    <tr className="bg-[#f8faf6] font-bold text-xs text-slate-700">
+                                      <td colSpan="5" className="px-4 py-2 text-right">
+                                        Delivery / Setup Charge:
+                                      </td>
+                                      <td className="px-4 py-2 text-right">
+                                        +₹{Number(selectedEventOrder.delivery_fee).toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+                                      </td>
+                                    </tr>
+                                  )}
+                                  <tr className="border-t-2 border-[#d6ebd0] bg-[#eef6ea] font-black text-sm">
+                                    <td colSpan="5" className="px-4 py-3.5 text-right text-[#071C18]">
+                                      {selectedEventOrder.status === "Quotation Sent" || selectedEventOrder.quoted_amount
+                                        ? "Final Quoted Amount:"
+                                        : "Total Estimated Amount:"}
+                                    </td>
+                                    <td className="px-4 py-3.5 text-right font-black text-base text-[#146b3a]">
+                                      ₹
+                                      {Number(
+                                        selectedEventOrder.quoted_amount || selectedEventOrder.total_estimated_amount || 0
+                                      ).toLocaleString("en-IN", { minimumFractionDigits: 2 })}
                                     </td>
                                   </tr>
                                 </tfoot>
@@ -1368,13 +1630,97 @@ const Account = () => {
                           </div>
 
                           {/* Modal Footer */}
-                          <div className="mt-6 flex justify-end border-t border-[#edf0ea] pt-4">
+                          <div className="mt-6 flex flex-col sm:flex-row items-center justify-between gap-3 border-t border-[#edf0ea] pt-4">
+                            {selectedEventOrder.status === "Quotation Sent" ? (
+                              <div className="flex gap-2 w-full sm:w-auto">
+                                <button
+                                  type="button"
+                                  disabled={respondingToQuote}
+                                  onClick={() => handleRespondToQuotation(selectedEventOrder.id, "accept")}
+                                  className="inline-flex h-10 items-center justify-center gap-1.5 rounded-xl bg-emerald-700 px-5 text-xs font-bold text-white shadow-xs hover:bg-emerald-800 transition cursor-pointer disabled:opacity-50"
+                                >
+                                  <CheckCircle2 size={14} /> Accept Quote
+                                </button>
+                                <button
+                                  type="button"
+                                  disabled={respondingToQuote}
+                                  onClick={() => setRejectPromptOrder(selectedEventOrder)}
+                                  className="inline-flex h-10 items-center justify-center gap-1.5 rounded-xl border border-rose-300 bg-white px-5 text-xs font-bold text-rose-700 hover:bg-rose-50 transition cursor-pointer disabled:opacity-50"
+                                >
+                                  <X size={14} /> Reject Quote
+                                </button>
+                              </div>
+                            ) : (
+                              <div />
+                            )}
                             <button
                               type="button"
                               onClick={() => setSelectedEventOrder(null)}
                               className="rounded-xl border border-slate-300 bg-white px-6 py-2.5 text-xs font-bold text-slate-700 transition hover:bg-slate-50 cursor-pointer"
                             >
                               Close Details
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* REJECTION REASON CONFIRMATION MODAL */}
+                    {rejectPromptOrder && (
+                      <div className="fixed inset-0 z-60 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs">
+                        <div className="w-full max-w-md rounded-3xl border border-rose-200 bg-white p-6 shadow-2xl">
+                          <div className="flex items-center gap-3 text-rose-600 mb-3">
+                            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-rose-100">
+                              <X size={20} />
+                            </div>
+                            <div>
+                              <h4 className="text-base font-bold text-slate-900">
+                                Decline Quotation?
+                              </h4>
+                              <p className="text-xs text-slate-500">
+                                Order #{rejectPromptOrder.event_order_number}
+                              </p>
+                            </div>
+                          </div>
+
+                          <p className="text-xs text-slate-600 leading-relaxed">
+                            Are you sure you want to decline this quote of ₹{Number(rejectPromptOrder.quoted_amount).toLocaleString("en-IN")}? Declining will cancel this bulk catering booking.
+                          </p>
+
+                          <div className="mt-3">
+                            <label className="block text-xs font-bold text-slate-700 mb-1">
+                              Reason for rejection (Optional):
+                            </label>
+                            <textarea
+                              rows="2"
+                              value={rejectReason}
+                              onChange={(e) => setRejectReason(e.target.value)}
+                              placeholder="e.g. Budget constraints, decided on different menu, event postponed..."
+                              className="w-full rounded-xl border border-slate-300 bg-slate-50 p-2.5 text-xs text-slate-800 focus:bg-white focus:outline-hidden"
+                            />
+                          </div>
+
+                          <div className="mt-5 flex gap-2 justify-end">
+                            <button
+                              type="button"
+                              disabled={respondingToQuote}
+                              onClick={() => {
+                                setRejectPromptOrder(null);
+                                setRejectReason("");
+                              }}
+                              className="rounded-xl border border-slate-300 px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-100 transition cursor-pointer"
+                            >
+                              Go Back
+                            </button>
+                            <button
+                              type="button"
+                              disabled={respondingToQuote}
+                              onClick={() =>
+                                handleRespondToQuotation(rejectPromptOrder.id, "reject", rejectReason)
+                              }
+                              className="rounded-xl bg-rose-600 px-4 py-2 text-xs font-bold text-white shadow-xs hover:bg-rose-700 transition cursor-pointer disabled:opacity-50"
+                            >
+                              {respondingToQuote ? "Cancelling..." : "Confirm Reject Order"}
                             </button>
                           </div>
                         </div>

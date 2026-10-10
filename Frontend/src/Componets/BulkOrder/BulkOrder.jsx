@@ -306,20 +306,20 @@ export default function BulkOrder() {
   if (orderSuccess) {
     return (
       <main className="min-h-screen bg-[#f7f7f3] pb-20 text-[#203129]">
-        <PageHeader title="Bulk Order Confirmed" />
+        <PageHeader title="Quotation Request Submitted" />
         <PageContainer>
           <div className="mx-auto mt-8 max-w-2xl rounded-3xl border border-[#d8d6c7] bg-white p-8 text-center shadow-lg sm:p-12">
             <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-emerald-100 text-emerald-700 shadow-inner">
               <CheckCircle2 className="h-10 w-10" />
             </div>
             <span className="mt-6 inline-block rounded-full bg-[#f6eee2] px-4 py-1 text-xs font-black uppercase tracking-widest text-[#a85b00]">
-              Reference #{orderSuccess.orderNumber}
+              Quotation Request #{orderSuccess.orderNumber}
             </span>
             <h1 className="mt-3 text-3xl font-black tracking-tight text-[#1a3c36] sm:text-4xl">
               Thank You, {orderSuccess.customerName}!
             </h1>
             <p className="mt-3 text-sm leading-relaxed text-slate-600 sm:text-base">
-              Your bulk catering request for <strong>{orderSuccess.eventType}</strong> ({orderSuccess.guestCount} guests) on <strong>{orderSuccess.eventDate}</strong> has been received by our kitchen management.
+              Your bulk catering menu request for <strong>{orderSuccess.eventType}</strong> ({orderSuccess.guestCount} guests) on <strong>{orderSuccess.eventDate}</strong> has been submitted to our management.
             </p>
 
             <div className="mt-6 rounded-2xl border border-slate-200 bg-slate-50 p-4 text-left text-xs sm:text-sm">
@@ -336,7 +336,7 @@ export default function BulkOrder() {
                 <span className="font-bold text-slate-800">{orderSuccess.guestCount} Pax</span>
               </div>
               <div className="flex justify-between py-1.5 font-bold">
-                <span className="text-slate-700">Estimated Total:</span>
+                <span className="text-slate-700">Estimated Menu Value:</span>
                 <span className="text-[#1a3c36] text-base">₹{Number(orderSuccess.estimatedTotal).toLocaleString("en-IN", { minimumFractionDigits: 2 })}</span>
               </div>
             </div>
@@ -345,7 +345,7 @@ export default function BulkOrder() {
               <div className="flex gap-2.5">
                 <Info className="h-4 w-4 shrink-0 text-amber-700 mt-0.5" />
                 <p>
-                  Our catering supervisor will contact you via phone shortly to confirm menu details, timing, and setup logistics. You can also view the live status in your account.
+                  <strong>What happens next?</strong> Our admin team will review your order, apply bulk discounts per dish or overall, and send you a discounted quotation. You can then review and <strong>Accept or Reject</strong> the quote directly in your account!
                 </p>
               </div>
             </div>
@@ -355,7 +355,7 @@ export default function BulkOrder() {
                 to="/account?tab=event-orders"
                 className="inline-flex h-12 items-center justify-center rounded-xl bg-[#1a3c36] px-6 text-sm font-bold text-white shadow-md transition hover:bg-[#24534a]"
               >
-                Track in My Account
+                View Quote in My Account
               </Link>
               <button
                 type="button"
@@ -969,47 +969,18 @@ export default function BulkOrder() {
                 </p>
               </div>
 
-              {/* Payment Preference */}
-              <div className="mt-5 border-t border-slate-100 pt-4">
-                <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-2">
-                  Payment Method Preference
-                </label>
-                <div className="grid grid-cols-2 gap-2 text-xs">
-                  <label
-                    className={`flex cursor-pointer items-center gap-2 rounded-xl border p-2.5 transition ${
-                      form.payment_method === "cod"
-                        ? "border-[#1a3c36] bg-[#1a3c36]/5 font-bold text-[#1a3c36]"
-                        : "border-slate-200 text-slate-700"
-                    }`}
-                  >
-                    <input
-                      type="radio"
-                      name="payment_method"
-                      value="cod"
-                      checked={form.payment_method === "cod"}
-                      onChange={handleInputChange}
-                      className="accent-[#1a3c36]"
-                    />
-                    <span>Cash on Delivery</span>
-                  </label>
-
-                  <label
-                    className={`flex cursor-pointer items-center gap-2 rounded-xl border p-2.5 transition ${
-                      form.payment_method === "online"
-                        ? "border-[#1a3c36] bg-[#1a3c36]/5 font-bold text-[#1a3c36]"
-                        : "border-slate-200 text-slate-700"
-                    }`}
-                  >
-                    <input
-                      type="radio"
-                      name="payment_method"
-                      value="online"
-                      checked={form.payment_method === "online"}
-                      onChange={handleInputChange}
-                      className="accent-[#1a3c36]"
-                    />
-                    <span>Online / UPI</span>
-                  </label>
+              {/* No Payment Required Notice */}
+              <div className="mt-5 rounded-2xl border border-emerald-200 bg-emerald-50/70 p-4 text-xs">
+                <div className="flex items-start gap-2.5">
+                  <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-800">
+                    <CheckCircle2 className="h-4 w-4" />
+                  </div>
+                  <div>
+                    <h5 className="font-bold text-emerald-900">No Upfront Payment Required</h5>
+                    <p className="mt-0.5 text-slate-600 leading-relaxed">
+                      Submit your requirements and selected dishes. Our admin team will review your quantities, apply <strong>special bulk discounts</strong> (per dish or overall), and send you an official quotation for your approval.
+                    </p>
+                  </div>
                 </div>
               </div>
 
@@ -1023,17 +994,17 @@ export default function BulkOrder() {
                   {submitting ? (
                     <span className="inline-flex items-center gap-2">
                       <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                      Submitting Request...
+                      Sending Quotation Request...
                     </span>
                   ) : (
                     <>
                       <Sparkles className="h-5 w-5 text-[#d79d4a]" />
-                      Submit Bulk Order Request
+                      Request Bulk Order Quotation
                     </>
                   )}
                 </button>
                 <p className="mt-2 text-center text-[11px] text-slate-500">
-                  No payment charged immediately. Our manager will contact you to confirm final booking.
+                  You can review and accept or reject the estimated quote in your account before any order confirmation.
                 </p>
               </div>
             </div>
