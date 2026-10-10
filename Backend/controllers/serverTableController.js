@@ -41,12 +41,12 @@ async function resolveUserId(val, authUser) {
 
 /**
  * Creates a new server table.
- * Expected input fields: table_number, no_of_seats, status (optional), user_id / created_by (optional)
+ * Expected input fields: table_number, no_of_seats, image_url (optional), status (optional), user_id / created_by (optional)
  * created_by will store the user_id (not name).
  */
 async function createTable(req, res) {
   try {
-    const { table_number, no_of_seats, status } = req.body || {};
+    const { table_number, no_of_seats, status, image_url } = req.body || {};
     const normalizedTableNumber = getValue(table_number);
 
     if (!normalizedTableNumber) {
@@ -69,6 +69,7 @@ async function createTable(req, res) {
     const newTable = await createServerTable({
       table_number: normalizedTableNumber,
       no_of_seats: seatsNumber,
+      image_url: image_url || null,
       status: getValue(status) || 'Available',
       created_by: createdBy,
     });
@@ -153,7 +154,7 @@ async function getTable(req, res) {
 async function updateTable(req, res) {
   try {
     const { id } = req.params;
-    const { table_number, no_of_seats, status } = req.body || {};
+    const { table_number, no_of_seats, status, image_url } = req.body || {};
 
     const existingTable = await findServerTableById(id);
     if (!existingTable) {
@@ -189,6 +190,10 @@ async function updateTable(req, res) {
 
     if (status !== undefined) {
       payload.status = getValue(status) || existingTable.status;
+    }
+
+    if (image_url !== undefined) {
+      payload.image_url = getValue(image_url) || null;
     }
 
     payload.updated_by = await resolveUserId(req.body?.user_id || req.body?.updated_by, req.auth);
