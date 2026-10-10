@@ -1,6 +1,7 @@
 import { useContext, useEffect, useState } from 'react';
-import { ArrowLeft, BadgeCheck, CheckCircle2, ChevronLeft, ChevronRight, Clock3, Flame, Heart, Leaf, Minus, Plus, ShoppingCart, Sparkles, Star, Truck, UtensilsCrossed } from 'lucide-react';
+import { ArrowLeft, ArrowRight, BadgeCheck, CheckCircle2, ChevronLeft, ChevronRight, Clock3, Flame, Heart, Leaf, Minus, Plus, ShoppingCart, Sparkles, Star, Truck, UtensilsCrossed } from 'lucide-react';
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
+import { Swiper, SwiperSlide } from 'swiper/react';
 import toast from 'react-hot-toast';
 import api, { BACKEND_BASE_URL } from '../api';
 import { StoreContext } from '../PrivateRouter/StoreContext';
@@ -8,6 +9,7 @@ import PageContainer from './PageContainer';
 import PageHeader from './PageHeader';
 import FoodCustomizationModal from './FoodCustomizationModal';
 import FoodProductCard from './FoodProductCard';
+import 'swiper/css';
 
 const imageUrl = (image) => {
   if (!image || typeof image !== 'string') return '';
@@ -38,6 +40,8 @@ function FoodDetailsPage() {
   const [relatedFoodsLoading, setRelatedFoodsLoading] = useState(false);
   const [relatedFoodsError, setRelatedFoodsError] = useState('');
   const [relatedFoodToCustomize, setRelatedFoodToCustomize] = useState(null);
+  const [cuisineSwiper, setCuisineSwiper] = useState(null);
+  const [categorySwiper, setCategorySwiper] = useState(null);
 
   useEffect(() => {
     if (food && String(food.food_id || food.id) === String(foodId)) return undefined;
@@ -194,6 +198,74 @@ function FoodDetailsPage() {
     String(item.food_id || item.id || item.product_id || item._id)
       === String(food?.food_id || food?.id)
   ));
+
+  const renderRelatedCarousel = (title, eyebrow, items, swiper, setSwiper, sectionId, SectionIcon) => {
+    if (!items.length) return null;
+    return (
+      <section aria-labelledby={sectionId}>
+        <div className="mb-5 flex items-end justify-between gap-4">
+          <div>
+            <p className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-emerald-700">{eyebrow}</p>
+            <h2 id={sectionId} className="mt-1 font-serif text-2xl font-bold text-[#17241e] sm:text-3xl">{title}</h2>
+          </div>
+          <div className="flex shrink-0 items-center gap-2">
+            <SectionIcon className="mr-1 hidden h-5 w-5 text-orange-500 sm:block" />
+            <button
+              type="button"
+              onClick={() => swiper?.slidePrev()}
+              aria-label={`Previous ${title}`}
+              className="flex h-9 w-9 items-center justify-center rounded-full border border-[#e7e2d7] bg-white text-[#174a32] shadow-sm transition hover:border-emerald-300 hover:bg-emerald-50"
+            >
+              <ArrowLeft className="h-4 w-4" />
+            </button>
+            <button
+              type="button"
+              onClick={() => swiper?.slideNext()}
+              aria-label={`Next ${title}`}
+              className="flex h-9 w-9 items-center justify-center rounded-full border border-[#e7e2d7] bg-white text-[#174a32] shadow-sm transition hover:border-emerald-300 hover:bg-emerald-50"
+            >
+              <ArrowRight className="h-4 w-4" />
+            </button>
+          </div>
+        </div>
+        <Swiper
+          onSwiper={setSwiper}
+          slidesPerView={1.15}
+          slidesPerGroup={1}
+          spaceBetween={14}
+          breakpoints={{
+            480: { slidesPerView: 1.7, spaceBetween: 16 },
+            640: { slidesPerView: 2, spaceBetween: 16 },
+            768: { slidesPerView: 3, spaceBetween: 18 },
+            1024: { slidesPerView: 4, spaceBetween: 18 },
+            1280: { slidesPerView: 5, spaceBetween: 20 },
+          }}
+          className="!pb-4"
+        >
+          {items.map((relatedFood) => {
+            const relatedFoodId = relatedFood.food_id || relatedFood.id;
+            const isRelatedFoodInWishlist = wishlist.some((item) => (
+              String(item.food_id || item.id || item.product_id || item._id) === String(relatedFoodId)
+            ));
+            const openRelatedFood = () => navigate(`/food/${encodeURIComponent(relatedFoodId)}`, { state: { food: relatedFood } });
+            return (
+              <SwiperSlide key={`${sectionId}-${relatedFoodId}`} className="!h-auto">
+                <FoodProductCard
+                  food={relatedFood}
+                  className="h-full w-full"
+                  onSelect={openRelatedFood}
+                  onImageClick={openRelatedFood}
+                  onAdd={() => setRelatedFoodToCustomize(relatedFood)}
+                  isInWishlist={isRelatedFoodInWishlist}
+                  onToggleWishlist={toggleWishlist}
+                />
+              </SwiperSlide>
+            );
+          })}
+        </Swiper>
+      </section>
+    );
+  };
 
   if (loading) {
     return (
@@ -591,62 +663,28 @@ function FoodDetailsPage() {
             {relatedFoodsLoading && (
               <div className="space-y-4" aria-label="Loading related dishes">
                 <div className="h-7 w-56 animate-pulse rounded-lg bg-slate-200" />
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
                   {[1, 2, 3, 4].map((item) => <div key={item} className="aspect-[4/3] animate-pulse rounded-3xl bg-slate-100" />)}
                 </div>
               </div>
             )}
-            {!relatedFoodsLoading && !relatedFoodsError && cuisineRelatedFoods.length > 0 && (
-              <section aria-labelledby="related-cuisine-heading">
-                <div className="mb-5 flex items-end justify-between gap-4">
-                  <div>
-                    <p className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-emerald-700">Explore the cuisine</p>
-                    <h2 id="related-cuisine-heading" className="mt-1 font-serif text-2xl font-bold text-[#17241e] sm:text-3xl">
-                      More from {food.cuisine_name}
-                    </h2>
-                  </div>
-                  <Sparkles className="mb-1 h-5 w-5 shrink-0 text-orange-500" />
-                </div>
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                  {cuisineRelatedFoods.map((relatedFood) => (
-                    <FoodProductCard
-                      key={`cuisine-${relatedFood.food_id || relatedFood.id}`}
-                      food={relatedFood}
-                      onSelect={() => navigate(`/food/${encodeURIComponent(relatedFood.food_id || relatedFood.id)}`, { state: { food: relatedFood } })}
-                      onImageClick={() => navigate(`/food/${encodeURIComponent(relatedFood.food_id || relatedFood.id)}`, { state: { food: relatedFood } })}
-                      onAdd={() => setRelatedFoodToCustomize(relatedFood)}
-                      isInWishlist={wishlist.some((item) => String(item.food_id || item.id || item.product_id || item._id) === String(relatedFood.food_id || relatedFood.id))}
-                      onToggleWishlist={toggleWishlist}
-                    />
-                  ))}
-                </div>
-              </section>
+            {!relatedFoodsLoading && !relatedFoodsError && renderRelatedCarousel(
+              `More from ${food.cuisine_name}`,
+              'Explore the cuisine',
+              cuisineRelatedFoods,
+              cuisineSwiper,
+              setCuisineSwiper,
+              'related-cuisine-heading',
+              Sparkles,
             )}
-            {!relatedFoodsLoading && !relatedFoodsError && categoryRelatedFoods.length > 0 && (
-              <section aria-labelledby="related-category-heading">
-                <div className="mb-5 flex items-end justify-between gap-4">
-                  <div>
-                    <p className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-emerald-700">More to enjoy</p>
-                    <h2 id="related-category-heading" className="mt-1 font-serif text-2xl font-bold text-[#17241e] sm:text-3xl">
-                      More {food.category_name} dishes
-                    </h2>
-                  </div>
-                  <UtensilsCrossed className="mb-1 h-5 w-5 shrink-0 text-orange-500" />
-                </div>
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                  {categoryRelatedFoods.map((relatedFood) => (
-                    <FoodProductCard
-                      key={`category-${relatedFood.food_id || relatedFood.id}`}
-                      food={relatedFood}
-                      onSelect={() => navigate(`/food/${encodeURIComponent(relatedFood.food_id || relatedFood.id)}`, { state: { food: relatedFood } })}
-                      onImageClick={() => navigate(`/food/${encodeURIComponent(relatedFood.food_id || relatedFood.id)}`, { state: { food: relatedFood } })}
-                      onAdd={() => setRelatedFoodToCustomize(relatedFood)}
-                      isInWishlist={wishlist.some((item) => String(item.food_id || item.id || item.product_id || item._id) === String(relatedFood.food_id || relatedFood.id))}
-                      onToggleWishlist={toggleWishlist}
-                    />
-                  ))}
-                </div>
-              </section>
+            {!relatedFoodsLoading && !relatedFoodsError && renderRelatedCarousel(
+              `More ${food.category_name} dishes`,
+              'More to enjoy',
+              categoryRelatedFoods,
+              categorySwiper,
+              setCategorySwiper,
+              'related-category-heading',
+              UtensilsCrossed,
             )}
           </div>
         </PageContainer>
