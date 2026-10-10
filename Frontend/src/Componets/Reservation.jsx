@@ -416,14 +416,13 @@ const Reservation = () => {
                           <div className="h-20 w-full shrink-0 rounded-xl bg-[url('/images/registre.png')] bg-cover bg-center sm:h-[58px] sm:w-28" role="img" aria-label="Restaurant table" />
                         )}
                         <div className="min-w-0 flex-1 sm:min-w-[115px]">
-                          <p className="truncate text-sm font-bold text-[#18251f]">{reservation.reservation_id}</p>
+                          <p className="truncate text-sm font-bold text-[#18251f]">Table {reservation.table_number}</p>
                           <span className={`mt-1 inline-flex rounded-full px-2.5 py-1 text-[10px] font-bold ${statusClass}`}>{reservation.status}</span>
                         </div>
                         <div className="grid flex-1 grid-cols-2 gap-x-4 gap-y-2 text-xs text-slate-600 sm:flex sm:items-center sm:justify-between">
                           <span className="flex items-center gap-1.5"><CalendarDays className="h-4 w-4 shrink-0 text-slate-700" />{formatDate(reservation.reservation_date)}</span>
                           <span className="flex items-center gap-1.5"><Clock3 className="h-4 w-4 shrink-0 text-slate-700" />{formatTime(reservation.start_time)}</span>
                           <span className="flex items-center gap-1.5"><Users className="h-4 w-4 shrink-0 text-slate-700" />{reservation.guests} Guests</span>
-                          <span className="flex items-center gap-1.5"><Armchair className="h-4 w-4 shrink-0 text-slate-700" />Table {reservation.table_number}</span>
                         </div>
                       </article>
                     );
