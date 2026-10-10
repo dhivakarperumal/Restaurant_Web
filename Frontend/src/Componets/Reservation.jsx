@@ -18,7 +18,7 @@ import {
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import PageContainer from "../CommonComponents/PageContainer";
-import api from "../api";
+import api, { BACKEND_BASE_URL } from "../api";
 import { useAuth } from "../PrivateRouter/AuthContext";
 
 const minimumReservationDate = (() => {
@@ -70,6 +70,25 @@ const formatDate = (value) => {
     day: "numeric",
     year: "numeric",
   });
+};
+
+const resolveTableImageUrl = (table) => {
+  const image = String(table.image_url || table.imageUrl || table.image || "").trim();
+  if (!image) return "";
+
+  try {
+    const imageUrl = new URL(image, `${BACKEND_BASE_URL}/`);
+    const isLocalImageHost = ["localhost", "127.0.0.1"].includes(imageUrl.hostname);
+    const isLocalAppHost = ["localhost", "127.0.0.1"].includes(window.location.hostname);
+    if (isLocalImageHost && !isLocalAppHost) {
+      const backendUrl = new URL(BACKEND_BASE_URL);
+      imageUrl.protocol = backendUrl.protocol;
+      imageUrl.host = backendUrl.host;
+    }
+    return imageUrl.href;
+  } catch {
+    return image;
+  }
 };
 
 const Reservation = () => {
@@ -317,10 +336,11 @@ const Reservation = () => {
                   <div className="space-y-2.5">
                     {tables.map((table) => {
                       const isSelected = selectedTable === table.table_id;
+                      const tableImageUrl = resolveTableImageUrl(table);
                       return (
                         <button key={table.table_id} type="button" onClick={() => setSelectedTable(table.table_id)} aria-pressed={isSelected} className={`flex w-full items-center gap-3 rounded-2xl border p-2.5 text-left transition focus:outline-none focus:ring-2 focus:ring-[#16804a]/25 sm:gap-4 ${isSelected ? "border-[#19a45e] bg-[#fbfefb] shadow-[0_0_0_1px_rgba(25,164,94,0.18)]" : "border-slate-200 bg-white hover:border-[#9dc9a8] hover:bg-[#fbfefb]"}`}>
                           <span className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full border ${isSelected ? "border-[#16804a]" : "border-slate-300"}`}>{isSelected && <span className="h-2.5 w-2.5 rounded-full bg-[#16804a]" />}</span>
-                          {table.image_url ? <img src={table.image_url} alt={`Table ${table.table_number}`} className="h-[68px] w-24 shrink-0 rounded-xl object-cover sm:w-28" /> : <span className="flex h-[68px] w-24 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-[#244a32] via-[#68764b] to-[#d8ad69] text-white sm:w-28"><Utensils className="h-7 w-7" /></span>}
+                          {tableImageUrl ? <img src={tableImageUrl} alt={`Table ${table.table_number}`} className="h-[68px] w-24 shrink-0 rounded-xl object-cover sm:w-28" /> : <span className="flex h-[68px] w-24 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-[#244a32] via-[#68764b] to-[#d8ad69] text-white sm:w-28"><Utensils className="h-7 w-7" /></span>}
                           <span className="min-w-0 flex-1">
                             <span className="block truncate text-sm font-bold text-[#203129]">Table {table.table_number}</span>
                             <span className="mt-1.5 flex items-center gap-1.5 text-xs text-slate-500"><Users className="h-3.5 w-3.5 shrink-0" /> {table.no_of_seats} Guests <span className="mx-1 text-slate-300">·</span><MapPin className="h-3.5 w-3.5 shrink-0" /> Indoor Seating</span>
