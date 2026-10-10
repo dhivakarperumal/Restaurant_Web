@@ -313,7 +313,7 @@ function FoodDetailsPage() {
                   {zoomPosition && images.length > 0 && (
                     <div
                       aria-hidden="true"
-                      className="pointer-events-auto absolute left-[calc(100%+1rem)] top-0 z-30 hidden aspect-[3/2] w-[min(32vw,420px)] rounded-2xl border border-white/80 bg-white shadow-2xl lg:block"
+                      className="pointer-events-auto absolute left-[calc(100%+1rem)] top-0 z-30 hidden aspect-[4/3] w-[min(40vw,560px)] rounded-2xl border border-white/80 bg-white shadow-2xl lg:block"
                       style={{
                         backgroundImage: `url("${imageUrl(images[activeImage] || images[0])}")`,
                         backgroundSize: '250% 250%',
