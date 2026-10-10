@@ -69,6 +69,11 @@ const navItems = [
     icon: UtensilsCrossed,
   },
   {
+    path: "/chef/event-orders",
+    label: "Event Orders",
+    icon: CalendarDays,
+  },
+  {
     path: "/chef/requests",
     label: "Inventory Requests",
     icon: ClipboardList,

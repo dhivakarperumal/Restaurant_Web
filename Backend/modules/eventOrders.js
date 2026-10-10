@@ -184,8 +184,15 @@ const listEventOrders = async ({
   }
 
   if (status && status !== 'All') {
-    conditions.push('eo.status = ?');
-    params.push(status);
+    if (Array.isArray(status)) {
+      if (status.length > 0) {
+        conditions.push(`eo.status IN (${status.map(() => '?').join(', ')})`);
+        params.push(...status);
+      }
+    } else {
+      conditions.push('eo.status = ?');
+      params.push(status);
+    }
   }
 
   if (search && search.trim()) {

@@ -9,7 +9,7 @@ const {
   customerRespondToQuotation,
 } = require('../modules/eventOrders');
 const { listFoods } = require('../modules/foods');
-const { notifyAdmins, notifyUser } = require('../utils/notificationSocket');
+const { notifyAdmins, notifyChefs, notifyUser } = require('../utils/notificationSocket');
 
 const validateEventOrderInput = (body) => {
   const customerName = String(body.customer_name || body.customerName || '').trim();
@@ -147,9 +147,27 @@ const getCustomerEventOrders = async (req, res) => {
 
 const getAllEventOrders = async (req, res) => {
   try {
-    const { status, search, limit, offset } = req.query;
+    const { status, search, limit, offset, confirmedOnly } = req.query;
+    const role = String(req.auth?.role || '').trim().toLowerCase();
+    const isChef = role === 'chef';
+
+    const confirmedLifecycleStatuses = ['Confirmed', 'Preparing', 'Ready', 'Completed'];
+
+    let statusFilter = status;
+    if (isChef || confirmedOnly === 'true' || confirmedOnly === '1') {
+      if (status && status !== 'All') {
+        if (confirmedLifecycleStatuses.includes(status)) {
+          statusFilter = status;
+        } else {
+          return res.json({ success: true, data: [] });
+        }
+      } else {
+        statusFilter = confirmedLifecycleStatuses;
+      }
+    }
+
     const orders = await listEventOrders({
-      status,
+      status: statusFilter,
       search,
       limit: Number(limit) || 100,
       offset: Number(offset) || 0,
@@ -169,10 +187,20 @@ const getEventOrder = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Event order not found.' });
     }
 
-    // Check customer authorization
+    // Check authorization
     const role = String(req.auth?.role || '').trim().toLowerCase();
-    const isAdmin = ['admin', 'super admin', 'superadmin', 'chef'].includes(role);
-    if (!isAdmin && order.user_id && order.user_id !== req.auth?.user_id) {
+    const isAdmin = ['admin', 'super admin', 'superadmin'].includes(role);
+    const isChef = role === 'chef';
+
+    // Chefs can ONLY view event orders that are confirmed or in cooking lifecycle
+    if (isChef && !['Confirmed', 'Preparing', 'Ready', 'Completed'].includes(order.status)) {
+      return res.status(403).json({
+        success: false,
+        message: 'This event order is not yet confirmed for kitchen preparation.',
+      });
+    }
+
+    if (!isAdmin && !isChef && order.user_id && order.user_id !== req.auth?.user_id) {
       return res.status(403).json({ success: false, message: 'Access denied.' });
     }
 
@@ -201,7 +229,40 @@ const updateStatus = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Event order not found.' });
     }
 
+    const role = String(req.auth?.role || '').trim().toLowerCase();
+    const isChef = role === 'chef';
+    if (isChef) {
+      if (!['Confirmed', 'Preparing', 'Ready', 'Completed'].includes(existing.status)) {
+        return res.status(403).json({
+          success: false,
+          message: 'Chefs can only update orders that are already confirmed.',
+        });
+      }
+      if (!['Preparing', 'Ready', 'Completed'].includes(status)) {
+        return res.status(400).json({
+          success: false,
+          message: 'Kitchen staff can update status to Preparing, Ready, or Completed.',
+        });
+      }
+    }
+
     await updateEventOrderStatus(id, status, admin_notes);
+
+    // If order transitioned to Confirmed, notify chefs for kitchen prep
+    if (status === 'Confirmed' && existing.status !== 'Confirmed') {
+      notifyChefs({
+        type: 'event_order_confirmed',
+        title: 'New Confirmed Event Order',
+        message: `Bulk order #${existing.event_order_number} (${existing.guest_count} guests) has been confirmed for ${existing.event_date}.`,
+        link: '/chef/event-orders',
+        data: {
+          order_id: existing.id,
+          order_number: existing.event_order_number,
+          event_date: existing.event_date,
+          guest_count: existing.guest_count,
+        },
+      });
+    }
 
     // Notify user if linked
     if (existing.user_id) {
@@ -308,6 +369,21 @@ const respondToQuotation = async (req, res) => {
         customer_action: result.customerAction,
       },
     });
+
+    if (result.customerAction === 'accepted') {
+      notifyChefs({
+        type: 'event_order_confirmed',
+        title: 'New Confirmed Event Order',
+        message: `Bulk order #${result.eventOrderNumber} (${result.guestCount || ''} guests) is confirmed and ready for kitchen preparation.`,
+        link: '/chef/event-orders',
+        data: {
+          order_id: result.id,
+          order_number: result.eventOrderNumber,
+          event_date: result.eventDate,
+          guest_count: result.guestCount,
+        },
+      });
+    }
 
     return res.json({
       success: true,

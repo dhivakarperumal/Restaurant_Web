@@ -58,6 +58,7 @@ const RevenuePage = lazy(() => import('./Admin/RevenuePage.jsx'))
 
 import ChefDashboard from './Chef Restaurant/ChefDashboard.jsx'
 import ChefKitchenOrders from './Chef Restaurant/ChefKitchenOrders.jsx'
+import ChefEventOrders from './Chef Restaurant/ChefEventOrders.jsx'
 import ChefLayout from './Chef Restaurant/Chefpanel.jsx'
 import ChefAttendance from './Chef Restaurant/ChefAttendance.jsx'
 import ServerDashboard from './Server Restaurant/ServerDashboard.jsx'
@@ -379,6 +380,10 @@ const router = createHashRouter([
           {
             path: 'orders',
             element: <ChefKitchenOrders />,
+          },
+          {
+            path: 'event-orders',
+            element: <ChefEventOrders />,
           },
           {
             path: 'requests',
