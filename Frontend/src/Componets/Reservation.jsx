@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import PageContainer from "../CommonComponents/PageContainer";
+import PageHeader from "../CommonComponents/PageHeader";
 import api, { BACKEND_BASE_URL } from "../api";
 import { useAuth } from "../PrivateRouter/AuthContext";
 
@@ -234,14 +235,9 @@ const Reservation = () => {
 
   return (
     <main className="min-h-screen bg-[#f7f7f3] pb-16 text-[#203129]">
+      <PageHeader title="Reservation" />
       <PageContainer>
         <section className="py-5 sm:py-7">
-          <nav aria-label="Breadcrumb" className="mb-5 flex items-center gap-2 text-xs font-medium text-slate-500">
-            <a href="/" className="transition hover:text-[#155c3b]">Home</a>
-            <span aria-hidden="true">›</span>
-            <span className="text-slate-700">Reservation</span>
-          </nav>
-
           <form onSubmit={handleSubmit} className="mx-auto grid max-w-[1500px] gap-4 lg:grid-cols-2 lg:items-start">
             <div className="rounded-3xl border border-[#e8e8e1] bg-white p-5 shadow-[0_8px_30px_rgba(25,45,34,0.05)] sm:p-7 lg:col-start-1 lg:row-start-1">
               <div className="mb-6 flex items-center gap-4">
