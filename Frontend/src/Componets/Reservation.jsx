@@ -249,13 +249,39 @@ const Reservation = () => {
                   {Array.from({ length: 20 }, (_, index) => index + 1).map((count) => <option key={count} value={count}>{count} {count === 1 ? "Guest" : "Guests"}</option>)}
                 </select>
               </label>
-              <label className="mt-4 block text-sm font-semibold text-slate-700">
-                <span className="flex items-center gap-2"><Armchair className="h-4 w-4 text-slate-600" /> Choose a Table</span>
-                <select value={selectedTable} onChange={(event) => setSelectedTable(event.target.value)} disabled={!tables.length || tablesLoading} className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-3 font-normal outline-none transition focus:border-[#17834d] focus:ring-2 focus:ring-[#17834d]/10 disabled:bg-slate-50 disabled:text-slate-400">
-                  <option value="">{tablesLoading ? "Checking availability..." : "Select an available table"}</option>
-                  {tables.map((table) => <option key={table.table_id} value={table.table_id}>Table {table.table_number} · up to {table.no_of_seats} guests</option>)}
-                </select>
-              </label>
+              <div className="mt-6 border-t border-slate-100 pt-5">
+                <h2 className="mb-4 flex items-center gap-2 text-base font-bold text-[#203129]"><UserRound className="h-4 w-4" /> Your Details</h2>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <label className="text-xs font-semibold text-slate-700">
+                    Full Name <span className="text-red-500">*</span>
+                    <input name="name" type="text" autoComplete="name" required maxLength={150} value={form.name} onChange={handleFormChange} className="mt-1.5 w-full rounded-xl border border-slate-200 px-3 py-3 text-sm font-normal outline-none transition focus:border-[#17834d] focus:ring-2 focus:ring-[#17834d]/10" placeholder="Your name" />
+                  </label>
+                  <label className="text-xs font-semibold text-slate-700">
+                    Email <span className="text-red-500">*</span>
+                    <input name="email" type="email" autoComplete="email" required maxLength={255} value={form.email} onChange={handleFormChange} className="mt-1.5 w-full rounded-xl border border-slate-200 px-3 py-3 text-sm font-normal outline-none transition focus:border-[#17834d] focus:ring-2 focus:ring-[#17834d]/10" placeholder="you@example.com" />
+                  </label>
+                </div>
+                <label className="mt-4 block text-xs font-semibold text-slate-700">
+                  Phone Number <span className="text-red-500">*</span>
+                  <input name="phone" type="tel" autoComplete="tel" required maxLength={32} value={form.phone} onChange={handleFormChange} className="mt-1.5 w-full rounded-xl border border-slate-200 px-3 py-3 text-sm font-normal outline-none transition focus:border-[#17834d] focus:ring-2 focus:ring-[#17834d]/10" placeholder="+91" />
+                </label>
+                <label className="mt-4 block text-xs font-semibold text-slate-700">
+                  Special Requests <span className="font-normal text-slate-400">(Optional)</span>
+                  <textarea name="notes" rows="3" maxLength={1000} value={form.notes} onChange={handleFormChange} className="mt-1.5 w-full resize-y rounded-xl border border-slate-200 px-3 py-3 text-sm font-normal outline-none transition focus:border-[#17834d] focus:ring-2 focus:ring-[#17834d]/10" placeholder="Birthday, anniversary, seating preference..." />
+                </label>
+                {errorMessage && <p role="alert" className="mt-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{errorMessage}</p>}
+                {successMessage && <p role="status" className="mt-4 rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-800">{successMessage}</p>}
+                {isCustomer ? (
+                  <button type="submit" disabled={submitting || tablesLoading || !selectedTable} className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl bg-[#08713e] px-5 py-3.5 text-sm font-bold text-white shadow-sm transition hover:bg-[#075d34] focus:outline-none focus:ring-2 focus:ring-[#08713e] focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60">
+                    <CalendarCheck2 className="h-4 w-4" /> {submitting ? "Sending request…" : "Request this table"}
+                  </button>
+                ) : (
+                  <button type="button" onClick={() => navigate("/login", { state: { from: "/reservation" } })} className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl bg-[#08713e] px-5 py-3.5 text-sm font-bold text-white shadow-sm transition hover:bg-[#075d34]">
+                    <CalendarCheck2 className="h-4 w-4" /> Login to request a table
+                  </button>
+                )}
+                <p className="mt-3 text-center text-xs leading-5 text-slate-400">Requests remain pending until confirmed by our team. A table is held for one hour per request.</p>
+              </div>
 
             </div>
 
@@ -334,47 +360,6 @@ const Reservation = () => {
               </div>
             </section>
 
-            <section className="grid gap-4 lg:col-start-1 lg:row-start-2">
-              <div className="rounded-3xl border border-[#e8e8e1] bg-white p-5 shadow-[0_8px_30px_rgba(25,45,34,0.05)] sm:p-7">
-              <h2 className="mb-4 flex items-center gap-2 text-base font-bold text-[#203129]"><UserRound className="h-4 w-4" /> Your Details</h2>
-              <div className="grid gap-5 sm:grid-cols-2">
-                <label className="text-sm font-semibold text-slate-700">
-                  Full Name <span className="text-red-500">*</span>
-                  <input name="name" type="text" autoComplete="name" required maxLength={150} value={form.name} onChange={handleFormChange} className="mt-1.5 w-full rounded-xl border border-slate-200 px-3 py-3 text-sm font-normal outline-none transition focus:border-[#17834d] focus:ring-2 focus:ring-[#17834d]/10" placeholder="Your name" />
-                </label>
-                <label className="text-sm font-semibold text-slate-700">
-                  Email <span className="text-red-500">*</span>
-                  <input name="email" type="email" autoComplete="email" required maxLength={255} value={form.email} onChange={handleFormChange} className="mt-1.5 w-full rounded-xl border border-slate-200 px-3 py-3 text-sm font-normal outline-none transition focus:border-[#17834d] focus:ring-2 focus:ring-[#17834d]/10" placeholder="you@example.com" />
-                </label>
-              </div>
-
-              <label className="mt-4 block text-sm font-semibold text-slate-700">
-                Phone Number <span className="text-red-500">*</span>
-                <input name="phone" type="tel" autoComplete="tel" required maxLength={32} value={form.phone} onChange={handleFormChange} className="mt-1.5 w-full rounded-xl border border-slate-200 px-3 py-3 text-sm font-normal outline-none transition focus:border-[#17834d] focus:ring-2 focus:ring-[#17834d]/10" placeholder="+91" />
-              </label>
-
-              <label className="mt-4 block text-sm font-semibold text-slate-700">
-                Special Requests <span className="font-normal text-slate-400">(Optional)</span>
-                <textarea name="notes" rows="3" maxLength={1000} value={form.notes} onChange={handleFormChange} className="mt-1.5 w-full resize-y rounded-xl border border-slate-200 px-3 py-3 text-sm font-normal outline-none transition focus:border-[#17834d] focus:ring-2 focus:ring-[#17834d]/10" placeholder="Birthday, anniversary, seating preference..." />
-              </label>
-
-              {errorMessage && <p role="alert" className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{errorMessage}</p>}
-              {successMessage && <p role="status" className="rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-800">{successMessage}</p>}
-
-              {isCustomer ? (
-                <button type="submit" disabled={submitting || tablesLoading || !selectedTable} className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#08713e] px-5 py-3.5 text-sm font-bold text-white shadow-sm transition hover:bg-[#075d34] focus:outline-none focus:ring-2 focus:ring-[#08713e] focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60">
-                  <CalendarCheck2 className="h-4 w-4" /> {submitting ? "Sending request…" : "Request this table"}
-                </button>
-              ) : (
-                <button type="button" onClick={() => navigate("/login", { state: { from: "/reservation" } })} className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#08713e] px-5 py-3.5 text-sm font-bold text-white shadow-sm transition hover:bg-[#075d34]">
-                  <CalendarCheck2 className="h-4 w-4" /> Login to request a table
-                </button>
-              )}
-              <p className="text-center text-xs leading-5 text-slate-400">
-                Requests remain pending until confirmed by our team. A table is held for one hour per request.
-              </p>
-              </div>
-            </section>
           </form>
 
           {isCustomer && (
