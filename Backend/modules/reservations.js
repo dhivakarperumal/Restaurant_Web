@@ -49,7 +49,7 @@ async function findAvailableReservationTables({ date, time, guests }) {
   }
 
   const [rows] = await db.execute(
-    `SELECT st.table_id, st.table_number, st.no_of_seats
+    `SELECT st.table_id, st.table_number, st.no_of_seats, st.image_url
      FROM server_table st
      WHERE LOWER(TRIM(st.status)) = 'available'
        ${guests ? 'AND st.no_of_seats >= ?' : ''}

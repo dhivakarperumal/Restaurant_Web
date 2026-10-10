@@ -1,8 +1,22 @@
 import { useEffect, useState } from "react";
-import { CalendarDays, CheckCircle2, Clock3, Mail, MapPin, Phone, Users, Utensils } from "lucide-react";
+import {
+  Armchair,
+  CalendarCheck2,
+  CalendarDays,
+  CheckCircle2,
+  ChefHat,
+  Clock3,
+  Leaf,
+  MapPin,
+  Phone,
+  Sparkles,
+  Star,
+  UserRound,
+  Users,
+  Utensils,
+} from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import PageContainer from "../CommonComponents/PageContainer";
-import PageHeader from "../CommonComponents/PageHeader";
 import api from "../api";
 import { useAuth } from "../PrivateRouter/AuthContext";
 
@@ -199,69 +213,66 @@ const Reservation = () => {
   };
 
   return (
-    <main className="min-h-screen bg-[#fcfbf9] pb-16 text-[#203129]">
-      <PageHeader title="Reservation" />
+    <main className="min-h-screen bg-[#f7f7f3] pb-16 text-[#203129]">
       <PageContainer>
-        <section className="py-10 sm:py-14">
-          <div className="mx-auto mb-8 max-w-2xl text-center">
-            <p className="text-xs font-bold uppercase tracking-[0.2em] text-[#a34f32]">Make it a date</p>
-            <h2 className="mt-2 font-serif text-3xl font-bold sm:text-4xl">Reserve your table</h2>
-            <p className="mt-3 text-sm leading-6 text-slate-500">
-              Choose a date, time, and table. Your request will be saved and our team will confirm it.
-            </p>
-          </div>
+        <section className="py-5 sm:py-7">
+          <nav aria-label="Breadcrumb" className="mb-5 flex items-center gap-2 text-xs font-medium text-slate-500">
+            <a href="/" className="transition hover:text-[#155c3b]">Home</a>
+            <span aria-hidden="true">›</span>
+            <span className="text-slate-700">Reservation</span>
+          </nav>
 
-          <div className="mx-auto grid max-w-6xl overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm lg:grid-cols-[0.8fr_1.2fr]">
-            <aside className="bg-[#1a3c36] p-6 text-white sm:p-8">
-              <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#edc783]">We look forward to seeing you</p>
-              <h3 className="mt-3 font-serif text-2xl font-bold">A table is waiting.</h3>
-              <p className="mt-3 text-sm leading-6 text-white/75">
-                Select a table that suits your group. Each request holds the table for one hour while our team reviews it.
-              </p>
-
-              <div className="mt-8 space-y-5 border-t border-white/15 pt-6 text-sm">
-                <div className="flex items-start gap-3">
-                  <MapPin className="mt-0.5 h-5 w-5 shrink-0 text-[#edc783]" />
-                  <span>123 Food Street, Ambur,<br />Tamil Nadu - 635802</span>
+          <form onSubmit={handleSubmit} className="mx-auto grid max-w-[1500px] gap-4 lg:grid-cols-2 lg:items-start">
+            <div className="rounded-3xl border border-[#e8e8e1] bg-white p-5 shadow-[0_8px_30px_rgba(25,45,34,0.05)] sm:p-7 lg:col-start-1 lg:row-start-1">
+              <div className="mb-6 flex items-center gap-4">
+                <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-[#e9f3df] text-[#155c3b]">
+                  <CalendarCheck2 className="h-7 w-7" />
+                </span>
+                <div>
+                  <h1 className="text-2xl font-bold tracking-tight text-[#18251f] sm:text-[27px]">Make a Reservation</h1>
+                  <p className="mt-1 text-sm text-slate-500">Fill in the details to find the best table for your dining experience.</p>
                 </div>
-                <div className="flex items-start gap-3">
-                  <Clock3 className="mt-0.5 h-5 w-5 shrink-0 text-[#edc783]" />
-                  <span>Every day<br />10:00 AM – 11:00 PM</span>
-                </div>
-                <a href="tel:+919876543210" className="flex items-center gap-3 text-white transition hover:text-[#edc783]">
-                  <Phone className="h-5 w-5 shrink-0 text-[#edc783]" />
-                  +91 98765 43210
-                </a>
-                <a href="mailto:info@foodierestaurant.com" className="flex items-center gap-3 break-all text-white transition hover:text-[#edc783]">
-                  <Mail className="h-5 w-5 shrink-0 text-[#edc783]" />
-                  info@foodierestaurant.com
-                </a>
               </div>
-            </aside>
-
-            <form onSubmit={handleSubmit} className="space-y-6 p-6 sm:p-8">
-              <div className="grid gap-5 sm:grid-cols-3">
+              <div className="grid gap-4 sm:grid-cols-2">
                 <label className="text-sm font-semibold text-slate-700">
-                  Date
-                  <span className="relative mt-2 block">
-                    <CalendarDays className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#1a3c36]" />
-                    <input name="date" type="date" min={minimumReservationDate} value={date} onChange={(event) => updateAvailability({ date: event.target.value })} required className="w-full min-w-0 rounded-xl border border-slate-200 py-3 pl-10 pr-3 font-normal outline-none transition focus:border-[#1a3c36] focus:ring-2 focus:ring-[#1a3c36]/10" />
-                  </span>
+                  <span className="flex items-center gap-2"><CalendarDays className="h-4 w-4 text-slate-600" /> Date</span>
+                  <input name="date" type="date" min={minimumReservationDate} value={date} onChange={(event) => updateAvailability({ date: event.target.value })} required className="mt-2 w-full min-w-0 rounded-xl border border-slate-200 bg-white px-3 py-3 font-normal outline-none transition focus:border-[#17834d] focus:ring-2 focus:ring-[#17834d]/10" />
                 </label>
                 <label className="text-sm font-semibold text-slate-700">
-                  Time
-                  <input name="time" type="time" min="10:00" max="22:00" step="60" required value={time} onChange={(event) => updateAvailability({ time: event.target.value })} className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-3 font-normal outline-none transition focus:border-[#1a3c36] focus:ring-2 focus:ring-[#1a3c36]/10" />
-                </label>
-                <label className="text-sm font-semibold text-slate-700">
-                  Guests
-                  <input name="guests" type="number" min="1" max="20" step="1" required value={guests} onChange={(event) => updateAvailability({ guests: event.target.value })} className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-3 font-normal outline-none transition focus:border-[#1a3c36] focus:ring-2 focus:ring-[#1a3c36]/10" />
+                  <span className="flex items-center gap-2"><Clock3 className="h-4 w-4 text-slate-600" /> Time</span>
+                  <input name="time" type="time" min="10:00" max="22:00" step="60" required value={time} onChange={(event) => updateAvailability({ time: event.target.value })} className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-3 font-normal outline-none transition focus:border-[#17834d] focus:ring-2 focus:ring-[#17834d]/10" />
                 </label>
               </div>
+              <label className="mt-4 block text-sm font-semibold text-slate-700">
+                <span className="flex items-center gap-2"><Users className="h-4 w-4 text-slate-600" /> Number of Guests</span>
+                <select name="guests" value={guests} onChange={(event) => updateAvailability({ guests: event.target.value })} className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-3 font-normal outline-none transition focus:border-[#17834d] focus:ring-2 focus:ring-[#17834d]/10">
+                  {Array.from({ length: 20 }, (_, index) => index + 1).map((count) => <option key={count} value={count}>{count} {count === 1 ? "Guest" : "Guests"}</option>)}
+                </select>
+              </label>
+              <label className="mt-4 block text-sm font-semibold text-slate-700">
+                <span className="flex items-center gap-2"><Armchair className="h-4 w-4 text-slate-600" /> Choose a Table</span>
+                <select value={selectedTable} onChange={(event) => setSelectedTable(event.target.value)} disabled={!tables.length || tablesLoading} className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-3 font-normal outline-none transition focus:border-[#17834d] focus:ring-2 focus:ring-[#17834d]/10 disabled:bg-slate-50 disabled:text-slate-400">
+                  <option value="">{tablesLoading ? "Checking availability..." : "Select an available table"}</option>
+                  {tables.map((table) => <option key={table.table_id} value={table.table_id}>Table {table.table_number} · up to {table.no_of_seats} guests</option>)}
+                </select>
+              </label>
 
-              <div>
+            </div>
+
+            <section className="rounded-3xl border border-[#e8e8e1] bg-white p-5 shadow-[0_8px_30px_rgba(25,45,34,0.05)] sm:p-6 lg:col-start-2 lg:row-start-1">
                 <div className="mb-3 flex items-center justify-between gap-3">
-                  <h3 className="font-serif text-lg font-bold text-[#203129]">Choose your table</h3>
-                  {date && time && <span className="text-xs text-slate-500">{tables.length} available</span>}
+                  <div className="flex items-center gap-3">
+                    <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#e9f3df] text-[#155c3b]"><Armchair className="h-6 w-6" /></span>
+                    <div>
+                      <h2 className="text-xl font-bold text-[#18251f]">Available Tables</h2>
+                      <p className="text-xs text-slate-500">Select a table based on your preference.</p>
+                    </div>
+                  </div>
+                </div>
+                <div className="mb-4 flex flex-wrap gap-2 text-[11px] font-semibold text-slate-600">
+                  {date && <span className="rounded-lg bg-slate-100 px-2.5 py-2"><CalendarDays className="mr-1 inline h-3.5 w-3.5" />{formatDate(date)}</span>}
+                  {time && <span className="rounded-lg bg-slate-100 px-2.5 py-2"><Clock3 className="mr-1 inline h-3.5 w-3.5" />{formatTime(time)}</span>}
+                  <span className="rounded-lg bg-slate-100 px-2.5 py-2"><Users className="mr-1 inline h-3.5 w-3.5" />{guests} Guests</span>
                 </div>
                 {!time ? (
                   <p className="rounded-xl border border-dashed border-slate-300 bg-slate-50 px-4 py-5 text-center text-sm text-slate-500">
@@ -274,17 +285,19 @@ const Reservation = () => {
                     {availabilityError}
                   </p>
                 ) : tables.length ? (
-                  <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                  <div className="space-y-2.5">
                     {tables.map((table) => {
                       const isSelected = selectedTable === table.table_id;
                       return (
-                        <button key={table.table_id} type="button" onClick={() => setSelectedTable(table.table_id)} aria-pressed={isSelected} className={`rounded-2xl border p-4 text-left transition focus:outline-none focus:ring-2 focus:ring-[#1a3c36]/30 ${isSelected ? "border-[#1a3c36] bg-[#edf4f0] ring-1 ring-[#1a3c36]" : "border-slate-200 bg-white hover:border-[#1a3c36]/50 hover:bg-slate-50"}`}>
-                          <span className="flex items-center justify-between">
-                            <Utensils className={`h-5 w-5 ${isSelected ? "text-[#1a3c36]" : "text-[#a34f32]"}`} />
-                            {isSelected && <CheckCircle2 className="h-4 w-4 text-[#1a3c36]" />}
+                        <button key={table.table_id} type="button" onClick={() => setSelectedTable(table.table_id)} aria-pressed={isSelected} className={`flex w-full items-center gap-3 rounded-2xl border p-2.5 text-left transition focus:outline-none focus:ring-2 focus:ring-[#16804a]/25 sm:gap-4 ${isSelected ? "border-[#19a45e] bg-[#fbfefb] shadow-[0_0_0_1px_rgba(25,164,94,0.18)]" : "border-slate-200 bg-white hover:border-[#9dc9a8] hover:bg-[#fbfefb]"}`}>
+                          <span className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full border ${isSelected ? "border-[#16804a]" : "border-slate-300"}`}>{isSelected && <span className="h-2.5 w-2.5 rounded-full bg-[#16804a]" />}</span>
+                          {table.image_url ? <img src={table.image_url} alt={`Table ${table.table_number}`} className="h-[68px] w-24 shrink-0 rounded-xl object-cover sm:w-28" /> : <span className="flex h-[68px] w-24 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-[#244a32] via-[#68764b] to-[#d8ad69] text-white sm:w-28"><Utensils className="h-7 w-7" /></span>}
+                          <span className="min-w-0 flex-1">
+                            <span className="block truncate text-sm font-bold text-[#203129]">Table {table.table_number}</span>
+                            <span className="mt-1.5 flex items-center gap-1.5 text-xs text-slate-500"><Users className="h-3.5 w-3.5 shrink-0" /> {table.no_of_seats} Guests <span className="mx-1 text-slate-300">·</span><MapPin className="h-3.5 w-3.5 shrink-0" /> Indoor Seating</span>
                           </span>
-                          <span className="mt-3 block font-bold text-[#203129]">Table {table.table_number}</span>
-                          <span className="mt-1 flex items-center gap-1 text-xs text-slate-500"><Users className="h-3.5 w-3.5" /> Up to {table.no_of_seats} guests</span>
+                          <span className="hidden rounded-lg bg-[#e6f5e8] px-3 py-1.5 text-xs font-bold text-[#16804a] sm:inline-flex">Available</span>
+                          {isSelected && <CheckCircle2 className="h-5 w-5 shrink-0 text-[#16804a] sm:hidden" />}
                         </button>
                       );
                     })}
@@ -294,46 +307,75 @@ const Reservation = () => {
                     No suitable tables are available for this time. Please try another time or guest count.
                   </p>
                 )}
-              </div>
+            </section>
 
+            <div className="grid grid-cols-4 divide-x divide-[#e9dfca] rounded-2xl bg-[#fff7e8] px-2 py-4 text-center lg:col-start-2 lg:row-start-2">
+              {[
+                { icon: Leaf, title: "Comfortable", detail: "Ambience", color: "text-emerald-700" },
+                { icon: ChefHat, title: "Delicious", detail: "Food", color: "text-orange-600" },
+                { icon: Users, title: "Perfect for", detail: "Gatherings", color: "text-orange-600" },
+                { icon: Star, title: "Great", detail: "Experience", color: "text-orange-500" },
+              ].map(({ icon: Icon, title, detail, color }) => (
+                <div key={detail} className="flex flex-col items-center gap-1 px-1 text-[11px] font-semibold leading-tight text-slate-700">
+                  <Icon className={`mb-1 h-6 w-6 ${color}`} />
+                  <span>{title}</span><span>{detail}</span>
+                </div>
+              ))}
+            </div>
+
+            <section className="relative overflow-hidden rounded-3xl bg-[#073b27] px-6 py-6 text-white shadow-sm lg:col-start-2 lg:row-start-3 sm:px-8">
+              <div className="absolute inset-0 bg-[url('/images/header.png')] bg-cover bg-center opacity-25" />
+              <div className="absolute inset-0 bg-gradient-to-r from-[#073b27] via-[#073b27]/90 to-[#073b27]/30" />
+              <div className="relative max-w-md">
+                <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.15em] text-[#d8c28d]"><Sparkles className="h-4 w-4" /> Make it memorable</p>
+                <h2 className="mt-2 font-serif text-2xl font-bold sm:text-3xl">Celebrate <span className="block italic text-[#f4b323]">Special Moments</span></h2>
+                <p className="mt-2 max-w-sm text-xs leading-5 text-white/80">Birthdays, anniversaries, family dinners and more. Let us make your evening special.</p>
+                <button type="button" onClick={() => document.querySelector("[name='notes']")?.focus()} className="mt-4 inline-flex items-center gap-2 rounded-lg bg-[#f2780b] px-4 py-2 text-xs font-bold text-white transition hover:bg-[#db6500]">Add a special request <Phone className="h-3.5 w-3.5" /></button>
+              </div>
+            </section>
+
+            <section className="grid gap-4 lg:col-start-1 lg:row-start-2">
+              <div className="rounded-3xl border border-[#e8e8e1] bg-white p-5 shadow-[0_8px_30px_rgba(25,45,34,0.05)] sm:p-7">
+              <h2 className="mb-4 flex items-center gap-2 text-base font-bold text-[#203129]"><UserRound className="h-4 w-4" /> Your Details</h2>
               <div className="grid gap-5 sm:grid-cols-2">
                 <label className="text-sm font-semibold text-slate-700">
-                  Your name
-                  <input name="name" type="text" autoComplete="name" required maxLength={150} value={form.name} onChange={handleFormChange} className="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3 font-normal outline-none transition focus:border-[#1a3c36] focus:ring-2 focus:ring-[#1a3c36]/10" placeholder="Full name" />
+                  Full Name <span className="text-red-500">*</span>
+                  <input name="name" type="text" autoComplete="name" required maxLength={150} value={form.name} onChange={handleFormChange} className="mt-1.5 w-full rounded-xl border border-slate-200 px-3 py-3 text-sm font-normal outline-none transition focus:border-[#17834d] focus:ring-2 focus:ring-[#17834d]/10" placeholder="Your name" />
                 </label>
                 <label className="text-sm font-semibold text-slate-700">
-                  Phone number
-                  <input name="phone" type="tel" autoComplete="tel" required maxLength={32} value={form.phone} onChange={handleFormChange} className="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3 font-normal outline-none transition focus:border-[#1a3c36] focus:ring-2 focus:ring-[#1a3c36]/10" placeholder="+91" />
+                  Email <span className="text-red-500">*</span>
+                  <input name="email" type="email" autoComplete="email" required maxLength={255} value={form.email} onChange={handleFormChange} className="mt-1.5 w-full rounded-xl border border-slate-200 px-3 py-3 text-sm font-normal outline-none transition focus:border-[#17834d] focus:ring-2 focus:ring-[#17834d]/10" placeholder="you@example.com" />
                 </label>
               </div>
 
-              <label className="block text-sm font-semibold text-slate-700">
-                Email address
-                <input name="email" type="email" autoComplete="email" required maxLength={255} value={form.email} onChange={handleFormChange} className="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3 font-normal outline-none transition focus:border-[#1a3c36] focus:ring-2 focus:ring-[#1a3c36]/10" placeholder="you@example.com" />
+              <label className="mt-4 block text-sm font-semibold text-slate-700">
+                Phone Number <span className="text-red-500">*</span>
+                <input name="phone" type="tel" autoComplete="tel" required maxLength={32} value={form.phone} onChange={handleFormChange} className="mt-1.5 w-full rounded-xl border border-slate-200 px-3 py-3 text-sm font-normal outline-none transition focus:border-[#17834d] focus:ring-2 focus:ring-[#17834d]/10" placeholder="+91" />
               </label>
 
-              <label className="block text-sm font-semibold text-slate-700">
-                Special requests <span className="font-normal text-slate-400">(optional)</span>
-                <textarea name="notes" rows="3" maxLength={1000} value={form.notes} onChange={handleFormChange} className="mt-2 w-full resize-y rounded-xl border border-slate-200 px-4 py-3 font-normal outline-none transition focus:border-[#1a3c36] focus:ring-2 focus:ring-[#1a3c36]/10" placeholder="Occasion, seating preference, or other details" />
+              <label className="mt-4 block text-sm font-semibold text-slate-700">
+                Special Requests <span className="font-normal text-slate-400">(Optional)</span>
+                <textarea name="notes" rows="3" maxLength={1000} value={form.notes} onChange={handleFormChange} className="mt-1.5 w-full resize-y rounded-xl border border-slate-200 px-3 py-3 text-sm font-normal outline-none transition focus:border-[#17834d] focus:ring-2 focus:ring-[#17834d]/10" placeholder="Birthday, anniversary, seating preference..." />
               </label>
 
               {errorMessage && <p role="alert" className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{errorMessage}</p>}
               {successMessage && <p role="status" className="rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-800">{successMessage}</p>}
 
               {isCustomer ? (
-                <button type="submit" disabled={submitting || tablesLoading || !selectedTable} className="w-full rounded-xl bg-[#1a3c36] px-5 py-3.5 text-sm font-bold text-white transition hover:bg-[#245048] focus:outline-none focus:ring-2 focus:ring-[#1a3c36] focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60">
-                  {submitting ? "Sending request…" : "Request this table"}
+                <button type="submit" disabled={submitting || tablesLoading || !selectedTable} className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#08713e] px-5 py-3.5 text-sm font-bold text-white shadow-sm transition hover:bg-[#075d34] focus:outline-none focus:ring-2 focus:ring-[#08713e] focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60">
+                  <CalendarCheck2 className="h-4 w-4" /> {submitting ? "Sending request…" : "Request this table"}
                 </button>
               ) : (
-                <button type="button" onClick={() => navigate("/login", { state: { from: "/reservation" } })} className="w-full rounded-xl bg-[#1a3c36] px-5 py-3.5 text-sm font-bold text-white transition hover:bg-[#245048] focus:outline-none focus:ring-2 focus:ring-[#1a3c36] focus:ring-offset-2">
-                  Login to request a table
+                <button type="button" onClick={() => navigate("/login", { state: { from: "/reservation" } })} className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#08713e] px-5 py-3.5 text-sm font-bold text-white shadow-sm transition hover:bg-[#075d34]">
+                  <CalendarCheck2 className="h-4 w-4" /> Login to request a table
                 </button>
               )}
               <p className="text-center text-xs leading-5 text-slate-400">
                 Requests remain pending until confirmed by our team. A table is held for one hour per request.
               </p>
-            </form>
-          </div>
+              </div>
+            </section>
+          </form>
 
           {isCustomer && (
             <section className="mx-auto mt-10 max-w-6xl">
