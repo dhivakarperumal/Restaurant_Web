@@ -335,9 +335,8 @@ function FoodDetailsPage() {
                 <p className="px-1 pb-1 pt-3 text-center text-[11px] font-medium tracking-wide text-slate-500">Freshly prepared, just for you</p>
               </div>
             </aside>
-          </div>
 
-          <section className="mt-8 overflow-hidden rounded-[1.75rem] border border-[#e9e4d8] bg-white/90 shadow-[0_18px_55px_-36px_rgba(38,55,37,0.35)]">
+          <section className="order-3 mt-2 overflow-hidden rounded-[1.75rem] border border-[#e9e4d8] bg-white/90 shadow-[0_18px_55px_-36px_rgba(38,55,37,0.35)] lg:col-start-2">
             <div className="border-b border-[#eee9de] bg-gradient-to-r from-white to-[#faf8f1] p-3 sm:px-5 sm:py-4">
               <div role="tablist" aria-label="Food information" className="flex gap-2 overflow-x-auto scrollbar-hide">
                 {detailTabs.map((tab) => (
@@ -487,6 +486,7 @@ function FoodDetailsPage() {
               )}
             </div>
           </section>
+          </div>
         </PageContainer>
       </main>
       {customizing && (
