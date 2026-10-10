@@ -286,8 +286,8 @@ const Reservation = () => {
 
             </div>
 
-            <div className="space-y-0 lg:col-start-2 lg:row-start-1">
-            <section className="flex h-[430px] flex-col overflow-hidden rounded-t-3xl border border-[#e8e8e1] bg-white p-5 shadow-[0_8px_30px_rgba(25,45,34,0.05)] sm:p-6">
+            <div className="space-y-4 lg:col-start-2 lg:row-start-1">
+            <section className="flex h-[430px] flex-col overflow-hidden rounded-3xl border border-[#e8e8e1] bg-white p-5 shadow-[0_8px_30px_rgba(25,45,34,0.05)] sm:p-6">
                 <div className="mb-3 flex items-center justify-between gap-3">
                   <div className="flex items-center gap-3">
                     <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#e9f3df] text-[#155c3b]"><Armchair className="h-6 w-6" /></span>
@@ -339,7 +339,7 @@ const Reservation = () => {
                 </div>
             </section>
 
-            <div className="grid grid-cols-4 divide-x divide-[#e9dfca] bg-[#fff7e8] px-2 py-4 text-center">
+            <div className="grid grid-cols-4 divide-x divide-[#e9dfca] rounded-2xl bg-[#fff7e8] px-2 py-4 text-center">
               {[
                 { icon: Leaf, title: "Comfortable", detail: "Ambience", color: "text-emerald-700" },
                 { icon: ChefHat, title: "Delicious", detail: "Food", color: "text-orange-600" },
@@ -353,7 +353,7 @@ const Reservation = () => {
               ))}
             </div>
 
-            <section className="relative min-h-[190px] overflow-hidden rounded-b-3xl bg-[#073b27] px-6 py-6 text-white shadow-sm sm:px-8">
+            <section className="relative min-h-[190px] overflow-hidden rounded-3xl bg-[#073b27] px-6 py-6 text-white shadow-sm sm:px-8">
               <div className="absolute inset-0 bg-[url('/images/offerbanner.png')] bg-cover bg-[position:70%_center]" />
               <div className="absolute inset-0 bg-gradient-to-r from-[#073b27] via-[#073b27]/90 to-[#073b27]/20" />
               <div className="relative max-w-md">
