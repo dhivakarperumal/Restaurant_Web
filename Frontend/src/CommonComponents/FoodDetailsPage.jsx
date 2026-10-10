@@ -160,7 +160,7 @@ function FoodDetailsPage() {
             <span className="font-bold text-slate-800">{food.food_name}</span>
           </nav>
 
-          <div className="mt-4 grid items-start gap-5 lg:grid-cols-[minmax(0,1.08fr)_minmax(360px,0.92fr)] lg:gap-7">
+          <div className="mt-4 grid items-start gap-4 lg:grid-cols-[minmax(0,1.08fr)_minmax(360px,0.92fr)] lg:gap-4">
             <div className="order-2 space-y-5 lg:order-2">
               <section className="rounded-[1.75rem] border border-[#e9e4d8] bg-white/90 p-5 shadow-[0_16px_50px_-30px_rgba(38,55,37,0.3)] sm:p-7">
                 <div className="flex flex-wrap items-center gap-2 text-[11px]">
@@ -264,7 +264,7 @@ function FoodDetailsPage() {
               <div className="relative z-10 rounded-[1.75rem] border border-[#e9e4d8] bg-white/90 p-3 shadow-[0_18px_55px_-30px_rgba(38,55,37,0.35)] sm:p-4">
                 <div className="relative" onMouseLeave={() => setZoomPosition(null)}>
                   <div
-                    className="relative aspect-[4/3] overflow-hidden rounded-[1.25rem] bg-gradient-to-br from-[#edf2ea] to-[#f6f3ed]"
+                    className="relative aspect-[3/2] overflow-hidden rounded-[1.25rem] bg-gradient-to-br from-[#edf2ea] to-[#f6f3ed]"
                     onMouseEnter={() => setZoomPosition({ x: 50, y: 50 })}
                     onMouseMove={(event) => {
                       const bounds = event.currentTarget.getBoundingClientRect();
@@ -313,7 +313,7 @@ function FoodDetailsPage() {
                   {zoomPosition && images.length > 0 && (
                     <div
                       aria-hidden="true"
-                      className="pointer-events-auto absolute left-[calc(100%+1rem)] top-0 z-30 hidden aspect-[4/3] w-[min(32vw,420px)] rounded-2xl border border-white/80 bg-white shadow-2xl lg:block"
+                      className="pointer-events-auto absolute left-[calc(100%+1rem)] top-0 z-30 hidden aspect-[3/2] w-[min(32vw,420px)] rounded-2xl border border-white/80 bg-white shadow-2xl lg:block"
                       style={{
                         backgroundImage: `url("${imageUrl(images[activeImage] || images[0])}")`,
                         backgroundSize: '250% 250%',
@@ -336,7 +336,7 @@ function FoodDetailsPage() {
               </div>
             </aside>
 
-          <section className="order-3 mt-2 overflow-hidden rounded-[1.75rem] border border-[#e9e4d8] bg-white/90 shadow-[0_18px_55px_-36px_rgba(38,55,37,0.35)] lg:col-start-2">
+          <section className="order-3 mt-0 overflow-hidden rounded-[1.75rem] border border-[#e9e4d8] bg-white/90 shadow-[0_18px_55px_-36px_rgba(38,55,37,0.35)] lg:col-start-2">
             <div className="border-b border-[#eee9de] bg-gradient-to-r from-white to-[#faf8f1] p-3 sm:px-5 sm:py-4">
               <div role="tablist" aria-label="Food information" className="flex gap-2 overflow-x-auto scrollbar-hide">
                 {detailTabs.map((tab) => (
