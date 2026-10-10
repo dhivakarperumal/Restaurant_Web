@@ -306,17 +306,9 @@ function FoodDetailsPage() {
 
   return (
     <>
+      <PageHeader title={food.food_name} />
       <main className="min-h-screen bg-[radial-gradient(ellipse_at_top_left,_#fffdf6_0%,_#f8f6ef_52%,_#f5f3ed_100%)] pb-16">
         <PageContainer>
-          <nav aria-label="Breadcrumb" className="flex flex-wrap items-center gap-2 pt-5 text-xs font-medium text-slate-500 sm:pt-7">
-            <Link to="/" className="transition hover:text-[#1a3c36]">Home</Link>
-            <span>/</span>
-            <Link to="/shop" className="transition hover:text-[#1a3c36]">Menu</Link>
-            {food.cuisine_name && <><span>/</span><span>{food.cuisine_name}</span></>}
-            <span>/</span>
-            <span className="font-bold text-slate-800">{food.food_name}</span>
-          </nav>
-
           <div className="mt-4 grid items-start gap-4 lg:grid-cols-[minmax(0,1.08fr)_minmax(360px,0.92fr)] lg:gap-4">
             <div className="order-2 space-y-5 lg:order-2">
               <section className="rounded-[1.75rem] border border-[#e9e4d8] bg-white/90 p-5 shadow-[0_16px_50px_-30px_rgba(38,55,37,0.3)] sm:p-7">
