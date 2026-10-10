@@ -285,7 +285,8 @@ const Reservation = () => {
 
             </div>
 
-            <section className="rounded-3xl border border-[#e8e8e1] bg-white p-5 shadow-[0_8px_30px_rgba(25,45,34,0.05)] sm:p-6 lg:col-start-2 lg:row-start-1">
+            <div className="space-y-0 lg:col-start-2 lg:row-span-3 lg:row-start-1">
+            <section className="flex h-[430px] flex-col overflow-hidden rounded-3xl border border-[#e8e8e1] bg-white p-5 shadow-[0_8px_30px_rgba(25,45,34,0.05)] sm:p-6">
                 <div className="mb-3 flex items-center justify-between gap-3">
                   <div className="flex items-center gap-3">
                     <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#e9f3df] text-[#155c3b]"><Armchair className="h-6 w-6" /></span>
@@ -300,6 +301,7 @@ const Reservation = () => {
                   {time && <span className="rounded-lg bg-slate-100 px-2.5 py-2"><Clock3 className="mr-1 inline h-3.5 w-3.5" />{formatTime(time)}</span>}
                   <span className="rounded-lg bg-slate-100 px-2.5 py-2"><Users className="mr-1 inline h-3.5 w-3.5" />{guests} Guests</span>
                 </div>
+                <div className="min-h-0 flex-1 overflow-y-auto pr-1">
                 {!time ? (
                   <p className="rounded-xl border border-dashed border-slate-300 bg-slate-50 px-4 py-5 text-center text-sm text-slate-500">
                     Choose your date and time to see available tables.
@@ -333,9 +335,10 @@ const Reservation = () => {
                     No suitable tables are available for this time. Please try another time or guest count.
                   </p>
                 )}
+                </div>
             </section>
 
-            <div className="grid grid-cols-4 divide-x divide-[#e9dfca] rounded-2xl bg-[#fff7e8] px-2 py-4 text-center lg:col-start-2 lg:row-start-2">
+            <div className="grid grid-cols-4 divide-x divide-[#e9dfca] bg-[#fff7e8] px-2 py-4 text-center">
               {[
                 { icon: Leaf, title: "Comfortable", detail: "Ambience", color: "text-emerald-700" },
                 { icon: ChefHat, title: "Delicious", detail: "Food", color: "text-orange-600" },
@@ -349,7 +352,7 @@ const Reservation = () => {
               ))}
             </div>
 
-            <section className="relative overflow-hidden rounded-3xl bg-[#073b27] px-6 py-6 text-white shadow-sm lg:col-start-2 lg:row-start-3 sm:px-8">
+            <section className="relative overflow-hidden rounded-b-3xl bg-[#073b27] px-6 py-6 text-white shadow-sm sm:px-8">
               <div className="absolute inset-0 bg-[url('/images/header.png')] bg-cover bg-center opacity-25" />
               <div className="absolute inset-0 bg-gradient-to-r from-[#073b27] via-[#073b27]/90 to-[#073b27]/30" />
               <div className="relative max-w-md">
@@ -359,6 +362,7 @@ const Reservation = () => {
                 <button type="button" onClick={() => document.querySelector("[name='notes']")?.focus()} className="mt-4 inline-flex items-center gap-2 rounded-lg bg-[#f2780b] px-4 py-2 text-xs font-bold text-white transition hover:bg-[#db6500]">Add a special request <Phone className="h-3.5 w-3.5" /></button>
               </div>
             </section>
+            </div>
 
           </form>
 
