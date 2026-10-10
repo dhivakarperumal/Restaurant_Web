@@ -30,6 +30,7 @@ function FoodDetailsPage() {
   const [activeImage, setActiveImage] = useState(0);
   const [customizing, setCustomizing] = useState(false);
   const [quantity, setQuantity] = useState(1);
+  const [zoomPosition, setZoomPosition] = useState(null);
 
   useEffect(() => {
     if (food && String(food.food_id || food.id) === String(foodId)) return undefined;
@@ -312,18 +313,42 @@ function FoodDetailsPage() {
             </div>
 
             <aside className="order-1 lg:sticky lg:top-24 lg:order-1">
-              <div className="rounded-3xl border border-slate-200 bg-white p-3 shadow-lg shadow-slate-900/5 sm:p-4">
-                <div className="relative aspect-[4/3] overflow-hidden rounded-2xl bg-gradient-to-br from-[#edf2ea] to-[#f6f3ed]">
-                  {images.length ? (
-                    <img src={imageUrl(images[activeImage] || images[0])} alt={food.food_name} className="h-full w-full object-cover" />
-                  ) : (
-                    <div className="flex h-full items-center justify-center text-[#1a3c36]/40"><UtensilsCrossed className="h-16 w-16" /></div>
-                  )}
-                  {hasDiscount && <span className="absolute left-4 top-4 rounded-full bg-[#d4a843] px-3 py-1.5 text-xs font-black text-slate-950">{food.discount}% OFF</span>}
-                  {toggleWishlist && (
-                    <button type="button" onClick={() => toggleWishlist(food)} aria-label={isInWishlist ? 'Remove from favorites' : 'Add to favorites'} className={`absolute right-4 top-4 flex h-10 w-10 items-center justify-center rounded-full bg-white shadow-md transition ${isInWishlist ? 'text-rose-600' : 'text-slate-500 hover:text-rose-600'}`}>
-                      <Heart className={`h-5 w-5 ${isInWishlist ? 'fill-rose-600' : ''}`} />
-                    </button>
+              <div className="relative z-10 rounded-3xl border border-slate-200 bg-white p-3 shadow-lg shadow-slate-900/5 sm:p-4">
+                <div className="relative" onMouseLeave={() => setZoomPosition(null)}>
+                  <div
+                    className="relative aspect-[4/3] overflow-hidden rounded-2xl bg-gradient-to-br from-[#edf2ea] to-[#f6f3ed]"
+                    onMouseEnter={() => setZoomPosition({ x: 50, y: 50 })}
+                    onMouseMove={(event) => {
+                      const bounds = event.currentTarget.getBoundingClientRect();
+                      setZoomPosition({
+                        x: ((event.clientX - bounds.left) / bounds.width) * 100,
+                        y: ((event.clientY - bounds.top) / bounds.height) * 100,
+                      });
+                    }}
+                  >
+                    {images.length ? (
+                      <img src={imageUrl(images[activeImage] || images[0])} alt={food.food_name} className="h-full w-full object-cover" />
+                    ) : (
+                      <div className="flex h-full items-center justify-center text-[#1a3c36]/40"><UtensilsCrossed className="h-16 w-16" /></div>
+                    )}
+                    {hasDiscount && <span className="absolute left-4 top-4 rounded-full bg-[#d4a843] px-3 py-1.5 text-xs font-black text-slate-950">{food.discount}% OFF</span>}
+                    {toggleWishlist && (
+                      <button type="button" onClick={() => toggleWishlist(food)} aria-label={isInWishlist ? 'Remove from favorites' : 'Add to favorites'} className={`absolute right-4 top-4 flex h-10 w-10 items-center justify-center rounded-full bg-white shadow-md transition ${isInWishlist ? 'text-rose-600' : 'text-slate-500 hover:text-rose-600'}`}>
+                        <Heart className={`h-5 w-5 ${isInWishlist ? 'fill-rose-600' : ''}`} />
+                      </button>
+                    )}
+                  </div>
+                  {zoomPosition && images.length > 0 && (
+                    <div
+                      aria-hidden="true"
+                      className="pointer-events-auto absolute left-full top-0 z-30 hidden aspect-[4/3] w-[min(40vw,560px)] rounded-2xl border border-white/80 bg-white shadow-2xl lg:block"
+                      style={{
+                        backgroundImage: `url("${imageUrl(images[activeImage] || images[0])}")`,
+                        backgroundSize: '250% 250%',
+                        backgroundPosition: `${Math.max(0, Math.min(100, (zoomPosition.x * 2.5 - 50) / 1.5))}% ${Math.max(0, Math.min(100, (zoomPosition.y * 2.5 - 50) / 1.5))}%`,
+                        backgroundRepeat: 'no-repeat',
+                      }}
+                    />
                   )}
                 </div>
                 {images.length > 1 && (
