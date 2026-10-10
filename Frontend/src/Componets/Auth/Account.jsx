@@ -1174,40 +1174,11 @@ const Account = () => {
                               )}
                             </div>
 
-                            {/* Foods & Quantity Preview */}
-                            {evt.items && evt.items.length > 0 && (
-                              <div className="mt-3 rounded-xl border border-[#edf0ea] bg-[#f8faf6] p-2.5">
-                                <div className="flex items-center justify-between text-[11px] font-bold text-slate-500 mb-1.5">
-                                  <span className="flex items-center gap-1.5 text-[#146b3a]">
-                                    <Utensils size={13} /> Selected Foods ({evt.items.length} dishes)
-                                  </span>
-                                  <span className="text-[#146b3a]">
-                                    {evt.items.reduce((s, i) => s + Number(i.quantity || 1), 0)} Total Portions
-                                  </span>
-                                </div>
-                                <div className="space-y-1">
-                                  {evt.items.slice(0, 3).map((it) => (
-                                    <div key={it.id || it.food_id} className="flex items-center justify-between text-xs text-slate-700">
-                                      <span className="truncate max-w-[200px] font-medium">{it.product_name}</span>
-                                      <span className="shrink-0 font-bold text-[#146b3a] bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
-                                        {it.quantity} Qty
-                                      </span>
-                                    </div>
-                                  ))}
-                                  {evt.items.length > 3 && (
-                                    <p className="text-[11px] font-bold text-slate-500 pt-0.5">
-                                      +{evt.items.length - 3} more dishes...
-                                    </p>
-                                  )}
-                                </div>
-                              </div>
-                            )}
-
                             {/* View Details Button */}
                             <button
                               type="button"
                               onClick={() => setSelectedEventOrder(evt)}
-                              className="mt-3.5 flex h-9 w-full items-center justify-center gap-1.5 rounded-xl border border-[#146b3a] bg-[#146b3a]/5 text-xs font-bold text-[#146b3a] transition hover:bg-[#146b3a] hover:text-white cursor-pointer"
+                              className="mt-4 flex h-10 w-full items-center justify-center gap-1.5 rounded-xl border border-[#146b3a] bg-[#146b3a]/5 text-xs font-bold text-[#146b3a] transition hover:bg-[#146b3a] hover:text-white cursor-pointer"
                             >
                               <Eye size={14} /> View Details &amp; Full Menu ({evt.items?.length || evt.total_items || 0} Foods)
                             </button>
