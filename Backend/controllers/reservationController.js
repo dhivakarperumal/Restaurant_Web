@@ -7,14 +7,33 @@ const {
 } = require('../modules/reservations');
 const { notifyAdmins, notifyUser } = require('../utils/notificationSocket');
 
-const isValidDate = (value) => {
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(value || '')) return false;
-  const date = new Date(`${value}T00:00:00Z`);
-  return !Number.isNaN(date.getTime()) && date.toISOString().slice(0, 10) === value;
+const normalizeDate = (value) => {
+  const input = String(value || '').trim();
+  const match = input.match(/^(\d{4})-(\d{2})-(\d{2})$/) || input.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if (!match) return '';
+  const dateString = match[1].length === 4
+    ? input
+    : `${match[3]}-${match[1].padStart(2, '0')}-${match[2].padStart(2, '0')}`;
+  const date = new Date(`${dateString}T00:00:00Z`);
+  return !Number.isNaN(date.getTime()) && date.toISOString().slice(0, 10) === dateString
+    ? dateString
+    : '';
 };
 
-const isValidTime = (value) => {
-  return /^(?:1[0-9]|20|21):[0-5][0-9]$|^22:00$/.test(value || '');
+const normalizeTime = (value) => {
+  const input = String(value || '').trim();
+  const twelveHourTime = input.match(/^(1[0-2]|0?[1-9]):([0-5]\d)\s*(AM|PM)$/i);
+  let normalized = input;
+  if (twelveHourTime) {
+    let hour = Number(twelveHourTime[1]) % 12;
+    if (twelveHourTime[3].toUpperCase() === 'PM') hour += 12;
+    normalized = `${String(hour).padStart(2, '0')}:${twelveHourTime[2]}`;
+  } else {
+    const twentyFourHourTime = input.match(/^([01]\d|2[0-3]):([0-5]\d)(?::00)?$/);
+    if (!twentyFourHourTime) return '';
+    normalized = `${twentyFourHourTime[1]}:${twentyFourHourTime[2]}`;
+  }
+  return /^(?:1[0-9]|20|21):[0-5][0-9]$|^22:00$/.test(normalized) ? normalized : '';
 };
 
 const normalizeText = (value) => String(value || '').trim();
@@ -22,7 +41,9 @@ const normalizeText = (value) => String(value || '').trim();
 async function listAvailableTables(req, res) {
   const { date, time, guests: guestsValue } = req.query || {};
   const hasAvailabilityFilters = Boolean(date || time || guestsValue);
-  if (hasAvailabilityFilters && (!isValidDate(date) || !isValidTime(time))) {
+  const normalizedDate = normalizeDate(date);
+  const normalizedTime = normalizeTime(time);
+  if (hasAvailabilityFilters && (!normalizedDate || !normalizedTime)) {
     return res.status(400).json({ success: false, message: 'Choose a valid reservation date and time.' });
   }
 
@@ -33,8 +54,8 @@ async function listAvailableTables(req, res) {
 
   try {
     const tables = await findAvailableReservationTables({
-      date: hasAvailabilityFilters ? date : null,
-      time: hasAvailabilityFilters ? time : null,
+      date: hasAvailabilityFilters ? normalizedDate : null,
+      time: hasAvailabilityFilters ? normalizedTime : null,
       guests,
     });
     return res.json({ success: true, tables });
@@ -49,8 +70,8 @@ async function createReservation(req, res) {
   const name = normalizeText(body.name);
   const email = normalizeText(body.email);
   const phone = normalizeText(body.phone);
-  const date = normalizeText(body.date);
-  const time = normalizeText(body.time);
+  const date = normalizeDate(body.date);
+  const time = normalizeTime(body.time);
   const tableId = normalizeText(body.table_id);
   const guests = Number(body.guests);
   const notes = normalizeText(body.notes);
@@ -61,7 +82,7 @@ async function createReservation(req, res) {
   if (!phone || phone.length > 32) {
     return res.status(400).json({ success: false, message: 'Enter a valid phone number.' });
   }
-  if (!isValidDate(date) || !isValidTime(time)) {
+  if (!date || !time) {
     return res.status(400).json({ success: false, message: 'Choose a valid future reservation date and time.' });
   }
   if (!tableId || !Number.isInteger(guests) || guests < 1 || guests > 20 || notes.length > 1000) {

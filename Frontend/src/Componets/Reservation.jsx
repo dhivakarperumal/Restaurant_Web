@@ -12,6 +12,35 @@ const minimumReservationDate = (() => {
   return localDate.toISOString().slice(0, 10);
 })();
 
+const normalizeReservationDate = (value) => {
+  const input = String(value || "").trim();
+  const match = input.match(/^(\d{4})-(\d{2})-(\d{2})$/) || input.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if (!match) return "";
+  const dateString = match[1].length === 4
+    ? input
+    : `${match[3]}-${match[1].padStart(2, "0")}-${match[2].padStart(2, "0")}`;
+  const date = new Date(`${dateString}T00:00:00Z`);
+  return !Number.isNaN(date.getTime()) && date.toISOString().slice(0, 10) === dateString
+    ? dateString
+    : "";
+};
+
+const normalizeReservationTime = (value) => {
+  const input = String(value || "").trim();
+  const twelveHourTime = input.match(/^(1[0-2]|0?[1-9]):([0-5]\d)\s*(AM|PM)$/i);
+  let normalized = input;
+  if (twelveHourTime) {
+    let hour = Number(twelveHourTime[1]) % 12;
+    if (twelveHourTime[3].toUpperCase() === "PM") hour += 12;
+    normalized = `${String(hour).padStart(2, "0")}:${twelveHourTime[2]}`;
+  } else {
+    const twentyFourHourTime = input.match(/^([01]\d|2[0-3]):([0-5]\d)(?::00)?$/);
+    if (!twentyFourHourTime) return "";
+    normalized = `${twentyFourHourTime[1]}:${twentyFourHourTime[2]}`;
+  }
+  return /^(?:1[0-9]|20|21):[0-5][0-9]$|^22:00$/.test(normalized) ? normalized : "";
+};
+
 const formatTime = (value) => {
   if (!value) return "";
   const [hour, minute] = value.slice(0, 5).split(":").map(Number);
@@ -37,6 +66,7 @@ const Reservation = () => {
   const [tables, setTables] = useState([]);
   const [selectedTable, setSelectedTable] = useState("");
   const [tablesLoading, setTablesLoading] = useState(false);
+  const [availabilityError, setAvailabilityError] = useState("");
   const [reservations, setReservations] = useState([]);
   const [form, setForm] = useState({
     name: user?.name || user?.username || "",
@@ -53,11 +83,27 @@ const Reservation = () => {
   useEffect(() => {
     let active = true;
     const guestCount = Number(guests);
-    if (!date || !time || !Number.isInteger(guestCount) || guestCount < 1 || guestCount > 20) {
+    const hasDateAndTime = Boolean(date && time);
+    const normalizedDate = normalizeReservationDate(date);
+    const normalizedTime = normalizeReservationTime(time);
+    const validDateAndTime = Boolean(normalizedDate && normalizedTime);
+    const validGuestCount = Number.isInteger(guestCount) && guestCount >= 1 && guestCount <= 20;
+    if (!hasDateAndTime || !validDateAndTime || !validGuestCount) {
+      setTables([]);
+      setSelectedTable("");
+      setTablesLoading(false);
+      setAvailabilityError(
+        hasDateAndTime && !validDateAndTime
+          ? "Choose a valid reservation date and time."
+          : hasDateAndTime && !validGuestCount
+            ? "Guest count must be between 1 and 20."
+            : ""
+      );
       return () => { active = false; };
     }
 
-    api.get("/reservations/available-tables", { params: { date, time, guests } })
+    setAvailabilityError("");
+    api.get("/reservations/available-tables", { params: { date: normalizedDate, time: normalizedTime, guests } })
       .then(({ data }) => {
         if (!active) return;
         setTables(data.tables || []);
@@ -68,7 +114,7 @@ const Reservation = () => {
       .catch((error) => {
         if (!active) return;
         setTables([]);
-        setErrorMessage(error.response?.data?.message || "Available tables could not be loaded.");
+        setAvailabilityError(error.response?.data?.message || "Available tables could not be loaded.");
       })
       .finally(() => {
         if (active) setTablesLoading(false);
@@ -102,6 +148,7 @@ const Reservation = () => {
     setTables([]);
     setSelectedTable("");
     setErrorMessage("");
+    setAvailabilityError("");
     const nextGuests = update.guests ?? guests;
     const guestCount = Number(nextGuests);
     setTablesLoading(
@@ -111,8 +158,8 @@ const Reservation = () => {
       guestCount >= 1 &&
       guestCount <= 20
     );
-    if (update.date !== undefined) setDate(update.date);
-    if (update.time !== undefined) setTime(update.time);
+    if (update.date !== undefined) setDate(normalizeReservationDate(update.date) || update.date);
+    if (update.time !== undefined) setTime(normalizeReservationTime(update.time) || update.time);
     if (update.guests !== undefined) setGuests(update.guests);
   };
 
@@ -135,8 +182,8 @@ const Reservation = () => {
       const { data } = await api.post("/reservations", {
         ...form,
         table_id: selectedTable,
-        date,
-        time,
+        date: normalizeReservationDate(date),
+        time: normalizeReservationTime(time),
         guests: Number(guests),
       });
       setSuccessMessage(`${data.message} Request reference: ${data.reservation.reservation_id}`);
@@ -222,6 +269,10 @@ const Reservation = () => {
                   </p>
                 ) : tablesLoading ? (
                   <p className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-5 text-center text-sm text-slate-500">Checking table availability…</p>
+                ) : availabilityError ? (
+                  <p role="alert" className="rounded-xl border border-red-200 bg-red-50 px-4 py-5 text-center text-sm text-red-700">
+                    {availabilityError}
+                  </p>
                 ) : tables.length ? (
                   <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
                     {tables.map((table) => {
