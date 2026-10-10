@@ -1,12 +1,13 @@
 import { useContext, useEffect, useState } from 'react';
-import { ArrowLeft, BadgeCheck, CheckCircle2, ChevronLeft, ChevronRight, Clock3, Flame, Heart, Leaf, Minus, Plus, ShoppingCart, Star, Truck, UtensilsCrossed } from 'lucide-react';
-import { Link, useLocation, useParams } from 'react-router-dom';
+import { ArrowLeft, BadgeCheck, CheckCircle2, ChevronLeft, ChevronRight, Clock3, Flame, Heart, Leaf, Minus, Plus, ShoppingCart, Sparkles, Star, Truck, UtensilsCrossed } from 'lucide-react';
+import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import api, { BACKEND_BASE_URL } from '../api';
 import { StoreContext } from '../PrivateRouter/StoreContext';
 import PageContainer from './PageContainer';
 import PageHeader from './PageHeader';
 import FoodCustomizationModal from './FoodCustomizationModal';
+import FoodProductCard from './FoodProductCard';
 
 const imageUrl = (image) => {
   if (!image || typeof image !== 'string') return '';
@@ -17,6 +18,7 @@ const imageUrl = (image) => {
 function FoodDetailsPage() {
   const { foodId } = useParams();
   const location = useLocation();
+  const navigate = useNavigate();
   const store = useContext(StoreContext) || {};
   const { addToCart, wishlist = [], toggleWishlist } = store;
   const initialFood = location.state?.food;
@@ -32,6 +34,10 @@ function FoodDetailsPage() {
   const [quantity, setQuantity] = useState(1);
   const [zoomPosition, setZoomPosition] = useState(null);
   const [activeDetailsTab, setActiveDetailsTab] = useState('overview');
+  const [relatedFoods, setRelatedFoods] = useState([]);
+  const [relatedFoodsLoading, setRelatedFoodsLoading] = useState(false);
+  const [relatedFoodsError, setRelatedFoodsError] = useState('');
+  const [relatedFoodToCustomize, setRelatedFoodToCustomize] = useState(null);
 
   useEffect(() => {
     if (food && String(food.food_id || food.id) === String(foodId)) return undefined;
@@ -58,6 +64,34 @@ function FoodDetailsPage() {
     loadFood();
     return () => { mounted = false; };
   }, [food, foodId]);
+
+  useEffect(() => {
+    if (!food) return undefined;
+    let mounted = true;
+    const loadRelatedFoods = async () => {
+      setRelatedFoodsLoading(true);
+      setRelatedFoodsError('');
+      try {
+        const response = await api.get('/foods');
+        const result = response.data?.success
+          ? response.data.data
+          : Array.isArray(response.data)
+            ? response.data
+            : null;
+        if (!Array.isArray(result)) throw new Error('The related menu items response was invalid.');
+        if (mounted) setRelatedFoods(result);
+      } catch (requestError) {
+        console.error('Failed to load related foods:', requestError);
+        if (mounted) {
+          setRelatedFoodsError('Related dishes could not be loaded right now.');
+        }
+      } finally {
+        if (mounted) setRelatedFoodsLoading(false);
+      }
+    };
+    loadRelatedFoods();
+    return () => { mounted = false; };
+  }, [food]);
 
   const addSelectedFoodToCart = async ({
     quantity,
@@ -90,9 +124,60 @@ function FoodDetailsPage() {
     });
   };
 
+  const addRelatedFoodToCart = async ({
+    quantity,
+    selectedAddons,
+    selectedCustomizations,
+    unitPrice,
+  }) => {
+    if (!relatedFoodToCustomize || !addToCart) {
+      toast.error('Unable to add this item to your cart.');
+      return false;
+    }
+    const selectedFood = relatedFoodToCustomize;
+    return addToCart({
+      ...selectedFood,
+      id: selectedFood.food_id || selectedFood.id,
+      food_id: selectedFood.food_id || selectedFood.id,
+      product_id: selectedFood.food_id || selectedFood.id,
+      product_name: selectedFood.food_name,
+      name: selectedFood.food_name,
+      price: unitPrice,
+      portion_size: selectedFood.portion_size || 'Standard',
+      product_image: selectedFood.food_images?.[0] || '',
+      image: selectedFood.food_images?.[0] || '',
+      quantity,
+    }, {
+      size: selectedFood.portion_size || 'Standard',
+      price: unitPrice,
+      quantity,
+      selectedAddons,
+      selectedCustomizations,
+    });
+  };
+
   const images = Array.isArray(food?.food_images) ? food.food_images.filter(Boolean) : [];
   const addons = Array.isArray(food?.addons) ? food.addons : [];
   const customizations = Array.isArray(food?.customizations) ? food.customizations : [];
+  const getRelatedFoods = (type) => {
+    const idField = type === 'cuisine' ? 'cuisine_id' : 'category_id';
+    const nameField = type === 'cuisine' ? 'cuisine_name' : 'category_name';
+    const currentId = String(food?.[idField] || '').trim();
+    const currentName = String(food?.[nameField] || '').trim().toLowerCase();
+    if (!currentId && !currentName) return [];
+    return relatedFoods.filter((item) => {
+      const itemId = String(item[idField] || '').trim();
+      const itemName = String(item[nameField] || '').trim().toLowerCase();
+      const matches = currentId && itemId
+        ? currentId === itemId
+        : currentName && itemName === currentName;
+      const sameFood = String(item.food_id || item.id) === String(food?.food_id || food?.id);
+      return matches && !sameFood && item.is_menu_visible !== false
+        && String(item.status || 'Active').toLowerCase() === 'active';
+    }).slice(0, 8);
+  };
+  const cuisineRelatedFoods = getRelatedFoods('cuisine');
+  const categoryRelatedFoods = getRelatedFoods('category');
   const detailTabs = [
     { id: 'overview', label: 'Overview' },
     { id: 'food-details', label: 'Food Details' },
@@ -496,6 +581,74 @@ function FoodDetailsPage() {
             </div>
           </section>
           </div>
+
+          <div className="mt-10 space-y-10">
+            {relatedFoodsError && (
+              <p role="status" className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+                {relatedFoodsError}
+              </p>
+            )}
+            {relatedFoodsLoading && (
+              <div className="space-y-4" aria-label="Loading related dishes">
+                <div className="h-7 w-56 animate-pulse rounded-lg bg-slate-200" />
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                  {[1, 2, 3, 4].map((item) => <div key={item} className="aspect-[4/3] animate-pulse rounded-3xl bg-slate-100" />)}
+                </div>
+              </div>
+            )}
+            {!relatedFoodsLoading && !relatedFoodsError && cuisineRelatedFoods.length > 0 && (
+              <section aria-labelledby="related-cuisine-heading">
+                <div className="mb-5 flex items-end justify-between gap-4">
+                  <div>
+                    <p className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-emerald-700">Explore the cuisine</p>
+                    <h2 id="related-cuisine-heading" className="mt-1 font-serif text-2xl font-bold text-[#17241e] sm:text-3xl">
+                      More from {food.cuisine_name}
+                    </h2>
+                  </div>
+                  <Sparkles className="mb-1 h-5 w-5 shrink-0 text-orange-500" />
+                </div>
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                  {cuisineRelatedFoods.map((relatedFood) => (
+                    <FoodProductCard
+                      key={`cuisine-${relatedFood.food_id || relatedFood.id}`}
+                      food={relatedFood}
+                      onSelect={() => navigate(`/food/${encodeURIComponent(relatedFood.food_id || relatedFood.id)}`, { state: { food: relatedFood } })}
+                      onImageClick={() => navigate(`/food/${encodeURIComponent(relatedFood.food_id || relatedFood.id)}`, { state: { food: relatedFood } })}
+                      onAdd={() => setRelatedFoodToCustomize(relatedFood)}
+                      isInWishlist={wishlist.some((item) => String(item.food_id || item.id || item.product_id || item._id) === String(relatedFood.food_id || relatedFood.id))}
+                      onToggleWishlist={toggleWishlist}
+                    />
+                  ))}
+                </div>
+              </section>
+            )}
+            {!relatedFoodsLoading && !relatedFoodsError && categoryRelatedFoods.length > 0 && (
+              <section aria-labelledby="related-category-heading">
+                <div className="mb-5 flex items-end justify-between gap-4">
+                  <div>
+                    <p className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-emerald-700">More to enjoy</p>
+                    <h2 id="related-category-heading" className="mt-1 font-serif text-2xl font-bold text-[#17241e] sm:text-3xl">
+                      More {food.category_name} dishes
+                    </h2>
+                  </div>
+                  <UtensilsCrossed className="mb-1 h-5 w-5 shrink-0 text-orange-500" />
+                </div>
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                  {categoryRelatedFoods.map((relatedFood) => (
+                    <FoodProductCard
+                      key={`category-${relatedFood.food_id || relatedFood.id}`}
+                      food={relatedFood}
+                      onSelect={() => navigate(`/food/${encodeURIComponent(relatedFood.food_id || relatedFood.id)}`, { state: { food: relatedFood } })}
+                      onImageClick={() => navigate(`/food/${encodeURIComponent(relatedFood.food_id || relatedFood.id)}`, { state: { food: relatedFood } })}
+                      onAdd={() => setRelatedFoodToCustomize(relatedFood)}
+                      isInWishlist={wishlist.some((item) => String(item.food_id || item.id || item.product_id || item._id) === String(relatedFood.food_id || relatedFood.id))}
+                      onToggleWishlist={toggleWishlist}
+                    />
+                  ))}
+                </div>
+              </section>
+            )}
+          </div>
         </PageContainer>
       </main>
       {customizing && (
@@ -505,6 +658,14 @@ function FoodDetailsPage() {
           initialQuantity={quantity}
           onClose={() => setCustomizing(false)}
           onAdd={addSelectedFoodToCart}
+        />
+      )}
+      {relatedFoodToCustomize && (
+        <FoodCustomizationModal
+          key={`related-${relatedFoodToCustomize.food_id || relatedFoodToCustomize.id}`}
+          food={relatedFoodToCustomize}
+          onClose={() => setRelatedFoodToCustomize(null)}
+          onAdd={addRelatedFoodToCart}
         />
       )}
     </>
