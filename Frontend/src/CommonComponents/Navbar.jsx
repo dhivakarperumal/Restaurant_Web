@@ -294,12 +294,12 @@ const Navbar = () => {
                 </div>
                 
 
-                <NavLink
+                {/* <NavLink
                   to="/gallery"
                   className={desktopLinkClass}
                 >
                   Gallery
-                </NavLink>
+                </NavLink> */}
 
                 <NavLink
                   to="/reservation"
@@ -472,9 +472,9 @@ const Navbar = () => {
                 <NavLink to="/about" onClick={() => setMobileMenu(false)} className={mobileLinkClass}>
                   About
                 </NavLink>
-                <NavLink to="/gallery" onClick={() => setMobileMenu(false)} className={mobileLinkClass}>
+                {/* <NavLink to="/gallery" onClick={() => setMobileMenu(false)} className={mobileLinkClass}>
                   Gallery
-                </NavLink>
+                </NavLink> */}
                 <NavLink to="/reservation" onClick={() => setMobileMenu(false)} className={mobileLinkClass}>
                   Reservation
                 </NavLink>
