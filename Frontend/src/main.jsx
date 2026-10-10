@@ -74,6 +74,11 @@ import RouteError from './CommonComponents/RouteError.jsx'
 import CustomerOrdersPage from './CommonComponents/CustomerOrdersPage.jsx'
 import FoodDetailsPage from './CommonComponents/FoodDetailsPage.jsx'
 
+const directFoodRoute = window.location.pathname.match(/^\/food\/([^/]+)\/?$/i)
+if (directFoodRoute && !window.location.hash) {
+  window.history.replaceState(window.history.state, '', `/#/food/${directFoodRoute[1]}${window.location.search}`)
+}
+
 
 
 const router = createHashRouter([
