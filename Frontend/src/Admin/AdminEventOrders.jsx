@@ -3,10 +3,14 @@ import {
   CalendarDays,
   Check,
   CheckCircle2,
-  Clock,
+  Clock3,
+  CircleAlert,
   Eye,
   Filter,
   Info,
+  LayoutGrid,
+  List,
+  LoaderCircle,
   MapPin,
   Package,
   PartyPopper,
@@ -29,15 +33,36 @@ import api, { BACKEND_BASE_URL } from "../api";
 
 const STATUS_OPTIONS = ["All", "Pending", "Quotation Sent", "Confirmed", "Preparing", "Ready", "Completed", "Cancelled"];
 
-const STATUS_BADGES = {
-  Pending: "bg-amber-100 text-amber-800 border-amber-300",
-  "Quotation Sent": "bg-sky-100 text-sky-800 border-sky-300 font-bold",
-  Confirmed: "bg-emerald-100 text-emerald-800 border-emerald-300 font-bold",
-  Preparing: "bg-purple-100 text-purple-800 border-purple-300",
-  Ready: "bg-indigo-100 text-indigo-800 border-indigo-300",
-  Completed: "bg-teal-100 text-teal-800 border-teal-300",
-  Cancelled: "bg-rose-100 text-rose-800 border-rose-300",
+const statusStyles = {
+  Pending: "border-amber-300 bg-amber-50 text-amber-800",
+  "Quotation Sent": "border-sky-300 bg-sky-50 text-sky-800 font-bold",
+  Confirmed: "border-emerald-300 bg-emerald-50 text-emerald-800 font-bold",
+  Preparing: "border-purple-300 bg-purple-50 text-purple-800",
+  Ready: "border-indigo-300 bg-indigo-50 text-indigo-800",
+  Completed: "border-teal-300 bg-teal-50 text-teal-800 font-bold",
+  Cancelled: "border-slate-200 bg-slate-100 text-slate-600",
 };
+
+const formatDate = (value) => {
+  if (!value) return "Date unavailable";
+  const dateString = typeof value === "string" ? value.slice(0, 10) : new Date(value).toISOString().slice(0, 10);
+  const date = new Date(`${dateString}T00:00:00`);
+  return Number.isNaN(date.getTime())
+    ? dateString
+    : date.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
+};
+
+const formatTime = (value) => {
+  if (!value) return "Time unavailable";
+  const [hour, minute] = String(value).slice(0, 5).split(":").map(Number);
+  return `${hour % 12 || 12}:${String(minute || 0).padStart(2, "0")} ${hour < 12 ? "AM" : "PM"}`;
+};
+
+const renderStatus = (status) => (
+  <span className={`inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-bold ${statusStyles[status] || statusStyles.Cancelled}`}>
+    {status}
+  </span>
+);
 
 const resolveImageUrl = (image) => {
   if (!image || typeof image !== "string") return "";
@@ -50,6 +75,8 @@ export default function AdminEventOrders() {
   const [loading, setLoading] = useState(true);
   const [activeStatus, setActiveStatus] = useState("All");
   const [searchTerm, setSearchTerm] = useState("");
+  const [sortBy, setSortBy] = useState("latest");
+  const [viewMode, setViewMode] = useState("table");
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [updatingStatus, setUpdatingStatus] = useState(false);
   const [adminNotes, setAdminNotes] = useState("");
@@ -295,179 +322,253 @@ export default function AdminEventOrders() {
     }
   };
 
-  // Metrics
-  const metrics = useMemo(() => {
-    const total = orders.length;
-    const pending = orders.filter((o) => o.status === "Pending").length;
-    const quotationSent = orders.filter((o) => o.status === "Quotation Sent").length;
-    const confirmed = orders.filter((o) => o.status === "Confirmed").length;
-    const preparing = orders.filter((o) => o.status === "Preparing").length;
-    const completed = orders.filter((o) => o.status === "Completed").length;
-    return { total, pending, quotationSent, confirmed, preparing, completed };
+  // Status counts matching AdminReservations
+  const counts = useMemo(() => {
+    const result = {
+      All: orders.length,
+      Pending: 0,
+      "Quotation Sent": 0,
+      Confirmed: 0,
+      Preparing: 0,
+      Ready: 0,
+      Completed: 0,
+      Cancelled: 0,
+    };
+    orders.forEach((order) => {
+      if (result[order.status] !== undefined) result[order.status] += 1;
+    });
+    return result;
   }, [orders]);
 
-  // Filtered orders
+  // Filtered and sorted orders
   const filteredOrders = useMemo(() => {
     const q = searchTerm.trim().toLowerCase();
-    return orders.filter((order) => {
-      const matchesStatus = activeStatus === "All" || order.status === activeStatus;
-      if (!matchesStatus) return false;
-      if (!q) return true;
-      const haystack = [
-        order.event_order_number,
-        order.customer_name,
-        order.customer_phone,
-        order.customer_email,
-        order.event_type,
-        order.venue_address,
-      ].join(" ").toLowerCase();
-      return haystack.includes(q);
-    });
-  }, [orders, activeStatus, searchTerm]);
+    return orders
+      .filter((order) => {
+        const matchesStatus = activeStatus === "All" || order.status === activeStatus;
+        if (!matchesStatus) return false;
+        if (!q) return true;
+        const haystack = [
+          order.event_order_number,
+          order.customer_name,
+          order.customer_phone,
+          order.customer_email,
+          order.event_type,
+          order.venue_address,
+        ]
+          .join(" ")
+          .toLowerCase();
+        return haystack.includes(q);
+      })
+      .sort((a, b) => {
+        if (sortBy === "soonest") {
+          const dateA = new Date(`${String(a.event_date).slice(0, 10)}T${a.event_time || "00:00"}`).getTime() || 0;
+          const dateB = new Date(`${String(b.event_date).slice(0, 10)}T${b.event_time || "00:00"}`).getTime() || 0;
+          return dateA - dateB;
+        }
+        if (sortBy === "amount_high") {
+          const amtA = Number(a.quoted_amount || a.total_estimated_amount || 0);
+          const amtB = Number(b.quoted_amount || b.total_estimated_amount || 0);
+          return amtB - amtA;
+        }
+        const createdA = new Date(a.created_at || 0).getTime() || 0;
+        const createdB = new Date(b.created_at || 0).getTime() || 0;
+        return createdB - createdA;
+      });
+  }, [orders, activeStatus, searchTerm, sortBy]);
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8 space-y-6 bg-[#fbfaf7] min-h-screen">
-      {/* Page Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-black text-[#1a3c36] flex items-center gap-2.5">
-            <PartyPopper className="h-7 w-7 text-[#b07838]" />
-            Bulk &amp; Event Orders
-          </h1>
-          <p className="mt-1 text-xs sm:text-sm text-slate-500">
-            Manage catering requests, guest headcount, event menus, and approvals
-          </p>
-        </div>
-        <button
-          type="button"
-          onClick={() => fetchEventOrders(true)}
-          className="inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-4 py-2 text-xs font-bold text-slate-700 shadow-xs hover:bg-slate-50 transition"
-        >
-          <RefreshCw className="h-3.5 w-3.5" /> Refresh List
-        </button>
-      </div>
+    <main className="min-h-screen p-4 md:p-2 lg:p-2">
+      <div className="mx-auto max-w-[1500px] space-y-6">
+        {/* Header */}
+        <header className="flex flex-wrap items-end justify-between gap-4">
+          <div>
+            <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#a34f32]">Front of house</p>
+            <h1 className="mt-1 font-serif text-3xl font-bold text-[#203129]">Bulk &amp; Event Orders</h1>
+            <p className="mt-2 text-sm text-slate-500">
+              Review catering requests, send discounted quotations, and track order approvals.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => fetchEventOrders(true)}
+            disabled={loading}
+            aria-label="Refresh event orders"
+            className="inline-flex h-11 items-center gap-2 rounded-xl border border-[#dfe2e5] bg-white px-4 text-sm font-semibold text-[#34443b] transition hover:bg-slate-50 disabled:opacity-50"
+          >
+            <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
+            Refresh
+          </button>
+        </header>
 
-      {/* Metrics Banner */}
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
-        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-xs">
-          <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Total Bookings</p>
-          <p className="mt-1 text-2xl font-black text-[#1a3c36]">{metrics.total}</p>
-        </div>
-        <div className="rounded-2xl border border-amber-200 bg-amber-50/60 p-4 shadow-xs">
-          <p className="text-[11px] font-bold uppercase tracking-wider text-amber-700">Pending Review</p>
-          <p className="mt-1 text-2xl font-black text-amber-800">{metrics.pending}</p>
-        </div>
-        <div className="rounded-2xl border border-blue-200 bg-blue-50/60 p-4 shadow-xs">
-          <p className="text-[11px] font-bold uppercase tracking-wider text-blue-700">Confirmed</p>
-          <p className="mt-1 text-2xl font-black text-blue-800">{metrics.confirmed}</p>
-        </div>
-        <div className="rounded-2xl border border-purple-200 bg-purple-50/60 p-4 shadow-xs">
-          <p className="text-[11px] font-bold uppercase tracking-wider text-purple-700">In Preparation</p>
-          <p className="mt-1 text-2xl font-black text-purple-800">{metrics.preparing}</p>
-        </div>
-        <div className="rounded-2xl border border-emerald-200 bg-emerald-50/60 p-4 shadow-xs col-span-2 sm:col-span-1">
-          <p className="text-[11px] font-bold uppercase tracking-wider text-emerald-700">Delivered / Done</p>
-          <p className="mt-1 text-2xl font-black text-emerald-800">{metrics.completed}</p>
-        </div>
-      </div>
-
-      {/* Filter Tabs & Search Bar */}
-      <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-4 rounded-2xl border border-slate-200 bg-white p-3 shadow-xs">
-        {/* Status Tabs */}
-        <div className="flex gap-1.5 overflow-x-auto pb-1 lg:pb-0 scrollbar-thin">
-          {STATUS_OPTIONS.map((status) => (
+        {/* Top Summary Cards (matching AdminReservations) */}
+        <section aria-label="Event order status summaries" className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-6">
+          {[
+            { status: "All", label: "All Orders", caption: "Every catering booking", icon: PartyPopper, bg: "bg-[#1a3c36]" },
+            { status: "Pending", label: "Pending Review", caption: "Waiting for quotation", icon: Clock3, bg: "bg-[#f59e0b]" },
+            { status: "Quotation Sent", label: "Quotation Sent", caption: "Awaiting customer approval", icon: Send, bg: "bg-[#0284c7]" },
+            { status: "Confirmed", label: "Confirmed", caption: "Quote accepted & booked", icon: CheckCircle2, bg: "bg-[#22c55e]" },
+            { status: "Preparing", label: "In Kitchen", caption: "Cooking & preparation", icon: Utensils, bg: "bg-[#8b5cf6]" },
+            { status: "Completed", label: "Completed", caption: "Delivered & settled", icon: CheckCircle2, bg: "bg-[#0d9488]" },
+          ].map(({ status, label, caption, icon: Icon, bg }) => (
             <button
               key={status}
               type="button"
-              onClick={() => setActiveStatus(status)}
-              className={`rounded-xl px-3.5 py-1.5 text-xs font-bold transition whitespace-nowrap ${
-                activeStatus === status
-                  ? "bg-[#1a3c36] text-white shadow-xs"
-                  : "text-slate-600 hover:bg-slate-100"
+              aria-pressed={activeStatus === status}
+              onClick={() => setActiveStatus(status === "All" || activeStatus === status ? "All" : status)}
+              className={`relative flex min-h-[140px] min-w-0 flex-col justify-between overflow-hidden rounded-xl border border-transparent p-4 text-left text-white shadow-[0_2px_10px_rgba(20,56,34,0.08)] transition hover:-translate-y-0.5 hover:shadow-lg sm:p-5 ${bg} ${
+                activeStatus === status ? "ring-4 ring-white/40" : ""
               }`}
             >
-              {status}
+              <div className="relative z-10 flex items-start gap-3">
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-white/20 shadow-sm">
+                  <Icon size={24} strokeWidth={2.2} />
+                </div>
+                <div className="mt-0.5 min-w-0 flex-1">
+                  <h2 className="mb-1 truncate text-xs font-semibold opacity-90">{label}</h2>
+                  <div className="text-[26px] font-extrabold leading-none tracking-tight">{counts[status] || 0}</div>
+                </div>
+              </div>
+              <div className="relative z-10 mt-5 text-[11px] font-medium opacity-75">{caption}</div>
+              <div className="pointer-events-none absolute bottom-0 right-0 h-16 w-24 opacity-40" aria-hidden="true">
+                <svg viewBox="0 0 100 50" preserveAspectRatio="none" className="h-full w-full">
+                  <path d="M0,50 L0,40 Q25,30 50,40 T100,20 L100,50 Z" fill="white" fillOpacity="0.4" />
+                  <path d="M0,40 Q25,30 50,40 T100,20" fill="none" stroke="white" strokeWidth="2.5" />
+                </svg>
+              </div>
             </button>
           ))}
+        </section>
+
+        {/* Filter bar: Search, Status, Sort, View Toggle */}
+        <div className="flex flex-col gap-3 rounded-xl border border-[#e1ded8] bg-white p-3 sm:flex-row sm:items-center sm:justify-between">
+          <label className="relative block w-full sm:max-w-sm sm:flex-1">
+            <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-[#7a857d]" />
+            <input
+              type="search"
+              value={searchTerm}
+              onChange={(event) => setSearchTerm(event.target.value)}
+              placeholder="Search reference, customer, phone, event, venue..."
+              aria-label="Search bulk orders"
+              className="h-[46px] w-full rounded-xl border border-[#dfe2e5] bg-[#faf9f8] pl-11 pr-3 text-sm text-[#2d3830] outline-none placeholder:text-[#89938c] focus:border-[#6d9a79]"
+            />
+          </label>
+          <div className="flex flex-wrap items-center gap-2 sm:justify-end">
+            <span className="mr-1 text-xs text-gray-500">
+              {filteredOrders.length} of {orders.length}
+            </span>
+            <select
+              value={activeStatus}
+              onChange={(event) => setActiveStatus(event.target.value)}
+              aria-label="Filter orders by status"
+              className="h-[46px] rounded-xl border border-[#dfe2e5] bg-white px-3 text-sm text-[#34443b] outline-none focus:border-[#6d9a79]"
+            >
+              {STATUS_OPTIONS.map((status) => (
+                <option key={status} value={status}>
+                  {status} ({counts[status] || 0})
+                </option>
+              ))}
+            </select>
+            <select
+              value={sortBy}
+              onChange={(event) => setSortBy(event.target.value)}
+              aria-label="Sort bulk orders"
+              className="h-[46px] rounded-xl border border-[#dfe2e5] bg-white px-3 text-sm text-[#34443b] outline-none focus:border-[#6d9a79]"
+            >
+              <option value="latest">Sort by: Latest Created</option>
+              <option value="soonest">Sort by: Event Date (Soonest)</option>
+              <option value="amount_high">Sort by: Amount (High to Low)</option>
+            </select>
+            <div className="flex h-[46px] overflow-hidden rounded-xl border border-[#dfe2e5] bg-white" role="group" aria-label="Order view mode">
+              <button
+                type="button"
+                onClick={() => setViewMode("table")}
+                aria-label="Table view"
+                aria-pressed={viewMode === "table"}
+                title="Table view"
+                className={`grid w-11 place-items-center border-r border-[#dfe2e5] ${
+                  viewMode === "table" ? "bg-[#1a3c36] text-white" : "text-[#66736b] hover:bg-gray-50"
+                }`}
+              >
+                <List size={16} />
+              </button>
+              <button
+                type="button"
+                onClick={() => setViewMode("card")}
+                aria-label="Card view"
+                aria-pressed={viewMode === "card"}
+                title="Card view"
+                className={`grid w-11 place-items-center ${
+                  viewMode === "card" ? "bg-[#1a3c36] text-white" : "text-[#66736b] hover:bg-gray-50"
+                }`}
+              >
+                <LayoutGrid size={16} />
+              </button>
+            </div>
+          </div>
         </div>
 
-        {/* Search */}
-        <div className="relative w-full lg:w-72">
-          <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400" />
-          <input
-            type="text"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            placeholder="Search by ID, name, phone, event..."
-            className="w-full rounded-xl border border-slate-200 bg-slate-50 pl-9 pr-3 py-1.5 text-xs font-semibold text-slate-800 focus:border-[#1a3c36] focus:bg-white focus:outline-hidden"
-          />
-        </div>
-      </div>
-
-      {/* Orders Table */}
-      <div className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-xs">
-        {loading ? (
-          <div className="py-20 text-center">
-            <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-[#b07838] border-t-transparent" />
-            <p className="mt-3 text-xs font-bold text-slate-500">Loading bulk orders...</p>
+        {/* Content Section: Loading, Empty, Table, or Card View */}
+        {loading && orders.length === 0 ? (
+          <div className="rounded-2xl border border-[#e7e0d8] bg-white p-16 text-center text-sm text-gray-500 shadow-sm">
+            <RefreshCw className="mx-auto mb-2 h-8 w-8 animate-spin text-[#1a3c36]" />
+            Loading bulk catering orders...
           </div>
         ) : filteredOrders.length === 0 ? (
-          <div className="py-20 text-center text-slate-400">
-            <Package className="mx-auto h-12 w-12 text-slate-300 mb-2" />
-            <p className="text-sm font-bold text-slate-700">No event orders found</p>
-            <p className="mt-1 text-xs">When users place bulk catering requests, they will show up here.</p>
+          <div className="rounded-2xl border-2 border-dashed border-[#e6ddd1] bg-[#faf9f8] py-16 text-center shadow-sm">
+            <PartyPopper className="mx-auto h-12 w-12 text-[#8a8a8a]" />
+            <h2 className="mt-3 text-base font-bold text-[#333]">
+              {activeStatus === "All" ? "No bulk or event orders found" : `No ${activeStatus.toLowerCase()} orders`}
+            </h2>
+            <p className="mt-1 text-xs text-[#888]">Customer bulk requests will appear here.</p>
           </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="min-w-full text-left text-xs">
-              <thead>
-                <tr className="border-b border-slate-200 bg-slate-50 font-bold uppercase tracking-wider text-slate-600">
-                  <th className="px-4 py-3.5">Order Ref</th>
-                  <th className="px-4 py-3.5">Customer</th>
-                  <th className="px-4 py-3.5">Event Details</th>
-                  <th className="px-4 py-3.5">Date &amp; Time</th>
-                  <th className="px-4 py-3.5">Dishes / Pax</th>
-                  <th className="px-4 py-3.5">Estimated Total</th>
-                  <th className="px-4 py-3.5">Status</th>
-                  <th className="px-4 py-3.5 text-right">Actions</th>
+        ) : viewMode === "table" ? (
+          /* Table View with Gold Header matching AdminReservations */
+          <div className="overflow-x-auto rounded-2xl border border-[#e7e0d8] bg-white shadow-sm">
+            <table className="w-full min-w-[1100px] border-collapse text-left text-sm">
+              <thead className="sticky top-0 bg-[#d4a843] text-[11px] uppercase tracking-wide text-white">
+                <tr>
+                  {["#", "Order Ref", "Customer", "Event Details", "Date & Time", "Headcount & Items", "Quoted / Est. Amount", "Status", "Actions"].map((heading) => (
+                    <th key={heading} className="whitespace-nowrap px-4 py-4 font-bold">{heading}</th>
+                  ))}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100 text-slate-700">
-                {filteredOrders.map((order) => (
-                  <tr key={order.id} className="hover:bg-slate-50/70 transition">
-                    <td className="px-4 py-3.5 font-mono font-bold text-[#1a3c36]">
+              <tbody className="divide-y divide-[#edf0eb]">
+                {filteredOrders.map((order, index) => (
+                  <tr key={order.id} className="align-middle hover:bg-[#fbfcfa]">
+                    <td className="whitespace-nowrap px-4 py-3 font-medium text-[#66736b]">{index + 1}</td>
+                    <td className="whitespace-nowrap px-4 py-3 font-mono font-bold text-[#1a3c36]">
                       {order.event_order_number}
                     </td>
-                    <td className="px-4 py-3.5">
-                      <p className="font-bold text-slate-900">{order.customer_name}</p>
-                      <p className="text-[11px] text-slate-500">{order.customer_phone}</p>
+                    <td className="px-4 py-3">
+                      <span className="font-semibold text-[#34443b]">{order.customer_name}</span>
+                      <span className="mt-1 block text-xs text-[#7c8980]">{order.customer_phone}</span>
+                      {order.customer_email && <span className="block text-xs text-[#7c8980]">{order.customer_email}</span>}
                     </td>
-                    <td className="px-4 py-3.5">
-                      <span className="inline-block rounded-md bg-amber-50 px-2 py-0.5 text-[11px] font-bold text-amber-800 border border-amber-200">
+                    <td className="px-4 py-3">
+                      <span className="inline-block rounded-md bg-amber-50 px-2 py-0.5 text-xs font-bold text-amber-800 border border-amber-200">
                         {order.event_type}
                       </span>
-                      <p className="mt-0.5 text-[11px] text-slate-500 truncate max-w-44" title={order.venue_address}>
+                      <span className="mt-1 block max-w-48 truncate text-xs text-[#66736b]" title={order.venue_address}>
                         {order.venue_address}
-                      </p>
+                      </span>
                     </td>
-                    <td className="px-4 py-3.5 whitespace-nowrap">
-                      <p className="font-bold text-slate-800">
-                        {order.event_date ? new Date(order.event_date).toLocaleDateString("en-IN") : "--"}
-                      </p>
-                      <p className="text-[11px] text-slate-500">{order.event_time}</p>
+                    <td className="whitespace-nowrap px-4 py-3">
+                      <span className="font-semibold text-[#34443b]">{formatDate(order.event_date)}</span>
+                      <span className="mt-1 block text-xs text-[#66736b]">{order.event_time}</span>
                     </td>
-                    <td className="px-4 py-3.5">
-                      <p className="font-bold text-slate-800">{order.guest_count} Pax</p>
-                      <p className="text-[11px] text-slate-500">
-                        {order.total_items || 0} dishes ({order.total_quantity || 0} portions)
-                      </p>
+                    <td className="whitespace-nowrap px-4 py-3">
+                      <span className="font-semibold text-[#34443b]">{order.guest_count} Pax</span>
+                      <span className="mt-1 block text-xs text-[#66736b]">
+                        {order.total_items || (order.items || []).length} dishes ({(order.items || []).reduce((s, i) => s + (Number(i.quantity) || 1), 0) || order.total_quantity || 0} portions)
+                      </span>
                     </td>
-                    <td className="px-4 py-3.5">
+                    <td className="whitespace-nowrap px-4 py-3">
                       {order.status === "Quotation Sent" || order.quoted_amount ? (
                         <div>
-                          <p className="font-black text-[#1a3c36] text-sm">
+                          <span className="font-black text-[#1a3c36] text-sm block">
                             ₹{Number(order.quoted_amount || order.total_estimated_amount).toLocaleString("en-IN", { minimumFractionDigits: 2 })}
-                          </p>
+                          </span>
                           {Number(order.discount_amount || 0) > 0 && (
                             <span className="inline-block rounded-md bg-emerald-50 px-1.5 py-0.2 text-[10px] font-bold text-emerald-700 border border-emerald-200">
                               -₹{Number(order.discount_amount).toLocaleString("en-IN")} off
@@ -475,42 +576,35 @@ export default function AdminEventOrders() {
                           )}
                         </div>
                       ) : (
-                        <p className="font-black text-[#1a3c36] text-sm">
+                        <span className="font-black text-[#1a3c36] text-sm">
                           ₹{Number(order.total_estimated_amount || 0).toLocaleString("en-IN", { minimumFractionDigits: 2 })}
-                        </p>
+                        </span>
                       )}
                     </td>
-                    <td className="px-4 py-3.5">
-                      <span
-                        className={`inline-block rounded-full border px-2.5 py-0.5 text-[11px] font-bold ${
-                          STATUS_BADGES[order.status] || "bg-slate-100 text-slate-700 border-slate-300"
-                        }`}
-                      >
-                        {order.status}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3.5 text-right whitespace-nowrap">
-                      <div className="inline-flex items-center gap-1.5">
+                    <td className="whitespace-nowrap px-4 py-3">{renderStatus(order.status)}</td>
+                    <td className="px-4 py-3 whitespace-nowrap">
+                      <div className="flex items-center gap-2">
                         <button
                           type="button"
                           onClick={() => handleViewDetails(order.id)}
-                          className={`inline-flex items-center gap-1 rounded-lg border px-2.5 py-1 text-xs font-bold transition ${
+                          className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-semibold transition ${
                             order.status === "Pending"
-                              ? "border-[#b07838] bg-[#fbf5ee] text-[#a85b00] hover:bg-[#f3e7d6]"
-                              : "border-slate-200 bg-white text-[#1a3c36] hover:bg-slate-100"
+                              ? "bg-[#1a3c36] text-white hover:bg-[#245048]"
+                              : "border border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
                           }`}
-                          title={order.status === "Pending" ? "Review & Send Quotation" : "View Order Details"}
+                          title={order.status === "Pending" ? "Review & Send Quotation" : "View Details"}
                         >
-                          <Eye className="h-3.5 w-3.5" />
+                          <Eye size={14} />
                           {order.status === "Pending" ? "Review & Quote" : "View"}
                         </button>
                         <button
                           type="button"
                           onClick={() => handleDeleteOrder(order.id)}
-                          className="flex h-7 w-7 items-center justify-center rounded-lg border border-rose-200 bg-rose-50 text-rose-600 hover:bg-rose-100 transition"
-                          title="Delete Order"
+                          aria-label="Delete order"
+                          title="Delete order"
+                          className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 text-slate-600 transition hover:border-red-200 hover:bg-red-50 hover:text-red-700"
                         >
-                          <Trash2 className="h-3.5 w-3.5" />
+                          <Trash2 size={15} />
                         </button>
                       </div>
                     </td>
@@ -519,8 +613,92 @@ export default function AdminEventOrders() {
               </tbody>
             </table>
           </div>
+        ) : (
+          /* Card View matching AdminReservations */
+          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+            {filteredOrders.map((order) => (
+              <article
+                key={order.id}
+                className="flex flex-col justify-between rounded-2xl border border-[#e7e0d8] bg-white p-5 shadow-sm transition hover:shadow-md"
+              >
+                <div>
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <span className="font-mono text-xs font-bold text-[#a34f32] bg-[#fbf5ee] px-2.5 py-0.5 rounded-md border border-[#f3e7d6]">
+                        {order.event_order_number}
+                      </span>
+                      <h2 className="mt-1.5 truncate font-serif text-xl font-bold text-[#203129]">
+                        {order.customer_name}
+                      </h2>
+                      <p className="mt-0.5 text-xs text-slate-500">{order.customer_phone}</p>
+                      {order.customer_email && <p className="text-xs text-slate-400">{order.customer_email}</p>}
+                    </div>
+                    {renderStatus(order.status)}
+                  </div>
+
+                  <div className="mt-4 grid gap-2.5 rounded-xl bg-[#f7f8f5] p-3.5 text-xs text-slate-700">
+                    <p className="flex items-center gap-2 font-medium">
+                      <PartyPopper className="h-4 w-4 shrink-0 text-[#a34f32]" />
+                      <span className="font-bold text-[#203129]">{order.event_type}</span>
+                    </p>
+                    <p className="flex items-center gap-2">
+                      <CalendarDays className="h-4 w-4 shrink-0 text-[#a34f32]" />
+                      {formatDate(order.event_date)} · {order.event_time}
+                    </p>
+                    <p className="flex items-center gap-2">
+                      <Users className="h-4 w-4 shrink-0 text-[#a34f32]" />
+                      {order.guest_count} Pax · {order.total_items || (order.items || []).length} dishes ({(order.items || []).reduce((s, i) => s + (Number(i.quantity) || 1), 0) || order.total_quantity || 0} portions)
+                    </p>
+                    <p className="flex items-center gap-2">
+                      <MapPin className="h-4 w-4 shrink-0 text-[#a34f32]" />
+                      <span className="truncate" title={order.venue_address}>{order.venue_address}</span>
+                    </p>
+                  </div>
+
+                  <div className="mt-3 flex items-baseline justify-between border-t border-[#f0ebe6] pt-3">
+                    <span className="text-xs font-bold text-slate-500">
+                      {order.status === "Quotation Sent" || order.quoted_amount ? "Quoted Total:" : "Estimated Menu Total:"}
+                    </span>
+                    <div className="text-right">
+                      <span className="font-black text-base text-[#1a3c36]">
+                        ₹{Number(order.quoted_amount || order.total_estimated_amount || 0).toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+                      </span>
+                      {Number(order.discount_amount || 0) > 0 && (
+                        <span className="block text-[10px] font-bold text-emerald-600">
+                          -₹{Number(order.discount_amount).toLocaleString("en-IN")} off
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mt-4 border-t border-[#f0ebe6] pt-4 flex items-center justify-between">
+                  <button
+                    type="button"
+                    onClick={() => handleViewDetails(order.id)}
+                    className={`inline-flex items-center gap-1.5 rounded-xl px-4 py-2 text-xs font-bold transition ${
+                      order.status === "Pending"
+                        ? "bg-[#1a3c36] text-white shadow-xs hover:bg-[#245048]"
+                        : "border border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
+                    }`}
+                  >
+                    <Eye size={14} />
+                    {order.status === "Pending" ? "Review & Quote" : "View Details"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleDeleteOrder(order.id)}
+                    aria-label="Delete order"
+                    title="Delete order"
+                    className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 text-slate-500 hover:border-red-200 hover:bg-red-50 hover:text-red-700 transition"
+                  >
+                    <Trash2 size={15} />
+                  </button>
+                </div>
+              </article>
+            ))}
+          </div>
         )}
-      </div>
 
       {/* DETAILED MODAL */}
       {selectedOrder && (
@@ -960,5 +1138,6 @@ export default function AdminEventOrders() {
         </div>
       )}
     </div>
-  );
+  </main>
+);
 }
