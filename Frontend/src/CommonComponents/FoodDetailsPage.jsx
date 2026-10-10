@@ -1,5 +1,5 @@
 import { useContext, useEffect, useState } from 'react';
-import { ArrowLeft, CheckCircle2, Clock3, Flame, Heart, Info, Minus, Plus, ShoppingCart, Star, UtensilsCrossed } from 'lucide-react';
+import { ArrowLeft, BadgeCheck, CheckCircle2, Clock3, Flame, Heart, Info, Leaf, Minus, Plus, ShoppingCart, Star, Truck, UtensilsCrossed } from 'lucide-react';
 import { Link, useLocation, useParams } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import api, { BACKEND_BASE_URL } from '../api';
@@ -141,54 +141,77 @@ function FoodDetailsPage() {
 
   return (
     <>
-      <PageHeader title="Dish Details" />
-      <main className="min-h-screen bg-[#fcfbf9] pb-16">
+      <main className="min-h-screen bg-[radial-gradient(ellipse_at_top_left,_#fffdf6_0%,_#f8f6ef_52%,_#f5f3ed_100%)] pb-16">
         <PageContainer>
-          <Link to="/shop" className="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-[#1a3c36] transition hover:text-emerald-700">
-            <ArrowLeft className="h-4 w-4" /> Back to shop
-          </Link>
+          <nav aria-label="Breadcrumb" className="flex flex-wrap items-center gap-2 pt-5 text-xs font-medium text-slate-500 sm:pt-7">
+            <Link to="/" className="transition hover:text-[#1a3c36]">Home</Link>
+            <span>/</span>
+            <Link to="/shop" className="transition hover:text-[#1a3c36]">Menu</Link>
+            {food.cuisine_name && <><span>/</span><span>{food.cuisine_name}</span></>}
+            <span>/</span>
+            <span className="font-bold text-slate-800">{food.food_name}</span>
+          </nav>
 
-          <div className="mt-5 grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(360px,0.9fr)] lg:gap-8">
-            <div className="order-2 space-y-6 lg:order-2">
-              <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm sm:p-7">
-                <div className="flex flex-wrap items-center gap-2 text-xs">
-                  <span className={`rounded-md px-2.5 py-1 font-bold ${String(food.food_type || '').toLowerCase() === 'veg' ? 'bg-emerald-50 text-emerald-800' : 'bg-rose-50 text-rose-800'}`}>
+          <div className="mt-4 grid items-start gap-5 lg:grid-cols-[minmax(0,1.08fr)_minmax(360px,0.92fr)] lg:gap-7">
+            <div className="order-2 space-y-5 lg:order-2">
+              <section className="rounded-[1.75rem] border border-[#e9e4d8] bg-white/90 p-5 shadow-[0_16px_50px_-30px_rgba(38,55,37,0.3)] sm:p-7">
+                <div className="flex flex-wrap items-center gap-2 text-[11px]">
+                  <span className={`rounded-full px-3 py-1.5 font-bold ${String(food.food_type || '').toLowerCase() === 'veg' ? 'bg-emerald-50 text-emerald-800' : 'bg-rose-50 text-rose-800'}`}>
                     {String(food.food_type || 'Food')}
                   </span>
-                  {food.category_name && <span className="rounded-md bg-slate-100 px-2.5 py-1 font-semibold text-slate-600">{food.category_name}</span>}
-                  {food.cuisine_name && <span className="rounded-md bg-slate-100 px-2.5 py-1 font-semibold text-slate-600">{food.cuisine_name}</span>}
-                  {food.is_spicy && <span className="inline-flex items-center gap-1 rounded-md bg-amber-50 px-2.5 py-1 font-bold text-amber-800"><Flame className="h-3.5 w-3.5" /> Spicy</span>}
+                  {food.cuisine_name && <span className="rounded-full bg-emerald-50 px-3 py-1.5 font-semibold text-emerald-800">{food.cuisine_name}</span>}
+                  {food.category_name && <span className="rounded-full bg-orange-50 px-3 py-1.5 font-semibold text-orange-800">{food.category_name}</span>}
+                  {food.is_spicy && <span className="inline-flex items-center gap-1 rounded-full bg-orange-50 px-3 py-1.5 font-bold text-orange-700"><Flame className="h-3.5 w-3.5" /> Spicy</span>}
                 </div>
 
-                <h1 className="mt-4 font-serif text-3xl font-bold text-slate-900 sm:text-4xl">{food.food_name}</h1>
+                <h1 className="mt-4 font-serif text-3xl font-bold leading-tight tracking-tight text-[#14231e] sm:text-4xl">{food.food_name}</h1>
                 {Number(food.rating) > 0 && (
-                  <div className="mt-3 inline-flex items-center gap-1.5 text-sm font-bold text-amber-700">
-                    <Star className="h-4 w-4 fill-amber-400 text-amber-400" /> {Number(food.rating).toFixed(1)} <span className="font-medium text-slate-400">Customer rating</span>
+                  <div className="mt-3 inline-flex flex-wrap items-center gap-1.5 text-sm font-bold text-amber-700">
+                    <span className="inline-flex gap-0.5" aria-label={`${Number(food.rating).toFixed(1)} out of 5 stars`}>
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <Star key={star} className={`h-4 w-4 ${Number(food.rating) >= star ? 'fill-amber-400 text-amber-400' : 'text-slate-300'}`} />
+                      ))}
+                    </span>
+                    {Number(food.rating).toFixed(1)} <span className="font-medium text-slate-500">Customer rating</span>
+                    {Number(food.preparation_time) > 0 && <><span className="mx-1 text-slate-300">|</span><Clock3 className="h-4 w-4 text-orange-600" /><span className="text-slate-800">{food.preparation_time} min</span></>}
                   </div>
                 )}
-                <p className="mt-5 text-sm leading-7 text-slate-600">{food.description || `Freshly prepared ${food.food_name}, made to order with care.`}</p>
+                <p className="mt-4 text-sm leading-6 text-slate-600">{food.description || `Freshly prepared ${food.food_name}, made to order with care.`}</p>
 
-                <div className="mt-6 flex flex-wrap gap-5 border-y border-slate-100 py-4 text-sm text-slate-500">
-                  {food.portion_size && <span className="inline-flex items-center gap-2"><UtensilsCrossed className="h-4 w-4 text-[#1a3c36]" />{food.portion_size}</span>}
-                  {Number(food.preparation_time) > 0 && <span className="inline-flex items-center gap-2"><Clock3 className="h-4 w-4 text-[#1a3c36]" />Ready in {food.preparation_time} min</span>}
+                <div className="mt-5 grid grid-cols-2 border-y border-[#efeae0] py-3 sm:grid-cols-4">
+                  {[
+                    [<BadgeCheck key="freshly-prepared" className="h-5 w-5" />, 'Freshly', 'Prepared'],
+                    [<Leaf key="quality-ingredients" className="h-5 w-5" />, 'Quality', 'Ingredients'],
+                    [<UtensilsCrossed key="authentic-taste" className="h-5 w-5" />, 'Authentic', 'Taste'],
+                    [<Truck key="delivery" className="h-5 w-5" />, 'Available for', 'Delivery'],
+                  ].map(([icon, firstLine, secondLine], index) => (
+                    <div key={firstLine} className={`flex flex-col items-center gap-1 px-2 py-2 text-center ${index > 0 ? 'border-l border-[#efeae0]' : ''}`}>
+                      <span className="text-orange-600">{icon}</span>
+                      <span className="text-[10px] font-semibold leading-tight text-slate-700">{firstLine}<br />{secondLine}</span>
+                    </div>
+                  ))}
                 </div>
 
-                <div className="mt-6 flex flex-wrap items-end gap-x-3 gap-y-1">
-                  <span className="font-serif text-3xl font-black text-[#1a3c36]">₹{price.toFixed(2)}</span>
-                  {hasDiscount && <span className="pb-1 text-base text-slate-400 line-through">₹{mrp.toFixed(2)}</span>}
-                  {hasDiscount && <span className="pb-1 text-xs font-bold text-emerald-700">You save ₹{(mrp - price).toFixed(2)}</span>}
+                <div className="mt-4 rounded-2xl bg-gradient-to-r from-[#edf5e8] to-[#fff2dc] p-4 sm:px-5">
+                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                    <span className="font-serif text-3xl font-black text-[#16432d]">₹{price.toFixed(2)}</span>
+                    {hasDiscount && <span className="text-sm font-medium text-slate-500 line-through">₹{mrp.toFixed(2)}</span>}
+                    {hasDiscount && <span className="rounded-lg bg-orange-600 px-3 py-1 text-[11px] font-extrabold text-white">{food.discount}% OFF</span>}
+                  </div>
+                  {hasDiscount && <p className="mt-1 text-xs font-semibold text-emerald-800">You save ₹{(mrp - price).toFixed(2)} on this dish!</p>}
+                  {food.featured && <span className="mt-2 inline-flex rounded-full bg-white/80 px-3 py-1 text-[11px] font-bold text-amber-800">Featured dish</span>}
                 </div>
-                <p className={`mt-2 text-xs font-semibold ${isAvailable ? 'text-emerald-700' : 'text-rose-600'}`}>{isAvailable ? 'Available to order' : 'Currently unavailable'}</p>
-                {food.featured && <span className="mt-3 inline-flex rounded-full bg-amber-50 px-3 py-1 text-xs font-bold text-amber-800">Featured dish</span>}
 
-                <div className="mt-6 flex flex-wrap items-center gap-3">
-                  <div className="inline-flex h-12 items-center rounded-xl border border-slate-200 bg-white">
+                <div className="mt-4 flex flex-wrap items-end gap-3">
+                  <div>
+                    <span className="mb-1.5 block text-xs font-semibold text-slate-700">Quantity</span>
+                    <div className="inline-flex h-11 items-center rounded-full border border-[#e5e2da] bg-[#fffefa]">
                     <button
                       type="button"
                       onClick={() => setQuantity((current) => Math.max(1, current - 1))}
                       disabled={quantity <= 1}
                       aria-label="Decrease quantity"
-                      className="flex h-full w-11 items-center justify-center rounded-l-xl text-slate-600 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
+                      className="flex h-full w-10 items-center justify-center rounded-l-full text-slate-600 transition hover:bg-emerald-50 disabled:cursor-not-allowed disabled:opacity-40"
                     >
                       <Minus className="h-4 w-4" />
                     </button>
@@ -198,31 +221,35 @@ function FoodDetailsPage() {
                       onClick={() => setQuantity((current) => Math.min(99, current + 1))}
                       disabled={quantity >= 99}
                       aria-label="Increase quantity"
-                      className="flex h-full w-11 items-center justify-center rounded-r-xl text-slate-600 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
+                      className="flex h-full w-10 items-center justify-center rounded-r-full text-slate-600 transition hover:bg-emerald-50 disabled:cursor-not-allowed disabled:opacity-40"
                     >
                       <Plus className="h-4 w-4" />
                     </button>
+                    </div>
                   </div>
-                  <button type="button" onClick={() => setCustomizing(true)} disabled={!isAvailable} className="inline-flex min-h-12 flex-1 items-center justify-center gap-2 rounded-xl bg-[#1a3c36] px-6 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-[#245048] disabled:cursor-not-allowed disabled:bg-slate-300 sm:flex-none">
-                  {isAvailable ? <><ShoppingCart className="h-4 w-4" />Customize & add to cart</> : 'Unavailable'}
+                  <button type="button" onClick={() => setCustomizing(true)} disabled={!isAvailable} className="inline-flex min-h-11 flex-1 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#10482f] to-[#075b39] px-4 py-3 text-sm font-bold text-white shadow-md shadow-emerald-950/10 transition hover:from-[#0c3d28] hover:to-[#064a30] disabled:cursor-not-allowed disabled:bg-slate-300 sm:flex-none">
+                  {isAvailable ? <><ShoppingCart className="h-4 w-4" />Customize & add to cart <ArrowLeft className="h-4 w-4 rotate-180" /></> : 'Unavailable'}
                   </button>
                 </div>
-                <p className="mt-3 text-xs text-slate-400">Choose a quantity and customize this dish before adding it to your cart.</p>
+                <p className={`mt-3 flex items-center gap-2 text-xs font-semibold ${isAvailable ? 'text-emerald-700' : 'text-rose-600'}`}>
+                  <span className={`h-2 w-2 rounded-full ${isAvailable ? 'bg-emerald-600' : 'bg-rose-500'}`} />
+                  {isAvailable ? 'Available to order' : 'Currently unavailable'}
+                </p>
               </section>
 
-              <section className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
-                <div className="border-b border-slate-100 bg-gradient-to-r from-[#f4f8f2] to-white px-5 py-5 sm:px-7">
+              <section id="food-details" className="scroll-mt-24 overflow-hidden rounded-[1.5rem] border border-[#e9e4d8] bg-white/90 shadow-[0_14px_40px_-30px_rgba(38,55,37,0.3)]">
+                <div className="border-b border-[#eee9de] bg-gradient-to-r from-[#f2f6ec] to-[#fffdf8] px-5 py-4 sm:px-6">
                   <div className="flex items-center gap-3">
-                    <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#1a3c36] text-white">
+                    <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#174a32] text-white">
                       <Info className="h-5 w-5" />
                     </span>
                     <div>
-                      <h2 className="font-serif text-xl font-bold text-slate-900">Food details</h2>
+                      <h2 className="font-serif text-xl font-bold text-[#17241e]">Food details</h2>
                       <p className="mt-0.5 text-xs text-slate-500">Serving, preparation, and ordering information</p>
                     </div>
                   </div>
                 </div>
-                <div className="grid gap-px bg-slate-100 sm:grid-cols-2">
+                <div className="grid gap-px bg-[#eeeae2] sm:grid-cols-2">
                   {[
                     ['Food ID', food.food_id || food.id],
                     ['Cuisine', food.cuisine_name],
@@ -234,24 +261,27 @@ function FoodDetailsPage() {
                     ['Available time', food.available_time],
                     ['Menu status', String(food.status || 'Active')],
                   ].filter(([, value]) => value !== undefined && value !== null && String(value).trim() !== '').map(([label, value]) => (
-                    <div key={label} className="bg-white px-5 py-4 sm:px-6">
+                    <div key={label} className="bg-white px-5 py-3.5 sm:px-6">
                       <p className="text-[10px] font-extrabold uppercase tracking-[0.14em] text-slate-400">{label}</p>
-                      <p className="mt-1.5 break-words text-sm font-semibold text-slate-800">{value}</p>
+                      <p className="mt-1.5 break-words text-sm font-semibold text-[#26362e]">{value}</p>
                     </div>
                   ))}
                 </div>
-                <div className="border-t border-slate-100 p-5 sm:p-6">
+                <div className="border-t border-[#eee9de] bg-[#fffefa] p-5 sm:p-6">
                   <h3 className="text-xs font-extrabold uppercase tracking-[0.14em] text-slate-500">Ordering availability</h3>
-                  <div className="mt-3 flex flex-wrap gap-2">
+                  <div className="mt-3 grid gap-2 sm:grid-cols-3">
                     {[
                       ['Dine-in', food.dining_available],
                       ['Takeaway', food.takeaway_available],
                       ['Delivery', food.delivery_available],
                     ].map(([label, available]) => (
-                      <span key={label} className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-bold ${available ? 'border-emerald-200 bg-emerald-50 text-emerald-800' : 'border-slate-200 bg-slate-50 text-slate-500'}`}>
-                        <CheckCircle2 className="h-3.5 w-3.5" />
-                        {label}: {available ? 'Available' : 'Not available'}
-                      </span>
+                      <div key={label} className={`flex items-center gap-2 rounded-xl border px-3 py-2.5 ${available ? 'border-emerald-100 bg-emerald-50/60 text-emerald-800' : 'border-slate-200 bg-slate-50 text-slate-500'}`}>
+                        <CheckCircle2 className="h-4 w-4 shrink-0" />
+                        <div>
+                          <p className="text-[11px] font-bold">{label}</p>
+                          <p className="mt-0.5 text-[10px]">{available ? 'Available' : 'Not available'}</p>
+                        </div>
+                      </div>
                     ))}
                   </div>
                 </div>
@@ -260,12 +290,12 @@ function FoodDetailsPage() {
               {(addons.length > 0 || customizations.length > 0) && (
                 <section className="space-y-6">
                   {addons.length > 0 && (
-                    <div className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
-                      <div className="border-b border-slate-100 px-5 py-4 sm:px-6">
-                        <h2 className="font-serif text-lg font-bold text-slate-900">Add-ons</h2>
+                    <div id="add-ons" className="scroll-mt-24 overflow-hidden rounded-[1.5rem] border border-[#e9e4d8] bg-white/90 shadow-[0_14px_40px_-30px_rgba(38,55,37,0.3)]">
+                      <div className="border-b border-[#eee9de] bg-[#fffdf8] px-5 py-4 sm:px-6">
+                        <h2 className="font-serif text-lg font-bold text-[#17241e]">Add-ons</h2>
                         <p className="mt-0.5 text-xs text-slate-500">Optional extras available with this dish</p>
                       </div>
-                      <ul className="divide-y divide-slate-100 px-5 sm:px-6">
+                      <ul className="divide-y divide-[#f0ede6] px-5 sm:px-6">
                         {addons.map((addon, index) => {
                           const available = String(addon.status || 'Active').toLowerCase() === 'active';
                           return (
@@ -280,9 +310,9 @@ function FoodDetailsPage() {
                   )}
 
                   {customizations.length > 0 && (
-                    <div className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
-                      <div className="border-b border-slate-100 px-5 py-4 sm:px-6">
-                        <h2 className="font-serif text-lg font-bold text-slate-900">Choose your options</h2>
+                    <div id="customization" className="scroll-mt-24 overflow-hidden rounded-[1.5rem] border border-[#e9e4d8] bg-white/90 shadow-[0_14px_40px_-30px_rgba(38,55,37,0.3)]">
+                      <div className="border-b border-[#eee9de] bg-[#fffdf8] px-5 py-4 sm:px-6">
+                        <h2 className="font-serif text-lg font-bold text-[#17241e]">Choose your options</h2>
                         <p className="mt-0.5 text-xs text-slate-500">Customize this dish to your preference</p>
                       </div>
                       <div className="space-y-4 p-5 sm:p-6">
@@ -313,10 +343,10 @@ function FoodDetailsPage() {
             </div>
 
             <aside className="order-1 lg:sticky lg:top-24 lg:order-1">
-              <div className="relative z-10 rounded-3xl border border-slate-200 bg-white p-3 shadow-lg shadow-slate-900/5 sm:p-4">
+              <div className="relative z-10 rounded-[1.75rem] border border-[#e9e4d8] bg-white/90 p-3 shadow-[0_18px_55px_-30px_rgba(38,55,37,0.35)] sm:p-4">
                 <div className="relative" onMouseLeave={() => setZoomPosition(null)}>
                   <div
-                    className="relative aspect-[4/3] overflow-hidden rounded-2xl bg-gradient-to-br from-[#edf2ea] to-[#f6f3ed]"
+                    className="relative aspect-[4/3] overflow-hidden rounded-[1.25rem] bg-gradient-to-br from-[#edf2ea] to-[#f6f3ed]"
                     onMouseEnter={() => setZoomPosition({ x: 50, y: 50 })}
                     onMouseMove={(event) => {
                       const bounds = event.currentTarget.getBoundingClientRect();
@@ -331,17 +361,21 @@ function FoodDetailsPage() {
                     ) : (
                       <div className="flex h-full items-center justify-center text-[#1a3c36]/40"><UtensilsCrossed className="h-16 w-16" /></div>
                     )}
-                    {hasDiscount && <span className="absolute left-4 top-4 rounded-full bg-[#d4a843] px-3 py-1.5 text-xs font-black text-slate-950">{food.discount}% OFF</span>}
+                    {hasDiscount && <span className="absolute left-4 top-5 -rotate-6 rounded-md bg-orange-600 px-3.5 py-2 text-xs font-black text-white shadow-md">{food.discount}% OFF</span>}
                     {toggleWishlist && (
-                      <button type="button" onClick={() => toggleWishlist(food)} aria-label={isInWishlist ? 'Remove from favorites' : 'Add to favorites'} className={`absolute right-4 top-4 flex h-10 w-10 items-center justify-center rounded-full bg-white shadow-md transition ${isInWishlist ? 'text-rose-600' : 'text-slate-500 hover:text-rose-600'}`}>
+                      <button type="button" onClick={() => toggleWishlist(food)} aria-label={isInWishlist ? 'Remove from favorites' : 'Add to favorites'} className={`absolute right-4 top-4 flex h-11 w-11 items-center justify-center rounded-full bg-white shadow-lg transition hover:scale-105 ${isInWishlist ? 'text-rose-600' : 'text-slate-500 hover:text-rose-600'}`}>
                         <Heart className={`h-5 w-5 ${isInWishlist ? 'fill-rose-600' : ''}`} />
                       </button>
                     )}
+                    <span className="absolute bottom-4 left-4 inline-flex items-center gap-2 rounded-xl bg-white/95 px-3 py-2 text-[11px] font-bold text-slate-800 shadow-md backdrop-blur">
+                      <span className={`h-2 w-2 rounded-full ${String(food.food_type || '').toLowerCase() === 'veg' ? 'bg-emerald-600' : 'bg-rose-600'}`} />
+                      {String(food.food_type || 'Food')}
+                    </span>
                   </div>
                   {zoomPosition && images.length > 0 && (
                     <div
                       aria-hidden="true"
-                      className="pointer-events-auto absolute left-[calc(100%+1rem)] top-0 z-30 hidden aspect-[4/3] w-[min(40vw,560px)] rounded-2xl border border-white/80 bg-white shadow-2xl lg:block"
+                      className="pointer-events-auto absolute left-[calc(100%+1rem)] top-0 z-30 hidden aspect-[4/3] w-[min(32vw,420px)] rounded-2xl border border-white/80 bg-white shadow-2xl lg:block"
                       style={{
                         backgroundImage: `url("${imageUrl(images[activeImage] || images[0])}")`,
                         backgroundSize: '250% 250%',
@@ -352,15 +386,15 @@ function FoodDetailsPage() {
                   )}
                 </div>
                 {images.length > 1 && (
-                  <div className="mt-3 flex gap-3 overflow-x-auto px-1 pb-1 scrollbar-hide">
+                  <div className="mt-3 flex gap-2 overflow-x-auto px-0.5 pb-1 scrollbar-hide sm:gap-3">
                     {images.map((image, index) => (
-                      <button key={`${image}-${index}`} type="button" onClick={() => setActiveImage(index)} aria-label={`View image ${index + 1}`} aria-pressed={activeImage === index} className={`h-16 w-20 shrink-0 overflow-hidden rounded-xl border-2 transition ${activeImage === index ? 'border-[#1a3c36]' : 'border-transparent opacity-70 hover:opacity-100'}`}>
+                      <button key={`${image}-${index}`} type="button" onClick={() => setActiveImage(index)} aria-label={`View image ${index + 1}`} aria-pressed={activeImage === index} className={`h-[4.25rem] w-[5.25rem] shrink-0 overflow-hidden rounded-xl border-2 transition sm:h-[4.5rem] sm:w-[5.5rem] ${activeImage === index ? 'border-orange-600 shadow-sm' : 'border-transparent opacity-75 hover:opacity-100'}`}>
                         <img src={imageUrl(image)} alt="" className="h-full w-full object-cover" />
                       </button>
                     ))}
                   </div>
                 )}
-                <p className="px-1 pb-1 pt-3 text-center text-xs font-medium text-slate-500">Freshly prepared, just for you</p>
+                <p className="px-1 pb-1 pt-3 text-center text-[11px] font-medium tracking-wide text-slate-500">Freshly prepared, just for you</p>
               </div>
             </aside>
           </div>
