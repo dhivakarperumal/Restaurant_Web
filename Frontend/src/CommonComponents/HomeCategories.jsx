@@ -115,27 +115,25 @@ function HomeCategories() {
                     <Link
                       to={`/shop?category=${encodeURIComponent(categoryFilter)}`}
                       aria-label={`Browse ${categoryName}`}
-                      className="group relative block aspect-square w-full rounded-full bg-[#c9a978] p-[10px] shadow-[0_8px_22px_rgba(17,24,39,0.12)] transition duration-300 hover:-translate-y-1 hover:shadow-[0_12px_30px_rgba(17,24,39,0.18)]"
+                      className="group relative block aspect-square w-full overflow-hidden rounded-full shadow-[0_8px_22px_rgba(17,24,39,0.12)] transition duration-300 hover:-translate-y-1 hover:shadow-[0_12px_30px_rgba(17,24,39,0.18)]"
                     >
-                      <div className="h-full w-full rounded-full bg-[#b8d6b6] p-[5px]">
-                        <div className="relative h-full w-full overflow-hidden rounded-full bg-[#f5efe5]">
-                          {image ? (
-                            <>
-                              <img
-                                src={image}
-                                alt={categoryName}
-                                loading="lazy"
-                                className="h-full w-full object-cover scale-105"
-                              />
-                              <div className="absolute inset-0 bg-gradient-to-t from-[#000000]/55 via-[#000000]/10 to-transparent" />
-                            </>
-                          ) : (
-                            <div className="flex h-full items-center justify-center text-[#a05c2a]">
-                              <ImageIcon className="h-10 w-10" />
-                            </div>
-                          )}
+                      {image ? (
+                        <>
+                          <img
+                            src={image}
+                            alt={categoryName}
+                            loading="lazy"
+                            className="absolute inset-0 h-full w-full scale-105 object-cover"
+                          />
+                          <div className="absolute inset-0 bg-gradient-to-t from-[#000000]/55 via-[#000000]/10 to-transparent" />
+                        </>
+                      ) : (
+                        <div className="absolute inset-0 flex items-center justify-center bg-[#f5efe5] text-[#a05c2a]">
+                          <ImageIcon className="h-10 w-10" />
                         </div>
-                      </div>
+                      )}
+                      <div aria-hidden="true" className="pointer-events-none absolute inset-0 z-10 rounded-full border-[10px] border-[#c9a978]" />
+                      <div aria-hidden="true" className="pointer-events-none absolute inset-[15px] z-10 rounded-full border-[5px] border-[#b8d6b6]" />
                     </Link>
                   </SwiperSlide>
                 );
