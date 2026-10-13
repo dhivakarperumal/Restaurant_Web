@@ -132,8 +132,11 @@ function HomeCategories() {
                           <ImageIcon className="h-10 w-10" />
                         </div>
                       )}
-                      <div aria-hidden="true" className="pointer-events-none absolute inset-0 z-10 rounded-full border-[10px] border-[#c9a978]" />
-                      <div aria-hidden="true" className="pointer-events-none absolute inset-[15px] z-10 rounded-full border-[5px] border-[#b8d6b6]" />
+                      <div
+                        aria-hidden="true"
+                        className="pointer-events-none absolute z-10 rounded-full"
+                        style={{ inset: 0, border: '10px solid #b8d6b6' }}
+                      />
                     </Link>
                   </SwiperSlide>
                 );
