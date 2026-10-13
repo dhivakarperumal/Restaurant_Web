@@ -115,9 +115,9 @@ function HomeCategories() {
                     <Link
                       to={`/shop?category=${encodeURIComponent(categoryFilter)}`}
                       aria-label={`Browse ${categoryName}`}
-                      className="group relative block aspect-square w-full overflow-hidden rounded-full border-[12px] border-[#f1e4d3] bg-[#f7f0e7] p-[9px] shadow-[0_8px_22px_rgba(17,24,39,0.08)] transition duration-300 hover:-translate-y-1 hover:shadow-[0_12px_30px_rgba(17,24,39,0.12)]"
+                      className="group relative block aspect-square w-full overflow-hidden rounded-full border-[10px] border-[#c9a978] bg-[#f3e7d5] p-[6px] shadow-[0_8px_22px_rgba(17,24,39,0.12)] transition duration-300 hover:-translate-y-1 hover:shadow-[0_12px_30px_rgba(17,24,39,0.18)]"
                     >
-                      <div className="relative h-full w-full overflow-hidden rounded-full border-[5px] border-[#dfeadf] bg-[#f5efe5]">
+                      <div className="relative h-full w-full overflow-hidden rounded-full border-[5px] border-[#b8d6b6] bg-[#f5efe5]">
                         {image ? (
                           <>
                             <img
