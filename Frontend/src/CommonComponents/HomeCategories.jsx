@@ -135,7 +135,7 @@ function HomeCategories() {
                       <div
                         aria-hidden="true"
                         className="pointer-events-none absolute z-10 rounded-full"
-                        style={{ inset: 0, border: '10px solid #b8d6b6' }}
+                        style={{ inset: 0, border: '5px solid #b8d6b6' }}
                       />
                     </Link>
                   </SwiperSlide>
