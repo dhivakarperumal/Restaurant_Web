@@ -115,35 +115,26 @@ function HomeCategories() {
                     <Link
                       to={`/shop?category=${encodeURIComponent(categoryFilter)}`}
                       aria-label={`Browse ${categoryName}`}
-                      className="group relative block aspect-square w-full overflow-hidden rounded-full border-[10px] border-[#c9a978] bg-[#f3e7d5] p-[6px] shadow-[0_8px_22px_rgba(17,24,39,0.12)] transition duration-300 hover:-translate-y-1 hover:shadow-[0_12px_30px_rgba(17,24,39,0.18)]"
+                      className="group relative block aspect-square w-full rounded-full bg-[#c9a978] p-[10px] shadow-[0_8px_22px_rgba(17,24,39,0.12)] transition duration-300 hover:-translate-y-1 hover:shadow-[0_12px_30px_rgba(17,24,39,0.18)]"
                     >
-                      <div className="relative h-full w-full overflow-hidden rounded-full border-[5px] border-[#b8d6b6] bg-[#f5efe5]">
-                        {image ? (
-                          <>
-                            <img
-                              src={image}
-                              alt={categoryName}
-                              loading="lazy"
-                              className="h-full w-full object-cover scale-105"
-                            />
-                            <div className="absolute inset-0 bg-gradient-to-t from-[#000000]/55 via-[#000000]/10 to-transparent" />
-                          </>
-                        ) : (
-                          <div className="flex h-full items-center justify-center text-[#a05c2a]">
-                            <ImageIcon className="h-10 w-10" />
-                          </div>
-                        )}
-                        {/* <div className="absolute inset-x-0 bottom-0 px-4 pb-4 pt-10">
-                          <div className="flex items-center justify-between gap-2">
-                            <h3
-                              className="max-w-[80%] truncate font-serif text-[clamp(1.6rem,2vw,2.2rem)] font-bold italic leading-none tracking-tight text-white drop-shadow-[0_2px_10px_rgba(0,0,0,0.55)]"
-                              title={categoryName}
-                            >
-                              {categoryName}
-                            </h3>
-                            <span className="inline-block h-1.5 w-12 rounded-full bg-[#f9c872] opacity-90" aria-hidden="true" />
-                          </div>
-                        </div> */}
+                      <div className="h-full w-full rounded-full bg-[#b8d6b6] p-[5px]">
+                        <div className="relative h-full w-full overflow-hidden rounded-full bg-[#f5efe5]">
+                          {image ? (
+                            <>
+                              <img
+                                src={image}
+                                alt={categoryName}
+                                loading="lazy"
+                                className="h-full w-full object-cover scale-105"
+                              />
+                              <div className="absolute inset-0 bg-gradient-to-t from-[#000000]/55 via-[#000000]/10 to-transparent" />
+                            </>
+                          ) : (
+                            <div className="flex h-full items-center justify-center text-[#a05c2a]">
+                              <ImageIcon className="h-10 w-10" />
+                            </div>
+                          )}
+                        </div>
                       </div>
                     </Link>
                   </SwiperSlide>
