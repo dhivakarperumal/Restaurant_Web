@@ -257,7 +257,7 @@ const Navbar = () => {
                 <img
                   src="/images/logo.png"
                   alt="Buy Food"
-                  className="h-12 w-[72px] shrink-0 rounded-lg bg-white object-contain sm:h-14 sm:w-[84px]"
+                  className="h-[58px] w-[87px] shrink-0 object-contain sm:h-[68px] sm:w-[102px]"
                 />
               </Link>
 
@@ -453,12 +453,15 @@ const Navbar = () => {
                     )}
                   </div>
                 ) : (
-                  <Link
-                    to="/login"
-                    className="hidden rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-brand-text shadow-md transition hover:bg-primary-soft hover:text-brand-bg sm:block"
+                  <button
+                    type="button"
+                    onClick={() => navigate("/login")}
+                    className="flex h-9 w-9 items-center justify-center rounded-full border border-brand-border bg-brand-surface text-brand-text transition hover:border-gold hover:bg-brand-surface-strong sm:h-11 sm:w-11"
+                    aria-label="Sign in to your account"
+                    title="Sign in"
                   >
-                    Login
-                  </Link>
+                    <FiUser className="text-base sm:text-lg" />
+                  </button>
                 )}
 
                 <button
@@ -537,15 +540,6 @@ const Navbar = () => {
                   <button type="button" onClick={() => { setMobileMenu(false); openCart ? openCart() : navigate("/cart"); }} className="col-span-2 flex items-center justify-center gap-2 rounded-xl bg-orange px-3 py-3 text-xs font-bold text-brand-bg transition hover:bg-orange-light sm:col-span-1">
                     <FiShoppingCart /> Cart {cart.length > 0 ? `(${cart.length})` : ""}
                   </button>
-                  {!isLoggedIn && (
-                    <Link
-                      to="/login"
-                      onClick={() => setMobileMenu(false)}
-                      className="col-span-2 flex items-center justify-center gap-2 rounded-xl border border-gold px-3 py-3 text-xs font-bold text-gold transition hover:bg-brand-surface sm:col-span-3"
-                    >
-                      <FiUser /> Login
-                    </Link>
-                  )}
                   {isLoggedIn && (
                     <button
                       type="button"
