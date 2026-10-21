@@ -42,7 +42,7 @@ function FoodProductCard({
               src={image}
               alt={food.food_name}
               loading="lazy"
-              className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+              className="h-full w-full object-contain"
             />
           ) : (
             <span className="flex h-full w-full items-center justify-center bg-emerald-50 text-[#1a3c36]/40">
