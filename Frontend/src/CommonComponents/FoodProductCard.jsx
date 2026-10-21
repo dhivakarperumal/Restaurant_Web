@@ -105,7 +105,7 @@ function FoodProductCard({
         )}
       </div>
 
-      <div className="flex flex-1 flex-col justify-between p-4">
+      <div className="flex flex-1 flex-col p-4">
         <div>
           <div className="mb-1 flex items-center justify-between gap-2 text-[11px] font-semibold text-slate-400">
             <div className="flex min-w-0 items-center gap-2">
@@ -130,12 +130,9 @@ function FoodProductCard({
           >
             {food.food_name}
           </button>
-          <p className="mt-1 line-clamp-2 min-h-9 text-xs leading-relaxed text-slate-500">
-            {food.description || `${food.portion_size || 'Full'} portion prepared fresh.`}
-          </p>
         </div>
 
-        <div className="mt-4 flex items-center justify-between gap-2 border-t border-slate-100 pt-3">
+        <div className="mt-3 flex items-center justify-between gap-2 border-t border-slate-100 pt-3">
           <div>
             <div className="flex items-baseline gap-1.5">
               <span className="text-lg font-black text-[#1a3c36]">₹{price.toFixed(2)}</span>
