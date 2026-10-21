@@ -3,18 +3,31 @@ import { Plus, X, ClipboardList, Clock3, CheckCircle2, AlertCircle, ChevronLeft,
 import toast from "react-hot-toast";
 import api from "../api";
 import { useAuth } from "../PrivateRouter/AuthContext";
+import InventoryUnitField from "../CommonComponents/InventoryUnitField";
 
 const newRequestForm = (requester) => ({
   request_number: `KR-${Date.now()}`,
   requested_by: requester || "Chef",
   department: "Kitchen",
   request_date: new Date().toISOString().slice(0, 10),
+  start_date: "",
+  end_date: "",
   priority: "Normal",
   notes: "",
   items: [{ product_id: "", product_name: "", quantity: "1", unit: "pcs" }],
 });
 
 const fieldClass = "w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-800 outline-none focus:border-emerald-700";
+const formatRequestDate = (value) => value instanceof Date
+  ? value.toISOString().slice(0, 10)
+  : String(value || "").slice(0, 10);
+const formatRequestPeriod = (request) => {
+  const startDate = formatRequestDate(request.start_date);
+  const endDate = formatRequestDate(request.end_date);
+  return startDate || endDate
+    ? `${startDate || "—"} – ${endDate || "—"}`
+    : formatRequestDate(request.request_date) || "-";
+};
 
 const ChefInventoryRequests = () => {
   const { profileName, role } = useAuth();
@@ -62,6 +75,10 @@ const ChefInventoryRequests = () => {
 
   const handleSubmit = async (event) => {
     event.preventDefault();
+    if (form.start_date && form.end_date && form.end_date < form.start_date) {
+      toast.error("End date cannot be before the start date.");
+      return;
+    }
     const items = form.items
       .filter((item) => item.product_name.trim() && Number(item.quantity) > 0)
       .map((item) => ({
@@ -82,6 +99,8 @@ const ChefInventoryRequests = () => {
       await api.post("/inventory/kitchen-requests", {
         ...form,
         requested_by: form.requested_by || requester,
+        start_date: form.start_date || null,
+        end_date: form.end_date || null,
         items,
       });
       toast.success("Kitchen request created.");
@@ -184,7 +203,7 @@ const ChefInventoryRequests = () => {
               <tr>
                 <th className="px-4 py-4 font-semibold">Request No.</th>
                 <th className="px-4 py-4 font-semibold">Items</th>
-                <th className="px-4 py-4 font-semibold">Date</th>
+                <th className="px-4 py-4 font-semibold">Period</th>
                 <th className="px-4 py-4 font-semibold">Priority</th>
                 <th className="px-4 py-4 font-semibold">Status</th>
                 <th className="px-4 py-4 font-semibold">Notes</th>
@@ -201,7 +220,7 @@ const ChefInventoryRequests = () => {
                       ? request.items.map((item) => `${item.item_name || item.product_name || "Item"} (${item.quantity} ${item.unit || "pcs"})`).join(", ")
                       : "No items"}
                   </td>
-                  <td className="whitespace-nowrap px-4 py-4 text-slate-600">{String(request.request_date || "").slice(0, 10) || "-"}</td>
+                  <td className="whitespace-nowrap px-4 py-4 text-slate-600">{formatRequestPeriod(request)}</td>
                   <td className="px-4 py-4 text-slate-600">{request.priority || "Normal"}</td>
                   <td className="px-4 py-4">
                     <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${request.status === "Approved" || request.status === "Completed" ? "bg-emerald-100 text-emerald-800" : request.status === "Rejected" ? "bg-rose-100 text-rose-800" : "bg-amber-100 text-amber-800"}`}>
@@ -265,6 +284,12 @@ const ChefInventoryRequests = () => {
                     <option>Low</option><option>Normal</option><option>High</option><option>Urgent</option>
                   </select>
                 </label>
+                <label className="space-y-1.5 text-xs font-semibold uppercase tracking-wide text-slate-500">Start date
+                  <input className={fieldClass} type="date" value={form.start_date} max={form.end_date || undefined} onChange={(event) => setForm({ ...form, start_date: event.target.value })} />
+                </label>
+                <label className="space-y-1.5 text-xs font-semibold uppercase tracking-wide text-slate-500">End date
+                  <input className={fieldClass} type="date" value={form.end_date} min={form.start_date || undefined} onChange={(event) => setForm({ ...form, end_date: event.target.value })} />
+                </label>
               </div>
 
               <div className="space-y-3">
@@ -281,7 +306,11 @@ const ChefInventoryRequests = () => {
                       <input className={fieldClass} type="number" min="0.01" step="0.01" value={item.quantity} onChange={(event) => updateItem(index, "quantity", event.target.value)} required />
                     </label>
                     <label className="space-y-1.5 text-xs font-semibold uppercase tracking-wide text-slate-500">Unit
-                      <input className={fieldClass} value={item.unit} onChange={(event) => updateItem(index, "unit", event.target.value)} placeholder="pcs" />
+                      <InventoryUnitField
+                        className={fieldClass}
+                        value={item.unit}
+                        onChange={(value) => updateItem(index, "unit", value)}
+                      />
                     </label>
                     <button type="button" onClick={() => setForm({ ...form, items: form.items.length > 1 ? form.items.filter((_, itemIndex) => itemIndex !== index) : form.items })} className="self-end rounded-md border border-rose-200 px-3 py-2.5 text-xs font-semibold text-rose-700">Remove</button>
                   </div>

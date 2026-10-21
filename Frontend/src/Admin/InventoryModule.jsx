@@ -6,6 +6,16 @@ import toast, { Toaster } from 'react-hot-toast';
 
 const formatCurrency = (value) => new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 2 }).format(Number(value || 0));
 const formatNumber = (value) => new Intl.NumberFormat('en-IN').format(Number(value || 0));
+const formatRequestDate = (value) => value instanceof Date
+  ? value.toISOString().slice(0, 10)
+  : String(value || '').slice(0, 10);
+const formatRequestPeriod = (request) => {
+  const startDate = formatRequestDate(request.start_date);
+  const endDate = formatRequestDate(request.end_date);
+  return startDate || endDate
+    ? `${startDate || '—'} – ${endDate || '—'}`
+    : formatRequestDate(request.request_date) || '—';
+};
 
 const EMPTY_DASHBOARD = {
   totalProducts: 0,
@@ -1286,6 +1296,8 @@ function KitchenRequestsPage() {
     requested_by: 'Admin',
     department: 'Kitchen',
     request_date: new Date().toISOString().slice(0, 10),
+    start_date: '',
+    end_date: '',
     priority: 'Normal',
     notes: '',
     items: [{ product_id: '', quantity: '1', unit: 'pcs' }],
@@ -1331,6 +1343,8 @@ function KitchenRequestsPage() {
       requested_by: 'Admin',
       department: 'Kitchen',
       request_date: new Date().toISOString().slice(0, 10),
+      start_date: '',
+      end_date: '',
       priority: 'Normal',
       notes: '',
       items: [{ product_id: '', quantity: '1', unit: 'pcs' }],
@@ -1339,6 +1353,11 @@ function KitchenRequestsPage() {
 
   const handleSubmit = async (event) => {
     event.preventDefault();
+
+    if (form.start_date && form.end_date && form.end_date < form.start_date) {
+      toast.error('End date cannot be before the start date.');
+      return;
+    }
 
     const validItems = form.items.filter((item) => item.product_id && Number(item.quantity || 0) > 0);
     if (!validItems.length) {
@@ -1350,6 +1369,8 @@ function KitchenRequestsPage() {
       await api.post('/inventory/kitchen-requests', {
         ...form,
         request_date: form.request_date || new Date().toISOString().slice(0, 10),
+        start_date: form.start_date || null,
+        end_date: form.end_date || null,
         requested_by: form.requested_by || 'Admin',
         items: validItems.map((item) => ({
           ...item,
@@ -1560,7 +1581,7 @@ function KitchenRequestsPage() {
             <InventoryTable columns={[
               { key: 'request_number', label: 'Request No.' },
               { key: 'requested_by', label: 'Requested By' },
-              { key: 'request_date', label: 'Date' },
+              { key: 'request_date', label: 'Period', render: (row) => formatRequestPeriod(row) },
               { key: 'priority', label: 'Priority' },
               { key: 'status', label: 'Status', render: (row) => <StatusBadge value={row.status || 'Pending'} /> },
               { key: 'notes', label: 'Notes', render: (row) => <span className="max-w-xs text-slate-600">{row.notes || '—'}</span> },
@@ -1578,7 +1599,7 @@ function KitchenRequestsPage() {
                     <StatusBadge value={request.status || 'Pending'} />
                   </div>
                   <dl className="mt-4 grid grid-cols-2 gap-3 text-sm">
-                    <div><dt className="text-xs text-slate-500">Request date</dt><dd className="mt-1 text-slate-800">{String(request.request_date || '').slice(0, 10) || '—'}</dd></div>
+                    <div><dt className="text-xs text-slate-500">Request period</dt><dd className="mt-1 text-slate-800">{formatRequestPeriod(request)}</dd></div>
                     <div><dt className="text-xs text-slate-500">Priority</dt><dd className="mt-1 text-slate-800">{request.priority || 'Normal'}</dd></div>
                   </dl>
                   <p className="mt-3 min-h-10 text-sm text-slate-600">{request.notes || 'No notes'}</p>
@@ -1615,6 +1636,12 @@ function KitchenRequestsPage() {
                 </FormField>
                 <FormField label="Request date">
                   <input type="date" value={form.request_date} onChange={(e) => setForm({ ...form, request_date: e.target.value })} className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" />
+                </FormField>
+                <FormField label="Start date">
+                  <input type="date" value={form.start_date} max={form.end_date || undefined} onChange={(e) => setForm({ ...form, start_date: e.target.value })} className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" />
+                </FormField>
+                <FormField label="End date">
+                  <input type="date" value={form.end_date} min={form.start_date || undefined} onChange={(e) => setForm({ ...form, end_date: e.target.value })} className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" />
                 </FormField>
                 <FormField label="Priority">
                   <select value={form.priority} onChange={(e) => setForm({ ...form, priority: e.target.value })} className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm">

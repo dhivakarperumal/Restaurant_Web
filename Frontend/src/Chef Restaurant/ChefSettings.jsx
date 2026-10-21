@@ -4,6 +4,7 @@ import { useAuth } from "../PrivateRouter/AuthContext";
 import api from "../api";
 import toast from "react-hot-toast";
 import { Bell, ChefHat, Lock, PackagePlus, Plus, ShieldCheck, UserCircle } from "lucide-react";
+import InventoryUnitField from "../CommonComponents/InventoryUnitField";
 
 const ChefSettings = () => {
   const { profileName, email, role } = useAuth();
@@ -278,11 +279,10 @@ const ChefSettings = () => {
 
                 <label className="block space-y-1.5">
                   <span className="text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-500">Unit</span>
-                  <input
+                  <InventoryUnitField
                     value={item.unit}
-                    onChange={(e) => updateItem(index, "unit", e.target.value)}
+                    onChange={(value) => updateItem(index, "unit", value)}
                     className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm text-slate-700 outline-none focus:border-[#1a3c36]"
-                    placeholder="pcs"
                   />
                 </label>
 

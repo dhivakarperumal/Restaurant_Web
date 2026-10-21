@@ -49,6 +49,14 @@ const ensureColumn = async (tableName, columnName, definition) => {
   }
 };
 
+const isValidInventoryDate = (value) => {
+  if (typeof value !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    return false;
+  }
+  const timestamp = Date.parse(`${value}T00:00:00.000Z`);
+  return Number.isFinite(timestamp) && new Date(timestamp).toISOString().slice(0, 10) === value;
+};
+
 const initializeInventorySchema = async () => {
   await ensureTable('inventory_categories', `
     CREATE TABLE IF NOT EXISTS inventory_categories (
@@ -295,6 +303,8 @@ const initializeInventorySchema = async () => {
       requested_by VARCHAR(150) NULL,
       department VARCHAR(120) NULL,
       request_date DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      start_date DATE NULL,
+      end_date DATE NULL,
       priority VARCHAR(30) NOT NULL DEFAULT 'Normal',
       status VARCHAR(30) NOT NULL DEFAULT 'Pending',
       notes TEXT NULL,
@@ -302,6 +312,8 @@ const initializeInventorySchema = async () => {
       updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
   `);
+  await ensureColumn('kitchen_requests', 'start_date', 'DATE NULL');
+  await ensureColumn('kitchen_requests', 'end_date', 'DATE NULL');
 
   await ensureTable('kitchen_request_items', `
     CREATE TABLE IF NOT EXISTS kitchen_request_items (
@@ -754,8 +766,20 @@ const createAdjustment = async (payload = {}) => {
 };
 
 const createKitchenRequest = async (payload = {}) => {
+  const startDate = payload.start_date || null;
+  const endDate = payload.end_date || null;
+  if (startDate && !isValidInventoryDate(startDate)) {
+    throw new Error('Start date must be a valid date.');
+  }
+  if (endDate && !isValidInventoryDate(endDate)) {
+    throw new Error('End date must be a valid date.');
+  }
+  if (startDate && endDate && endDate < startDate) {
+    throw new Error('End date cannot be before the start date.');
+  }
+
   const requestNumber = payload.request_number || `KR-${Date.now()}`;
-  const [requestResult] = await db.query('INSERT INTO kitchen_requests (request_number, requested_by, department, request_date, priority, status, notes) VALUES (?, ?, ?, ?, ?, ?, ?)', [requestNumber, payload.requested_by || '', payload.department || 'Kitchen', payload.request_date || new Date(), payload.priority || 'Normal', payload.status || 'Pending', payload.notes || '']);
+  const [requestResult] = await db.query('INSERT INTO kitchen_requests (request_number, requested_by, department, request_date, start_date, end_date, priority, status, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)', [requestNumber, payload.requested_by || '', payload.department || 'Kitchen', payload.request_date || new Date(), startDate, endDate, payload.priority || 'Normal', payload.status || 'Pending', payload.notes || '']);
   const requestId = requestResult.insertId;
   for (const item of payload.items || []) {
     await db.query('INSERT INTO kitchen_request_items (request_id, product_id, product_name, quantity, unit) VALUES (?, ?, ?, ?, ?)', [requestId, item.product_id || null, item.product_name || '', toNumber(item.quantity || 0), item.unit || 'pcs']);
