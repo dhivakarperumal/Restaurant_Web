@@ -38,12 +38,21 @@ function FoodProductCard({
           className="absolute inset-0 z-0 h-full w-full"
         >
           {image ? (
-            <img
-              src={image}
-              alt={food.food_name}
-              loading="lazy"
-              className="h-full w-full object-contain"
-            />
+            <>
+              <img
+                src={image}
+                alt=""
+                aria-hidden="true"
+                loading="lazy"
+                className="absolute inset-0 h-full w-full scale-110 object-cover opacity-70 blur-sm"
+              />
+              <img
+                src={image}
+                alt={food.food_name}
+                loading="lazy"
+                className="relative h-full w-full object-contain"
+              />
+            </>
           ) : (
             <span className="flex h-full w-full items-center justify-center bg-emerald-50 text-[#1a3c36]/40">
               <UtensilsCrossed className="h-10 w-10" />
