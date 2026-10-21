@@ -1,11 +1,21 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { Clock3, RefreshCw, UtensilsCrossed, Flame, CheckCircle2 } from "lucide-react";
+import {
+  ArrowRight,
+  CalendarDays,
+  Clock3,
+  RefreshCw,
+  UtensilsCrossed,
+  Flame,
+  CheckCircle2,
+} from "lucide-react";
 import {
   Bar,
   BarChart,
   CartesianGrid,
   Cell,
+  Line,
+  LineChart,
   Pie,
   PieChart,
   ResponsiveContainer,
@@ -37,7 +47,6 @@ const statusClasses = {
 const ChefDashboard = () => {
   const { profileName } = useAuth();
   const [orders, setOrders] = useState([]);
-  const [requests, setRequests] = useState([]);
   const [eventOrders, setEventOrders] = useState([]);
   const [ordersError, setOrdersError] = useState("");
   const [loading, setLoading] = useState(true);
@@ -48,9 +57,8 @@ const ChefDashboard = () => {
     if (showLoading) setLoading(true);
 
    
-    const [ordersResult, requestsResult, eventOrdersResult] = await Promise.allSettled([
+    const [ordersResult, eventOrdersResult] = await Promise.allSettled([
       api.get("/kitchen-orders"),
-      api.get("/inventory/kitchen-requests"),
       api.get("/event-orders", { params: { confirmedOnly: "true" } }),
     ]);
 
@@ -64,18 +72,10 @@ const ChefDashboard = () => {
     const updatedAt = new Date();
     setLastUpdated(updatedAt);
     setDashboardDate(updatedAt);
-    if (requestsResult.status === "fulfilled") {
-      setRequests(Array.isArray(requestsResult.value.data?.data) ? requestsResult.value.data.data : []);
-      setRequestsError("");
-    } else {
-      setRequestsError(requestsResult.reason?.response?.data?.message || "Inventory requests could not be loaded.");
-    }
-
     if (eventOrdersResult.status === "fulfilled") {
       setEventOrders(Array.isArray(eventOrdersResult.value.data?.data) ? eventOrdersResult.value.data.data : []);
     }
 
-    setLastUpdated(new Date());
     setLoading(false);
   }, []);
 
@@ -126,6 +126,41 @@ const ChefDashboard = () => {
     return days;
   }, [dashboardDate, orders]);
 
+  const hourlyOrders = useMemo(() => {
+    const buckets = Array.from({ length: 24 }, (_, hour) => ({
+      hour,
+      label: new Date(2000, 0, 1, hour).toLocaleTimeString([], { hour: "numeric" }),
+      orders: 0,
+    }));
+    const today = dashboardDate.toLocaleDateString();
+
+    orders.forEach((order) => {
+      if (!order.created_at) return;
+      const createdAt = new Date(order.created_at);
+      if (Number.isNaN(createdAt.getTime()) || createdAt.toLocaleDateString() !== today) return;
+      buckets[createdAt.getHours()].orders += 1;
+    });
+
+    return buckets.filter((bucket) => bucket.hour % 3 === 0);
+  }, [dashboardDate, orders]);
+
+  const topDishes = useMemo(() => {
+    const quantities = new Map();
+
+    orders.forEach((order) => {
+      (Array.isArray(order.items) ? order.items : []).forEach((item) => {
+        const name = String(item.food_name || "").trim();
+        if (!name) return;
+        const quantity = Number(item.quantity);
+        quantities.set(name, (quantities.get(name) || 0) + (Number.isFinite(quantity) && quantity > 0 ? quantity : 1));
+      });
+    });
+
+    return Array.from(quantities, ([name, quantity]) => ({ name, quantity }))
+      .sort((a, b) => b.quantity - a.quantity)
+      .slice(0, 5);
+  }, [orders]);
+
   const orderStatusData = useMemo(() => {
     const counts = new Map(Object.keys(STATUS_COLORS).map((status) => [status, 0]));
 
@@ -138,11 +173,6 @@ const ChefDashboard = () => {
     return Array.from(counts, ([name, value]) => ({ name, value, color: STATUS_COLORS[name] }))
       .filter((item) => item.value > 0);
   }, [orders]);
-
-  const pendingRequests = useMemo(
-    () => requests.filter((request) => String(request.status || "Pending").toLowerCase() === "pending"),
-    [requests]
-  );
 
   const upcomingEventOrders = useMemo(() => {
     return eventOrders.filter((o) =>
@@ -331,6 +361,58 @@ const ChefDashboard = () => {
                 <UtensilsCrossed size={24} className="text-slate-300" />
                 <p className="mt-2 text-sm font-semibold text-slate-700">No order data yet</p>
                 <p className="mt-1 text-xs text-slate-500">Status distribution will appear when orders arrive.</p>
+              </div>
+            )}
+          </article>
+        </div>
+        <div className="grid gap-5 xl:grid-cols-2">
+          <article className="min-w-0 rounded-xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
+            <div className="mb-4">
+              <h3 className="font-bold text-slate-900">Today’s order pace</h3>
+              <p className="mt-1 text-xs text-slate-500">Order arrivals by time of day</p>
+            </div>
+            <div className="h-60 w-full" role="img" aria-label="Line chart showing today's kitchen orders by hour">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={hourlyOrders} margin={{ top: 8, right: 8, left: -20, bottom: 0 }}>
+                  <CartesianGrid stroke="#e2e8f0" strokeDasharray="4 4" vertical={false} />
+                  <XAxis dataKey="label" axisLine={false} tickLine={false} tick={{ fill: "#64748b", fontSize: 11 }} />
+                  <YAxis allowDecimals={false} axisLine={false} tickLine={false} tick={{ fill: "#64748b", fontSize: 12 }} />
+                  <Tooltip
+                    contentStyle={{ border: "1px solid #e2e8f0", borderRadius: 12, boxShadow: "0 8px 24px rgba(15, 23, 42, 0.08)" }}
+                    formatter={(value) => [value, "Orders"]}
+                  />
+                  <Line type="monotone" dataKey="orders" stroke="#d4a843" strokeWidth={3} dot={{ r: 3, fill: "#d4a843", strokeWidth: 0 }} activeDot={{ r: 6 }} />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          </article>
+
+          <article className="min-w-0 rounded-xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
+            <div className="mb-4">
+              <h3 className="font-bold text-slate-900">Most-ordered dishes</h3>
+              <p className="mt-1 text-xs text-slate-500">Top 5 dishes by quantity across kitchen orders</p>
+            </div>
+            {topDishes.length ? (
+              <div className="h-60 w-full" role="img" aria-label="Bar chart showing the five most-ordered dishes">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={topDishes} layout="vertical" margin={{ top: 4, right: 12, left: 8, bottom: 0 }}>
+                    <CartesianGrid stroke="#e2e8f0" strokeDasharray="4 4" horizontal={false} />
+                    <XAxis type="number" allowDecimals={false} axisLine={false} tickLine={false} tick={{ fill: "#64748b", fontSize: 12 }} />
+                    <YAxis type="category" dataKey="name" width={100} axisLine={false} tickLine={false} tick={{ fill: "#475569", fontSize: 11 }} />
+                    <Tooltip
+                      cursor={{ fill: "#f1f5f9" }}
+                      contentStyle={{ border: "1px solid #e2e8f0", borderRadius: 12, boxShadow: "0 8px 24px rgba(15, 23, 42, 0.08)" }}
+                      formatter={(value) => [value, "Quantity"]}
+                    />
+                    <Bar dataKey="quantity" fill="#1a3c36" radius={[0, 6, 6, 0]} maxBarSize={28} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            ) : (
+              <div className="flex h-60 flex-col items-center justify-center text-center">
+                <UtensilsCrossed size={24} className="text-slate-300" />
+                <p className="mt-2 text-sm font-semibold text-slate-700">No dish data yet</p>
+                <p className="mt-1 text-xs text-slate-500">Dish quantities will appear when orders arrive.</p>
               </div>
             )}
           </article>
