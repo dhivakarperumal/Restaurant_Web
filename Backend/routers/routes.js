@@ -136,7 +136,7 @@ const requireInventoryAccess = async (req, res, next) => {
     const originalPath = req.originalUrl.split('?')[0].replace(/\/+$/, '');
     const matchesInventoryPath = (path) => requestPath === path || originalPath.endsWith(`/inventory${path}`);
     const isChefRequestAccess = role === 'chef' && (
-      (req.method === 'GET' && ['/products/options', '/kitchen-requests'].some(matchesInventoryPath)) ||
+      (req.method === 'GET' && ['/products', '/products/options', '/kitchen-requests'].some(matchesInventoryPath)) ||
       (req.method === 'POST' && matchesInventoryPath('/kitchen-requests'))
     );
 

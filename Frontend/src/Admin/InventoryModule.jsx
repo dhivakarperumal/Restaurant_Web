@@ -302,8 +302,9 @@ function InventoryDashboard() {
   );
 }
 
-function ProductsPage() {
+function ProductsPage({ readOnly = false }) {
   const { products, categories, subcategories, units, suppliers, locations, loadData } = useInventoryContext();
+  const navigate = useNavigate();
   const [search, setSearch] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All Categories');
   const [selectedStatus, setSelectedStatus] = useState('All Status');
@@ -364,7 +365,20 @@ function ProductsPage() {
     { key: 'purchase_price', label: 'Purchase Price', render: (row) => formatCurrency(row.purchase_price) },
     { key: 'stock_value', label: 'Stock Value', render: (row) => formatCurrency(row.stock_value || row.current_stock * row.purchase_price) },
     { key: 'status', label: 'Status', render: (row) => <StatusBadge value={row.status || 'Active'} /> },
-    { key: 'actions', label: 'Actions', render: () => <div className="flex gap-2"><button className="text-sky-600" title="View"><Eye size={15} /></button><button className="text-amber-600" title="Edit"><Pencil size={15} /></button><button className="text-rose-600" title="Delete"><Trash2 size={15} /></button></div> },
+    ...(readOnly ? [{
+      key: 'request',
+      label: 'Request',
+      render: (row) => (
+        <button
+          type="button"
+          onClick={() => navigate('/chef/requests', { state: { requestProduct: { id: row.id, name: row.product_name } } })}
+          className="rounded-lg bg-[#1a3c36] px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-[#214a42]"
+        >
+          Request
+        </button>
+      ),
+    }] : []),
+    ...(!readOnly ? [{ key: 'actions', label: 'Actions', render: () => <div className="flex gap-2"><button className="text-sky-600" title="View"><Eye size={15} /></button><button className="text-amber-600" title="Edit"><Pencil size={15} /></button><button className="text-rose-600" title="Delete"><Trash2 size={15} /></button></div> }] : []),
   ];
 
   const totalCategories = new Set(products.map(p => p.category_name).filter(Boolean)).size;
@@ -372,7 +386,7 @@ function ProductsPage() {
   const outOfStockCount = products.filter(p => (Number(p.current_stock) || 0) === 0).length;
 
   const statCardsData = [
-    { title: "Total Groceries", value: products.length, icon: Package, bg: "bg-[#22c55e]", hint: "Registered inventory items" },
+    { title: readOnly ? "Total Stock Items" : "Total Groceries", value: products.length, icon: Package, bg: "bg-[#22c55e]", hint: "Registered inventory items" },
     { title: "Categories", value: totalCategories, icon: Tags, bg: "bg-[#3b82f6]", hint: "Active categories" },
     { title: "Low Stock", value: lowStockCount, icon: AlertTriangle, bg: "bg-[#f59e0b]", hint: "Below reorder level" },
     { title: "Out of Stock", value: outOfStockCount, icon: TrendingDown, bg: outOfStockCount > 0 ? "bg-[#ef4444]" : "bg-[#8b5cf6]", hint: "No units left" },
@@ -381,6 +395,23 @@ function ProductsPage() {
   return (
     <>
       <div>
+        {readOnly && (
+          <div className="mb-5 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Chef workspace</p>
+              <h1 className="mt-1 text-2xl font-bold text-slate-900">Inventory Stock</h1>
+              <p className="mt-1 text-sm text-slate-600">View current stock levels for kitchen inventory.</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => navigate('/chef/requests')}
+              className="inline-flex h-11 items-center justify-center gap-2 self-start rounded-xl bg-[#1a3c36] px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-[#214a42] sm:self-auto"
+            >
+              <Plus className="h-4 w-4" />
+              Add Request
+            </button>
+          </div>
+        )}
         
         <div className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
           {statCardsData.map(({ title, value, icon: Icon, bg, hint }, index) => (
@@ -422,7 +453,7 @@ function ProductsPage() {
                 value={search}
                 onChange={(event) => setSearch(event.target.value)}
                 className="h-[46px] w-full rounded-xl border border-slate-200 bg-slate-50 pl-10 pr-3 text-sm text-slate-700 outline-none placeholder:text-slate-400 focus:border-[#1a3c36]"
-                placeholder="Search groceries by name, SKU or barcode..."
+                placeholder={readOnly ? "Search stock items by name, SKU or barcode..." : "Search groceries by name, SKU or barcode..."}
               />
             </label>
             <div className="flex flex-wrap items-center gap-3 xl:ml-auto">
@@ -493,14 +524,14 @@ function ProductsPage() {
                   <Table2 className="h-4 w-4" />
                 </button>
               </div>
-              <button
+              {!readOnly && <button
                 type="button"
                 onClick={() => setIsAddModalOpen(true)}
                 className="inline-flex h-[46px] items-center gap-2 rounded-xl bg-[#1a3c36] px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-[#214a42]"
               >
                 <Plus className="h-4 w-4" />
                 Add Grocery
-              </button>
+              </button>}
             </div>
           </div>
           {viewMode === 'table' ? (
@@ -527,6 +558,15 @@ function ProductsPage() {
                     <div><dt className="text-xs text-slate-500">Reorder Level</dt><dd className="mt-1 font-medium text-slate-800">{product.reorder_level ?? 0}</dd></div>
                     <div><dt className="text-xs text-slate-500">Purchase Price</dt><dd className="mt-1 font-medium text-slate-800">{formatCurrency(product.purchase_price)}</dd></div>
                   </dl>
+                  {readOnly && (
+                    <button
+                      type="button"
+                      onClick={() => navigate('/chef/requests', { state: { requestProduct: { id: product.id, name: product.product_name } } })}
+                      className="mt-4 w-full rounded-lg bg-[#1a3c36] px-3 py-2 text-sm font-semibold text-white transition hover:bg-[#214a42]"
+                    >
+                      Request this item
+                    </button>
+                  )}
                 </article>
               ))}
             </div>
@@ -536,7 +576,7 @@ function ProductsPage() {
         </div>
       </div>
 
-      {isAddModalOpen && (
+      {!readOnly && isAddModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/45 p-4">
           <div className="w-full max-w-2xl rounded-2xl border border-slate-200 bg-white p-5 shadow-2xl">
             <div className="mb-4 flex items-center justify-between">
@@ -1804,6 +1844,14 @@ export default function InventoryModule() {
         <Toaster position="top-right" />
         <InventoryRoutes />
       </div>
+    </InventoryContext>
+  );
+}
+
+export function InventoryStockReadOnly() {
+  return (
+    <InventoryContext>
+      <ProductsPage readOnly />
     </InventoryContext>
   );
 }

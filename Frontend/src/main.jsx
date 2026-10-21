@@ -42,7 +42,7 @@ import Cuisines from './Admin/AdminProducts/Cuisines.jsx'
 import AdminProducts from './Admin/AdminProducts/AdminProducts.jsx'
 import StockDetails from './Admin/AdminProducts/StockDetails.jsx'
 import AddFood from './Admin/AdminProducts/AddFood.jsx'
-import InventoryModule from './Admin/InventoryModule.jsx'
+import InventoryModule, { InventoryStockReadOnly } from './Admin/InventoryModule.jsx'
 import AdminReviews from './Admin/AdminReviews/AdminReviews.jsx'
 import AdminReservations from './Admin/AdminReservations.jsx'
 import AdminEventOrders from './Admin/AdminEventOrders.jsx'
@@ -391,7 +391,7 @@ const router = createHashRouter([
           },
           {
             path: 'stock-details',
-            element: <StockDetails readOnly />,
+            element: <InventoryStockReadOnly />,
           },
           {
             path: 'products',

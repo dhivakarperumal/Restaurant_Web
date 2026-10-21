@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import { Plus, X, ClipboardList, Clock3, CheckCircle2, AlertCircle, ChevronLeft, ChevronRight } from "lucide-react";
 import toast from "react-hot-toast";
 import api from "../api";
@@ -31,6 +32,8 @@ const formatRequestPeriod = (request) => {
 
 const ChefInventoryRequests = () => {
   const { profileName, role } = useAuth();
+  const location = useLocation();
+  const navigate = useNavigate();
   const requester = profileName || role || "Chef";
   const [requests, setRequests] = useState([]);
   const [products, setProducts] = useState([]);
@@ -58,6 +61,23 @@ const ChefInventoryRequests = () => {
   useEffect(() => {
     loadPageData();
   }, []);
+
+  useEffect(() => {
+    const requestedProduct = location.state?.requestProduct;
+    if (!requestedProduct?.id || !requestedProduct?.name) return;
+
+    setForm((current) => ({
+      ...current,
+      items: [{
+        product_id: String(requestedProduct.id),
+        product_name: requestedProduct.name,
+        quantity: "1",
+        unit: "pcs",
+      }],
+    }));
+    setIsModalOpen(true);
+    navigate(location.pathname, { replace: true, state: null });
+  }, [location.pathname, location.state, navigate]);
 
   const updateItem = (index, field, value) => {
     setForm((current) => ({

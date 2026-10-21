@@ -43,7 +43,7 @@ const getStatusLabel = (currentStock) => {
   return 'In Stock';
 };
 
-const StockDetails = () => {
+const StockDetails = ({ readOnly = false }) => {
   const [foods, setFoods] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -262,10 +262,12 @@ const StockDetails = () => {
                   <LayoutGrid className="h-4 w-4" />
                 </button>
               </div>
-               <button type="button" onClick={openStockReport} className="inline-flex h-[46px] items-center gap-2 rounded-xl bg-[#1a3c36] px-4 text-[15px] font-semibold text-white shadow-[0_6px_14px_rgba(26,60,54,0.18)] transition hover:bg-[#214a42]">
-              <span className="text-lg">+</span>
-              Stock Report
-            </button>
+               {!readOnly && (
+                 <button type="button" onClick={openStockReport} className="inline-flex h-[46px] items-center gap-2 rounded-xl bg-[#1a3c36] px-4 text-[15px] font-semibold text-white shadow-[0_6px_14px_rgba(26,60,54,0.18)] transition hover:bg-[#214a42]">
+                   <span className="text-lg">+</span>
+                   Stock Report
+                 </button>
+               )}
          
             </div>
           </div>
@@ -291,9 +293,11 @@ const StockDetails = () => {
                     <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold ${item.status === 'In Stock' ? 'bg-[#edf7f1] text-[#2d7b5a]' : item.status === 'Low Stock' ? 'bg-[#fff2df] text-[#c77f11]' : 'bg-[#fde7e7] text-[#d94d4d]'}`}>
                       <span className="h-2 w-2 rounded-full bg-current" />{item.status}
                     </span>
-                    <button type="button" onClick={() => openStockEditor(item)} className="flex h-8 w-8 items-center justify-center rounded-lg border border-[#e2d9cf] bg-white text-[#4d4d4d] hover:border-[#d0b997] hover:text-[#1a1a1a]" aria-label={`Edit stock for ${item.product}`} title="Edit stock">
-                      <Pencil className="h-4 w-4" />
-                    </button>
+                    {!readOnly && (
+                      <button type="button" onClick={() => openStockEditor(item)} className="flex h-8 w-8 items-center justify-center rounded-lg border border-[#e2d9cf] bg-white text-[#4d4d4d] hover:border-[#d0b997] hover:text-[#1a1a1a]" aria-label={`Edit stock for ${item.product}`} title="Edit stock">
+                        <Pencil className="h-4 w-4" />
+                      </button>
+                    )}
                   </div>
                 </div>
               ))}
@@ -310,7 +314,7 @@ const StockDetails = () => {
                   <th className="px-4 py-4">Price</th>
                   <th className="px-4 py-4">Stock</th>
                   <th className="px-4 py-4">Status</th>
-                  <th className="px-4 py-4 text-right">Actions</th>
+                  {!readOnly && <th className="px-4 py-4 text-right">Actions</th>}
                 </tr>
               </thead>
               <tbody>
@@ -354,13 +358,15 @@ const StockDetails = () => {
                         {item.status}
                       </span>
                     </td>
-                    <td className="px-4 py-4">
-                      <div className="flex items-center justify-end gap-2">
-                        <button type="button" onClick={() => openStockEditor(item)} className="rounded-lg border border-[#e7e0d8] bg-white p-2 text-[#4d4d4d] hover:bg-[#f8f6f3]" aria-label={`Edit stock for ${item.product}`} title="Edit stock">
-                          <Pencil className="h-4 w-4" />
-                        </button>
-                      </div>
-                    </td>
+                    {!readOnly && (
+                      <td className="px-4 py-4">
+                        <div className="flex items-center justify-end gap-2">
+                          <button type="button" onClick={() => openStockEditor(item)} className="rounded-lg border border-[#e7e0d8] bg-white p-2 text-[#4d4d4d] hover:bg-[#f8f6f3]" aria-label={`Edit stock for ${item.product}`} title="Edit stock">
+                            <Pencil className="h-4 w-4" />
+                          </button>
+                        </div>
+                      </td>
+                    )}
                   </tr>
                 ))}
               </tbody>
@@ -381,7 +387,7 @@ const StockDetails = () => {
         </div>
       </div>
 
-      {reportOpen && (
+      {!readOnly && reportOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
           <form onSubmit={saveStock} className="w-full max-w-lg rounded-2xl border border-[#e7e0d8] bg-white p-6 shadow-2xl">
             <div className="mb-5 flex items-start justify-between gap-4 border-b border-[#f0ebe3] pb-4">
