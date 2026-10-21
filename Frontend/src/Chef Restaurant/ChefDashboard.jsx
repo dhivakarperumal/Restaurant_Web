@@ -47,7 +47,7 @@ const ChefDashboard = () => {
   const loadDashboard = useCallback(async (showLoading = false) => {
     if (showLoading) setLoading(true);
 
-    const [ordersResult] = await Promise.allSettled([api.get("/kitchen-orders")]);
+   
     const [ordersResult, requestsResult, eventOrdersResult] = await Promise.allSettled([
       api.get("/kitchen-orders"),
       api.get("/inventory/kitchen-requests"),
