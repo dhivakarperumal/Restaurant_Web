@@ -24,9 +24,6 @@ function FoodProductCard({
   const discount = Number(food.discount || 0);
   const isAvailable = food.is_available !== false
     && String(food.status || 'Active').toLowerCase() === 'active';
-  const hasOptions = (food.addons || []).some(
-    (addon) => String(addon.status || 'Active').toLowerCase() === 'active',
-  ) || (food.customizations || []).length > 0;
   const image = resolveImageUrl(food.food_images?.[0]);
 
   return (
@@ -149,19 +146,17 @@ function FoodProductCard({
             {food.portion_size && <p className="text-[10px] font-medium text-slate-400">{food.portion_size}</p>}
           </div>
           <div className="flex shrink-0 items-center gap-1.5">
-            {hasOptions && (
-              <button
-                type="button"
-                onClick={(event) => {
-                  event.stopPropagation();
-                  onCustomize?.(food);
-                }}
-                disabled={!isAvailable}
-                className="inline-flex items-center rounded-xl border border-[#1a3c36] px-2.5 py-2 text-[11px] font-bold text-[#1a3c36] transition hover:bg-emerald-50 active:scale-95 disabled:cursor-not-allowed disabled:border-slate-200 disabled:text-slate-400"
-              >
-                Customize
-              </button>
-            )}
+            <button
+              type="button"
+              onClick={(event) => {
+                event.stopPropagation();
+                onCustomize?.(food);
+              }}
+              disabled={!isAvailable}
+              className="inline-flex items-center rounded-xl border border-[#1a3c36] px-2.5 py-2 text-[11px] font-bold text-[#1a3c36] transition hover:bg-emerald-50 active:scale-95 disabled:cursor-not-allowed disabled:border-slate-200 disabled:text-slate-400"
+            >
+              Customize
+            </button>
             <button
               type="button"
               onClick={(event) => {
