@@ -131,7 +131,7 @@ function FoodProductCard({
         <div className="mt-4 flex items-center justify-between gap-2 border-t border-slate-100 pt-3">
           <div>
             <div className="flex items-baseline gap-1.5">
-              <span className="font-serif text-lg font-black text-[#1a3c36]">₹{price.toFixed(2)}</span>
+              <span className="text-lg font-black text-[#1a3c36]">₹{price.toFixed(2)}</span>
               {discount > 0 && mrp > price && (
                 <span className="text-xs text-slate-400 line-through">₹{mrp.toFixed(2)}</span>
               )}
