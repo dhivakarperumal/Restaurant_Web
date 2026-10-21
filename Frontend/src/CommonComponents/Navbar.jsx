@@ -177,7 +177,7 @@ const Navbar = () => {
       location.pathname.startsWith("/products/") ||
       location.pathname.startsWith("/product/"));
 
-  const isPagesRoute = ["/gallery", "/about", "/contact", "/privacy-policy"].includes(
+  const isPagesRoute = ["/gallery", "/about", "/contact"].includes(
     location.pathname,
   );
 
@@ -249,22 +249,16 @@ const Navbar = () => {
         >
           <PageContainer>
             <div className="flex h-[72px] items-center justify-between gap-2 bg-brand-bg sm:gap-4 lg:h-[88px]">
-              <Link to="/" className="flex min-w-0 items-center gap-2.5 sm:gap-3">
-                {/* <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-[#d79d4a]/50 bg-white shadow-inner sm:h-14 sm:w-14">
-                  <img
-                    src="/images/logo.png"
-                    alt="Restaurant Name logo"
-                    className="h-full bg-white w-full object-contain"
-                  />
-                </div> */}
-                <div className="min-w-0 leading-none">
-                  <div className="text-[22px] font-black tracking-[-0.06em] text-brand-text sm:text-[26px]">
-                    Buy Food
-                  </div>
-                  <div className="mt-1 hidden text-[9px] font-semibold tracking-[0.28em] text-gold sm:block">
-                    Buy Food &amp; Snacks Online
-                  </div>
-                </div>
+              <Link
+                to="/"
+                className="flex min-w-0 items-center gap-2.5 sm:gap-3"
+                aria-label="Buy Food home"
+              >
+                <img
+                  src="/images/logo.png"
+                  alt="Buy Food"
+                  className="h-12 w-[72px] shrink-0 rounded-lg bg-white object-contain sm:h-14 sm:w-[84px]"
+                />
               </Link>
 
               <nav className="hidden items-center gap-6 xl:flex">
@@ -283,23 +277,6 @@ const Navbar = () => {
                     Menu
                   </NavLink>
                 </div>
-
-                <div className="flex items-center gap-1 text-sm font-semibold text-brand-text">
-                  <NavLink
-                    to="/about"
-                    className={desktopLinkClass}
-                  >
-                    About
-                  </NavLink>
-                </div>
-                
-
-                {/* <NavLink
-                  to="/gallery"
-                  className={desktopLinkClass}
-                >
-                  Gallery
-                </NavLink> */}
 
                 <NavLink
                   to="/reservation"
@@ -320,9 +297,37 @@ const Navbar = () => {
                 <NavLink to="/offers" className={desktopLinkClass}>
                   Offers
                 </NavLink>
-                <NavLink to="/contact" className={desktopLinkClass}>
-                  Contact
-                </NavLink>
+                <div className="group relative">
+                  <button
+                    type="button"
+                    className={`${desktopLinkClass({ isActive: isPagesRoute })} flex items-center gap-1`}
+                    aria-haspopup="true"
+                  >
+                    Pages
+                    <FiChevronDown className="transition-transform group-hover:rotate-180 group-focus-within:rotate-180" />
+                  </button>
+                  <div className="invisible absolute right-0 top-full z-50 min-w-44 translate-y-1 rounded-xl border border-brand-border bg-brand-bg p-2 opacity-0 shadow-xl transition-all group-hover:visible group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:visible group-focus-within:translate-y-0 group-focus-within:opacity-100">
+                    {[
+                      ["Gallery", "/gallery"],
+                      ["About Us", "/about"],
+                      ["Contact Us", "/contact"],
+                    ].map(([label, path]) => (
+                      <NavLink
+                        key={path}
+                        to={path}
+                        className={({ isActive }) =>
+                          `block rounded-lg px-3 py-2 text-sm font-semibold transition-colors ${
+                            isActive
+                              ? "bg-primary/20 text-gold"
+                              : "text-brand-text hover:bg-brand-surface hover:text-gold"
+                          }`
+                        }
+                      >
+                        {label}
+                      </NavLink>
+                    ))}
+                  </div>
+                </div>
               </nav>
 
               <div className="flex shrink-0 items-center gap-1.5 sm:gap-2.5 lg:gap-3">
@@ -477,12 +482,6 @@ const Navbar = () => {
                 <NavLink to="/shop" onClick={() => setMobileMenu(false)} className={() => mobileLinkClass({ isActive: isShopPage })}>
                   Menu
                 </NavLink>
-                <NavLink to="/about" onClick={() => setMobileMenu(false)} className={mobileLinkClass}>
-                  About
-                </NavLink>
-                {/* <NavLink to="/gallery" onClick={() => setMobileMenu(false)} className={mobileLinkClass}>
-                  Gallery
-                </NavLink> */}
                 <NavLink to="/reservation" onClick={() => setMobileMenu(false)} className={mobileLinkClass}>
                   Reservation
                 </NavLink>
@@ -509,7 +508,6 @@ const Navbar = () => {
                       ["Gallery", "/gallery"],
                       ["About Us", "/about"],
                       ["Contact Us", "/contact"],
-                      ["Privacy Policy", "/privacy-policy"],
                     ].map(([label, path]) => (
                       <NavLink
                         key={path}
