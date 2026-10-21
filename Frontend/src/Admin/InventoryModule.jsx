@@ -3,6 +3,7 @@ import { Route, Routes, NavLink, useNavigate } from 'react-router-dom';
 import { AlertTriangle, ArrowRightLeft, BarChart3, Boxes, CalendarClock, CircleDollarSign, ClipboardList, Eye, Filter, Gauge, LayoutGrid, MapPinned, NotebookPen, Package, PackagePlus, Pencil, Plus, PlusCircle, Search, ShoppingCart, Table2, Tag, Tags, Trash2, TrendingDown, TrendingUp, Truck, UtensilsCrossed, Warehouse, Wrench } from 'lucide-react';
 import api from '../api';
 import toast, { Toaster } from 'react-hot-toast';
+import InventoryUnitField from '../CommonComponents/InventoryUnitField';
 
 const formatCurrency = (value) => new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 2 }).format(Number(value || 0));
 const formatNumber = (value) => new Intl.NumberFormat('en-IN').format(Number(value || 0));
@@ -1041,7 +1042,7 @@ function SuppliersPage() {
 
 function PurchasesPage() {
   const { suppliers, products, loadData } = useInventoryContext();
-  const [form, setForm] = useState({ purchase_number: 'PUR-1001', supplier_id: '', invoice_number: '', purchase_date: '', notes: '', items: [{ product_id: '', quantity: '1', unit: 'Kg', purchase_price: '0', discount: '0', tax: '0' }] });
+  const [form, setForm] = useState({ purchase_number: 'PUR-1001', supplier_id: '', invoice_number: '', purchase_date: '', notes: '', items: [{ product_id: '', quantity: '1', unit: 'kg', purchase_price: '0', discount: '0', tax: '0' }] });
 
   const handleSubmit = async (event) => {
     event.preventDefault();
@@ -1100,7 +1101,11 @@ function PurchasesPage() {
                     <input value={item.quantity} onChange={(e) => updateItem(index, 'quantity', e.target.value)} type="number" className="rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Qty" />
                   </FormField>
                   <FormField label="Unit">
-                    <input value={item.unit} onChange={(e) => updateItem(index, 'unit', e.target.value)} className="rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Kg" />
+                    <InventoryUnitField
+                      value={item.unit}
+                      onChange={(value) => updateItem(index, 'unit', value)}
+                      className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm"
+                    />
                   </FormField>
                   <FormField label="Price">
                     <input value={item.purchase_price} onChange={(e) => updateItem(index, 'purchase_price', e.target.value)} type="number" className="rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="0.00" />
@@ -1109,7 +1114,7 @@ function PurchasesPage() {
                 </div>
               ))}
             </div>
-            <button type="button" className="mt-3 rounded-xl bg-slate-100 px-3 py-2 text-xs font-semibold uppercase tracking-[0.12em] text-slate-700" onClick={() => setForm((prev) => ({ ...prev, items: [...prev.items, { product_id: '', quantity: '1', unit: 'Kg', purchase_price: '0', discount: '0', tax: '0' }] }))}>Add Product</button>
+            <button type="button" className="mt-3 rounded-xl bg-slate-100 px-3 py-2 text-xs font-semibold uppercase tracking-[0.12em] text-slate-700" onClick={() => setForm((prev) => ({ ...prev, items: [...prev.items, { product_id: '', quantity: '1', unit: 'kg', purchase_price: '0', discount: '0', tax: '0' }] }))}>Add Product</button>
           </div>
 
           <div className="grid gap-3 md:grid-cols-2">

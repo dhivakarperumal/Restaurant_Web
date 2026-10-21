@@ -12,10 +12,31 @@ const unitOptions = [
   { value: "Other", label: "Other" },
 ];
 const unitValues = new Set(unitOptions.map((option) => option.value));
+const unitAliases = new Map([
+  ["kg", "kg"],
+  ["kilogram", "kg"],
+  ["g", "g"],
+  ["gram", "g"],
+  ["mg", "mg"],
+  ["milligram", "mg"],
+  ["l", "l"],
+  ["liter", "l"],
+  ["litre", "l"],
+  ["ml", "ml"],
+  ["milliliter", "ml"],
+  ["millilitre", "ml"],
+  ["pcs", "pcs"],
+  ["piece", "pcs"],
+  ["pieces", "pcs"],
+  ["pk", "packet"],
+  ["btl", "bottle"],
+  ["dz", "dozen"],
+]);
 
 const InventoryUnitField = ({ value, onChange, className }) => {
-  const isCustomUnit = value && !unitValues.has(value);
-  const selectedUnit = isCustomUnit ? "Other" : value || "pcs";
+  const normalizedValue = unitAliases.get(String(value || "").trim().toLowerCase()) || value;
+  const isCustomUnit = normalizedValue && !unitValues.has(normalizedValue);
+  const selectedUnit = isCustomUnit ? "Other" : normalizedValue || "pcs";
 
   return (
     <div className="space-y-2">
