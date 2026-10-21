@@ -148,22 +148,33 @@ function FoodProductCard({
             </div>
             {food.portion_size && <p className="text-[10px] font-medium text-slate-400">{food.portion_size}</p>}
           </div>
-          <button
-            type="button"
-            onClick={(event) => {
-              event.stopPropagation();
-              if (hasOptions) {
-                onCustomize?.(food);
-              } else {
+          <div className="flex shrink-0 items-center gap-1.5">
+            {hasOptions && (
+              <button
+                type="button"
+                onClick={(event) => {
+                  event.stopPropagation();
+                  onCustomize?.(food);
+                }}
+                disabled={!isAvailable}
+                className="inline-flex items-center rounded-xl border border-[#1a3c36] px-2.5 py-2 text-[11px] font-bold text-[#1a3c36] transition hover:bg-emerald-50 active:scale-95 disabled:cursor-not-allowed disabled:border-slate-200 disabled:text-slate-400"
+              >
+                Customize
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={(event) => {
+                event.stopPropagation();
                 onAdd?.(food);
-              }
-            }}
-            disabled={!isAvailable}
-            className="inline-flex shrink-0 items-center gap-1.5 rounded-xl bg-[#1a3c36] px-3.5 py-2 text-xs font-bold text-white shadow-sm transition hover:bg-[#245048] active:scale-95 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400"
-          >
-            {isAvailable && <Plus className="h-3.5 w-3.5 text-emerald-300" />}
-            {isAvailable ? (hasOptions ? 'Customize' : cartQuantity > 0 ? `Add (${cartQuantity})` : 'Add') : 'Unavailable'}
-          </button>
+              }}
+              disabled={!isAvailable}
+              className="inline-flex items-center gap-1 rounded-xl bg-[#1a3c36] px-2.5 py-2 text-xs font-bold text-white shadow-sm transition hover:bg-[#245048] active:scale-95 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400"
+            >
+              {isAvailable && <Plus className="h-3.5 w-3.5 text-emerald-300" />}
+              {isAvailable ? (cartQuantity > 0 ? `Add (${cartQuantity})` : 'Add') : 'Unavailable'}
+            </button>
+          </div>
         </div>
       </div>
     </article>
