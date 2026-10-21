@@ -28,7 +28,8 @@ function HomeProducts() {
       const data = response.data?.data ?? response.data;
       if (!Array.isArray(data)) throw new Error('The menu response was invalid.');
       setFoods(data.filter((food) => (
-        food.is_available !== false
+        food.is_menu_visible !== false
+        && food.is_available !== false
         && String(food.status || 'Active').toLowerCase() === 'active'
       )));
     } catch (requestError) {
