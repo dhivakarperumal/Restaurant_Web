@@ -119,21 +119,12 @@ function HomeCuisines() {
                     >
                       <div className="relative aspect-square overflow-hidden bg-[#17251e]">
                         {image ? (
-                          <>
-                            <img
-                              src={image}
-                              alt=""
-                              aria-hidden="true"
-                              loading="lazy"
-                              className="absolute inset-0 h-full w-full scale-110 object-cover opacity-70 blur-sm"
-                            />
-                            <img
-                              src={image}
-                              alt={cuisineName}
-                              loading="lazy"
-                              className="relative h-full w-full object-contain"
-                            />
-                          </>
+                          <img
+                            src={image}
+                            alt={cuisineName}
+                            loading="lazy"
+                            className="absolute inset-0 h-full w-full object-cover"
+                          />
                         ) : (
                           <div className="flex h-full items-center justify-center bg-[#315d2d] text-white/80">
                             <Utensils className="h-12 w-12" />
