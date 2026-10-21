@@ -57,7 +57,7 @@ function HomeCuisines() {
             Our Cuisines
           </p>
           <h2 id="home-cuisines-heading" className="mt-2 text-2xl font-extrabold text-[#17251e] sm:text-3xl">
-            A World of <span className="font-serif italic text-[#1a6a3b]">Flavors</span>
+            Choose your <span className="font-serif italic text-[#1a6a3b]">Cuisine</span>
           </h2>
         </div>
 

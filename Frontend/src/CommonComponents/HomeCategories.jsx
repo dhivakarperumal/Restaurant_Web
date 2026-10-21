@@ -57,7 +57,7 @@ function HomeCategories() {
             Popular Categories
           </p>
           <h2 id="home-categories-heading" className="mt-2 text-2xl font-extrabold text-[#17251e] sm:text-3xl">
-            Choose Your <span className="font-serif italic text-[#1a6a3b]">Favorite</span>
+            Choose Your <span className="font-serif italic text-[#1a6a3b]">Category</span>
           </h2>
         </div>
 
