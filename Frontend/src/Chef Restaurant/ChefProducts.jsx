@@ -1,13 +1,29 @@
 import { useEffect, useMemo, useState } from "react";
 import { Search, UtensilsCrossed, CheckCircle2, Eye, EyeOff, X, List, LayoutGrid, ChevronLeft, ChevronRight } from "lucide-react";
 import toast from "react-hot-toast";
-import api from "../api";
+import api, { BACKEND_BASE_URL } from "../api";
 
 const formatPrice = (value) => new Intl.NumberFormat("en-IN", {
   style: "currency",
   currency: "INR",
   maximumFractionDigits: 2,
 }).format(Number(value || 0));
+
+const getFoodImage = (food) => {
+  let image = Array.isArray(food.food_images) ? food.food_images[0] : food.food_images || food.image || food.image_url;
+  if (typeof image === "string" && image.trim().startsWith("[")) {
+    try {
+      const images = JSON.parse(image);
+      image = Array.isArray(images) ? images[0] : image;
+    } catch {
+      // Use the original image value when it is not valid JSON.
+    }
+  }
+  if (typeof image !== "string" || !image.trim()) return "";
+  const imageUrl = image.trim();
+  if (/^(https?:|data:|blob:)/i.test(imageUrl)) return imageUrl;
+  return `${BACKEND_BASE_URL}${imageUrl.startsWith("/") ? imageUrl : `/${imageUrl}`}`;
+};
 
 const ChefProducts = () => {
   const [foods, setFoods] = useState([]);
@@ -269,7 +285,15 @@ const ChefProducts = () => {
                     />
                   </td>
                   <td className="whitespace-nowrap px-4 py-3 text-slate-500">{pageOffset + index + 1}</td>
-                  <td className="px-4 py-3 font-semibold text-slate-800">{food.food_name || "Unnamed food"}</td>
+                  <td className="px-4 py-3">
+                    <div className="flex items-center gap-3">
+                      <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-lg bg-emerald-50 text-emerald-700">
+                        <UtensilsCrossed size={18} className="absolute inset-0 m-auto" />
+                        {getFoodImage(food) && <img src={getFoodImage(food)} alt="" loading="lazy" className="relative h-full w-full object-cover" onError={(event) => { event.currentTarget.style.display = "none"; }} />}
+                      </div>
+                      <span className="font-semibold text-slate-800">{food.food_name || "Unnamed food"}</span>
+                    </div>
+                  </td>
                   <td className="px-4 py-3 text-slate-600">{food.category_name || "Uncategorized"}</td>
                   <td className="px-4 py-3 text-slate-600">{food.preparation_time ? `${food.preparation_time} min` : "-"}</td>
                   <td className="whitespace-nowrap px-4 py-3 font-medium text-slate-800">{formatPrice(food.final_price)}</td>
@@ -302,6 +326,10 @@ const ChefProducts = () => {
             </div>
           ) : filteredFoods.length ? paginatedFoods.map((food, index) => (
             <article key={food.food_id} className="min-w-0 rounded-xl border border-slate-200 bg-white p-4 shadow-[0_4px_16px_rgba(15,23,42,0.08)] transition-shadow hover:shadow-md">
+              <div className="relative mb-3 h-40 overflow-hidden rounded-lg bg-emerald-50 text-emerald-700">
+                <UtensilsCrossed size={30} className="absolute inset-0 m-auto" />
+                {getFoodImage(food) && <img src={getFoodImage(food)} alt={food.food_name || "Food"} loading="lazy" className="relative h-full w-full object-cover" onError={(event) => { event.currentTarget.style.display = "none"; }} />}
+              </div>
               <div className="flex items-start gap-3">
                 <input
                   type="checkbox"

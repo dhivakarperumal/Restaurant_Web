@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import { Route, Routes, NavLink, useNavigate } from 'react-router-dom';
 import { AlertTriangle, ArrowRightLeft, BarChart3, Boxes, CalendarClock, CircleDollarSign, ClipboardList, Eye, Filter, Gauge, LayoutGrid, MapPinned, NotebookPen, Package, PackagePlus, Pencil, Plus, PlusCircle, Search, ShoppingCart, Table2, Tag, Tags, Trash2, TrendingDown, TrendingUp, Truck, UtensilsCrossed, Warehouse, Wrench } from 'lucide-react';
-import api from '../api';
+import api, { BACKEND_BASE_URL } from '../api';
 import toast, { Toaster } from 'react-hot-toast';
 import InventoryUnitField from '../CommonComponents/InventoryUnitField';
 
@@ -16,6 +16,26 @@ const formatRequestPeriod = (request) => {
   return startDate || endDate
     ? `${startDate || '—'} – ${endDate || '—'}`
     : formatRequestDate(request.request_date) || '—';
+};
+const generateInventorySku = () => `INV-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).slice(2, 6).toUpperCase()}`;
+const emptyGroceryForm = () => ({
+  product_name: '',
+  sku: generateInventorySku(),
+  category_id: '',
+  subcategory_id: '',
+  unit_id: '',
+  supplier_id: '',
+  purchase_price: '',
+  selling_price: '',
+  current_stock: '0',
+  minimum_stock: '0',
+  reorder_level: '0',
+  status: 'Active',
+});
+const inventoryImageUrl = (value) => {
+  if (!value) return '';
+  if (/^(https?:\/\/|data:|blob:)/i.test(value)) return value;
+  return `${BACKEND_BASE_URL}${value.startsWith('/') ? value : `/${value}`}`;
 };
 
 const EMPTY_DASHBOARD = {
@@ -313,9 +333,23 @@ function ProductsPage({ readOnly = false }) {
   const [sortBy, setSortBy] = useState('latest');
   const [viewMode, setViewMode] = useState('table');
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-  const [form, setForm] = useState({
-    product_name: '', sku: '', barcode: '', category_id: '', subcategory_id: '', unit_id: '', supplier_id: '', purchase_price: '', selling_price: '', current_stock: '0', minimum_stock: '0', reorder_level: '0', status: 'Active',
-  });
+  const [viewProduct, setViewProduct] = useState(null);
+  const [editingProductId, setEditingProductId] = useState(null);
+  const [form, setForm] = useState(emptyGroceryForm);
+  const [productImage, setProductImage] = useState(null);
+  const [imagePreview, setImagePreview] = useState('');
+  const [isSavingProduct, setIsSavingProduct] = useState(false);
+
+  useEffect(() => {
+    if (!productImage) {
+      setImagePreview('');
+      return undefined;
+    }
+
+    const previewUrl = URL.createObjectURL(productImage);
+    setImagePreview(previewUrl);
+    return () => URL.revokeObjectURL(previewUrl);
+  }, [productImage]);
 
   const filtered = [...products]
     .filter((product) => {
@@ -345,26 +379,95 @@ function ProductsPage({ readOnly = false }) {
 
   const handleSubmit = async (event) => {
     event.preventDefault();
+    if (isSavingProduct) return;
+    setIsSavingProduct(true);
     try {
-      await api.post('/inventory/products', { ...form, current_stock: Number(form.current_stock || 0), purchase_price: Number(form.purchase_price || 0), selling_price: Number(form.selling_price || 0), minimum_stock: Number(form.minimum_stock || 0), reorder_level: Number(form.reorder_level || 0) });
-      toast.success('Product added successfully.');
-      setForm({ product_name: '', sku: '', barcode: '', category_id: '', subcategory_id: '', unit_id: '', supplier_id: '', purchase_price: '', selling_price: '', current_stock: '0', minimum_stock: '0', reorder_level: '0', status: 'Active' });
-      loadData();
+      let imageUrl = '';
+      if (productImage) {
+        const uploadData = new FormData();
+        uploadData.append('folder', 'inventory');
+        uploadData.append('file', productImage);
+        const uploadResponse = await api.post('/upload', uploadData);
+        imageUrl = uploadResponse.data?.url;
+        if (!imageUrl) throw new Error('Image upload did not return a file URL.');
+      }
+      const payload = {
+        ...form,
+        image_url: imageUrl || form.image_url || null,
+        current_stock: Number(form.current_stock || 0),
+        purchase_price: Number(form.purchase_price || 0),
+        selling_price: Number(form.selling_price || 0),
+        minimum_stock: Number(form.minimum_stock || 0),
+        reorder_level: Number(form.reorder_level || 0),
+      };
+      if (editingProductId) {
+        await api.put(`/inventory/products/${editingProductId}`, payload);
+        toast.success('Product updated successfully.');
+      } else {
+        await api.post('/inventory/products', payload);
+        toast.success('Product added successfully.');
+      }
+      setForm(emptyGroceryForm());
+      setProductImage(null);
+      setEditingProductId(null);
+      setIsAddModalOpen(false);
+      await loadData();
     } catch (error) {
-      toast.error(error?.response?.data?.message || 'Unable to add product.');
+      toast.error(error?.response?.data?.message || `Unable to ${editingProductId ? 'update' : 'add'} product.`);
+    } finally {
+      setIsSavingProduct(false);
+    }
+  };
+
+  const openAddGrocery = () => {
+    setForm(emptyGroceryForm());
+    setProductImage(null);
+    setEditingProductId(null);
+    setIsAddModalOpen(true);
+  };
+
+  const openEditProduct = (product) => {
+    setForm({
+      ...emptyGroceryForm(),
+      ...product,
+      sku: product.sku || '',
+      category_id: product.category_id ? String(product.category_id) : '',
+      subcategory_id: product.subcategory_id ? String(product.subcategory_id) : '',
+      unit_id: product.unit_id ? String(product.unit_id) : '',
+      supplier_id: product.supplier_id ? String(product.supplier_id) : '',
+      current_stock: String(product.current_stock ?? 0),
+      minimum_stock: String(product.minimum_stock ?? 0),
+      reorder_level: String(product.reorder_level ?? 0),
+      purchase_price: String(product.purchase_price ?? 0),
+      selling_price: String(product.selling_price ?? 0),
+    });
+    setEditingProductId(product.id);
+    setProductImage(null);
+    setIsAddModalOpen(true);
+  };
+
+  const deleteProduct = async (product) => {
+    if (!window.confirm(`Delete "${product.product_name}"?`)) return;
+    try {
+      await api.delete(`/inventory/products/${product.id}`);
+      toast.success('Product deleted successfully.');
+      await loadData();
+    } catch (error) {
+      toast.error(error?.response?.data?.message || 'Unable to delete product.');
     }
   };
 
   const columns = [
-    { key: 'image_url', label: 'Product Image', render: () => <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-slate-100 text-slate-500"> <Package size={18} /> </div> },
+    { key: 'image_url', label: 'Product Image', render: (row) => <div className="flex h-12 w-12 items-center justify-center overflow-hidden rounded-xl bg-slate-100 text-slate-500">{row.image_url ? <img src={inventoryImageUrl(row.image_url)} alt={row.product_name || 'Inventory product'} className="h-full w-full object-cover" /> : <Package size={18} />}</div> },
     { key: 'product_name', label: 'Grocery Name' },
     { key: 'sku', label: 'SKU' },
-    { key: 'barcode', label: 'Barcode' },
     { key: 'category_name', label: 'Category' },
     { key: 'current_stock', label: 'Current Stock' },
-    { key: 'reorder_level', label: 'Reorder Level' },
-    { key: 'purchase_price', label: 'Purchase Price', render: (row) => formatCurrency(row.purchase_price) },
-    { key: 'stock_value', label: 'Stock Value', render: (row) => formatCurrency(row.stock_value || row.current_stock * row.purchase_price) },
+    ...(!readOnly ? [
+      { key: 'reorder_level', label: 'Reorder Level' },
+      { key: 'purchase_price', label: 'Purchase Price', render: (row) => formatCurrency(row.purchase_price) },
+      { key: 'stock_value', label: 'Stock Value', render: (row) => formatCurrency(row.stock_value || row.current_stock * row.purchase_price) },
+    ] : []),
     { key: 'status', label: 'Status', render: (row) => <StatusBadge value={row.status || 'Active'} /> },
     ...(readOnly ? [{
       key: 'request',
@@ -379,7 +482,17 @@ function ProductsPage({ readOnly = false }) {
         </button>
       ),
     }] : []),
-    ...(!readOnly ? [{ key: 'actions', label: 'Actions', render: () => <div className="flex gap-2"><button className="text-sky-600" title="View"><Eye size={15} /></button><button className="text-amber-600" title="Edit"><Pencil size={15} /></button><button className="text-rose-600" title="Delete"><Trash2 size={15} /></button></div> }] : []),
+    ...(!readOnly ? [{
+      key: 'actions',
+      label: 'Actions',
+      render: (row) => (
+        <div className="flex gap-3">
+          <button type="button" className="text-sky-600 hover:text-sky-800" title="View" aria-label={`View ${row.product_name}`} onClick={() => setViewProduct(row)}><Eye size={15} /></button>
+          <button type="button" className="text-amber-600 hover:text-amber-800" title="Edit" aria-label={`Edit ${row.product_name}`} onClick={() => openEditProduct(row)}><Pencil size={15} /></button>
+          <button type="button" className="text-rose-600 hover:text-rose-800" title="Delete" aria-label={`Delete ${row.product_name}`} onClick={() => deleteProduct(row)}><Trash2 size={15} /></button>
+        </div>
+      ),
+    }] : []),
   ];
 
   const totalCategories = new Set(products.map(p => p.category_name).filter(Boolean)).size;
@@ -527,7 +640,7 @@ function ProductsPage({ readOnly = false }) {
               </div>
               {!readOnly && <button
                 type="button"
-                onClick={() => setIsAddModalOpen(true)}
+                onClick={openAddGrocery}
                 className="inline-flex h-[46px] items-center gap-2 rounded-xl bg-[#1a3c36] px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-[#214a42]"
               >
                 <Plus className="h-4 w-4" />
@@ -541,6 +654,11 @@ function ProductsPage({ readOnly = false }) {
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
               {filtered.map((product) => (
                 <article key={product.product_id} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+                  <div className="mb-3 flex h-36 items-center justify-center overflow-hidden rounded-xl bg-slate-100 text-slate-400">
+                    {product.image_url
+                      ? <img src={inventoryImageUrl(product.image_url)} alt={product.product_name || 'Inventory product'} className="h-full w-full object-cover" />
+                      : <Package size={32} />}
+                  </div>
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex min-w-0 items-center gap-3">
                       <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-500">
@@ -551,13 +669,22 @@ function ProductsPage({ readOnly = false }) {
                         <p className="mt-1 truncate text-xs text-slate-500">{product.category_name || 'Uncategorized'}</p>
                       </div>
                     </div>
-                    <StatusBadge value={product.status || 'Active'} />
+                    <div className="flex shrink-0 items-center gap-2">
+                      <StatusBadge value={product.status || 'Active'} />
+                      {!readOnly && (
+                        <div className="flex gap-2">
+                          <button type="button" className="text-sky-600 hover:text-sky-800" title="View" aria-label={`View ${product.product_name}`} onClick={() => setViewProduct(product)}><Eye size={15} /></button>
+                          <button type="button" className="text-amber-600 hover:text-amber-800" title="Edit" aria-label={`Edit ${product.product_name}`} onClick={() => openEditProduct(product)}><Pencil size={15} /></button>
+                          <button type="button" className="text-rose-600 hover:text-rose-800" title="Delete" aria-label={`Delete ${product.product_name}`} onClick={() => deleteProduct(product)}><Trash2 size={15} /></button>
+                        </div>
+                      )}
+                    </div>
                   </div>
                   <dl className="mt-4 grid grid-cols-2 gap-3 text-sm">
                     <div><dt className="text-xs text-slate-500">SKU</dt><dd className="mt-1 font-medium text-slate-800">{product.sku || '—'}</dd></div>
                     <div><dt className="text-xs text-slate-500">Current Stock</dt><dd className="mt-1 font-medium text-slate-800">{product.current_stock ?? 0}</dd></div>
-                    <div><dt className="text-xs text-slate-500">Reorder Level</dt><dd className="mt-1 font-medium text-slate-800">{product.reorder_level ?? 0}</dd></div>
-                    <div><dt className="text-xs text-slate-500">Purchase Price</dt><dd className="mt-1 font-medium text-slate-800">{formatCurrency(product.purchase_price)}</dd></div>
+                    {!readOnly && <div><dt className="text-xs text-slate-500">Reorder Level</dt><dd className="mt-1 font-medium text-slate-800">{product.reorder_level ?? 0}</dd></div>}
+                    {!readOnly && <div><dt className="text-xs text-slate-500">Purchase Price</dt><dd className="mt-1 font-medium text-slate-800">{formatCurrency(product.purchase_price)}</dd></div>}
                   </dl>
                   {readOnly && (
                     <button
@@ -577,28 +704,79 @@ function ProductsPage({ readOnly = false }) {
         </div>
       </div>
 
+      {!readOnly && viewProduct && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/45 p-4" role="presentation" onMouseDown={(event) => {
+          if (event.target === event.currentTarget) setViewProduct(null);
+        }}>
+          <section className="w-full max-w-xl rounded-2xl border border-slate-200 bg-white p-5 shadow-2xl" role="dialog" aria-modal="true" aria-labelledby="product-details-title">
+            <div className="mb-4 flex items-center justify-between">
+              <h2 id="product-details-title" className="text-xl font-bold text-slate-900">Product Details</h2>
+              <button type="button" onClick={() => setViewProduct(null)} aria-label="Close product details" className="rounded-full bg-slate-100 px-2.5 py-1 text-sm font-semibold text-slate-600">×</button>
+            </div>
+            <div className="grid gap-4 sm:grid-cols-[120px_1fr]">
+              <div className="flex h-28 w-28 items-center justify-center overflow-hidden rounded-xl bg-slate-100 text-slate-500">
+                {viewProduct.image_url ? <img src={inventoryImageUrl(viewProduct.image_url)} alt={viewProduct.product_name} className="h-full w-full object-cover" /> : <Package size={32} />}
+              </div>
+              <dl className="grid grid-cols-2 gap-x-4 gap-y-3 text-sm">
+                <div><dt className="text-slate-500">Grocery Name</dt><dd className="font-semibold text-slate-900">{viewProduct.product_name || '—'}</dd></div>
+                <div><dt className="text-slate-500">SKU</dt><dd className="font-semibold text-slate-900">{viewProduct.sku || '—'}</dd></div>
+                <div><dt className="text-slate-500">Category</dt><dd className="font-semibold text-slate-900">{viewProduct.category_name || '—'}</dd></div>
+                <div><dt className="text-slate-500">Unit</dt><dd className="font-semibold text-slate-900">{viewProduct.unit_name || '—'}</dd></div>
+                <div><dt className="text-slate-500">Supplier</dt><dd className="font-semibold text-slate-900">{viewProduct.supplier_name || '—'}</dd></div>
+                <div><dt className="text-slate-500">Status</dt><dd><StatusBadge value={viewProduct.status || 'Active'} /></dd></div>
+                <div><dt className="text-slate-500">Current Stock</dt><dd className="font-semibold text-slate-900">{viewProduct.current_stock ?? 0}</dd></div>
+                <div><dt className="text-slate-500">Reorder Level</dt><dd className="font-semibold text-slate-900">{viewProduct.reorder_level ?? 0}</dd></div>
+                <div><dt className="text-slate-500">Purchase Price</dt><dd className="font-semibold text-slate-900">{formatCurrency(viewProduct.purchase_price)}</dd></div>
+                <div><dt className="text-slate-500">Selling Price</dt><dd className="font-semibold text-slate-900">{formatCurrency(viewProduct.selling_price)}</dd></div>
+              </dl>
+            </div>
+          </section>
+        </div>
+      )}
+
       {!readOnly && isAddModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/45 p-4">
           <div className="w-full max-w-2xl rounded-2xl border border-slate-200 bg-white p-5 shadow-2xl">
             <div className="mb-4 flex items-center justify-between">
-              <h2 className="text-xl font-bold text-slate-900">Add Grocery</h2>
-              <button type="button" onClick={() => setIsAddModalOpen(false)} className="rounded-full bg-slate-100 px-2.5 py-1 text-sm font-semibold text-slate-600">×</button>
+              <h2 className="text-xl font-bold text-slate-900">{editingProductId ? 'Edit Grocery' : 'Add Grocery'}</h2>
+              <button type="button" onClick={() => { setIsAddModalOpen(false); setEditingProductId(null); setProductImage(null); }} className="rounded-full bg-slate-100 px-2.5 py-1 text-sm font-semibold text-slate-600">×</button>
             </div>
-            <form className="space-y-3" onSubmit={(event) => {
-              handleSubmit(event);
-              setIsAddModalOpen(false);
-            }}>
+            <form className="space-y-3" onSubmit={handleSubmit}>
               <FormField label="Grocery name" required>
                 <input value={form.product_name} onChange={(e) => setForm({ ...form, product_name: e.target.value })} placeholder="Enter grocery name" className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" required />
               </FormField>
-              <div className="grid grid-cols-2 gap-3">
-                <FormField label="SKU">
-                  <input value={form.sku} onChange={(e) => setForm({ ...form, sku: e.target.value })} placeholder="Enter SKU" className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" />
-                </FormField>
-                <FormField label="Barcode">
-                  <input value={form.barcode} onChange={(e) => setForm({ ...form, barcode: e.target.value })} placeholder="Enter barcode" className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" />
-                </FormField>
-              </div>
+              <FormField label="Product image">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+                  {(imagePreview || form.image_url) && <img src={imagePreview || inventoryImageUrl(form.image_url)} alt="Grocery preview" className="h-20 w-20 rounded-lg border border-slate-200 object-cover" />}
+                  <input
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp"
+                    onChange={(event) => {
+                      const file = event.target.files?.[0] || null;
+                      if (!file) {
+                        setProductImage(null);
+                        return;
+                      }
+                      if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
+                        toast.error('Choose a JPG, PNG, or WEBP image.');
+                        event.target.value = '';
+                        return;
+                      }
+                      if (file.size > 5 * 1024 * 1024) {
+                        toast.error('Image size must be 5 MB or less.');
+                        event.target.value = '';
+                        return;
+                      }
+                      setProductImage(file);
+                    }}
+                    className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm"
+                  />
+                </div>
+                <p className="mt-1 text-xs text-slate-500">JPG, PNG, or WEBP. Maximum size 5 MB.</p>
+              </FormField>
+              <FormField label="SKU">
+                <input value={form.sku} readOnly className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-600" aria-label="Automatically generated SKU" />
+              </FormField>
               <div className="grid grid-cols-2 gap-3">
                 <FormField label="Category">
                   <select value={form.category_id} onChange={(e) => setForm({ ...form, category_id: e.target.value })} className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm">
@@ -639,8 +817,8 @@ function ProductsPage({ readOnly = false }) {
                 </select>
               </FormField>
               <div className="flex justify-end gap-3 pt-2">
-                <button type="button" onClick={() => setIsAddModalOpen(false)} className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700">Cancel</button>
-                <button type="submit" className="rounded-xl bg-[#1a3c36] px-4 py-2 text-sm font-semibold text-white">Save Product</button>
+                <button type="button" onClick={() => { setIsAddModalOpen(false); setEditingProductId(null); setProductImage(null); }} className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700" disabled={isSavingProduct}>Cancel</button>
+                <button type="submit" disabled={isSavingProduct} className="rounded-xl bg-[#1a3c36] px-4 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60">{isSavingProduct ? "Saving..." : editingProductId ? "Save Changes" : "Save Product"}</button>
               </div>
             </form>
           </div>
@@ -1043,6 +1221,9 @@ function SuppliersPage() {
 function PurchasesPage() {
   const { suppliers, products, loadData } = useInventoryContext();
   const [form, setForm] = useState({ purchase_number: 'PUR-1001', supplier_id: '', invoice_number: '', purchase_date: '', notes: '', items: [{ product_id: '', quantity: '1', unit: 'kg', purchase_price: '0', discount: '0', tax: '0' }] });
+  const generateInvoiceNumber = (supplierId) => (
+    `INV-${supplierId}-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).slice(2, 6).toUpperCase()}`
+  );
 
   const handleSubmit = async (event) => {
     event.preventDefault();
@@ -1076,13 +1257,24 @@ function PurchasesPage() {
               <input value={form.purchase_number} onChange={(e) => setForm({ ...form, purchase_number: e.target.value })} className="rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Enter purchase number" />
             </FormField>
             <FormField label="Supplier">
-              <select value={form.supplier_id} onChange={(e) => setForm({ ...form, supplier_id: e.target.value })} className="rounded-xl border border-slate-200 px-3 py-2 text-sm">
+              <select
+                value={form.supplier_id}
+                onChange={(event) => {
+                  const supplierId = event.target.value;
+                  setForm((current) => ({
+                    ...current,
+                    supplier_id: supplierId,
+                    invoice_number: supplierId ? generateInvoiceNumber(supplierId) : '',
+                  }));
+                }}
+                className="rounded-xl border border-slate-200 px-3 py-2 text-sm"
+              >
                 <option value="">Select supplier</option>
                 {suppliers.map((supplier) => <option key={supplier.id} value={supplier.id}>{supplier.supplier_name}</option>)}
               </select>
             </FormField>
             <FormField label="Invoice number">
-              <input value={form.invoice_number} onChange={(e) => setForm({ ...form, invoice_number: e.target.value })} className="rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Enter invoice number" />
+              <input value={form.invoice_number} readOnly className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-600" placeholder="Select a supplier to generate" />
             </FormField>
           </div>
 

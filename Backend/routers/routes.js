@@ -56,7 +56,7 @@ const legacyEmployeeUploadDirectories = [
 
 fs.mkdirSync(uploadDirectory, { recursive: true });
 
-const uploadFolders = new Set(['categories', 'cuisines', 'foods', 'banners', 'review', 'settings', 'tables']);
+const uploadFolders = new Set(['categories', 'cuisines', 'foods', 'inventory', 'banners', 'review', 'settings', 'tables']);
 fs.mkdirSync(employeeUploadDirectory, { recursive: true });
 
 const createUploadFilename = (req, file, callback) => {
