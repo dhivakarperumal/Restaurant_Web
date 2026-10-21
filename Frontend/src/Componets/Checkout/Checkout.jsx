@@ -454,9 +454,6 @@ function Checkout() {
     <main className="min-h-screen bg-[#faf8f5] pb-12">
       <PageHeader title="Checkout" />
       <PageContainer className="py-8">
-        {/* <Link to="/shop" className="mb-6 inline-flex items-center gap-2 text-sm font-semibold text-[#68766e] hover:text-[#a34f32]">
-          <ArrowLeft size={17} /> Continue shopping
-        </Link> */}
         <div className="mb-8">
           <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[#a34f32]">Almost there</p>
           <p className="mt-2 text-[#68766e]">Your details, your food, and the finishing touch.</p>
