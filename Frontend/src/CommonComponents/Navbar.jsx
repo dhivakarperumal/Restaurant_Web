@@ -294,12 +294,12 @@ const Navbar = () => {
                 </div>
                 
 
-                <NavLink
+                {/* <NavLink
                   to="/gallery"
                   className={desktopLinkClass}
                 >
                   Gallery
-                </NavLink>
+                </NavLink> */}
 
                 <NavLink
                   to="/reservation"
@@ -308,6 +308,14 @@ const Navbar = () => {
                   }
                 >
                   Reservation
+                </NavLink>
+                <NavLink
+                  to="/bulk-order"
+                  className={({ isActive }) =>
+                    desktopLinkClass({ isActive })
+                  }
+                >
+                  Event Order
                 </NavLink>
                 <NavLink to="/offers" className={desktopLinkClass}>
                   Offers
@@ -472,11 +480,14 @@ const Navbar = () => {
                 <NavLink to="/about" onClick={() => setMobileMenu(false)} className={mobileLinkClass}>
                   About
                 </NavLink>
-                <NavLink to="/gallery" onClick={() => setMobileMenu(false)} className={mobileLinkClass}>
+                {/* <NavLink to="/gallery" onClick={() => setMobileMenu(false)} className={mobileLinkClass}>
                   Gallery
-                </NavLink>
+                </NavLink> */}
                 <NavLink to="/reservation" onClick={() => setMobileMenu(false)} className={mobileLinkClass}>
                   Reservation
+                </NavLink>
+                <NavLink to="/bulk-order" onClick={() => setMobileMenu(false)} className={mobileLinkClass}>
+                  Event Order
                 </NavLink>
                 <NavLink to="/offers" onClick={() => setMobileMenu(false)} className={mobileLinkClass}>
                   Offers

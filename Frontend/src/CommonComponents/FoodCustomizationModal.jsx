@@ -9,9 +9,9 @@ const imageUrl = (image) => {
   return `${BACKEND_BASE_URL}${image.startsWith('/') ? image : `/${image}`}`;
 };
 
-function FoodCustomizationModal({ food, onClose, onAdd }) {
+function FoodCustomizationModal({ food, initialQuantity = 1, onClose, onAdd }) {
   const [imageIndex, setImageIndex] = useState(0);
-  const [quantity, setQuantity] = useState(1);
+  const [quantity, setQuantity] = useState(initialQuantity);
   const [selectedAddons, setSelectedAddons] = useState([]);
   const [customizations, setCustomizations] = useState(() => {
     const initial = {};
@@ -231,7 +231,7 @@ function FoodCustomizationModal({ food, onClose, onAdd }) {
             <div className="flex items-center rounded-xl border border-slate-200 bg-white">
               <button type="button" onClick={() => setQuantity((current) => Math.max(1, current - 1))} aria-label="Decrease quantity" className="rounded-l-xl p-2 text-slate-600 hover:bg-slate-100"><Minus className="h-3.5 w-3.5" /></button>
               <span className="min-w-8 text-center text-xs font-bold">{quantity}</span>
-              <button type="button" onClick={() => setQuantity((current) => current + 1)} aria-label="Increase quantity" className="rounded-r-xl p-2 text-slate-600 hover:bg-slate-100"><Plus className="h-3.5 w-3.5" /></button>
+              <button type="button" onClick={() => setQuantity((current) => Math.min(99, current + 1))} aria-label="Increase quantity" disabled={quantity >= 99} className="rounded-r-xl p-2 text-slate-600 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-40"><Plus className="h-3.5 w-3.5" /></button>
             </div>
             <span className="text-xs text-slate-500">₹{basePrice.toFixed(2)} each</span>
           </div>

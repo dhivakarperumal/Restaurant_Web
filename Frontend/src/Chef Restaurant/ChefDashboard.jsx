@@ -37,6 +37,8 @@ const statusClasses = {
 const ChefDashboard = () => {
   const { profileName } = useAuth();
   const [orders, setOrders] = useState([]);
+  const [requests, setRequests] = useState([]);
+  const [eventOrders, setEventOrders] = useState([]);
   const [ordersError, setOrdersError] = useState("");
   const [loading, setLoading] = useState(true);
   const [lastUpdated, setLastUpdated] = useState(null);
@@ -46,6 +48,11 @@ const ChefDashboard = () => {
     if (showLoading) setLoading(true);
 
     const [ordersResult] = await Promise.allSettled([api.get("/kitchen-orders")]);
+    const [ordersResult, requestsResult, eventOrdersResult] = await Promise.allSettled([
+      api.get("/kitchen-orders"),
+      api.get("/inventory/kitchen-requests"),
+      api.get("/event-orders", { params: { confirmedOnly: "true" } }),
+    ]);
 
     if (ordersResult.status === "fulfilled") {
       setOrders(Array.isArray(ordersResult.value.data?.orders) ? ordersResult.value.data.orders : []);
@@ -57,6 +64,18 @@ const ChefDashboard = () => {
     const updatedAt = new Date();
     setLastUpdated(updatedAt);
     setDashboardDate(updatedAt);
+    if (requestsResult.status === "fulfilled") {
+      setRequests(Array.isArray(requestsResult.value.data?.data) ? requestsResult.value.data.data : []);
+      setRequestsError("");
+    } else {
+      setRequestsError(requestsResult.reason?.response?.data?.message || "Inventory requests could not be loaded.");
+    }
+
+    if (eventOrdersResult.status === "fulfilled") {
+      setEventOrders(Array.isArray(eventOrdersResult.value.data?.data) ? eventOrdersResult.value.data.data : []);
+    }
+
+    setLastUpdated(new Date());
     setLoading(false);
   }, []);
 
@@ -120,6 +139,17 @@ const ChefDashboard = () => {
       .filter((item) => item.value > 0);
   }, [orders]);
 
+  const pendingRequests = useMemo(
+    () => requests.filter((request) => String(request.status || "Pending").toLowerCase() === "pending"),
+    [requests]
+  );
+
+  const upcomingEventOrders = useMemo(() => {
+    return eventOrders.filter((o) =>
+      ["confirmed", "preparing", "ready"].includes(String(o.status || "").toLowerCase())
+    );
+  }, [eventOrders]);
+
   const stats = [
     { label: "Active Orders", value: orderCounts.active, detail: "Open kitchen orders", icon: UtensilsCrossed, bg: "bg-[#22c55e]" },
     { label: "Pending", value: orderCounts.pending, detail: "Waiting to start", icon: Clock3, bg: "bg-[#f59e0b]" },
@@ -146,6 +176,33 @@ const ChefDashboard = () => {
 
       {/* Attendance Banner */}
       <AttendanceWidget variant="dashboard" />
+
+      {/* Confirmed Event Orders Banner */}
+      {upcomingEventOrders.length > 0 && (
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 rounded-2xl border border-amber-300 bg-gradient-to-r from-amber-50 via-orange-50 to-amber-50 p-4 shadow-sm">
+          <div className="flex items-center gap-3">
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#d4a843] text-white shadow-sm">
+              <CalendarDays size={22} />
+            </div>
+            <div>
+              <p className="text-sm font-extrabold text-amber-950">
+                {upcomingEventOrders.length} Confirmed Event Order{upcomingEventOrders.length > 1 ? "s" : ""} to Prepare
+              </p>
+              <p className="text-xs text-amber-800">
+                Next: {upcomingEventOrders[0]?.event_type || "Catering Event"} ({upcomingEventOrders[0]?.guest_count} guests) on{" "}
+                {upcomingEventOrders[0]?.event_date ? new Date(upcomingEventOrders[0].event_date).toLocaleDateString(undefined, { month: "short", day: "numeric" }) : "Upcoming"}
+              </p>
+            </div>
+          </div>
+          <Link
+            to="/chef/event-orders"
+            className="inline-flex items-center gap-1.5 rounded-xl bg-[#1a3c36] px-4 py-2 text-xs font-black text-white shadow-sm hover:bg-[#25524a] transition self-start sm:self-center"
+          >
+            Open Event Orders
+            <ArrowRight size={14} />
+          </Link>
+        </div>
+      )}
 
       <section aria-label="Kitchen order summary" className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {stats.map((stat, index) => {

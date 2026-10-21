@@ -11,6 +11,7 @@ import About from './Componets/About.jsx'
 import Gallery from './Componets/Gallery.jsx'
 import Contact from './Componets/Contact.jsx'
 import Reservation from './Componets/Reservation.jsx'
+import BulkOrder from './Componets/BulkOrder/BulkOrder.jsx'
 
 import Login from './Componets/Auth/Login.jsx'
 import Register from './Componets/Auth/Register.jsx'
@@ -44,6 +45,7 @@ import AddFood from './Admin/AdminProducts/AddFood.jsx'
 import InventoryModule from './Admin/InventoryModule.jsx'
 import AdminReviews from './Admin/AdminReviews/AdminReviews.jsx'
 import AdminReservations from './Admin/AdminReservations.jsx'
+import AdminEventOrders from './Admin/AdminEventOrders.jsx'
 import PointOfSale from './Admin/Billings/PointOfSale.jsx'
 import Billing from './Admin/Billings/Billing.jsx'
 import NewBilling from './Admin/Billings/NewBilling.jsx'
@@ -56,6 +58,7 @@ const RevenuePage = lazy(() => import('./Admin/RevenuePage.jsx'))
 
 import ChefDashboard from './Chef Restaurant/ChefDashboard.jsx'
 import ChefKitchenOrders from './Chef Restaurant/ChefKitchenOrders.jsx'
+import ChefEventOrders from './Chef Restaurant/ChefEventOrders.jsx'
 import ChefLayout from './Chef Restaurant/Chefpanel.jsx'
 import ChefAttendance from './Chef Restaurant/ChefAttendance.jsx'
 import ServerDashboard from './Server Restaurant/ServerDashboard.jsx'
@@ -73,6 +76,11 @@ import { AdminProvider } from './PrivateRouter/AdminContext';
 import RouteError from './CommonComponents/RouteError.jsx'
 import CustomerOrdersPage from './CommonComponents/CustomerOrdersPage.jsx'
 import FoodDetailsPage from './CommonComponents/FoodDetailsPage.jsx'
+
+const directFoodRoute = window.location.pathname.match(/^\/food\/([^/]+)\/?$/i)
+if (directFoodRoute && !window.location.hash) {
+  window.history.replaceState(window.history.state, '', `/#/food/${directFoodRoute[1]}${window.location.search}`)
+}
 
 
 
@@ -114,6 +122,14 @@ const router = createHashRouter([
       {
         path: 'reservation',
         element: <Reservation />,
+      },
+      {
+        path: 'bulk-order',
+        element: <BulkOrder />,
+      },
+      {
+        path: 'event-order',
+        element: <BulkOrder />,
       },
       {
         path: 'food/:foodId',
@@ -212,6 +228,14 @@ const router = createHashRouter([
           {
             path: 'reservations',
             element: <AdminReservations />,
+          },
+          {
+            path: 'event-orders',
+            element: <AdminEventOrders />,
+          },
+          {
+            path: 'bulk-orders',
+            element: <AdminEventOrders />,
           },
           {
             path: 'customers',
@@ -356,6 +380,10 @@ const router = createHashRouter([
           {
             path: 'orders',
             element: <ChefKitchenOrders />,
+          },
+          {
+            path: 'event-orders',
+            element: <ChefEventOrders />,
           },
           {
             path: 'requests',

@@ -42,6 +42,7 @@ const revenueRouter = require('./revenue');
 const reservationsRouter = require('./reservations');
 const expensesRouter = require('./expenses');
 const salariesRouter = require('./salaries');
+const eventOrdersRouter = require('./eventOrdersRouter');
 const { getFund, updateFund } = require('../controllers/expenseController');
 const attendanceRouter = require('./attendance');
 
@@ -55,7 +56,7 @@ const legacyEmployeeUploadDirectories = [
 
 fs.mkdirSync(uploadDirectory, { recursive: true });
 
-const uploadFolders = new Set(['categories', 'cuisines', 'foods', 'banners', 'review', 'settings']);
+const uploadFolders = new Set(['categories', 'cuisines', 'foods', 'banners', 'review', 'settings', 'tables']);
 fs.mkdirSync(employeeUploadDirectory, { recursive: true });
 
 const createUploadFilename = (req, file, callback) => {
@@ -276,6 +277,46 @@ router.use('/reservations', (req, res, next) => {
   }
   return requireAdmin(req, res, next);
 }, reservationsRouter);
+const requireEventOrderAccess = async (req, res, next) => {
+  const token = req.get('authorization')?.replace(/^Bearer\s+/i, '');
+  if (!token) return res.status(401).json({ success: false, message: 'Login is required.' });
+
+  try {
+    const user = await findUserByToken(token);
+    if (!user) return res.status(401).json({ success: false, message: 'Your session is invalid or expired.' });
+
+    const role = String(user.role || '').trim().toLowerCase();
+    const isAdmin = ['admin', 'super admin', 'superadmin'].includes(role);
+    const isChef = role === 'chef';
+
+    if (isAdmin) {
+      req.auth = user;
+      return next();
+    }
+
+    if (isChef) {
+      const isAllowedChefMethod = (req.method === 'GET') || (req.method === 'PATCH' && req.path.endsWith('/status'));
+      if (isAllowedChefMethod) {
+        req.auth = user;
+        return next();
+      }
+      return res.status(403).json({ success: false, message: 'Administrator access is required for this action.' });
+    }
+
+    return res.status(403).json({ success: false, message: 'Administrator access is required.' });
+  } catch (error) {
+    console.error('Failed to authorize event order request:', error);
+    return res.status(500).json({ success: false, message: 'Unable to verify access.' });
+  }
+};
+
+router.use('/event-orders', (req, res, next) => {
+  if (req.path === '/menu') return next();
+  if (req.method === 'POST' && req.path === '/') return optionalAuth(req, res, next);
+  if (req.path === '/mine') return requireAuthenticatedUser(req, res, next);
+  if (req.method === 'POST' && req.path.endsWith('/respond')) return requireAuthenticatedUser(req, res, next);
+  return requireEventOrderAccess(req, res, next);
+}, eventOrdersRouter);
 router.use('/inventory', requireInventoryAccess, inventoryRouter);
 router.get('/employees', optionalAuth, requireEmployeeAdmin, listEmployees);
 router.get('/employees/documents/:filename', optionalAuth, requireEmployeeAdmin, (req, res) => {

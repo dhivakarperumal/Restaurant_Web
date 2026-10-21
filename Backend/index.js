@@ -2,7 +2,7 @@ const express = require('express');
 const http = require('http');
 const cors = require('cors');
 const path = require('path');
-const { initializeAuthSchema, initializeBannerSchema, initializeCategorySchema, initializeCouponSchema, initializeCuisineSchema, initializeFoodSchema, initializeInventorySchema, initializeKitchenOrderSchema, initializeReviewSchema, initializeVideoSchema, initializeEmployeeSchema, initializeServerTableSchema, initializeSettingsSchema, initializeOrderSchema, initializeWishlistSchema, initializeReservationSchema, initializeAttendanceSchema, initializeExpenseSchema, initializeSalarySchema, testConnection } = require('./modules/modules');
+const { initializeAuthSchema, initializeBannerSchema, initializeCategorySchema, initializeCouponSchema, initializeCuisineSchema, initializeFoodSchema, initializeInventorySchema, initializeKitchenOrderSchema, initializeReviewSchema, initializeVideoSchema, initializeEmployeeSchema, initializeServerTableSchema, initializeSettingsSchema, initializeOrderSchema, initializeEventOrderSchema, initializeWishlistSchema, initializeReservationSchema, initializeAttendanceSchema, initializeExpenseSchema, initializeSalarySchema, testConnection } = require('./modules/modules');
 const apiRouter = require('./routers/routes');
 const { initializeRevenueIndexes } = require('./modules/revenue');
 const { initializeNotificationSocket } = require('./utils/notificationSocket');
@@ -70,6 +70,8 @@ async function startServer() {
     console.log('Kitchen order tables ready');
     await initializeOrderSchema();
     console.log('Customer order tables ready');
+    await initializeEventOrderSchema();
+    console.log('Event & bulk order tables ready');
     await initializeWishlistSchema();
     console.log('Wishlist table ready');
     await initializeBannerSchema();

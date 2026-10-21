@@ -11,6 +11,7 @@ async function initializeServerTableSchema() {
       table_id VARCHAR(255) NOT NULL UNIQUE,
       table_number VARCHAR(100) NOT NULL UNIQUE,
       no_of_seats INT NOT NULL,
+      image_url TEXT NULL,
       status VARCHAR(50) NOT NULL DEFAULT 'Available',
       created_by VARCHAR(255) NULL,
       updated_by VARCHAR(255) NULL,
@@ -25,6 +26,15 @@ async function initializeServerTableSchema() {
   await db.query(
     'ALTER TABLE server_table MODIFY updated_at TIMESTAMP NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP'
   );
+
+  try {
+    const [imageColumns] = await db.query("SHOW COLUMNS FROM server_table LIKE 'image_url'");
+    if (imageColumns.length === 0) {
+      await db.query('ALTER TABLE server_table ADD COLUMN image_url TEXT NULL AFTER no_of_seats');
+    }
+  } catch (error) {
+    console.error('Error adding server table image_url column:', error.message);
+  }
 
   // Migrate any legacy names stored in created_by or updated_by to user_id
   try {
@@ -60,18 +70,19 @@ async function initializeServerTableSchema() {
 /**
  * Creates a new record in server_table with an auto-generated UUID for table_id.
  */
-async function createServerTable({ table_number, no_of_seats, status = 'Available', created_by = null }) {
+async function createServerTable({ table_number, no_of_seats, image_url = null, status = 'Available', created_by = null }) {
   const tableId = randomUUID();
   const normalizedTableNumber = String(table_number || '').trim();
   const seats = Number(no_of_seats);
 
   const [result] = await db.execute(
-    `INSERT INTO server_table (table_id, table_number, no_of_seats, status, created_by, updated_by)
-     VALUES (?, ?, ?, ?, ?, NULL)`,
+    `INSERT INTO server_table (table_id, table_number, no_of_seats, image_url, status, created_by, updated_by)
+     VALUES (?, ?, ?, ?, ?, ?, NULL)`,
     [
       tableId,
       normalizedTableNumber,
       seats,
+      image_url || null,
       status || 'Available',
       created_by || null,
     ]
@@ -82,6 +93,7 @@ async function createServerTable({ table_number, no_of_seats, status = 'Availabl
     table_id: tableId,
     table_number: normalizedTableNumber,
     no_of_seats: seats,
+    image_url: image_url || null,
     status: status || 'Available',
     assigned_server_id: null,
     assigned_at: null,
@@ -103,6 +115,7 @@ async function findServerTables(filters = {}) {
       st.table_id, 
       st.table_number, 
       st.no_of_seats, 
+      st.image_url,
       st.status, 
       st.assigned_server_id, 
       st.assigned_at,
@@ -203,6 +216,7 @@ async function findServerTableById(idOrTableId) {
       st.table_id, 
       st.table_number, 
       st.no_of_seats, 
+      st.image_url,
       st.status, 
       st.assigned_server_id, 
       st.assigned_at,
@@ -235,6 +249,7 @@ async function findServerTableByNumber(table_number) {
       st.table_id, 
       st.table_number, 
       st.no_of_seats, 
+      st.image_url,
       st.status, 
       st.assigned_server_id, 
       st.assigned_at,
@@ -257,7 +272,7 @@ async function findServerTableByNumber(table_number) {
 /**
  * Updates a server table by normal id or table_id (UUID).
  */
-async function updateServerTable(idOrTableId, { table_number, no_of_seats, status, assigned_server_id, updated_by = null }) {
+async function updateServerTable(idOrTableId, { table_number, no_of_seats, image_url, status, assigned_server_id, updated_by = null }) {
   const existingTable = await findServerTableById(idOrTableId);
   if (!existingTable) return null;
 
@@ -272,6 +287,11 @@ async function updateServerTable(idOrTableId, { table_number, no_of_seats, statu
   if (no_of_seats !== undefined) {
     updates.push('no_of_seats = ?');
     values.push(Number(no_of_seats));
+  }
+
+  if (image_url !== undefined) {
+    updates.push('image_url = ?');
+    values.push(image_url || null);
   }
 
   if (status !== undefined) {

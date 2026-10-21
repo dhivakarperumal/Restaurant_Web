@@ -124,7 +124,9 @@ export default function ServerTables() {
     table_number: "",
     no_of_seats: "",
     status: "Available",
+    image_url: "",
   });
+  const [tableImageFile, setTableImageFile] = useState(null);
 
   const fetchActiveBills = async () => {
     try {
@@ -178,7 +180,9 @@ export default function ServerTables() {
       table_number: "",
       no_of_seats: "",
       status: "Available",
+      image_url: "",
     });
+    setTableImageFile(null);
     setEditingTable(null);
     setIsAddModalOpen(true);
   };
@@ -188,7 +192,9 @@ export default function ServerTables() {
       table_number: table.table_number || "",
       no_of_seats: table.no_of_seats || "",
       status: table.status || "Available",
+      image_url: table.image_url || "",
     });
+    setTableImageFile(null);
     setEditingTable(table);
     setIsAddModalOpen(true);
   };
@@ -210,11 +216,22 @@ export default function ServerTables() {
 
     try {
       setSubmitting(true);
+      let imageUrl = formData.image_url;
+      if (tableImageFile) {
+        const uploadData = new FormData();
+        uploadData.append("folder", "tables");
+        uploadData.append("file", tableImageFile);
+        const uploadResponse = await api.post("/upload", uploadData);
+        imageUrl = uploadResponse.data?.url;
+        if (!imageUrl) throw new Error("The image upload did not return an image URL.");
+      }
+
       if (editingTable) {
         const idToUpdate = editingTable.table_id || editingTable.id;
         const res = await api.put(`/server-tables/${idToUpdate}`, {
           table_number: tableNumber,
           no_of_seats: seats,
+          image_url: imageUrl || null,
           status: formData.status,
           user_id: userProfile?.user_id,
         });
@@ -227,6 +244,7 @@ export default function ServerTables() {
         const res = await api.post("/server-tables", {
           table_number: tableNumber,
           no_of_seats: seats,
+          image_url: imageUrl || null,
           status: formData.status,
           user_id: userProfile?.user_id,
         });
@@ -831,9 +849,17 @@ export default function ServerTables() {
                   {/* Top Bar: Table Number & Status */}
                   <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center gap-2">
-                      <div className="w-10 h-10 rounded-xl bg-[#1f3228] text-[#d4a843] flex items-center justify-center font-bold text-base font-serif shadow-inner">
-                        {table.table_number.length <= 4 ? table.table_number : "#"}
-                      </div>
+                        {table.image_url ? (
+                          <img
+                            src={table.image_url}
+                            alt={`${table.table_number} table`}
+                            className="h-10 w-10 rounded-xl object-cover"
+                          />
+                        ) : (
+                          <div className="w-10 h-10 rounded-xl bg-[#1f3228] text-[#d4a843] flex items-center justify-center font-bold text-base font-serif shadow-inner">
+                            {table.table_number.length <= 4 ? table.table_number : "#"}
+                          </div>
+                        )}
                       <div>
                         <h4 className="font-bold text-gray-900 text-base leading-tight">
                           {table.table_number}
@@ -1109,9 +1135,17 @@ export default function ServerTables() {
                       )}
                       <td className="py-3 px-4 font-semibold text-gray-900">
                         <div className="flex items-center gap-2">
-                          <div className="w-8 h-8 rounded-lg bg-[#1f3228] text-[#d4a843] flex items-center justify-center font-bold text-xs font-serif">
-                            {table.table_number.length <= 4 ? table.table_number : "#"}
-                          </div>
+                          {table.image_url ? (
+                            <img
+                              src={table.image_url}
+                              alt={`${table.table_number} table`}
+                              className="h-8 w-8 rounded-lg object-cover"
+                            />
+                          ) : (
+                            <div className="w-8 h-8 rounded-lg bg-[#1f3228] text-[#d4a843] flex items-center justify-center font-bold text-xs font-serif">
+                              {table.table_number.length <= 4 ? table.table_number : "#"}
+                            </div>
+                          )}
                           <span>{table.table_number}</span>
                         </div>
                       </td>
@@ -1295,7 +1329,7 @@ export default function ServerTables() {
       {/* Add / Edit Table Modal (Admin only) */}
       {isAdminTablesPage && isAddModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
-          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-gray-100 relative">
+          <div className="bg-white rounded-2xl max-h-[90vh] max-w-md w-full overflow-y-auto p-6 shadow-2xl border border-gray-100 relative">
             <button
               onClick={() => !submitting && setIsAddModalOpen(false)}
               className="absolute right-4 top-4 p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition"
@@ -1367,6 +1401,56 @@ export default function ServerTables() {
                 </div>
                 <p className="text-[11px] text-gray-400 mt-1">
                   Total maximum guest capacity for this table.
+                </p>
+              </div>
+
+              <div>
+                <label htmlFor="server-table-image" className="block text-xs font-semibold text-gray-700 mb-1">
+                  Table Image
+                </label>
+                {formData.image_url && (
+                  <div className="mb-2 flex items-center gap-3">
+                    <img
+                      src={formData.image_url}
+                      alt="Current table"
+                      className="h-14 w-14 rounded-lg border border-gray-200 object-cover"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setFormData((current) => ({ ...current, image_url: "" }));
+                        setTableImageFile(null);
+                      }}
+                      className="text-xs font-medium text-red-600 hover:text-red-700"
+                    >
+                      Remove image
+                    </button>
+                  </div>
+                )}
+                <input
+                  id="server-table-image"
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  onChange={(event) => {
+                    const file = event.target.files?.[0] || null;
+                    if (!file) return;
+                    if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
+                      toast.error("Choose a JPG, PNG, or WEBP image.");
+                      event.target.value = "";
+                      return;
+                    }
+                    if (file.size > 5 * 1024 * 1024) {
+                      toast.error("Image size must be 5 MB or less.");
+                      event.target.value = "";
+                      return;
+                    }
+                    setTableImageFile(file);
+                  }}
+                  className="w-full text-sm text-gray-600 file:mr-3 file:rounded-lg file:border-0 file:bg-gray-100 file:px-3 file:py-2 file:text-xs file:font-semibold file:text-gray-700 hover:file:bg-gray-200"
+                />
+                <p className="mt-1 text-[11px] text-gray-400">
+                  Optional. JPG, PNG, or WEBP, up to 5 MB.
+                  {tableImageFile ? ` Selected: ${tableImageFile.name}` : ""}
                 </p>
               </div>
 
