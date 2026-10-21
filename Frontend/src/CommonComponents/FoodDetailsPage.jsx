@@ -160,6 +160,32 @@ function FoodDetailsPage() {
     });
   };
 
+  const addRelatedFoodDirectly = (selectedFood) => {
+    if (!addToCart) {
+      toast.error('Unable to add this item to your cart.');
+      return false;
+    }
+    const price = Number(selectedFood.final_price || selectedFood.mrp || 0);
+    const size = selectedFood.portion_size || 'Standard';
+    return addToCart({
+      ...selectedFood,
+      id: selectedFood.food_id || selectedFood.id,
+      food_id: selectedFood.food_id || selectedFood.id,
+      product_id: selectedFood.food_id || selectedFood.id,
+      product_name: selectedFood.food_name,
+      name: selectedFood.food_name,
+      price,
+      portion_size: size,
+      product_image: selectedFood.food_images?.[0] || '',
+      image: selectedFood.food_images?.[0] || '',
+      quantity: 1,
+    }, {
+      size,
+      price,
+      quantity: 1,
+    });
+  };
+
   const images = Array.isArray(food?.food_images) ? food.food_images.filter(Boolean) : [];
   const addons = Array.isArray(food?.addons) ? food.addons : [];
   const customizations = Array.isArray(food?.customizations) ? food.customizations : [];
@@ -255,7 +281,8 @@ function FoodDetailsPage() {
                   className="h-full w-full"
                   onSelect={openRelatedFood}
                   onImageClick={openRelatedFood}
-                  onAdd={() => setRelatedFoodToCustomize(relatedFood)}
+                  onCustomize={setRelatedFoodToCustomize}
+                  onAdd={addRelatedFoodDirectly}
                   isInWishlist={isRelatedFoodInWishlist}
                   onToggleWishlist={toggleWishlist}
                 />

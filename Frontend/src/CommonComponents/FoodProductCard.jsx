@@ -11,6 +11,7 @@ function FoodProductCard({
   food,
   onSelect,
   onImageClick,
+  onCustomize,
   onAdd,
   cartQuantity = 0,
   isInWishlist = false,
@@ -127,7 +128,7 @@ function FoodProductCard({
           </div>
           <button
             type="button"
-            onClick={onSelect}
+            onClick={onImageClick || onSelect}
             className="block max-w-full truncate text-left font-serif text-base font-bold text-slate-900 transition hover:text-[#1a3c36]"
           >
             {food.food_name}
@@ -151,7 +152,11 @@ function FoodProductCard({
             type="button"
             onClick={(event) => {
               event.stopPropagation();
-              onAdd(food);
+              if (hasOptions) {
+                onCustomize?.(food);
+              } else {
+                onAdd?.(food);
+              }
             }}
             disabled={!isAvailable}
             className="inline-flex shrink-0 items-center gap-1.5 rounded-xl bg-[#1a3c36] px-3.5 py-2 text-xs font-bold text-white shadow-sm transition hover:bg-[#245048] active:scale-95 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400"

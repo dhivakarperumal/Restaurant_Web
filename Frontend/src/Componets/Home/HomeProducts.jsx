@@ -1,6 +1,6 @@
 import { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { ArrowLeft, ArrowRight, UtensilsCrossed } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Autoplay } from 'swiper/modules';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import api from '../../api';
@@ -12,6 +12,7 @@ import 'swiper/css';
 
 function HomeProducts() {
   const swiperRef = useRef(null);
+  const navigate = useNavigate();
   const [foods, setFoods] = useState([]);
   const [selectedFood, setSelectedFood] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -74,6 +75,29 @@ function HomeProducts() {
       quantity,
       selectedAddons,
       selectedCustomizations,
+    });
+  };
+
+  const addFoodToCart = (food) => {
+    const price = Number(food.final_price || food.mrp || 0);
+    const size = food.portion_size || 'Standard';
+    if (!addToCart) return false;
+    return addToCart({
+      ...food,
+      id: food.food_id || food.id,
+      food_id: food.food_id || food.id,
+      product_id: food.food_id || food.id,
+      product_name: food.food_name,
+      name: food.food_name,
+      price,
+      portion_size: size,
+      product_image: food.food_images?.[0] || '',
+      image: food.food_images?.[0] || '',
+      quantity: 1,
+    }, {
+      size,
+      price,
+      quantity: 1,
     });
   };
 
@@ -148,8 +172,10 @@ function HomeProducts() {
                   <FoodProductCard
                     food={food}
                     className="h-full w-full"
-                    onSelect={() => setSelectedFood(food)}
-                    onAdd={setSelectedFood}
+                    onSelect={() => navigate(`/food/${encodeURIComponent(food.food_id || food.id)}`, { state: { food } })}
+                    onImageClick={() => navigate(`/food/${encodeURIComponent(food.food_id || food.id)}`, { state: { food } })}
+                    onCustomize={setSelectedFood}
+                    onAdd={addFoodToCart}
                     isInWishlist={wishlist.some((item) => (
                       String(item.food_id || item.id || item.product_id || item._id)
                         === String(food.food_id || food.id)
