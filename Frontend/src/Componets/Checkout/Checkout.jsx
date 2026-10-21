@@ -1,5 +1,5 @@
 import { useContext, useEffect, useMemo, useRef, useState } from 'react';
-import { ArrowLeft, CheckCircle2, MapPin, PackageCheck, ShoppingBag, UtensilsCrossed } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, LocateFixed, MapPin, PackageCheck, ShoppingBag, UtensilsCrossed } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 import api, { BACKEND_BASE_URL } from '../../api';
@@ -79,6 +79,43 @@ const addressFields = [
   { name: 'pincode', label: 'Pincode', placeholder: '6-digit pincode' },
   { name: 'landmark', label: 'Landmark (optional)', placeholder: 'Nearby landmark' },
 ];
+const getAddressFromCoordinates = async ({ latitude, longitude }) => {
+  const query = new URLSearchParams({
+    format: 'jsonv2',
+    addressdetails: '1',
+    zoom: '18',
+    lat: String(latitude),
+    lon: String(longitude),
+  });
+  const response = await fetch(`https://nominatim.openstreetmap.org/reverse?${query}`);
+  if (!response.ok) {
+    throw new Error('Your location could not be converted to an address. Please enter it manually.');
+  }
+
+  const result = await response.json();
+  const parts = result.address || {};
+  const resolvedState = parts.state === 'NCT of Delhi' ? 'Delhi' : parts.state;
+  const matchedState = indianStatesAndTerritories.find(
+    (state) => state.toLowerCase() === String(resolvedState || '').toLowerCase(),
+  );
+  const street = [parts.house_number, parts.road || parts.pedestrian || parts.footway]
+    .filter(Boolean)
+    .join(' ');
+  const area = parts.neighbourhood || parts.suburb || parts.quarter || parts.city_district;
+  const city = parts.city || parts.town || parts.village || parts.municipality || parts.county;
+
+  if (!result.address || (!street && !area && !city && !parts.state)) {
+    throw new Error('No address details were found for your current location. Please enter it manually.');
+  }
+
+  return {
+    address_line: street || parts.house_name || '',
+    area_locality: area || '',
+    city: city || '',
+    state: matchedState || '',
+    pincode: String(parts.postcode || '').replace(/\s/g, '').slice(0, 6),
+  };
+};
 
 const getCheckoutIdempotencyKey = async (userId, cart) => {
   const requestFingerprint = JSON.stringify({
@@ -130,6 +167,7 @@ function Checkout() {
   });
   const [savedAddresses, setSavedAddresses] = useState([]);
   const [selectedAddress, setSelectedAddress] = useState('new');
+  const [fetchingLocation, setFetchingLocation] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [completedOrder, setCompletedOrder] = useState(null);
   const submissionInProgress = useRef(false);
@@ -184,6 +222,45 @@ function Checkout() {
       pincode: '',
       landmark: '',
     });
+  };
+
+  const useCurrentLocation = () => {
+    if (!navigator.geolocation) {
+      toast.error('Location is not supported by this browser. Please enter your address manually.');
+      return;
+    }
+
+    setFetchingLocation(true);
+    navigator.geolocation.getCurrentPosition(
+      async ({ coords }) => {
+        try {
+          const detectedAddress = await getAddressFromCoordinates(coords);
+          setSelectedAddress('new');
+          setAddress((previous) => ({
+            ...previous,
+            ...Object.fromEntries(
+              Object.entries(detectedAddress).filter(([, value]) => value),
+            ),
+          }));
+          toast.success('Location found. Please review your address before placing the order.');
+        } catch (error) {
+          console.error('Could not resolve current checkout location:', error);
+          toast.error(error.message || 'Could not fetch your address. Please enter it manually.');
+        } finally {
+          setFetchingLocation(false);
+        }
+      },
+      (error) => {
+        const message = error.code === error.PERMISSION_DENIED
+          ? 'Location permission was denied. Allow location access or enter your address manually.'
+          : error.code === error.TIMEOUT
+            ? 'Location lookup timed out. Please try again or enter your address manually.'
+            : 'Your current location could not be detected. Please enter your address manually.';
+        toast.error(message);
+        setFetchingLocation(false);
+      },
+      { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 },
+    );
   };
 
   const finishOrder = async (orderNumber, message) => {
@@ -245,14 +322,21 @@ function Checkout() {
         return;
       }
 
+      const paymentDetails = data.data.razorpay;
+      if (!paymentDetails?.key_id || !paymentDetails.order_id || !Number(paymentDetails.amount)) {
+        throw new Error('Razorpay payment details are incomplete. Please contact the restaurant.');
+      }
       await loadRazorpay();
+      if (!window.Razorpay) {
+        throw new Error('Razorpay checkout could not be initialized. Please try again.');
+      }
       const checkout = new window.Razorpay({
-        key: data.data.razorpay.key_id,
-        amount: data.data.razorpay.amount,
-        currency: data.data.razorpay.currency,
+        key: paymentDetails.key_id,
+        amount: paymentDetails.amount,
+        currency: paymentDetails.currency,
         name: 'Restaurant',
         description: `Order ${data.data.order_number}`,
-        order_id: data.data.razorpay.order_id,
+        order_id: paymentDetails.order_id,
         prefill: {
           name: customer.name,
           email: customer.email,
@@ -421,7 +505,22 @@ function Checkout() {
                     </label>
                   )}
                   <div className="grid gap-4 sm:grid-cols-2">
-                    {addressFields.map((field) => (
+                      <div className="sm:col-span-2">
+                        <button
+                          type="button"
+                          onClick={useCurrentLocation}
+                          disabled={fetchingLocation}
+                          className="inline-flex items-center gap-2 rounded-xl border border-[#a34f32] px-4 py-2.5 text-sm font-semibold text-[#a34f32] transition hover:bg-[#fbf6f1] disabled:cursor-wait disabled:opacity-60"
+                        >
+                          <LocateFixed size={17} />
+                          {fetchingLocation ? 'Finding your address…' : 'Use current location'}
+                        </button>
+                        <p className="mt-2 text-xs leading-5 text-[#8c7a6b]">
+                          If you continue, your device coordinates will be sent to OpenStreetMap to find an address. Please review the result; you can edit any field.
+                          {' '}<a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer" className="underline hover:text-[#a34f32]">© OpenStreetMap contributors</a>
+                        </p>
+                      </div>
+                      {addressFields.map((field) => (
                       <label key={field.name} className={`text-sm font-semibold text-[#263830] ${field.name === 'address_line' || field.name === 'area_locality' || field.name === 'landmark' ? 'sm:col-span-2' : ''}`}>
                         {field.label}{field.name !== 'landmark' && <span className="text-[#a34f32]"> *</span>}
                         {field.name === 'state' ? (
