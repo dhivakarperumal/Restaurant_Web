@@ -390,6 +390,10 @@ const router = createHashRouter([
             element: <ChefInventoryRequests />,
           },
           {
+            path: 'stock-details',
+            element: <StockDetails readOnly />,
+          },
+          {
             path: 'products',
             element: <ChefProducts />,
           },

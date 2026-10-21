@@ -73,6 +73,11 @@ const navItems = [
     label: "Inventory Requests",
     icon: ClipboardList,
   },
+  {
+    path: "/chef/stock-details",
+    label: "Stock Details",
+    icon: Package,
+  },
 
 
 
