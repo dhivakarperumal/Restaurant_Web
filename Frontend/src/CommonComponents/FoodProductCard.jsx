@@ -30,7 +30,7 @@ function FoodProductCard({
 
   return (
     <article className={`group flex h-full flex-col overflow-hidden rounded-3xl border border-slate-200/80 bg-white shadow-sm transition duration-300 hover:-translate-y-1 hover:border-emerald-200 hover:shadow-xl ${className}`}>
-      <div className="relative aspect-[4/3] overflow-hidden bg-slate-100">
+      <div className="relative aspect-square overflow-hidden bg-slate-100">
         <button
           type="button"
           onClick={onImageClick || onSelect}
