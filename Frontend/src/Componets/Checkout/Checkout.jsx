@@ -5,6 +5,8 @@ import { toast } from 'react-hot-toast';
 import api, { BACKEND_BASE_URL } from '../../api';
 import { useAuth } from '../../PrivateRouter/AuthContext';
 import { StoreContext } from '../../PrivateRouter/StoreContext';
+import PageContainer from '../../CommonComponents/PageContainer';
+import PageHeader from '../../CommonComponents/PageHeader';
 
 let razorpayScriptPromise;
 
@@ -388,62 +390,75 @@ function Checkout() {
 
   if (!user?.user_id) {
     return (
-      <main className="min-h-[65vh] bg-[#faf8f5] px-4 py-16">
-        <div className="mx-auto max-w-lg rounded-3xl border border-[#eadfd2] bg-white p-8 text-center shadow-sm">
-          <ShoppingBag className="mx-auto mb-4 h-10 w-10 text-[#a34f32]" />
-          <h1 className="text-2xl font-bold text-[#263830]">Log in to checkout</h1>
-          <p className="mt-2 text-sm text-[#68766e]">Sign in to save your address and place your order.</p>
-          <Link to="/login" state={{ from: '/checkout' }} className="mt-6 inline-flex rounded-xl bg-[#263830] px-6 py-3 font-semibold text-white hover:bg-[#1a2822]">
-            Log in
-          </Link>
-        </div>
+      <main className="min-h-[65vh] bg-[#faf8f5] pb-16">
+        <PageHeader title="Log in to checkout" />
+        <PageContainer className="pt-12">
+          <div className="mx-auto max-w-lg rounded-3xl border border-[#eadfd2] bg-white p-8 text-center shadow-sm">
+            <ShoppingBag className="mx-auto mb-4 h-10 w-10 text-[#a34f32]" />
+            <p className="text-sm text-[#68766e]">Sign in to save your address and place your order.</p>
+            <Link to="/login" state={{ from: '/checkout' }} className="mt-6 inline-flex rounded-xl bg-[#263830] px-6 py-3 font-semibold text-white hover:bg-[#1a2822]">
+              Log in
+            </Link>
+          </div>
+        </PageContainer>
       </main>
     );
   }
 
   if (completedOrder) {
     return (
-      <main className="min-h-[65vh] bg-[#faf8f5] px-4 py-16">
-        <div className="mx-auto max-w-xl rounded-3xl border border-[#eadfd2] bg-white p-8 text-center shadow-sm">
-          <CheckCircle2 className="mx-auto mb-4 h-14 w-14 text-emerald-600" />
-          <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[#a34f32]">Order confirmed</p>
-          <h1 className="mt-2 text-3xl font-bold text-[#263830]">Thank you, {customer.name}!</h1>
-          <p className="mt-3 text-sm text-[#68766e]">Your order reference is</p>
-          <p className="mt-1 break-all font-mono text-sm font-bold text-[#263830]">{completedOrder}</p>
-          <Link to="/shop" className="mt-7 inline-flex items-center gap-2 rounded-xl bg-[#263830] px-6 py-3 font-semibold text-white hover:bg-[#1a2822]">
-            <ShoppingBag size={17} /> Continue browsing
-          </Link>
-        </div>
+      <main className="min-h-[65vh] bg-[#faf8f5] pb-16">
+        <PageHeader title="Order confirmed" />
+        <PageContainer className="pt-12">
+          <div className="mx-auto max-w-xl rounded-3xl border border-[#eadfd2] bg-white p-8 text-center shadow-sm">
+            <CheckCircle2 className="mx-auto mb-4 h-14 w-14 text-emerald-600" />
+            <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[#a34f32]">Order confirmed</p>
+            <h1 className="mt-2 text-3xl font-bold text-[#263830]">Thank you, {customer.name}!</h1>
+            <p className="mt-3 text-sm text-[#68766e]">Your order reference is</p>
+            <p className="mt-1 break-all font-mono text-sm font-bold text-[#263830]">{completedOrder}</p>
+            <Link to="/shop" className="mt-7 inline-flex items-center gap-2 rounded-xl bg-[#263830] px-6 py-3 font-semibold text-white hover:bg-[#1a2822]">
+              <ShoppingBag size={17} /> Continue browsing
+            </Link>
+          </div>
+        </PageContainer>
       </main>
     );
   }
 
   if (loadingCart) {
-    return <main className="min-h-[60vh] bg-[#faf8f5] px-4 py-20 text-center text-[#68766e]">Loading your cart…</main>;
+    return (
+      <main className="min-h-[60vh] bg-[#faf8f5] pb-16">
+        <PageHeader title="Checkout" />
+        <PageContainer className="py-16 text-center text-[#68766e]">Loading your cart…</PageContainer>
+      </main>
+    );
   }
 
   if (!cart.length) {
     return (
-      <main className="min-h-[60vh] bg-[#faf8f5] px-4 py-16">
-        <div className="mx-auto max-w-lg rounded-3xl border border-[#eadfd2] bg-white p-8 text-center">
-          <ShoppingBag className="mx-auto mb-4 h-10 w-10 text-[#a34f32]" />
-          <h1 className="text-2xl font-bold text-[#263830]">Your cart is empty</h1>
-          <p className="mt-2 text-sm text-[#68766e]">Add something delicious before checking out.</p>
-          <Link to="/shop" className="mt-6 inline-flex rounded-xl bg-[#263830] px-6 py-3 font-semibold text-white">Browse food</Link>
-        </div>
+      <main className="min-h-[60vh] bg-[#faf8f5] pb-16">
+        <PageHeader title="Checkout" />
+        <PageContainer className="pt-12">
+          <div className="mx-auto max-w-lg rounded-3xl border border-[#eadfd2] bg-white p-8 text-center">
+            <ShoppingBag className="mx-auto mb-4 h-10 w-10 text-[#a34f32]" />
+            <h1 className="text-2xl font-bold text-[#263830]">Your cart is empty</h1>
+            <p className="mt-2 text-sm text-[#68766e]">Add something delicious before checking out.</p>
+            <Link to="/shop" className="mt-6 inline-flex rounded-xl bg-[#263830] px-6 py-3 font-semibold text-white">Browse food</Link>
+          </div>
+        </PageContainer>
       </main>
     );
   }
 
   return (
-    <main className="min-h-screen bg-[#faf8f5] px-4 py-8 sm:px-6 lg:px-8">
-      <div className="mx-auto max-w-7xl">
-        <Link to="/shop" className="mb-6 inline-flex items-center gap-2 text-sm font-semibold text-[#68766e] hover:text-[#a34f32]">
+    <main className="min-h-screen bg-[#faf8f5] pb-12">
+      <PageHeader title="Checkout" />
+      <PageContainer className="py-8">
+        {/* <Link to="/shop" className="mb-6 inline-flex items-center gap-2 text-sm font-semibold text-[#68766e] hover:text-[#a34f32]">
           <ArrowLeft size={17} /> Continue shopping
-        </Link>
+        </Link> */}
         <div className="mb-8">
           <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[#a34f32]">Almost there</p>
-          <h1 className="mt-1 text-3xl font-bold text-[#263830] sm:text-4xl">Checkout</h1>
           <p className="mt-2 text-[#68766e]">Your details, your food, and the finishing touch.</p>
         </div>
 
@@ -631,7 +646,7 @@ function Checkout() {
             </div>
           </aside>
         </form>
-      </div>
+      </PageContainer>
     </main>
   );
 }
