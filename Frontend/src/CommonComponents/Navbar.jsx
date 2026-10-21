@@ -177,7 +177,7 @@ const Navbar = () => {
       location.pathname.startsWith("/products/") ||
       location.pathname.startsWith("/product/"));
 
-  const isPagesRoute = ["/gallery", "/about", "/contact"].includes(
+  const isPagesRoute = ["/about", "/contact", "/privacy-policy"].includes(
     location.pathname,
   );
 
@@ -297,6 +297,9 @@ const Navbar = () => {
                 <NavLink to="/offers" className={desktopLinkClass}>
                   Offers
                 </NavLink>
+                <NavLink to="/gallery" className={desktopLinkClass}>
+                  Gallery
+                </NavLink>
                 <div className="group relative">
                   <button
                     type="button"
@@ -308,9 +311,9 @@ const Navbar = () => {
                   </button>
                   <div className="invisible absolute right-0 top-full z-50 min-w-44 translate-y-1 rounded-xl border border-brand-border bg-brand-bg p-2 opacity-0 shadow-xl transition-all group-hover:visible group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:visible group-focus-within:translate-y-0 group-focus-within:opacity-100">
                     {[
-                      ["Gallery", "/gallery"],
                       ["About Us", "/about"],
                       ["Contact Us", "/contact"],
+                      ["Privacy Policy", "/privacy-policy"],
                     ].map(([label, path]) => (
                       <NavLink
                         key={path}
@@ -491,6 +494,9 @@ const Navbar = () => {
                 <NavLink to="/offers" onClick={() => setMobileMenu(false)} className={mobileLinkClass}>
                   Offers
                 </NavLink>
+                <NavLink to="/gallery" onClick={() => setMobileMenu(false)} className={mobileLinkClass}>
+                  Gallery
+                </NavLink>
 
                 <button
                   type="button"
@@ -505,9 +511,9 @@ const Navbar = () => {
                 {mobileSubMenu === "pages" && (
                   <div className="ml-3 space-y-1 border-l border-primary/20 pl-3">
                     {[
-                      ["Gallery", "/gallery"],
                       ["About Us", "/about"],
                       ["Contact Us", "/contact"],
+                      ["Privacy Policy", "/privacy-policy"],
                     ].map(([label, path]) => (
                       <NavLink
                         key={path}
