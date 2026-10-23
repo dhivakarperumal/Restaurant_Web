@@ -61,6 +61,7 @@ export default function ServerSupplies() {
   const [requesterFilter, setRequesterFilter] = useState('All');
   const [requestSort, setRequestSort] = useState('latest');
   const [requestView, setRequestView] = useState('table');
+  const [inventoryView, setInventoryView] = useState('table');
   const [activeTab, setActiveTab] = useState('items');
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -429,43 +430,6 @@ export default function ServerSupplies() {
         </div>
       </header>}
 
-      <div className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm xl:flex-row xl:items-center">
-        <label className="relative min-w-0 flex-1">
-          <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
-          <input
-            type="search"
-            value={requestSearch}
-            onChange={(event) => setRequestSearch(event.target.value)}
-            placeholder="Search request number, item, requester, or remarks..."
-            aria-label="Search supply requests"
-            className="h-[52px] w-full rounded-xl border border-slate-200 bg-slate-50 pl-11 pr-3 text-sm outline-none focus:border-[#1a3c36]"
-          />
-        </label>
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:flex">
-          <select value={requesterFilter} onChange={(event) => setRequesterFilter(event.target.value)} aria-label="Filter by requester" className="h-[52px] min-w-0 rounded-xl border border-slate-200 bg-white px-4 text-sm text-slate-700 outline-none focus:border-[#1a3c36] xl:w-[170px]">
-            <option value="All">All Requesters</option>
-            {requesters.map((requester) => <option key={requester} value={requester}>{requester}</option>)}
-          </select>
-          <select value={requestStatus} onChange={(event) => setRequestStatus(event.target.value)} aria-label="Filter by request status" className="h-[52px] min-w-0 rounded-xl border border-slate-200 bg-white px-4 text-sm text-slate-700 outline-none focus:border-[#1a3c36] xl:w-[170px]">
-            <option value="All">All Status</option>
-            <option value="pending">Pending</option>
-            <option value="approved">Approved</option>
-            <option value="rejected">Rejected</option>
-          </select>
-          <select value={requestSort} onChange={(event) => setRequestSort(event.target.value)} aria-label="Sort supply requests" className="col-span-2 h-[52px] min-w-0 rounded-xl border border-slate-200 bg-white px-4 text-sm text-slate-700 outline-none focus:border-[#1a3c36] sm:col-span-1 xl:w-[180px]">
-            <option value="latest">Sort by: Latest</option>
-            <option value="oldest">Sort by: Oldest</option>
-          </select>
-        </div>
-        <div className="flex h-[52px] shrink-0 items-stretch overflow-hidden rounded-xl border border-slate-200" role="group" aria-label="Request display mode">
-          <button type="button" onClick={() => setRequestView('grid')} aria-label="Grid view" aria-pressed={requestView === 'grid'} className={`flex w-14 items-center justify-center ${requestView === 'grid' ? 'bg-[#1a3c36] text-white' : 'bg-white text-slate-600 hover:bg-slate-50'}`}><LayoutGrid size={19} /></button>
-          <button type="button" onClick={() => setRequestView('table')} aria-label="Table view" aria-pressed={requestView === 'table'} className={`flex w-14 items-center justify-center border-l border-slate-200 ${requestView === 'table' ? 'bg-[#1a3c36] text-white' : 'bg-white text-slate-600 hover:bg-slate-50'}`}><Table2 size={19} /></button>
-        </div>
-        {!isAdmin && <button type="button" onClick={() => { setActiveTab('requests'); openRequestForm(); }} className="inline-flex h-[52px] shrink-0 items-center justify-center gap-2 rounded-xl bg-[#1a3c36] px-5 text-sm font-semibold text-white hover:bg-[#244e45]">
-          <Plus size={18} /> Request Supplies
-        </button>}
-      </div>
-
       <div className="flex gap-2 border-b border-slate-200" role="tablist" aria-label="Serving supplies sections">
         {[
           { id: 'items', label: 'All Supply Items', count: items.length },
@@ -526,6 +490,42 @@ export default function ServerSupplies() {
             <p className="mt-1 text-sm text-slate-500">{isAdmin ? 'Approving adds catalog items to stock. Custom items require manual procurement.' : 'Requests are sent to Admin. Stock is not changed until approved.'}</p>
           </div>
           <span className="rounded-full bg-amber-50 px-3 py-1 text-sm font-semibold text-amber-800">{requests.filter((request) => request.status === 'pending').length} pending</span>
+        </div>
+        <div className="flex flex-col gap-3 border-b border-slate-100 p-4 xl:flex-row xl:items-center">
+          <label className="relative min-w-0 flex-1">
+            <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+            <input
+              type="search"
+              value={requestSearch}
+              onChange={(event) => setRequestSearch(event.target.value)}
+              placeholder="Search request number, item, requester, or remarks..."
+              aria-label="Search supply requests"
+              className="h-[52px] w-full rounded-xl border border-slate-200 bg-slate-50 pl-11 pr-3 text-sm outline-none focus:border-[#1a3c36]"
+            />
+          </label>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:flex">
+            <select value={requesterFilter} onChange={(event) => setRequesterFilter(event.target.value)} aria-label="Filter by requester" className="h-[52px] min-w-0 rounded-xl border border-slate-200 bg-white px-4 text-sm text-slate-700 outline-none focus:border-[#1a3c36] xl:w-[170px]">
+              <option value="All">All Requesters</option>
+              {requesters.map((requester) => <option key={requester} value={requester}>{requester}</option>)}
+            </select>
+            <select value={requestStatus} onChange={(event) => setRequestStatus(event.target.value)} aria-label="Filter by request status" className="h-[52px] min-w-0 rounded-xl border border-slate-200 bg-white px-4 text-sm text-slate-700 outline-none focus:border-[#1a3c36] xl:w-[170px]">
+              <option value="All">All Status</option>
+              <option value="pending">Pending</option>
+              <option value="approved">Approved</option>
+              <option value="rejected">Rejected</option>
+            </select>
+            <select value={requestSort} onChange={(event) => setRequestSort(event.target.value)} aria-label="Sort supply requests" className="col-span-2 h-[52px] min-w-0 rounded-xl border border-slate-200 bg-white px-4 text-sm text-slate-700 outline-none focus:border-[#1a3c36] sm:col-span-1 xl:w-[180px]">
+              <option value="latest">Sort by: Latest</option>
+              <option value="oldest">Sort by: Oldest</option>
+            </select>
+          </div>
+          <div className="flex h-[52px] shrink-0 items-stretch overflow-hidden rounded-xl border border-slate-200" role="group" aria-label="Request display mode">
+            <button type="button" onClick={() => setRequestView('grid')} aria-label="Grid view" aria-pressed={requestView === 'grid'} className={`flex w-14 items-center justify-center ${requestView === 'grid' ? 'bg-[#1a3c36] text-white' : 'bg-white text-slate-600 hover:bg-slate-50'}`}><LayoutGrid size={19} /></button>
+            <button type="button" onClick={() => setRequestView('table')} aria-label="Table view" aria-pressed={requestView === 'table'} className={`flex w-14 items-center justify-center border-l border-slate-200 ${requestView === 'table' ? 'bg-[#1a3c36] text-white' : 'bg-white text-slate-600 hover:bg-slate-50'}`}><Table2 size={19} /></button>
+          </div>
+          {!isAdmin && <button type="button" onClick={() => openRequestForm()} className="inline-flex h-[52px] shrink-0 items-center justify-center gap-2 rounded-xl bg-[#1a3c36] px-5 text-sm font-semibold text-white hover:bg-[#244e45]">
+            <Plus size={18} /> Request Supplies
+          </button>}
         </div>
         {requests.length === 0 ? (
           <p className="p-5 text-sm text-slate-500">{isAdmin ? 'There are no supply requests yet.' : 'You have not submitted any supply requests yet.'}</p>
@@ -589,29 +589,30 @@ export default function ServerSupplies() {
       </div>}
 
       {activeTab === 'items' && <div className="space-y-6">
-      <div className="flex flex-col gap-3 sm:flex-row">
-        <select aria-label="Filter by category" value={selectedCategory} onChange={(event) => { setSelectedCategory(event.target.value); setPage(1); }} className="h-11 rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700">
-          <option value="All">All Categories</option>
-          {categories.map((category) => <option key={category.id || categoryName(category)} value={categoryName(category)}>{categoryName(category)}</option>)}
-        </select>
-        <select aria-label="Filter by stock status" value={selectedStatus} onChange={(event) => { setSelectedStatus(event.target.value); setPage(1); }} className="h-11 rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700">
-          <option value="All">All Stock Status</option><option value="Available">Available</option><option value="Low Stock">Low Stock</option><option value="Out of Stock">Out of Stock</option>
-        </select>
-      </div>
-
       <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
         <div className="flex flex-col gap-3 border-b border-slate-100 p-4 lg:flex-row lg:items-center">
           <label className="relative min-w-0 flex-1">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
             <input value={search} onChange={(event) => { setSearch(event.target.value); setPage(1); }} placeholder="Search by item name or code..." className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50 pl-10 pr-3 text-sm outline-none focus:border-[#1a3c36]" />
           </label>
+          <select aria-label="Filter by category" value={selectedCategory} onChange={(event) => { setSelectedCategory(event.target.value); setPage(1); }} className="h-11 rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700">
+            <option value="All">All Categories</option>
+            {categories.map((category) => <option key={category.id || categoryName(category)} value={categoryName(category)}>{categoryName(category)}</option>)}
+          </select>
+          <select aria-label="Filter by stock status" value={selectedStatus} onChange={(event) => { setSelectedStatus(event.target.value); setPage(1); }} className="h-11 rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700">
+            <option value="All">All Stock Status</option><option value="Available">Available</option><option value="Low Stock">Low Stock</option><option value="Out of Stock">Out of Stock</option>
+          </select>
+          <div className="flex h-11 shrink-0 items-stretch overflow-hidden rounded-xl border border-slate-200" role="group" aria-label="Supply item display mode">
+            <button type="button" onClick={() => setInventoryView('grid')} aria-label="Card mode" title="Card mode" aria-pressed={inventoryView === 'grid'} className={`flex w-12 items-center justify-center ${inventoryView === 'grid' ? 'bg-[#1a3c36] text-white' : 'bg-white text-slate-600 hover:bg-slate-50'}`}><LayoutGrid size={18} /></button>
+            <button type="button" onClick={() => setInventoryView('table')} aria-label="Table mode" title="Table mode" aria-pressed={inventoryView === 'table'} className={`flex w-12 items-center justify-center border-l border-slate-200 ${inventoryView === 'table' ? 'bg-[#1a3c36] text-white' : 'bg-white text-slate-600 hover:bg-slate-50'}`}><Table2 size={18} /></button>
+          </div>
         </div>
 
         {loading ? <div className="p-12 text-center text-sm text-slate-500">Loading supply inventory…</div> : filteredItems.length === 0 ? (
           <div className="p-12 text-center text-sm text-slate-500">No supply items found.</div>
         ) : (
           <>
-            <div className="scrollbar-hide hidden overflow-x-auto lg:block">
+            {inventoryView === 'table' && <div className="scrollbar-hide overflow-x-auto">
               <table className="min-w-[1180px] w-full text-left text-sm">
                 <thead className="bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
                   <tr>{['Image', 'Item Name', 'Item Code', 'Category', 'Material', 'Current Stock', 'Unit', 'Purchase Price', 'Stock Status', 'Actions'].map((heading) => <th key={heading} className="px-4 py-3 font-semibold">{heading}</th>)}</tr>
@@ -637,8 +638,8 @@ export default function ServerSupplies() {
                   ))}
                 </tbody>
               </table>
-            </div>
-            <div className="grid gap-3 p-4 lg:hidden">
+            </div>}
+            {inventoryView === 'grid' && <div className="grid gap-3 p-4 sm:grid-cols-2 xl:grid-cols-3">
               {pageItems.map((item) => (
                 <article key={item.id} className="rounded-xl border border-slate-200 p-4">
                   <div className="flex gap-3">
@@ -664,7 +665,7 @@ export default function ServerSupplies() {
                   </div>
                 </article>
               ))}
-            </div>
+            </div>}
             <div className="flex flex-col gap-3 border-t border-slate-100 px-4 py-3 text-sm text-slate-500 sm:flex-row sm:items-center sm:justify-between">
               <span>Showing {filteredItems.length ? (currentPage - 1) * PAGE_SIZE + 1 : 0}–{Math.min(currentPage * PAGE_SIZE, filteredItems.length)} of {filteredItems.length} items</span>
               <div className="flex items-center gap-2">
