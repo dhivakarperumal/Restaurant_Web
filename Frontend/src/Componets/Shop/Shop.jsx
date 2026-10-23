@@ -25,7 +25,6 @@ import PageContainer from "../../CommonComponents/PageContainer";
 import PageHeader from "../../CommonComponents/PageHeader";
 import FoodProductCard from "../../CommonComponents/FoodProductCard";
 import FoodCustomizationModal from "../../CommonComponents/FoodCustomizationModal";
-import ShopPromoBanner from "../../CommonComponents/ShopPromoBanner";
 
 const resolveImageUrl = (img) => {
   if (!img || typeof img !== "string") return "";
@@ -300,15 +299,6 @@ export default function Shop({ offersOnly = false }) {
     (currentPage - 1) * productsPerPage,
     currentPage * productsPerPage,
   );
-  const gridItems = paginatedFoods.flatMap((food, index) => {
-    const items = [{ type: "food", food }];
-    const bannerVariants = { 2: "fresh", 5: "chef", 8: "share" };
-    const bannerVariant = bannerVariants[index];
-    if (bannerVariant && index < paginatedFoods.length - 1) {
-      items.push({ type: "banner", variant: bannerVariant });
-    }
-    return items;
-  });
   const pageNumbers = Array.from(
     { length: totalPages },
     (_, index) => index + 1,
@@ -765,22 +755,18 @@ export default function Shop({ offersOnly = false }) {
           ) : viewMode === "grid" ? (
             /* Grid View */
             <div className={`grid grid-cols-1 gap-6 sm:grid-cols-2 ${desktopFiltersOpen ? "xl:grid-cols-4" : "xl:grid-cols-5"}`}>
-              {gridItems.map((item) => (
-                item.type === "banner" ? (
-                  <ShopPromoBanner key={`promo-${item.variant}`} variant={item.variant} />
-                ) : (
-                  <FoodProductCard
-                    key={item.food.food_id || item.food.id}
-                    food={item.food}
-                    onSelect={() => navigate(`/food/${encodeURIComponent(item.food.food_id || item.food.id)}`, { state: { food: item.food } })}
-                    onImageClick={() => navigate(`/food/${encodeURIComponent(item.food.food_id || item.food.id)}`, { state: { food: item.food } })}
-                    onCustomize={openCustomizer}
-                    onAdd={handleQuickAdd}
-                    cartQuantity={getItemCartQty(item.food.food_id || item.food.id)}
-                    isInWishlist={isItemInWishlist(item.food.food_id || item.food.id)}
-                    onToggleWishlist={toggleWishlist}
-                  />
-                )
+              {paginatedFoods.map((food) => (
+                <FoodProductCard
+                  key={food.food_id || food.id}
+                  food={food}
+                  onSelect={() => navigate(`/food/${encodeURIComponent(food.food_id || food.id)}`, { state: { food } })}
+                  onImageClick={() => navigate(`/food/${encodeURIComponent(food.food_id || food.id)}`, { state: { food } })}
+                  onCustomize={openCustomizer}
+                  onAdd={handleQuickAdd}
+                  cartQuantity={getItemCartQty(food.food_id || food.id)}
+                  isInWishlist={isItemInWishlist(food.food_id || food.id)}
+                  onToggleWishlist={toggleWishlist}
+                />
               ))}
             </div>
           ) : (

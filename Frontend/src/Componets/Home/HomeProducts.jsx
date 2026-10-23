@@ -7,6 +7,7 @@ import api from '../../api';
 import FoodProductCard from '../../CommonComponents/FoodProductCard';
 import FoodCustomizationModal from '../../CommonComponents/FoodCustomizationModal';
 import PageContainer from '../../CommonComponents/PageContainer';
+import ShopPromoBanner from '../../CommonComponents/ShopPromoBanner';
 import { StoreContext } from '../../PrivateRouter/StoreContext';
 import 'swiper/css';
 
@@ -251,19 +252,25 @@ function HomeProducts() {
 
   return (
     <>
-      {productSections.map((section) => (
-        <HomeProductSwiper
-          key={section.id}
-          section={section}
-          loading={loading}
-          error={error}
-          onRetry={fetchFoods}
-          onSelectFood={(food) => navigate(`/food/${encodeURIComponent(food.food_id || food.id)}`, { state: { food } })}
-          onCustomize={setSelectedFood}
-          onAdd={addFoodToCart}
-          wishlist={wishlist}
-          toggleWishlist={toggleWishlist}
-        />
+      {productSections.map((section, index) => (
+        <div key={section.id}>
+          <HomeProductSwiper
+            section={section}
+            loading={loading}
+            error={error}
+            onRetry={fetchFoods}
+            onSelectFood={(food) => navigate(`/food/${encodeURIComponent(food.food_id || food.id)}`, { state: { food } })}
+            onCustomize={setSelectedFood}
+            onAdd={addFoodToCart}
+            wishlist={wishlist}
+            toggleWishlist={toggleWishlist}
+          />
+          <section className="px-4 py-4 sm:py-6">
+            <PageContainer>
+              <ShopPromoBanner variant={['fresh', 'chef', 'share'][index]} />
+            </PageContainer>
+          </section>
+        </div>
       ))}
       {selectedFood && (
         <FoodCustomizationModal
