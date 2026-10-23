@@ -69,7 +69,7 @@ const getOrders = async (req, res, customerOnly, orderNumber = null) => {
        LEFT JOIN employees assigned_partner ON assigned_partner.employee_id = o.assigned_delivery_partner_id
        ${where}
        ORDER BY o.created_at DESC, o.id DESC
-       LIMIT 250`,
+       ${customerOnly ? 'LIMIT 250' : ''}`,
       params
     );
 

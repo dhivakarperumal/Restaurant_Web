@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Clock3, LayoutGrid, List, MapPin, PackageCheck, RefreshCw, Search, UserRound, UtensilsCrossed } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Clock3, LayoutGrid, List, MapPin, PackageCheck, RefreshCw, Search, UserRound, UtensilsCrossed } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import api, { BACKEND_BASE_URL } from '../api';
 import PageHeader from './PageHeader';
@@ -76,6 +76,16 @@ const formatDate = (value) => {
   });
 };
 
+const isOrderFromToday = (order) => {
+  if (!order.created_at) return false;
+  const createdAt = new Date(order.created_at);
+  const today = new Date();
+  return !Number.isNaN(createdAt.getTime())
+    && createdAt.getFullYear() === today.getFullYear()
+    && createdAt.getMonth() === today.getMonth()
+    && createdAt.getDate() === today.getDate();
+};
+
 function CustomerOrdersPage({ audience = 'admin', view = 'all', showOrderFilters = false, todayOnly = false }) {
   const getInitialOrderType = (v) => (v === 'delivery' ? 'home_delivery' : v === 'pickup' ? 'pickup' : 'all');
   const getInitialStatus = (v) => (v === 'new' ? 'placed' : v === 'cancelled' ? 'cancelled' : v === 'delivered' ? 'delivered' : 'all');
@@ -94,6 +104,7 @@ function CustomerOrdersPage({ audience = 'admin', view = 'all', showOrderFilters
   const [searchTerm, setSearchTerm] = useState('');
   const [sortOrder, setSortOrder] = useState('latest');
   const [layout, setLayout] = useState('table');
+  const [page, setPage] = useState(1);
 
   // Immediately synchronize filter state whenever audience or view prop changes
   const [prevViewKey, setPrevViewKey] = useState(`${audience}-${view}`);
@@ -153,6 +164,11 @@ function CustomerOrdersPage({ audience = 'admin', view = 'all', showOrderFilters
         return sortOrder === 'latest' ? -difference : difference;
       });
   }, [orders, orderTypeFilter, searchTerm, sortOrder, statusFilter]);
+  const pageSize = 10;
+  const pageCount = Math.max(1, Math.ceil(visibleOrders.length / pageSize));
+  const currentPage = Math.min(page, pageCount);
+  const pageOffset = (currentPage - 1) * pageSize;
+  const paginatedOrders = visibleOrders.slice(pageOffset, pageOffset + pageSize);
   const statusCounts = useMemo(() => STATUS_OPTIONS.reduce((counts, status) => {
     counts[status.value] = orders.filter((order) => order.order_status === status.value).length;
     return counts;
@@ -172,10 +188,7 @@ function CustomerOrdersPage({ audience = 'admin', view = 'all', showOrderFilters
       const { data } = await api.get(endpoint, { params: isCustomer ? undefined : params });
       const fetchedOrders = Array.isArray(data?.data) ? data.data : [];
       const visibleOrders = todayOnly
-        ? fetchedOrders.filter((order) =>
-          order.created_at &&
-          new Date(order.created_at).toLocaleDateString() === new Date().toLocaleDateString()
-        )
+        ? fetchedOrders.filter(isOrderFromToday)
         : fetchedOrders;
       setOrders(visibleOrders);
       setError('');
@@ -230,7 +243,8 @@ function CustomerOrdersPage({ audience = 'admin', view = 'all', showOrderFilters
         const endpoint = isCustomer ? '/orders/mine' : '/orders/management';
         const { data } = await api.get(endpoint, { params: isCustomer ? undefined : params });
         if (isCancelled) return;
-        setOrders(Array.isArray(data?.data) ? data.data : []);
+        const fetchedOrders = Array.isArray(data?.data) ? data.data : [];
+        setOrders(todayOnly ? fetchedOrders.filter(isOrderFromToday) : fetchedOrders);
         setError('');
         if (canAssignDelivery) {
           fetchDeliveryPartners();
@@ -253,7 +267,7 @@ function CustomerOrdersPage({ audience = 'admin', view = 'all', showOrderFilters
       isCancelled = true;
       window.clearInterval(intervalId);
     };
-  }, [canAssignDelivery, fetchDeliveryPartners, filterStatus, filterOrderType, isCustomer, orderTypeFilter, showOrderFilters]);
+  }, [canAssignDelivery, fetchDeliveryPartners, filterStatus, filterOrderType, isCustomer, orderTypeFilter, showOrderFilters, todayOnly]);
 
   const changeStatus = async (order, status, deliveryPartnerId = '') => {
     setUpdatingOrder(order.order_number);
@@ -412,7 +426,7 @@ function CustomerOrdersPage({ audience = 'admin', view = 'all', showOrderFilters
               <input
                 type="search"
                 value={searchTerm}
-                onChange={(event) => setSearchTerm(event.target.value)}
+                onChange={(event) => { setSearchTerm(event.target.value); setPage(1); }}
                 placeholder="Search order, customer, phone..."
                 aria-label="Search orders"
                 className="h-[46px] w-full rounded-xl border border-[#dfe2e5] bg-white pl-11 pr-3 text-sm text-[#263830] outline-none placeholder:text-[#89938c] focus:border-[#6d9a79]"
@@ -420,16 +434,16 @@ function CustomerOrdersPage({ audience = 'admin', view = 'all', showOrderFilters
             </label>
             <div className="flex flex-wrap items-center gap-2 sm:justify-end">
               <span className="mr-1 whitespace-nowrap text-xs text-[#68766e]">{visibleOrders.length} of {orders.length}</span>
-              <select value={orderTypeFilter} onChange={(event) => setOrderTypeFilter(event.target.value)} aria-label="Filter orders by type" className="h-[46px] rounded-xl border border-[#dfe2e5] bg-white px-3 text-sm text-[#263830] outline-none focus:border-[#6d9a79]">
+              <select value={orderTypeFilter} onChange={(event) => { setOrderTypeFilter(event.target.value); setPage(1); }} aria-label="Filter orders by type" className="h-[46px] rounded-xl border border-[#dfe2e5] bg-white px-3 text-sm text-[#263830] outline-none focus:border-[#6d9a79]">
                 <option value="all">All Types</option>
                 <option value="home_delivery">Home Delivery</option>
                 <option value="pickup">Pickup</option>
               </select>
-              <select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)} aria-label="Filter orders by status" className="h-[46px] rounded-xl border border-[#dfe2e5] bg-white px-3 text-sm text-[#263830] outline-none focus:border-[#6d9a79]">
+              <select value={statusFilter} onChange={(event) => { setStatusFilter(event.target.value); setPage(1); }} aria-label="Filter orders by status" className="h-[46px] rounded-xl border border-[#dfe2e5] bg-white px-3 text-sm text-[#263830] outline-none focus:border-[#6d9a79]">
                 <option value="all">All Status ({orders.length})</option>
                 {STATUS_OPTIONS.map((status) => <option key={status.value} value={status.value}>{status.label} ({statusCounts[status.value]})</option>)}
               </select>
-              <select value={sortOrder} onChange={(event) => setSortOrder(event.target.value)} aria-label="Sort orders" className="h-[46px] rounded-xl border border-[#dfe2e5] bg-white px-3 text-sm text-[#263830] outline-none focus:border-[#6d9a79]">
+              <select value={sortOrder} onChange={(event) => { setSortOrder(event.target.value); setPage(1); }} aria-label="Sort orders" className="h-[46px] rounded-xl border border-[#dfe2e5] bg-white px-3 text-sm text-[#263830] outline-none focus:border-[#6d9a79]">
                 <option value="latest">Sort by: Latest</option>
                 <option value="oldest">Sort by: Oldest</option>
               </select>
@@ -464,7 +478,7 @@ function CustomerOrdersPage({ audience = 'admin', view = 'all', showOrderFilters
                   <tr>{['Order', 'Customer', 'Items', 'Type', 'Status', ...(canAssignDelivery ? ['Delivery Partner'] : []), 'Payment', 'Total', 'Placed'].map((heading) => <th key={heading} className="whitespace-nowrap px-4 py-4 font-bold">{heading}</th>)}</tr>
                 </thead>
                 <tbody className="divide-y divide-[#edf0eb]">
-                  {visibleOrders.map((order) => (
+                  {paginatedOrders.map((order) => (
                     <tr key={order.order_number} className="hover:bg-[#fbfcfa]">
                       <td className="whitespace-nowrap px-4 py-3 font-mono text-xs font-bold text-[#263830]">{order.order_number}</td>
                       <td className="px-4 py-3"><p className="font-semibold text-[#263830]">{order.customer_name}</p><p className="text-xs text-[#68766e]">{order.customer_phone}</p></td>
@@ -495,7 +509,7 @@ function CustomerOrdersPage({ audience = 'admin', view = 'all', showOrderFilters
           </div>
         ) : (
           <div className={`grid gap-5 ${showOrderFilters ? 'md:grid-cols-2' : 'xl:grid-cols-2'}`}>
-            {visibleOrders.map((order) => (
+            {paginatedOrders.map((order) => (
               <article key={order.order_number} className="overflow-hidden rounded-2xl border border-[#e3e7e1] bg-white shadow-sm">
                 <div className="flex flex-wrap items-start justify-between gap-3 border-b border-[#edf0eb] p-5">
                   <div className="min-w-0">
@@ -599,6 +613,34 @@ function CustomerOrdersPage({ audience = 'admin', view = 'all', showOrderFilters
               </article>
             ))}
           </div>
+        )}
+        {!loading && !error && visibleOrders.length > 0 && (
+          <nav aria-label="Order pages" className="flex flex-col gap-3 rounded-xl border border-[#e1ded8] bg-white px-4 py-3 shadow-sm sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-sm text-[#68766e]">
+              Showing {pageOffset + 1}-{Math.min(pageOffset + pageSize, visibleOrders.length)} of {visibleOrders.length} orders
+            </p>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setPage(Math.max(1, currentPage - 1))}
+                disabled={currentPage === 1}
+                className="inline-flex min-h-10 items-center gap-1 rounded-lg border border-[#dfe2e5] bg-white px-3 text-sm font-medium text-[#34443b] transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <ChevronLeft size={16} /> Previous
+              </button>
+              <span className="min-w-20 text-center text-sm font-medium text-[#34443b]">
+                {currentPage} / {pageCount}
+              </span>
+              <button
+                type="button"
+                onClick={() => setPage(Math.min(pageCount, currentPage + 1))}
+                disabled={currentPage === pageCount}
+                className="inline-flex min-h-10 items-center gap-1 rounded-lg border border-[#dfe2e5] bg-white px-3 text-sm font-medium text-[#34443b] transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                Next <ChevronRight size={16} />
+              </button>
+            </div>
+          </nav>
         )}
       </div>
       </main>
