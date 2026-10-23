@@ -4,8 +4,6 @@ import { Swiper, SwiperSlide } from "swiper/react";
 import api, { BACKEND_BASE_URL } from "../api";
 import PageContainer from "./PageContainer";
 import "swiper/css";
-import "swiper/css/pagination";
-import { Pagination } from "swiper/modules";
 
 const resolveReviewImage = (image) => {
   if (!image || typeof image !== "string") return "";
@@ -198,8 +196,6 @@ const CustomerReviews = () => {
                 )}
                 <Swiper
                   className="customer-reviews-swiper !overflow-hidden !py-2"
-                  modules={[Pagination]}
-                  pagination={{ clickable: true }}
                   onSwiper={(swiper) => {
                     swiperRef.current = swiper;
                   }}
