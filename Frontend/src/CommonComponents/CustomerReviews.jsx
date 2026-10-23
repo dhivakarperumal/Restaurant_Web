@@ -246,7 +246,7 @@ const CustomerReviews = () => {
                                 {review.title}
                               </p>
                             )}
-                            <p className="line-clamp-5 pl-5 text-sm leading-6 text-[#283c32] sm:text-base sm:leading-7">
+                            <p className="line-clamp-5 pl-5 text-justify text-[13px] leading-5 text-[#283c32] sm:text-sm sm:leading-6">
                               {review.comment}
                             </p>
                           </div>
