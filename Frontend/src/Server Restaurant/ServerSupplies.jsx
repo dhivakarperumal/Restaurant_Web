@@ -322,16 +322,30 @@ export default function ServerSupplies() {
         </div>
       </header>
 
-      <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {[
-          { label: 'Total Supply Items', value: items.length, icon: Boxes, color: 'text-sky-700 bg-sky-50' },
-          { label: 'Available Stock', value: availableStock.toLocaleString('en-IN'), icon: Package, color: 'text-emerald-700 bg-emerald-50' },
-          { label: 'Low Stock Items', value: lowStockCount, icon: AlertTriangle, color: 'text-amber-700 bg-amber-50' },
-          { label: 'Out of Stock Items', value: outOfStockCount, icon: TrendingDown, color: 'text-rose-700 bg-rose-50' },
-        ].map(({ label, value, icon: Icon, color }) => (
-          <article key={label} className="flex items-center gap-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-            <div className={`flex h-12 w-12 items-center justify-center rounded-xl ${color}`}><Icon size={21} /></div>
-            <div><p className="text-sm text-slate-500">{label}</p><p className="mt-1 text-2xl font-bold text-slate-900">{value}</p></div>
+          { label: 'Total Supply Items', value: items.length.toLocaleString('en-IN'), detail: 'in the supply catalog', badge: 'Items', icon: Boxes, tone: 'bg-white/20 text-white', surface: 'bg-[#22c55e] border-transparent text-white' },
+          { label: 'Available Stock', value: availableStock.toLocaleString('en-IN'), detail: 'units currently available', badge: 'Units', icon: Package, tone: 'bg-white/20 text-white', surface: 'bg-[#3b82f6] border-transparent text-white' },
+          { label: 'Low Stock Items', value: lowStockCount.toLocaleString('en-IN'), detail: 'need attention', badge: 'Low', icon: AlertTriangle, tone: 'bg-white/20 text-white', surface: 'bg-[#f59e0b] border-transparent text-white' },
+          { label: 'Out of Stock Items', value: outOfStockCount.toLocaleString('en-IN'), detail: 'need restocking', badge: 'Empty', icon: TrendingDown, tone: 'bg-white/20 text-white', surface: 'bg-[#8b5cf6] border-transparent text-white' },
+        ].map(({ label, value, detail, badge, icon: Icon, tone, surface }) => (
+          <article key={label} className={`relative flex min-h-[140px] min-w-0 flex-col justify-between overflow-hidden rounded-xl border p-4 text-white shadow-[0_2px_10px_rgba(20,56,34,0.04)] sm:p-5 ${surface}`}>
+            <div className="relative z-10 flex items-start gap-3">
+              <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-lg shadow-sm ${tone}`}><Icon size={24} strokeWidth={2.2} /></div>
+              <div className="mt-0.5 min-w-0 flex-1">
+                <h2 className="mb-1 truncate text-[12px] font-semibold opacity-90">{label}</h2>
+                <p className="truncate text-[22px] font-extrabold leading-none tracking-tight sm:text-[25px]">{value}</p>
+              </div>
+            </div>
+            <div className="relative z-10 mt-5 flex items-center gap-2">
+              <span className="inline-flex items-center rounded-md bg-white/25 px-1.5 py-0.5 text-[11px] font-bold">{badge}</span>
+              <span className="truncate text-[11px] font-medium opacity-75">{detail}</span>
+            </div>
+            <div className="pointer-events-none absolute bottom-0 right-0 h-16 w-24 opacity-50">
+              <svg viewBox="0 0 100 50" preserveAspectRatio="none" className="h-full w-full">
+                <path d="M0,40 Q25,30 50,40 T100,20" fill="none" stroke="white" strokeWidth="2.5" />
+              </svg>
+            </div>
           </article>
         ))}
       </section>
