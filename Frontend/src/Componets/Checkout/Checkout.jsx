@@ -744,8 +744,8 @@ function Checkout() {
                 <div className="mt-6 border-t border-[#f0e9df] pt-6">
                   {savedAddresses.length > 0 && (
                     <label className="mb-4 block text-sm font-semibold text-[#263830]">
-                      Saved address
-                      <select value={selectedAddress} onChange={selectAddress} className="mt-2 w-full rounded-xl border border-[#ded5c9] bg-white px-4 py-3 outline-none focus:border-[#a34f32] sm:max-w-lg">
+                      <span className="block">Saved address</span>
+                      <select value={selectedAddress} onChange={selectAddress} className="mt-2 block w-full rounded-xl border border-[#ded5c9] bg-white px-4 py-3 outline-none focus:border-[#a34f32]">
                         {savedAddresses.map((saved) => (
                           <option key={saved.id} value={String(saved.id)}>
                             {[saved.address_line, saved.area_locality, saved.city, saved.pincode].filter(Boolean).join(', ')}
@@ -767,7 +767,7 @@ function Checkout() {
                           {fetchingLocation ? 'Finding your address…' : 'Use current location'}
                         </button>
                         <p className="mt-2 text-xs leading-5 text-[#8c7a6b]">
-                          Enter or review your address, then use the matching current location to calculate the delivery fee. Your device coordinates are used for distance and sent to OpenStreetMap for address lookup. Editing the address requires refreshing your location.
+                          Enter a complete address to calculate the delivery fee automatically, or use your current location for a more precise result.
                           {' '}<a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer" className="underline hover:text-[#a34f32]">© OpenStreetMap contributors</a>
                         </p>
                       </div>
@@ -787,7 +787,7 @@ function Checkout() {
                         </p>
                       )}
                       {addressFields.map((field) => (
-                      <label key={field.name} className={`text-sm font-semibold text-[#263830] ${field.name === 'address_line' || field.name === 'area_locality' || field.name === 'landmark' ? 'sm:col-span-2' : ''}`}>
+                      <label key={field.name} className={`text-sm font-semibold text-[#263830] ${field.name === 'address_line' || field.name === 'area_locality' ? 'sm:col-span-2' : ''}`}>
                         {field.label}{field.name !== 'landmark' && <span className="text-[#a34f32]"> *</span>}
                         {field.name === 'state' ? (
                           <select
