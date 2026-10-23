@@ -133,6 +133,13 @@ export default function ServerSupplies() {
     return [...groups.entries()];
   }, [items]);
   const requesters = [...new Set(requests.map((request) => request.requested_by).filter(Boolean))];
+  const requestStatusCounts = useMemo(() => requests.reduce((counts, request) => {
+    const status = String(request.status || '').trim().toLowerCase();
+    if (status === 'approved') counts.approved += 1;
+    if (status === 'pending') counts.pending += 1;
+    if (status === 'rejected') counts.rejected += 1;
+    return counts;
+  }, { approved: 0, pending: 0, rejected: 0 }), [requests]);
   const filteredRequests = useMemo(() => {
     const query = requestSearch.trim().toLowerCase();
     return requests
@@ -533,14 +540,24 @@ export default function ServerSupplies() {
       </div>}
 
       {activeTab === 'requests' && <div id="supplies-panel-requests" role="tabpanel" aria-labelledby="supplies-tab-requests">
-      <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-        <div className="flex items-center justify-between border-b border-slate-100 p-4">
-          <div>
-            <h2 className="flex items-center gap-2 text-lg font-bold text-slate-900"><ClipboardList size={19} />{isAdmin ? 'Supply Requests' : 'My Supply Requests'}</h2>
-            <p className="mt-1 text-sm text-slate-500">{isAdmin ? 'Approving adds catalog items to stock. Custom items require manual procurement.' : 'Requests are sent to Admin. Stock is not changed until approved.'}</p>
-          </div>
-          <span className="rounded-full bg-amber-50 px-3 py-1 text-sm font-semibold text-amber-800">{requests.filter((request) => request.status === 'pending').length} pending</span>
-        </div>
+      <section className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4" aria-label="Supply request summary">
+        {[
+          { label: 'Total Requests', value: requests.length, detail: 'all submitted requests', icon: ClipboardList, surface: 'bg-[#3b82f6]' },
+          { label: 'Approved', value: requestStatusCounts.approved, detail: 'approved by Admin', icon: Check, surface: 'bg-[#22c55e]' },
+          { label: 'Pending Approval', value: requestStatusCounts.pending, detail: 'awaiting Admin decision', icon: AlertTriangle, surface: 'bg-[#f59e0b]' },
+          { label: 'Rejected', value: requestStatusCounts.rejected, detail: 'not approved', icon: XCircle, surface: 'bg-[#ef4444]' },
+        ].map(({ label, value, detail, icon: Icon, surface }) => (
+          <article key={label} className={`flex min-h-[120px] min-w-0 flex-col justify-between rounded-xl p-4 text-white shadow-sm sm:p-5 ${surface}`}>
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <h2 className="truncate text-sm font-semibold opacity-90">{label}</h2>
+                <p className="mt-2 text-3xl font-extrabold leading-none">{value.toLocaleString('en-IN')}</p>
+              </div>
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-white/20"><Icon size={22} /></div>
+            </div>
+            <p className="mt-4 text-xs font-medium opacity-80">{detail}</p>
+          </article>
+        ))}
       </section>
 
       <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
