@@ -54,8 +54,90 @@ function ShopPromoBanner({ variant }) {
           backgroundRepeat: 'no-repeat',
         }}
       >
-        <div className="flex min-h-[260px] items-stretch">
-          <div className="relative z-10 flex w-full flex-col justify-center px-5 py-4 sm:px-7 lg:w-[40%] lg:shrink-0 lg:px-10 lg:py-5">
+        {/* ── Desktop layout: text + icons side-by-side on the left, image fills right ── */}
+        <div className="hidden min-h-[260px] items-center lg:flex">
+
+          {/* Left: text block */}
+          <div className="relative z-10 flex w-[38%] shrink-0 flex-col justify-center px-10 py-6">
+            <div className="mb-2 flex items-center gap-3 text-[#d39d2d]">
+              <p className="text-[10px] font-black uppercase tracking-[0.28em]">
+                {banner.eyebrow}
+              </p>
+              <span className="h-px w-12 bg-[#d39d2d]/80" />
+            </div>
+
+            <h3 className="max-w-[340px] font-serif text-[2.1rem] font-black leading-[0.95] tracking-[-0.03em] text-[#1a1a1a]">
+              Authentic Flavours
+              <br />
+              Delivered to{' '}
+              <span className="text-[#c99518]">Your Doorstep</span>
+            </h3>
+
+            <p className="mt-2.5 max-w-[300px] text-[13px] leading-[1.5] text-[#4d4039]">
+              Enjoy a wide variety of tasty and hygienic meals prepared with fresh ingredients,
+              delivered fresh to your home.
+            </p>
+
+            <div className="mt-4">
+              <Link
+                to="/shop"
+                className="inline-flex items-center gap-2 rounded-xl bg-[#e2b14e] px-5 py-2.5 text-sm font-extrabold text-[#1d130d] shadow-[0_8px_18px_rgba(226,177,78,0.22)] transition hover:bg-[#d29c2f]"
+              >
+                {banner.action}
+                <ArrowRight className="h-4 w-4" />
+              </Link>
+            </div>
+
+            <div className="mt-3 flex items-center gap-2 text-[#d39d2d]">
+              <svg viewBox="0 0 24 24" className="h-5 w-5 fill-[#d39d2d]">
+                <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5S10.62 6.5 12 6.5s2.5 1.12 2.5 2.5S13.38 11.5 12 11.5z"/>
+              </svg>
+              <svg viewBox="0 0 120 30" className="h-5 w-28" fill="none">
+                <path d="M2 18 Q20 4 40 10 T80 12 T118 8" stroke="#d39d2d" strokeWidth="1.8" strokeDasharray="4 5" strokeLinecap="round" />
+              </svg>
+              <Bike className="h-7 w-7" />
+            </div>
+          </div>
+
+          {/* Centre: feature icons – immediately to the right of the text */}
+          <div className="relative z-10 flex w-[28%] shrink-0 flex-col justify-center py-6 pl-2 pr-4">
+            <div className="grid grid-cols-2 gap-x-4 gap-y-5">
+              {deliveryFeatures.map(({ Icon: FeatIcon, label }) => (
+                <div key={label} className="flex flex-col items-center gap-2 text-center">
+                  <span className="flex h-[52px] w-[52px] items-center justify-center rounded-full border border-[#e8d6a0] bg-[#f8f0dc]/90 text-[#c9941f] shadow-[0_0_0_4px_rgba(236,204,126,0.18)]">
+                    <FeatIcon className="h-6 w-6" strokeWidth={1.8} />
+                  </span>
+                  <span className="whitespace-pre-line text-[11px] font-semibold leading-tight text-[#3d3128]">
+                    {label}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Right: decorative area – lets the bg photo show through */}
+          <div className="relative ml-auto flex-1 self-stretch overflow-hidden">
+            <div
+              className="absolute right-5 top-6 z-10 text-right font-serif italic text-[#2b251e]"
+              style={{ fontFamily: "'Dancing Script', cursive, serif" }}
+            >
+              <p className="text-[18px]">Good Food</p>
+              <p className="text-[18px]">Good Mood</p>
+            </div>
+
+            <div className="absolute bottom-4 right-4 z-10 flex h-16 w-16 flex-col items-center justify-center rounded-full border-2 border-[#d5ad52] bg-[#f9f1db]/90 text-center shadow-md">
+              <ChefHat className="h-4 w-4 text-[#b17816]" />
+              <p className="mt-0.5 text-[7px] font-black uppercase leading-[1.1] text-[#312821]">
+                Fresh<br />Tasty<br />
+                <span className="text-[#b17816]">Happiness</span>
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* ── Mobile layout ── */}
+        <div className="lg:hidden">
+          <div className="flex flex-col justify-center px-5 py-5 sm:px-7">
             <div className="mb-2 flex items-center gap-3 text-[#d39d2d]">
               <p className="text-[10px] font-black uppercase tracking-[0.28em] sm:text-[11px]">
                 {banner.eyebrow}
@@ -63,7 +145,7 @@ function ShopPromoBanner({ variant }) {
               <span className="h-px w-12 bg-[#d39d2d]/80" />
             </div>
 
-            <h3 className="max-w-[470px] font-serif text-[1.8rem] font-black leading-[0.95] tracking-[-0.04em] text-[#1a1a1a] sm:text-[2.2rem] lg:text-[2.55rem]">
+            <h3 className="max-w-[470px] font-serif text-[1.8rem] font-black leading-[0.95] tracking-[-0.04em] text-[#1a1a1a] sm:text-[2.2rem]">
               Authentic Flavours
               <br />
               Delivered to{' '}
@@ -84,66 +166,20 @@ function ShopPromoBanner({ variant }) {
                 <ArrowRight className="h-4 w-4" />
               </Link>
             </div>
-
-            <div className="mt-3 flex items-center gap-2 text-[#d39d2d]">
-              <svg viewBox="0 0 24 24" className="h-5 w-5 fill-[#d39d2d]">
-                <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5S10.62 6.5 12 6.5s2.5 1.12 2.5 2.5S13.38 11.5 12 11.5z"/>
-              </svg>
-              <svg viewBox="0 0 120 30" className="h-5 w-28 sm:w-32" fill="none">
-                <path d="M2 18 Q20 4 40 10 T80 12 T118 8" stroke="#d39d2d" strokeWidth="1.8" strokeDasharray="4 5" strokeLinecap="round" />
-              </svg>
-              <Bike className="h-7 w-7" />
-            </div>
           </div>
 
-          <div className="relative z-10 hidden w-[38%] shrink-0 items-center px-1 py-6 lg:flex">
-            <div className="grid w-full grid-cols-4 gap-3">
-              {deliveryFeatures.map(({ Icon: FeatIcon, label }) => (
-                <div key={label} className="flex min-w-0 flex-col items-center gap-2 text-center">
-                  <span className="flex h-[52px] w-[52px] items-center justify-center rounded-full border border-[#e8d6a0] bg-[#f8f0dc] text-[#c9941f] shadow-[0_0_0_4px_rgba(236,204,126,0.15)]">
-                    <FeatIcon className="h-6 w-6" strokeWidth={1.8} />
-                  </span>
-                  <span className="whitespace-pre-line text-[11px] font-semibold leading-tight text-[#3d3128]">
-                    {label}
-                  </span>
-                </div>
-              ))}
-            </div>
+          <div className="flex justify-around border-t border-[#e8dac3] px-4 py-4">
+            {deliveryFeatures.map(({ Icon: FeatIcon, label }) => (
+              <div key={label} className="flex flex-col items-center gap-1.5 text-center">
+                <span className="flex h-10 w-10 items-center justify-center rounded-full border border-[#e6c678] bg-[#f7f0df] text-[#d08a17]">
+                  <FeatIcon className="h-4 w-4" strokeWidth={1.8} />
+                </span>
+                <span className="whitespace-pre-line text-[9px] font-semibold leading-tight text-[#3d3128]">
+                  {label}
+                </span>
+              </div>
+            ))}
           </div>
-
-          <div className="relative ml-auto hidden w-[22%] min-w-[220px] flex-1 overflow-hidden lg:block">
-            <div
-              className="absolute right-5 top-7 z-10 text-right font-serif italic text-[#2b251e]"
-              style={{ fontFamily: "'Dancing Script', cursive, serif" }}
-            >
-              <p className="text-[16px] sm:text-[20px]">Good Food</p>
-              <p className="text-[16px] sm:text-[20px]">Good Mood</p>
-            </div>
-
-            <div className="absolute bottom-4 right-4 z-10 flex h-16 w-16 flex-col items-center justify-center rounded-full border-2 border-[#d5ad52] bg-[#f9f1db]/90 text-center shadow-md">
-              <ChefHat className="h-4 w-4 text-[#b17816]" />
-              <p className="mt-0.5 text-[7px] font-black uppercase leading-[1.1] text-[#312821]">
-                Fresh
-                <br />
-                Tasty
-                <br />
-                <span className="text-[#b17816]">Happiness</span>
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <div className="flex justify-around border-t border-[#e8dac3] px-4 py-4 lg:hidden">
-          {deliveryFeatures.map(({ Icon: FeatIcon, label }) => (
-            <div key={label} className="flex flex-col items-center gap-1.5 text-center">
-              <span className="flex h-10 w-10 items-center justify-center rounded-full border border-[#e6c678] bg-[#f7f0df] text-[#d08a17]">
-                <FeatIcon className="h-4 w-4" strokeWidth={1.8} />
-              </span>
-              <span className="whitespace-pre-line text-[9px] font-semibold leading-tight text-[#3d3128]">
-                {label}
-              </span>
-            </div>
-          ))}
         </div>
       </article>
     );
