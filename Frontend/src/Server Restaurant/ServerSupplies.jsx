@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { AlertTriangle, Boxes, Check, ClipboardList, Eye, Package, Pencil, Plus, Search, Trash2, TrendingDown, TrendingUp, X, XCircle } from 'lucide-react';
+import { AlertTriangle, Boxes, Check, ClipboardList, Eye, LayoutGrid, Package, Pencil, Plus, Search, Table2, Trash2, TrendingDown, TrendingUp, X, XCircle } from 'lucide-react';
 import toast, { Toaster } from 'react-hot-toast';
 import api, { BACKEND_BASE_URL } from '../api';
 import { useAuth } from '../PrivateRouter/AuthContext';
@@ -52,6 +52,11 @@ export default function ServerSupplies() {
   const [items, setItems] = useState([]);
   const [categories, setCategories] = useState([]);
   const [requests, setRequests] = useState([]);
+  const [requestSearch, setRequestSearch] = useState('');
+  const [requestStatus, setRequestStatus] = useState('All');
+  const [requesterFilter, setRequesterFilter] = useState('All');
+  const [requestSort, setRequestSort] = useState('latest');
+  const [requestView, setRequestView] = useState('table');
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
@@ -109,6 +114,27 @@ export default function ServerSupplies() {
   const pageCount = Math.max(1, Math.ceil(filteredItems.length / PAGE_SIZE));
   const currentPage = Math.min(page, pageCount);
   const pageItems = filteredItems.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+  const requesters = [...new Set(requests.map((request) => request.requested_by).filter(Boolean))];
+  const filteredRequests = useMemo(() => {
+    const query = requestSearch.trim().toLowerCase();
+    return requests
+      .filter((request) => {
+        const matchesSearch = !query || [
+          request.id,
+          request.item_name,
+          request.item_code,
+          request.requested_by,
+          request.remarks,
+        ].some((value) => String(value || '').toLowerCase().includes(query));
+        const matchesStatus = requestStatus === 'All' || request.status === requestStatus.toLowerCase();
+        const matchesRequester = requesterFilter === 'All' || request.requested_by === requesterFilter;
+        return matchesSearch && matchesStatus && matchesRequester;
+      })
+      .sort((a, b) => {
+        const difference = new Date(a.requested_at).getTime() - new Date(b.requested_at).getTime();
+        return requestSort === 'latest' ? -difference : difference;
+      });
+  }, [requests, requestSearch, requestStatus, requesterFilter, requestSort]);
   const lowStockCount = items.filter((item) => getStatus(item) === 'Low Stock').length;
   const outOfStockCount = items.filter((item) => getStatus(item) === 'Out of Stock').length;
   const availableStock = items.reduce((total, item) => total + (Number(item.current_stock) || 0), 0);
@@ -358,16 +384,54 @@ export default function ServerSupplies() {
           </div>
           <span className="rounded-full bg-amber-50 px-3 py-1 text-sm font-semibold text-amber-800">{requests.filter((request) => request.status === 'pending').length} pending</span>
         </div>
+        <div className="flex flex-col gap-3 border-b border-slate-100 p-4 xl:flex-row xl:items-center">
+          <label className="relative min-w-0 flex-1">
+            <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+            <input
+              type="search"
+              value={requestSearch}
+              onChange={(event) => setRequestSearch(event.target.value)}
+              placeholder="Search request number, item, requester, or remarks..."
+              aria-label="Search supply requests"
+              className="h-[52px] w-full rounded-xl border border-slate-200 bg-slate-50 pl-11 pr-3 text-sm outline-none focus:border-[#1a3c36]"
+            />
+          </label>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:flex">
+            <select value={requesterFilter} onChange={(event) => setRequesterFilter(event.target.value)} aria-label="Filter by requester" className="h-[52px] min-w-0 rounded-xl border border-slate-200 bg-white px-4 text-sm text-slate-700 outline-none focus:border-[#1a3c36] xl:w-[170px]">
+              <option value="All">All Requesters</option>
+              {requesters.map((requester) => <option key={requester} value={requester}>{requester}</option>)}
+            </select>
+            <select value={requestStatus} onChange={(event) => setRequestStatus(event.target.value)} aria-label="Filter by request status" className="h-[52px] min-w-0 rounded-xl border border-slate-200 bg-white px-4 text-sm text-slate-700 outline-none focus:border-[#1a3c36] xl:w-[170px]">
+              <option value="All">All Status</option>
+              <option value="pending">Pending</option>
+              <option value="approved">Approved</option>
+              <option value="rejected">Rejected</option>
+            </select>
+            <select value={requestSort} onChange={(event) => setRequestSort(event.target.value)} aria-label="Sort supply requests" className="col-span-2 h-[52px] min-w-0 rounded-xl border border-slate-200 bg-white px-4 text-sm text-slate-700 outline-none focus:border-[#1a3c36] sm:col-span-1 xl:w-[180px]">
+              <option value="latest">Sort by: Latest</option>
+              <option value="oldest">Sort by: Oldest</option>
+            </select>
+          </div>
+          <div className="flex h-[52px] shrink-0 items-stretch overflow-hidden rounded-xl border border-slate-200" role="group" aria-label="Request display mode">
+            <button type="button" onClick={() => setRequestView('grid')} aria-label="Grid view" aria-pressed={requestView === 'grid'} className={`flex w-14 items-center justify-center ${requestView === 'grid' ? 'bg-[#1a3c36] text-white' : 'bg-white text-slate-600 hover:bg-slate-50'}`}><LayoutGrid size={19} /></button>
+            <button type="button" onClick={() => setRequestView('table')} aria-label="Table view" aria-pressed={requestView === 'table'} className={`flex w-14 items-center justify-center border-l border-slate-200 ${requestView === 'table' ? 'bg-[#1a3c36] text-white' : 'bg-white text-slate-600 hover:bg-slate-50'}`}><Table2 size={19} /></button>
+          </div>
+          {!isAdmin && <button type="button" onClick={() => openRequestForm()} className="inline-flex h-[52px] shrink-0 items-center justify-center gap-2 rounded-xl bg-[#1a3c36] px-5 text-sm font-semibold text-white hover:bg-[#244e45]">
+            <Plus size={18} /> Request Supplies
+          </button>}
+        </div>
         {requests.length === 0 ? (
           <p className="p-5 text-sm text-slate-500">{isAdmin ? 'There are no supply requests yet.' : 'You have not submitted any supply requests yet.'}</p>
-        ) : (
+        ) : filteredRequests.length === 0 ? (
+          <p className="p-5 text-sm text-slate-500">No supply requests match these filters.</p>
+        ) : requestView === 'table' ? (
           <div className="scrollbar-hide overflow-x-auto">
             <table className="min-w-[760px] w-full text-left text-sm">
               <thead className="bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
                 <tr>{['Item', ...(isAdmin ? ['Requested By'] : []), 'Quantity', 'Remarks', 'Status', 'Date', ...(isAdmin ? ['Actions'] : ['Decision'])].map((heading) => <th key={heading} className="px-4 py-3 font-semibold">{heading}</th>)}</tr>
               </thead>
               <tbody>
-                {requests.map((request) => (
+                {filteredRequests.map((request) => (
                   <tr key={request.id} className="border-t border-slate-100">
                     <td className="px-4 py-3 font-semibold text-slate-900">{request.item_name}</td>
                     {isAdmin && <td className="px-4 py-3 text-slate-600">{request.requested_by}</td>}
@@ -389,6 +453,26 @@ export default function ServerSupplies() {
                 ))}
               </tbody>
             </table>
+          </div>
+        ) : (
+          <div className="grid gap-3 p-4 sm:grid-cols-2 xl:grid-cols-3">
+            {filteredRequests.map((request) => (
+              <article key={request.id} className="flex min-w-0 flex-col rounded-xl border border-slate-200 bg-white p-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0"><h3 className="truncate font-semibold text-slate-900">{request.item_name}</h3><p className="mt-1 text-xs text-slate-500">Request #{request.id}{isAdmin ? ` · ${request.requested_by}` : ''}</p></div>
+                  <span className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-semibold ${request.status === 'approved' ? 'bg-emerald-50 text-emerald-700' : request.status === 'rejected' ? 'bg-rose-50 text-rose-700' : 'bg-amber-50 text-amber-800'}`}>{request.status}</span>
+                </div>
+                <p className="mt-3 text-sm text-slate-700">Quantity: <strong>{request.requested_quantity} {request.unit}</strong></p>
+                <p className="mt-1 line-clamp-2 text-sm text-slate-600">{request.remarks || 'No remarks'}</p>
+                <p className="mt-2 text-xs text-slate-500">{String(request.requested_at || '').slice(0, 10)}</p>
+                <div className="mt-3 border-t border-slate-100 pt-3">
+                  {isAdmin && request.status === 'pending' ? <div className="flex gap-2">
+                    <button type="button" disabled={processingRequestId === request.id} onClick={() => decideRequest(request, 'approve')} className="inline-flex items-center gap-1 rounded-lg bg-emerald-50 px-2.5 py-1.5 text-xs font-semibold text-emerald-700 disabled:opacity-50"><Check size={14} /> Approve</button>
+                    <button type="button" disabled={processingRequestId === request.id} onClick={() => decideRequest(request, 'reject')} className="inline-flex items-center gap-1 rounded-lg bg-rose-50 px-2.5 py-1.5 text-xs font-semibold text-rose-700 disabled:opacity-50"><XCircle size={14} /> Reject</button>
+                  </div> : isAdmin ? <p className="text-xs text-slate-500">{request.decided_by || '—'}{request.decision_reason ? ` · ${request.decision_reason}` : ''}</p> : <p className="text-xs text-slate-500">{request.decision_reason || (request.status === 'pending' ? 'Awaiting Admin approval' : '—')}</p>}
+                </div>
+              </article>
+            ))}
           </div>
         )}
       </section>
