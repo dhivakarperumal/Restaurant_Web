@@ -46,6 +46,10 @@ const emptyMovement = (type) => ({
   remarks: '',
 });
 
+const getRequestItems = (request) => request.items?.length
+  ? request.items
+  : [{ item_id: request.item_id, item_name: request.item_name, unit: request.unit, quantity: request.requested_quantity }];
+
 export default function ServerSupplies() {
   const { role } = useAuth();
   const isAdmin = ['admin', 'super admin', 'superadmin'].includes(String(role || '').trim().toLowerCase());
@@ -76,6 +80,10 @@ export default function ServerSupplies() {
   const [requestFormOpen, setRequestFormOpen] = useState(false);
   const [requestItem, setRequestItem] = useState(null);
   const [requestForm, setRequestForm] = useState({ quantity: '', remarks: '' });
+  const [requestLines, setRequestLines] = useState([]);
+  const [requestCustomMode, setRequestCustomMode] = useState(false);
+  const [requestCustomName, setRequestCustomName] = useState('');
+  const [requestCustomUnit, setRequestCustomUnit] = useState(UNITS[0]);
   const [savingRequest, setSavingRequest] = useState(false);
   const [processingRequestId, setProcessingRequestId] = useState(null);
 
@@ -114,6 +122,14 @@ export default function ServerSupplies() {
   const pageCount = Math.max(1, Math.ceil(filteredItems.length / PAGE_SIZE));
   const currentPage = Math.min(page, pageCount);
   const pageItems = filteredItems.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+  const itemsByCategory = useMemo(() => {
+    const groups = new Map();
+    items.forEach((item) => {
+      if (!groups.has(item.category)) groups.set(item.category, []);
+      groups.get(item.category).push(item);
+    });
+    return [...groups.entries()];
+  }, [items]);
   const requesters = [...new Set(requests.map((request) => request.requested_by).filter(Boolean))];
   const filteredRequests = useMemo(() => {
     const query = requestSearch.trim().toLowerCase();
@@ -121,10 +137,9 @@ export default function ServerSupplies() {
       .filter((request) => {
         const matchesSearch = !query || [
           request.id,
-          request.item_name,
-          request.item_code,
           request.requested_by,
           request.remarks,
+          ...getRequestItems(request).flatMap((item) => [item.item_name, item.item_code]),
         ].some((value) => String(value || '').toLowerCase().includes(query));
         const matchesStatus = requestStatus === 'All' || request.status === requestStatus.toLowerCase();
         const matchesRequester = requesterFilter === 'All' || request.requested_by === requesterFilter;
@@ -260,22 +275,26 @@ export default function ServerSupplies() {
 
   const submitSupplyRequest = async (event) => {
     event.preventDefault();
-    const quantity = Number(requestForm.quantity);
-    if (!requestItem || !Number.isFinite(quantity) || quantity <= 0) {
-      toast.error('Enter a quantity greater than zero.');
+    if (!requestLines.length) {
+      toast.error('Add at least one supply item to the request.');
       return;
     }
     setSavingRequest(true);
     try {
       await api.post('/server-supplies/requests', {
-        item_id: requestItem.id,
-        quantity,
+        items: requestLines.map((line) => line.is_custom
+          ? { is_custom: true, item_name: line.item_name, unit: line.unit, quantity: line.quantity }
+          : { item_id: line.item.id, quantity: line.quantity }),
         remarks: requestForm.remarks,
       });
       toast.success('Request sent to Admin for approval.');
       setRequestFormOpen(false);
       setRequestItem(null);
       setRequestForm({ quantity: '', remarks: '' });
+      setRequestLines([]);
+      setRequestCustomMode(false);
+      setRequestCustomName('');
+      setRequestCustomUnit(UNITS[0]);
       await loadData();
     } catch (error) {
       toast.error(error?.response?.data?.message || 'Unable to submit supply request.');
@@ -287,6 +306,10 @@ export default function ServerSupplies() {
   const openRequestForm = (item = null) => {
     setRequestItem(item);
     setRequestForm({ quantity: '', remarks: '' });
+    setRequestLines([]);
+    setRequestCustomMode(false);
+    setRequestCustomName('');
+    setRequestCustomUnit(UNITS[0]);
     setRequestFormOpen(true);
   };
 
@@ -294,6 +317,56 @@ export default function ServerSupplies() {
     setRequestFormOpen(false);
     setRequestItem(null);
     setRequestForm({ quantity: '', remarks: '' });
+    setRequestLines([]);
+    setRequestCustomMode(false);
+    setRequestCustomName('');
+    setRequestCustomUnit(UNITS[0]);
+  };
+
+  const addRequestLine = () => {
+    const quantity = Number(requestForm.quantity);
+    if (!Number.isFinite(quantity) || quantity <= 0) {
+      toast.error('Enter a quantity greater than zero.');
+      return;
+    }
+    if (requestCustomMode) {
+      const itemName = requestCustomName.trim();
+      if (!itemName) {
+        toast.error('Enter a name for the custom supply item.');
+        return;
+      }
+      if (requestLines.some((line) => line.is_custom && line.item_name.toLowerCase() === itemName.toLowerCase())) {
+        toast.error('This custom item is already in the request.');
+        return;
+      }
+      setRequestLines((lines) => [...lines, {
+        is_custom: true,
+        item_name: itemName,
+        unit: requestCustomUnit,
+        quantity,
+      }]);
+      setRequestCustomName('');
+      setRequestForm((formState) => ({ ...formState, quantity: '' }));
+      return;
+    }
+    if (!requestItem) {
+      toast.error('Select a supply item.');
+      toast.error('Select a supply item and enter a quantity greater than zero.');
+      return;
+    }
+    if (requestLines.some((line) => !line.is_custom && line.item.id === requestItem.id)) {
+      toast.error('This supply item is already in the request.');
+      return;
+    }
+    setRequestLines((lines) => [...lines, {
+      item: requestItem,
+      item_name: requestItem.item_name,
+      unit: requestItem.unit,
+      quantity,
+      is_custom: false,
+    }]);
+    setRequestItem(null);
+    setRequestForm((formState) => ({ ...formState, quantity: '' }));
   };
 
   const decideRequest = async (request, decision) => {
@@ -305,7 +378,8 @@ export default function ServerSupplies() {
       if (reason !== null) toast.error('A rejection reason is required.');
       return;
     }
-    if (approved && !window.confirm(`Approve ${request.requested_quantity} ${request.unit} of ${request.item_name}? Stock will be updated.`)) return;
+    const requestSummary = getRequestItems(request).map((item) => `${item.item_name}: ${item.quantity} ${item.unit}`).join(', ');
+    if (approved && !window.confirm(`Approve ${requestSummary}? Stock will be updated.`)) return;
     setProcessingRequestId(request.id);
     try {
       await api.patch(`/server-supplies/requests/${request.id}/${decision === 'approve' ? 'approve' : 'reject'}`, { reason });
@@ -428,14 +502,15 @@ export default function ServerSupplies() {
           <div className="scrollbar-hide overflow-x-auto">
             <table className="min-w-[760px] w-full text-left text-sm">
               <thead className="bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
-                <tr>{['Item', ...(isAdmin ? ['Requested By'] : []), 'Quantity', 'Remarks', 'Status', 'Date', ...(isAdmin ? ['Actions'] : ['Decision'])].map((heading) => <th key={heading} className="px-4 py-3 font-semibold">{heading}</th>)}</tr>
+                <tr>{['Requested Items', ...(isAdmin ? ['Requested By'] : []), 'Remarks', 'Status', 'Date', ...(isAdmin ? ['Actions'] : ['Decision'])].map((heading) => <th key={heading} className="px-4 py-3 font-semibold">{heading}</th>)}</tr>
               </thead>
               <tbody>
                 {filteredRequests.map((request) => (
                   <tr key={request.id} className="border-t border-slate-100">
-                    <td className="px-4 py-3 font-semibold text-slate-900">{request.item_name}</td>
+                    <td className="px-4 py-3">
+                      <div className="space-y-1">{getRequestItems(request).map((item) => <p key={item.item_id} className="font-semibold text-slate-900">{item.item_name} <span className="font-normal text-slate-600">· {item.unit} · Qty {item.quantity}</span></p>)}</div>
+                    </td>
                     {isAdmin && <td className="px-4 py-3 text-slate-600">{request.requested_by}</td>}
-                    <td className="px-4 py-3">{request.requested_quantity} {request.unit}</td>
                     <td className="max-w-56 truncate px-4 py-3 text-slate-600" title={request.remarks || ''}>{request.remarks || '—'}</td>
                     <td className="px-4 py-3"><span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${request.status === 'approved' ? 'bg-emerald-50 text-emerald-700' : request.status === 'rejected' ? 'bg-rose-50 text-rose-700' : 'bg-amber-50 text-amber-800'}`}>{request.status}</span></td>
                     <td className="px-4 py-3 text-slate-600">{String(request.requested_at || '').slice(0, 10)}</td>
@@ -459,10 +534,12 @@ export default function ServerSupplies() {
             {filteredRequests.map((request) => (
               <article key={request.id} className="flex min-w-0 flex-col rounded-xl border border-slate-200 bg-white p-4">
                 <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0"><h3 className="truncate font-semibold text-slate-900">{request.item_name}</h3><p className="mt-1 text-xs text-slate-500">Request #{request.id}{isAdmin ? ` · ${request.requested_by}` : ''}</p></div>
+                  <div className="min-w-0"><h3 className="font-semibold text-slate-900">{getRequestItems(request).length} item{getRequestItems(request).length === 1 ? '' : 's'}</h3><p className="mt-1 text-xs text-slate-500">Request #{request.id}{isAdmin ? ` · ${request.requested_by}` : ''}</p></div>
                   <span className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-semibold ${request.status === 'approved' ? 'bg-emerald-50 text-emerald-700' : request.status === 'rejected' ? 'bg-rose-50 text-rose-700' : 'bg-amber-50 text-amber-800'}`}>{request.status}</span>
                 </div>
-                <p className="mt-3 text-sm text-slate-700">Quantity: <strong>{request.requested_quantity} {request.unit}</strong></p>
+                <ul className="mt-3 space-y-1 text-sm text-slate-700">
+                  {getRequestItems(request).map((item) => <li key={item.item_id}><strong>{item.item_name}</strong> · {item.unit} · Qty {item.quantity}</li>)}
+                </ul>
                 <p className="mt-1 line-clamp-2 text-sm text-slate-600">{request.remarks || 'No remarks'}</p>
                 <p className="mt-2 text-xs text-slate-500">{String(request.requested_at || '').slice(0, 10)}</p>
                 <div className="mt-3 border-t border-slate-100 pt-3">
@@ -598,17 +675,31 @@ export default function ServerSupplies() {
 
       {requestFormOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-3">
-          <section className="w-full max-w-lg rounded-2xl bg-white p-5 shadow-2xl">
+          <section className="max-h-[94vh] w-full max-w-2xl overflow-y-auto rounded-2xl bg-white p-5 shadow-2xl">
             <div className="mb-5 flex items-start justify-between">
-              <div><h2 className="text-xl font-bold text-slate-900">Request Supply Stock</h2><p className="mt-1 text-sm text-slate-500">{requestItem ? `${requestItem.item_name} · Available: ${requestItem.current_stock} ${requestItem.unit}` : 'Choose an item and enter the quantity needed.'}</p></div>
+              <div><h2 className="text-xl font-bold text-slate-900">Request Supply Stock</h2><p className="mt-1 text-sm text-slate-500">Add one or more items with their type and quantity.</p></div>
               <button type="button" onClick={closeRequestForm} aria-label="Close request form" className="rounded-lg p-2 text-slate-500 hover:bg-slate-100"><X size={18} /></button>
             </div>
             <form onSubmit={submitSupplyRequest} className="space-y-4">
-              <label className="block text-sm font-medium text-slate-700">Supply Item<select required value={requestItem?.id || ''} onChange={(event) => { const selectedItem = items.find((item) => String(item.id) === event.target.value) || null; setRequestItem(selectedItem); setRequestForm({ ...requestForm, quantity: '' }); }} className="mt-1.5 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5"><option value="">Select supply item</option>{items.map((item) => <option key={item.id} value={item.id}>{item.item_name} · {item.current_stock} {item.unit} available</option>)}</select></label>
-              <label className="block text-sm font-medium text-slate-700">Requested Quantity<input required autoFocus type="number" min="0.01" step="any" value={requestForm.quantity} onChange={(event) => setRequestForm({ ...requestForm, quantity: event.target.value })} className="mt-1.5 w-full rounded-xl border border-slate-200 px-3 py-2.5" /></label>
+              <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_150px_auto] sm:items-end">
+                <label className="block text-sm font-medium text-slate-700">Supply Item / Type<select required value={requestItem?.id || ''} onChange={(event) => { const selectedItem = items.find((item) => String(item.id) === event.target.value) || null; setRequestItem(selectedItem); setRequestForm((formState) => ({ ...formState, quantity: '' })); }} className="mt-1.5 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5"><option value="">Select supply item</option>{itemsByCategory.map(([category, categoryItems]) => <optgroup key={category} label={category}>{categoryItems.map((item) => <option key={item.id} value={item.id} disabled={requestLines.some((line) => line.item.id === item.id)}>{item.item_name} · {item.material || 'General'} · {item.unit} · {item.current_stock} available</option>)}</optgroup>)}</select></label>
+                <label className="block text-sm font-medium text-slate-700">Quantity<input autoFocus type="number" min="0.01" step="any" value={requestForm.quantity} onChange={(event) => setRequestForm((formState) => ({ ...formState, quantity: event.target.value }))} className="mt-1.5 w-full rounded-xl border border-slate-200 px-3 py-2.5" /></label>
+                <button type="button" onClick={addRequestLine} className="inline-flex h-[42px] items-center justify-center gap-2 rounded-xl border border-[#1a3c36] px-4 text-sm font-semibold text-[#1a3c36] hover:bg-emerald-50"><Plus size={16} /> Add Item</button>
+              </div>
+              {requestLines.length > 0 && (
+                <div className="overflow-hidden rounded-xl border border-slate-200">
+                  <div className="grid grid-cols-[minmax(0,1fr)_90px_90px_40px] gap-2 bg-slate-50 px-3 py-2 text-xs font-semibold uppercase text-slate-500"><span>Name</span><span>Type</span><span>Quantity</span><span /></div>
+                  {requestLines.map(({ item, quantity }) => (
+                    <div key={item.id} className="grid grid-cols-[minmax(0,1fr)_90px_90px_40px] items-center gap-2 border-t border-slate-100 px-3 py-2 text-sm">
+                      <span className="truncate font-medium text-slate-800">{item.item_name}</span><span className="truncate text-slate-600">{item.unit}</span><span className="text-slate-700">{quantity}</span>
+                      <button type="button" onClick={() => setRequestLines((lines) => lines.filter((line) => line.item.id !== item.id))} aria-label={`Remove ${item.item_name}`} className="rounded-lg p-2 text-rose-600 hover:bg-rose-50"><X size={15} /></button>
+                    </div>
+                  ))}
+                </div>
+              )}
               <label className="block text-sm font-medium text-slate-700">Remarks<textarea rows={3} value={requestForm.remarks} onChange={(event) => setRequestForm({ ...requestForm, remarks: event.target.value })} placeholder="Reason or additional details" className="mt-1.5 w-full rounded-xl border border-slate-200 px-3 py-2.5" /></label>
               <p className="rounded-xl bg-amber-50 p-3 text-sm text-amber-800">This request will not change stock until an Admin approves it.</p>
-              <div className="flex justify-end gap-2"><button type="button" onClick={closeRequestForm} className="rounded-xl border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700">Cancel</button><button type="submit" disabled={savingRequest || !requestItem} className="rounded-xl bg-[#1a3c36] px-4 py-2 text-sm font-semibold text-white disabled:opacity-60">{savingRequest ? 'Sending…' : 'Send Request'}</button></div>
+              <div className="flex justify-end gap-2"><button type="button" onClick={closeRequestForm} className="rounded-xl border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700">Cancel</button><button type="submit" disabled={savingRequest || !requestLines.length} className="rounded-xl bg-[#1a3c36] px-4 py-2 text-sm font-semibold text-white disabled:opacity-60">{savingRequest ? 'Sending…' : 'Send Request'}</button></div>
             </form>
           </section>
         </div>

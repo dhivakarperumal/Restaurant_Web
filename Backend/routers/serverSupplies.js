@@ -90,11 +90,7 @@ router.get('/requests', withErrorHandler(async (req, res) => {
 }));
 
 router.post('/requests', requireServer, withErrorHandler(async (req, res) => {
-  const request = await createServerSupplyRequest(
-    parseId(String(req.body.item_id || '')),
-    req.body,
-    getActorName(req.auth)
-  );
+  const request = await createServerSupplyRequest(req.body, getActorName(req.auth));
   res.status(201).json({ success: true, message: 'Supply request sent to Admin for approval.', data: request });
 }));
 

@@ -113,7 +113,7 @@ const initializeServerSuppliesSchema = async () => {
   await db.query(`
     CREATE TABLE IF NOT EXISTS server_supply_movements (
       id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
-      item_id INT UNSIGNED NOT NULL,
+      item_id INT UNSIGNED NULL,
       movement_type ENUM('stock-in', 'stock-out') NOT NULL,
       quantity DECIMAL(12,2) NOT NULL,
       movement_date DATE NOT NULL,
@@ -130,6 +130,7 @@ const initializeServerSuppliesSchema = async () => {
       id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
       item_id INT UNSIGNED NOT NULL,
       requested_quantity DECIMAL(12,2) NOT NULL,
+      items_json LONGTEXT NULL,
       remarks TEXT NULL,
       status ENUM('pending', 'approved', 'rejected') NOT NULL DEFAULT 'pending',
       requested_by VARCHAR(255) NOT NULL,
@@ -143,6 +144,14 @@ const initializeServerSuppliesSchema = async () => {
         REFERENCES server_supply_items (id)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
   `);
+  const [requestColumns] = await db.query("SHOW COLUMNS FROM server_supply_requests LIKE 'items_json'");
+  if (!requestColumns.length) {
+    await db.query('ALTER TABLE server_supply_requests ADD COLUMN items_json LONGTEXT NULL AFTER requested_quantity');
+  }
+  const [itemIdColumns] = await db.query("SHOW COLUMNS FROM server_supply_requests LIKE 'item_id'");
+  if (itemIdColumns[0]?.Null === 'NO') {
+    await db.query('ALTER TABLE server_supply_requests MODIFY item_id INT UNSIGNED NULL');
+  }
 
   for (const category of defaultCategories) {
     await db.execute('INSERT IGNORE INTO server_supply_categories (category_name) VALUES (?)', [category]);
@@ -318,35 +327,109 @@ const listServerSupplyMovements = async (id) => {
   return rows.map((row) => ({ ...row, quantity: Number(row.quantity) }));
 };
 
+const parseRequestItems = (row) => {
+  let items = row.items_json;
+  if (typeof items === 'string') {
+    try {
+      items = JSON.parse(items);
+    } catch {
+      throw new SuppliesError('A supply request contains invalid item data.', 500);
+    }
+  }
+  if (Array.isArray(items) && items.length) {
+    return items.map((item) => ({
+      item_id: item.item_id == null ? null : Number(item.item_id),
+      item_name: item.item_name,
+      item_code: item.item_code,
+      unit: item.unit,
+      quantity: Number(item.quantity),
+      is_custom: Boolean(item.is_custom),
+    }));
+  }
+  return [{
+    item_id: row.item_id == null ? null : Number(row.item_id),
+    item_name: row.item_name,
+    item_code: row.item_code,
+    unit: row.unit,
+    quantity: Number(row.requested_quantity),
+    is_custom: row.item_id == null,
+  }];
+};
+
 const listServerSupplyRequests = async (requester = null) => {
   const requesterFilter = requester ? 'AND r.requested_by = ?' : '';
   const params = requester ? [requester] : [];
   const [rows] = await db.execute(
     `SELECT r.id, r.item_id, i.item_name, i.item_code, i.unit, r.requested_quantity,
-       r.remarks, r.status, r.requested_by, r.decided_by, r.decision_reason,
+       r.items_json, r.remarks, r.status, r.requested_by, r.decided_by, r.decision_reason,
        r.requested_at, r.decided_at
      FROM server_supply_requests r
-     JOIN server_supply_items i ON i.id = r.item_id
+     LEFT JOIN server_supply_items i ON i.id = r.item_id
      WHERE 1 = 1 ${requesterFilter}
      ORDER BY CASE r.status WHEN 'pending' THEN 0 ELSE 1 END, r.requested_at DESC, r.id DESC`,
     params
   );
-  return rows.map((row) => ({
-    ...row,
-    requested_quantity: Number(row.requested_quantity),
-  }));
+  return rows.map((row) => {
+    const items = parseRequestItems(row);
+    return {
+      ...row,
+      items,
+      item_name: items.map((item) => item.item_name).join(', '),
+      requested_quantity: items.reduce((total, item) => total + item.quantity, 0),
+      unit: items.length === 1 ? items[0].unit : 'Multiple',
+    };
+  });
 };
 
-const createServerSupplyRequest = async (itemId, payload = {}, requestedBy) => {
-  const quantity = validateAmount(payload.quantity, 'quantity', { required: true, allowZero: false });
+const createServerSupplyRequest = async (payload = {}, requestedBy) => {
+  const submittedItems = Array.isArray(payload.items)
+    ? payload.items
+    : [{ item_id: payload.item_id, quantity: payload.quantity }];
+  if (!submittedItems.length || submittedItems.length > 50) {
+    throw new SuppliesError('Add between 1 and 50 supply items to a request.');
+  }
+  const items = [];
+  const seenItemIds = new Set();
+  const seenCustomNames = new Set();
+  for (const submittedItem of submittedItems) {
+    const quantity = Number(validateAmount(submittedItem.quantity, 'quantity', { required: true, allowZero: false }));
+    if (submittedItem.is_custom) {
+      const itemName = validateText(submittedItem.item_name, 'custom item name', { required: true, maxLength: 200 });
+      const nameKey = itemName.toLowerCase();
+      if (seenCustomNames.has(nameKey)) throw new SuppliesError('Each custom item can only be added once per request.');
+      seenCustomNames.add(nameKey);
+      items.push({
+        item_id: null,
+        item_name: itemName,
+        item_code: null,
+        unit: validateText(submittedItem.unit, 'unit/type', { required: true, maxLength: 50 }),
+        quantity,
+        is_custom: true,
+      });
+    } else {
+      const itemId = Number(submittedItem?.item_id);
+      if (!Number.isSafeInteger(itemId) || itemId < 1) throw new SuppliesError('A valid item id is required.');
+      if (seenItemIds.has(itemId)) throw new SuppliesError('Each supply item can only be added once per request.');
+      seenItemIds.add(itemId);
+      const item = await getItemById(itemId);
+      items.push({
+        item_id: item.id,
+        item_name: item.item_name,
+        item_code: item.item_code,
+        unit: item.unit,
+        quantity,
+        is_custom: false,
+      });
+    }
+  }
   const remarks = validateText(payload.remarks, 'remarks', { maxLength: 5000 });
-  const item = await getItemById(itemId);
+  const firstCatalogItem = items.find((item) => !item.is_custom);
   const [result] = await db.execute(
-    `INSERT INTO server_supply_requests (item_id, requested_quantity, remarks, requested_by)
-     VALUES (?, ?, ?, ?)`,
-    [item.id, quantity, remarks, requestedBy]
+    `INSERT INTO server_supply_requests (item_id, requested_quantity, items_json, remarks, requested_by)
+     VALUES (?, ?, ?, ?, ?)`,
+    [firstCatalogItem?.item_id || null, firstCatalogItem?.quantity || items[0].quantity, JSON.stringify(items), remarks, requestedBy]
   );
-  return { id: result.insertId, item_id: item.id, item_name: item.item_name, requested_quantity: Number(quantity), remarks, status: 'pending' };
+  return { id: result.insertId, items, remarks, status: 'pending' };
 };
 
 const decideServerSupplyRequest = async (requestId, decision, decidedBy, reason = null) => {
@@ -357,28 +440,32 @@ const decideServerSupplyRequest = async (requestId, decision, decidedBy, reason 
   try {
     await connection.beginTransaction();
     const [requests] = await connection.execute(
-      'SELECT id, item_id, requested_quantity, remarks, status FROM server_supply_requests WHERE id = ? FOR UPDATE',
+      'SELECT id, item_id, requested_quantity, items_json, remarks, status FROM server_supply_requests WHERE id = ? FOR UPDATE',
       [requestId]
     );
     if (!requests.length) throw new SuppliesError('Supply request was not found.', 404);
     const request = requests[0];
     if (request.status !== 'pending') throw new SuppliesError('This supply request has already been processed.', 409);
     if (decision === 'approved') {
-      const [items] = await connection.execute(
-        'SELECT id FROM server_supply_items WHERE id = ? AND deleted_at IS NULL FOR UPDATE',
-        [request.item_id]
-      );
-      if (!items.length) throw new SuppliesError('The requested supply item is no longer available.', 404);
-      await connection.execute(
-        'UPDATE server_supply_items SET current_stock = current_stock + ? WHERE id = ?',
-        [request.requested_quantity, request.item_id]
-      );
-      const remarks = [`Approved request #${request.id}`, request.remarks].filter(Boolean).join(' — ');
-      await connection.execute(
-        `INSERT INTO server_supply_movements (item_id, movement_type, quantity, movement_date, remarks, created_by)
-         VALUES (?, 'stock-in', ?, CURRENT_DATE, ?, ?)`,
-        [request.item_id, request.requested_quantity, remarks, decidedBy]
-      );
+      const requestItems = parseRequestItems(request).sort((a, b) => (a.item_id || Number.MAX_SAFE_INTEGER) - (b.item_id || Number.MAX_SAFE_INTEGER));
+      for (const item of requestItems) {
+        if (item.is_custom || item.item_id == null) continue;
+        const [availableItems] = await connection.execute(
+          'SELECT id FROM server_supply_items WHERE id = ? AND deleted_at IS NULL FOR UPDATE',
+          [item.item_id]
+        );
+        if (!availableItems.length) throw new SuppliesError(`The requested supply item ${item.item_name || ''} is no longer available.`, 404);
+        await connection.execute(
+          'UPDATE server_supply_items SET current_stock = current_stock + ? WHERE id = ?',
+          [item.quantity, item.item_id]
+        );
+        const movementRemarks = [`Approved request #${request.id}`, request.remarks].filter(Boolean).join(' — ');
+        await connection.execute(
+          `INSERT INTO server_supply_movements (item_id, movement_type, quantity, movement_date, remarks, created_by)
+           VALUES (?, 'stock-in', ?, CURRENT_DATE, ?, ?)`,
+          [item.item_id, item.quantity, movementRemarks, decidedBy]
+        );
+      }
     }
     await connection.execute(
       `UPDATE server_supply_requests
