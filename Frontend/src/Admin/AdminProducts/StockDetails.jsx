@@ -278,8 +278,9 @@ const StockDetails = ({ readOnly = false }) => {
             <div className="rounded-2xl border-2 border-dashed border-[#e6ddd1] bg-[#faf9f8] py-16 text-center text-sm text-[#777]">No stock records found.</div>
           ) : viewMode === 'card' ? (
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-              {paginatedRows.map((item) => (
+              {paginatedRows.map((item, index) => (
                 <div key={item.id} className="rounded-xl border border-[#e7e0d8] bg-[#fdfdfc] p-4 shadow-sm">
+                  <p className="mb-2 text-xs font-semibold text-[#666]">S No: {(visiblePage - 1) * pageSize + index + 1}</p>
                   <div className="mb-4 flex h-40 items-center justify-center overflow-hidden rounded-lg bg-[#f5f1ec]">
                     {item.image ? <img src={item.image} alt={item.product} className="h-full w-full object-contain" /> : <Package className="h-12 w-12 text-[#b5a998]" />}
                   </div>
@@ -307,7 +308,7 @@ const StockDetails = ({ readOnly = false }) => {
             <table className="w-full min-w-[1200px] border-collapse bg-white text-left">
               <thead className="bg-[#f0e6d2] text-left text-sm font-semibold text-[#3d3d3d]">
                 <tr>
-                  <th className="px-4 py-4">S.No</th>
+                  <th className="px-4 py-4">S No</th>
                   <th className="px-4 py-4">Product</th>
                   
                   <th className="px-4 py-4">Category</th>
@@ -320,7 +321,7 @@ const StockDetails = ({ readOnly = false }) => {
               <tbody>
                 {paginatedRows.map((item, index) => (
                   <tr key={item.id} className="border-t border-[#efefef] text-[13px] text-[#444444]">
-                    <td className="px-4 py-4">{index + 1}</td>
+                    <td className="px-4 py-4">{(visiblePage - 1) * pageSize + index + 1}</td>
                     <td className="px-4 py-4">
                       <div className="flex items-center gap-3">
                         <div className="flex h-11 w-11 items-center justify-center overflow-hidden rounded-lg border border-[#e7e0d8] bg-[#f5f1ec]">

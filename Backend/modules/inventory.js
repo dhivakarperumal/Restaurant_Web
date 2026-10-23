@@ -880,20 +880,46 @@ const deleteKitchenRequest = async (requestId) => {
 };
 
 const issueKitchenRequest = async (requestId, payload = {}) => {
-  const [items] = await db.query('SELECT * FROM kitchen_request_items WHERE request_id = ?', [requestId]);
-  for (const item of items) {
-    if (!item.product_id) continue;
-    const [productRows] = await db.query('SELECT current_stock FROM inventory_products WHERE id = ?', [item.product_id]);
-    const available = toNumber(productRows[0]?.current_stock || 0);
-    if (toNumber(item.quantity) > available) {
-      throw new Error(`Insufficient stock for product ${item.product_id}. Available stock: ${available}`);
+  const connection = await db.getConnection();
+  try {
+    await connection.beginTransaction();
+    const [requests] = await connection.query('SELECT status FROM kitchen_requests WHERE id = ? FOR UPDATE', [requestId]);
+    if (!requests.length) throw new Error('Kitchen request not found.');
+    if (requests[0].status !== 'Approved') {
+      throw new Error('Only approved kitchen requests can be issued.');
     }
-    const newStock = available - toNumber(item.quantity);
-    await db.query('UPDATE inventory_products SET current_stock = ? WHERE id = ?', [newStock, item.product_id]);
-    await db.query('INSERT INTO stock_transactions (product_id, transaction_type, reference_type, reference_id, quantity, unit, previous_stock, new_stock, reason, notes, created_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', [item.product_id, 'KITCHEN_USAGE', 'KITCHEN_REQUEST', requestId, toNumber(item.quantity), item.unit || 'pcs', available, newStock, 'Kitchen issue', 'Issued from kitchen request', payload.created_by || 'system']);
+
+    const [items] = await connection.query('SELECT * FROM kitchen_request_items WHERE request_id = ?', [requestId]);
+    for (const item of items) {
+      if (!item.product_id) continue;
+      const [productRows] = await connection.query(
+        'SELECT current_stock FROM inventory_products WHERE id = ? AND deleted_at IS NULL FOR UPDATE',
+        [item.product_id]
+      );
+      if (!productRows.length) throw new Error(`Product ${item.product_id} was not found.`);
+      const previousStock = toNumber(productRows[0].current_stock);
+      const quantity = toNumber(item.quantity);
+      if (quantity <= 0) throw new Error(`Invalid requested quantity for product ${item.product_id}.`);
+      const newStock = previousStock + quantity;
+      await connection.query('UPDATE inventory_products SET current_stock = ? WHERE id = ?', [newStock, item.product_id]);
+      await connection.query(
+        'INSERT INTO stock_transactions (product_id, transaction_type, reference_type, reference_id, quantity, unit, previous_stock, new_stock, reason, notes, created_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+        [item.product_id, 'KITCHEN_STOCK_IN', 'KITCHEN_REQUEST', requestId, quantity, item.unit || 'pcs', previousStock, newStock, 'Kitchen request stock added', 'Issued kitchen request stock', payload.created_by || 'system']
+      );
+    }
+    await connection.query('UPDATE kitchen_requests SET status = ? WHERE id = ?', ['Issued', requestId]);
+    await connection.commit();
+    return true;
+  } catch (error) {
+    try {
+      await connection.rollback();
+    } catch (rollbackError) {
+      console.error('Unable to roll back kitchen stock issue.', rollbackError);
+    }
+    throw error;
+  } finally {
+    connection.release();
   }
-  await db.query('UPDATE kitchen_requests SET status = ? WHERE id = ?', ['Issued', requestId]);
-  return true;
 };
 
 const createWastage = async (payload = {}) => {

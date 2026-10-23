@@ -429,7 +429,7 @@ function ProductsPage({ readOnly = false }) {
   };
 
   const columns = [
-    ...(!readOnly ? [{ key: 'serial', label: 'S No', render: (_, index) => index + 1 }] : []),
+    { key: 'serial', label: 'S No', render: (_, index) => index + 1 },
     { key: 'product_name', label: 'Grocery Name' },
     { key: 'sku', label: 'SKU' },
     { key: 'current_stock', label: 'Current Stock' },
@@ -1940,14 +1940,31 @@ function KitchenRequestsPage() {
             </div>
             <p className="mb-3 text-sm text-slate-700">Confirm the requested stock details before approving:</p>
             {approvalRequest.items?.length ? (
-              <ul className="divide-y divide-slate-100 rounded-xl border border-slate-200">
-                {approvalRequest.items.map((item) => (
-                  <li key={item.id || `${item.product_id}-${item.quantity}`} className="flex items-center justify-between gap-4 px-3 py-2.5 text-sm">
-                    <span className="font-medium text-slate-800">{item.item_name || item.product_name || products.find((product) => product.id === item.product_id)?.product_name || 'Unknown product'}</span>
-                    <span className="shrink-0 text-slate-600">{formatNumber(item.quantity)} {item.unit || 'pcs'}</span>
-                  </li>
-                ))}
-              </ul>
+              <div className="overflow-x-auto rounded-xl border border-slate-200">
+                <table className="min-w-full text-left text-sm">
+                  <thead className="bg-slate-50 text-slate-600">
+                    <tr>
+                      <th className="px-3 py-2 font-semibold">Product</th>
+                      <th className="px-3 py-2 font-semibold">Current stock</th>
+                      <th className="px-3 py-2 font-semibold">Requested</th>
+                      <th className="px-3 py-2 font-semibold">After issue</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {approvalRequest.items.map((item) => {
+                      const product = products.find((entry) => String(entry.id) === String(item.product_id));
+                      return (
+                        <tr key={item.id || `${item.product_id}-${item.quantity}`} className="border-t border-slate-100">
+                          <td className="px-3 py-2.5 font-medium text-slate-800">{item.item_name || item.product_name || product?.product_name || 'Unknown product'}</td>
+                          <td className="px-3 py-2.5 text-slate-600">{formatNumber(product?.current_stock ?? 0)} {item.unit || 'pcs'}</td>
+                          <td className="px-3 py-2.5 text-slate-600">{formatNumber(item.quantity)} {item.unit || 'pcs'}</td>
+                          <td className="px-3 py-2.5 font-semibold text-emerald-700">{formatNumber(Number(product?.current_stock ?? 0) + Number(item.quantity ?? 0))} {item.unit || 'pcs'}</td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
             ) : (
               <p className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">No stock items are listed for this request.</p>
             )}
