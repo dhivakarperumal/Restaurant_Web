@@ -743,9 +743,9 @@ function Checkout() {
               {fulfillmentType === 'home_delivery' && (
                 <div className="mt-6 border-t border-[#f0e9df] pt-6">
                   {savedAddresses.length > 0 && (
-                    <label className="mb-4 block text-sm font-semibold text-[#263830]">
-                      <span className="block">Saved address</span>
-                      <select value={selectedAddress} onChange={selectAddress} className="mt-2 block w-full rounded-xl border border-[#ded5c9] bg-white px-4 py-3 outline-none focus:border-[#a34f32]">
+                    <label className="mb-5 flex flex-col gap-2 text-sm font-semibold text-[#263830] sm:flex-row sm:items-center">
+                      <span className="shrink-0 sm:w-28">Saved address</span>
+                      <select value={selectedAddress} onChange={selectAddress} className="block w-full rounded-xl border border-[#ded5c9] bg-white px-4 py-3 font-normal outline-none focus:border-[#a34f32] sm:max-w-xl">
                         {savedAddresses.map((saved) => (
                           <option key={saved.id} value={String(saved.id)}>
                             {[saved.address_line, saved.area_locality, saved.city, saved.pincode].filter(Boolean).join(', ')}
@@ -755,18 +755,18 @@ function Checkout() {
                       </select>
                     </label>
                   )}
-                  <div className="grid gap-4 sm:grid-cols-2">
-                      <div className="sm:col-span-2">
+                  <div className="grid gap-x-5 gap-y-4 sm:grid-cols-2">
+                      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:col-span-2">
                         <button
                           type="button"
                           onClick={useCurrentLocation}
                           disabled={fetchingLocation}
-                          className="inline-flex items-center gap-2 rounded-xl border border-[#a34f32] px-4 py-2.5 text-sm font-semibold text-[#a34f32] transition hover:bg-[#fbf6f1] disabled:cursor-wait disabled:opacity-60"
+                          className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl border border-[#a34f32] px-4 py-2.5 text-sm font-semibold text-[#a34f32] transition hover:bg-[#fbf6f1] disabled:cursor-wait disabled:opacity-60"
                         >
                           <LocateFixed size={17} />
                           {fetchingLocation ? 'Finding your address…' : 'Use current location'}
                         </button>
-                        <p className="mt-2 text-xs leading-5 text-[#8c7a6b]">
+                        <p className="text-xs leading-5 text-[#8c7a6b]">
                           Enter a complete address to calculate the delivery fee automatically, or use your current location for a more precise result.
                           {' '}<a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer" className="underline hover:text-[#a34f32]">© OpenStreetMap contributors</a>
                         </p>
@@ -787,7 +787,7 @@ function Checkout() {
                         </p>
                       )}
                       {addressFields.map((field) => (
-                      <label key={field.name} className={`text-sm font-semibold text-[#263830] ${field.name === 'address_line' || field.name === 'area_locality' ? 'sm:col-span-2' : ''}`}>
+                      <label key={field.name} className="text-sm font-semibold text-[#263830]">
                         {field.label}{field.name !== 'landmark' && <span className="text-[#a34f32]"> *</span>}
                         {field.name === 'state' ? (
                           <select
