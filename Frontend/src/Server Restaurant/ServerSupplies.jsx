@@ -87,8 +87,8 @@ export default function ServerSupplies() {
   const [savingRequest, setSavingRequest] = useState(false);
   const [processingRequestId, setProcessingRequestId] = useState(null);
 
-  const loadData = useCallback(async () => {
-    setLoading(true);
+  const loadData = useCallback(async ({ showLoading = true } = {}) => {
+    if (showLoading) setLoading(true);
     try {
       const [itemsResponse, categoriesResponse, requestsResponse] = await Promise.all([
         api.get('/server-supplies'),
@@ -101,7 +101,7 @@ export default function ServerSupplies() {
     } catch (error) {
       toast.error(error?.response?.data?.message || 'Unable to load serving supplies.');
     } finally {
-      setLoading(false);
+      if (showLoading) setLoading(false);
     }
   }, []);
 
@@ -345,12 +345,14 @@ export default function ServerSupplies() {
         unit: requestCustomUnit,
         quantity,
       }]);
+      setRequestCustomMode(false);
       setRequestCustomName('');
+      setRequestCustomUnit(UNITS[0]);
+      setRequestItem(null);
       setRequestForm((formState) => ({ ...formState, quantity: '' }));
       return;
     }
     if (!requestItem) {
-      toast.error('Select a supply item.');
       toast.error('Select a supply item and enter a quantity greater than zero.');
       return;
     }
@@ -378,13 +380,20 @@ export default function ServerSupplies() {
       if (reason !== null) toast.error('A rejection reason is required.');
       return;
     }
-    const requestSummary = getRequestItems(request).map((item) => `${item.item_name}: ${item.quantity} ${item.unit}`).join(', ');
-    if (approved && !window.confirm(`Approve ${requestSummary}? Stock will be updated.`)) return;
+    const requestItems = getRequestItems(request);
+    const requestSummary = requestItems.map((item) => `${item.item_name}: ${item.quantity} ${item.unit}`).join(', ');
+    const hasCustomItems = requestItems.some((item) => item.is_custom || item.item_id == null);
+    const approvalMessage = hasCustomItems
+      ? `Approve ${requestSummary}? Catalog stock will be updated for listed catalog items. Custom items will need manual procurement.`
+      : `Approve ${requestSummary}? Stock will be updated.`;
+    if (approved && !window.confirm(approvalMessage)) return;
     setProcessingRequestId(request.id);
     try {
       await api.patch(`/server-supplies/requests/${request.id}/${decision === 'approve' ? 'approve' : 'reject'}`, { reason });
-      toast.success(approved ? 'Request approved and stock updated.' : 'Request rejected.');
-      await loadData();
+      toast.success(approved && hasCustomItems
+        ? 'Request approved. Custom items require manual procurement.'
+        : approved ? 'Request approved and stock updated.' : 'Request rejected.');
+      await loadData({ showLoading: false });
     } catch (error) {
       toast.error(error?.response?.data?.message || 'Unable to process supply request.');
     } finally {
@@ -406,21 +415,18 @@ export default function ServerSupplies() {
   return (
     <div className="space-y-6">
       <Toaster position="top-right" />
-      <header className="flex flex-col gap-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:flex-row sm:items-center sm:justify-between">
+      {isAdmin && <header className="flex flex-col gap-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:flex-row sm:items-center sm:justify-between">
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">{isAdmin ? 'Admin Workspace' : 'Server Workspace'}</p>
           <h1 className="mt-1 text-2xl font-bold text-slate-900">Serving Supplies</h1>
           <p className="mt-1 text-sm text-slate-500">{isAdmin ? 'Review server requests and manage dining supply inventory.' : 'Browse supplies and request stock. Inventory changes after Admin approval.'}</p>
         </div>
         <div className="flex flex-wrap gap-2">
-          {!isAdmin && <button type="button" onClick={() => openRequestForm()} className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-[#1a3c36] px-4 text-sm font-semibold text-white hover:bg-[#214a42]">
-            <Plus size={17} /> Request Supplies
-          </button>}
           {isAdmin && <button type="button" onClick={openAddForm} className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-[#1a3c36] px-4 text-sm font-semibold text-white hover:bg-[#214a42]">
             <Plus size={17} /> Add Supply Item
           </button>}
         </div>
-      </header>
+      </header>}
 
       <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {[
@@ -454,7 +460,7 @@ export default function ServerSupplies() {
         <div className="flex items-center justify-between border-b border-slate-100 p-4">
           <div>
             <h2 className="flex items-center gap-2 text-lg font-bold text-slate-900"><ClipboardList size={19} />{isAdmin ? 'Supply Requests' : 'My Supply Requests'}</h2>
-            <p className="mt-1 text-sm text-slate-500">{isAdmin ? 'Approve a request to add the quantity to inventory, or reject it with a reason.' : 'Requests are sent to Admin. Stock is not changed until approved.'}</p>
+            <p className="mt-1 text-sm text-slate-500">{isAdmin ? 'Approving adds catalog items to stock. Custom items require manual procurement.' : 'Requests are sent to Admin. Stock is not changed until approved.'}</p>
           </div>
           <span className="rounded-full bg-amber-50 px-3 py-1 text-sm font-semibold text-amber-800">{requests.filter((request) => request.status === 'pending').length} pending</span>
         </div>
@@ -508,7 +514,7 @@ export default function ServerSupplies() {
                 {filteredRequests.map((request) => (
                   <tr key={request.id} className="border-t border-slate-100">
                     <td className="px-4 py-3">
-                      <div className="space-y-1">{getRequestItems(request).map((item) => <p key={item.item_id} className="font-semibold text-slate-900">{item.item_name} <span className="font-normal text-slate-600">· {item.unit} · Qty {item.quantity}</span></p>)}</div>
+                      <div className="space-y-1">{getRequestItems(request).map((item, index) => <p key={`${item.item_id || item.item_name}-${index}`} className="font-semibold text-slate-900">{item.item_name} {(item.is_custom || item.item_id == null) && <span className="rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-semibold text-slate-600">Other</span>} <span className="font-normal text-slate-600">· {item.unit} · Qty {item.quantity}</span></p>)}</div>
                     </td>
                     {isAdmin && <td className="px-4 py-3 text-slate-600">{request.requested_by}</td>}
                     <td className="max-w-56 truncate px-4 py-3 text-slate-600" title={request.remarks || ''}>{request.remarks || '—'}</td>
@@ -538,7 +544,7 @@ export default function ServerSupplies() {
                   <span className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-semibold ${request.status === 'approved' ? 'bg-emerald-50 text-emerald-700' : request.status === 'rejected' ? 'bg-rose-50 text-rose-700' : 'bg-amber-50 text-amber-800'}`}>{request.status}</span>
                 </div>
                 <ul className="mt-3 space-y-1 text-sm text-slate-700">
-                  {getRequestItems(request).map((item) => <li key={item.item_id}><strong>{item.item_name}</strong> · {item.unit} · Qty {item.quantity}</li>)}
+                  {getRequestItems(request).map((item, index) => <li key={`${item.item_id || item.item_name}-${index}`}><strong>{item.item_name}</strong> {(item.is_custom || item.item_id == null) && <span className="text-xs text-slate-500">(Other)</span>} · {item.unit} · Qty {item.quantity}</li>)}
                 </ul>
                 <p className="mt-1 line-clamp-2 text-sm text-slate-600">{request.remarks || 'No remarks'}</p>
                 <p className="mt-2 text-xs text-slate-500">{String(request.requested_at || '').slice(0, 10)}</p>
@@ -680,19 +686,25 @@ export default function ServerSupplies() {
               <div><h2 className="text-xl font-bold text-slate-900">Request Supply Stock</h2><p className="mt-1 text-sm text-slate-500">Add one or more items with their type and quantity.</p></div>
               <button type="button" onClick={closeRequestForm} aria-label="Close request form" className="rounded-lg p-2 text-slate-500 hover:bg-slate-100"><X size={18} /></button>
             </div>
-            <form onSubmit={submitSupplyRequest} className="space-y-4">
+            <form noValidate onSubmit={submitSupplyRequest} className="space-y-4">
               <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_150px_auto] sm:items-end">
-                <label className="block text-sm font-medium text-slate-700">Supply Item / Type<select required value={requestItem?.id || ''} onChange={(event) => { const selectedItem = items.find((item) => String(item.id) === event.target.value) || null; setRequestItem(selectedItem); setRequestForm((formState) => ({ ...formState, quantity: '' })); }} className="mt-1.5 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5"><option value="">Select supply item</option>{itemsByCategory.map(([category, categoryItems]) => <optgroup key={category} label={category}>{categoryItems.map((item) => <option key={item.id} value={item.id} disabled={requestLines.some((line) => line.item.id === item.id)}>{item.item_name} · {item.material || 'General'} · {item.unit} · {item.current_stock} available</option>)}</optgroup>)}</select></label>
+                <label className="block text-sm font-medium text-slate-700">Supply Item / Type<select value={requestCustomMode ? 'other' : requestItem?.id || ''} onChange={(event) => { const isOther = event.target.value === 'other'; const selectedItem = items.find((item) => String(item.id) === event.target.value) || null; setRequestCustomMode(isOther); setRequestCustomName(''); setRequestItem(selectedItem); setRequestForm((formState) => ({ ...formState, quantity: '' })); }} className="mt-1.5 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5"><option value="">Select supply item</option>{itemsByCategory.map(([category, categoryItems]) => <optgroup key={category} label={category}>{categoryItems.map((item) => <option key={item.id} value={item.id} disabled={requestLines.some((line) => !line.is_custom && line.item.id === item.id)}>{item.item_name} · {item.material || 'General'} · {item.unit} · {item.current_stock} available</option>)}</optgroup>)}<option value="other">Other — enter a custom item</option></select></label>
                 <label className="block text-sm font-medium text-slate-700">Quantity<input autoFocus type="number" min="0.01" step="any" value={requestForm.quantity} onChange={(event) => setRequestForm((formState) => ({ ...formState, quantity: event.target.value }))} className="mt-1.5 w-full rounded-xl border border-slate-200 px-3 py-2.5" /></label>
                 <button type="button" onClick={addRequestLine} className="inline-flex h-[42px] items-center justify-center gap-2 rounded-xl border border-[#1a3c36] px-4 text-sm font-semibold text-[#1a3c36] hover:bg-emerald-50"><Plus size={16} /> Add Item</button>
               </div>
+              {requestCustomMode && (
+                <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_180px]">
+                  <label className="block text-sm font-medium text-slate-700">Custom Item Name<input maxLength={200} value={requestCustomName} onChange={(event) => setRequestCustomName(event.target.value)} placeholder="Enter item name" className="mt-1.5 w-full rounded-xl border border-slate-200 px-3 py-2.5" /></label>
+                  <label className="block text-sm font-medium text-slate-700">Type / Unit<select value={requestCustomUnit} onChange={(event) => setRequestCustomUnit(event.target.value)} className="mt-1.5 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5">{UNITS.map((unit) => <option key={unit} value={unit}>{unit}</option>)}</select></label>
+                </div>
+              )}
               {requestLines.length > 0 && (
                 <div className="overflow-hidden rounded-xl border border-slate-200">
                   <div className="grid grid-cols-[minmax(0,1fr)_90px_90px_40px] gap-2 bg-slate-50 px-3 py-2 text-xs font-semibold uppercase text-slate-500"><span>Name</span><span>Type</span><span>Quantity</span><span /></div>
-                  {requestLines.map(({ item, quantity }) => (
-                    <div key={item.id} className="grid grid-cols-[minmax(0,1fr)_90px_90px_40px] items-center gap-2 border-t border-slate-100 px-3 py-2 text-sm">
-                      <span className="truncate font-medium text-slate-800">{item.item_name}</span><span className="truncate text-slate-600">{item.unit}</span><span className="text-slate-700">{quantity}</span>
-                      <button type="button" onClick={() => setRequestLines((lines) => lines.filter((line) => line.item.id !== item.id))} aria-label={`Remove ${item.item_name}`} className="rounded-lg p-2 text-rose-600 hover:bg-rose-50"><X size={15} /></button>
+                  {requestLines.map((line, index) => (
+                    <div key={`${line.is_custom ? 'custom' : 'catalog'}-${line.item?.id || line.item_name}-${index}`} className="grid grid-cols-[minmax(0,1fr)_90px_90px_40px] items-center gap-2 border-t border-slate-100 px-3 py-2 text-sm">
+                      <span className="truncate font-medium text-slate-800">{line.item_name}</span><span className="truncate text-slate-600">{line.unit}</span><span className="text-slate-700">{line.quantity}</span>
+                      <button type="button" onClick={() => setRequestLines((lines) => lines.filter((existingLine) => existingLine !== line))} aria-label={`Remove ${line.item_name}`} className="rounded-lg p-2 text-rose-600 hover:bg-rose-50"><X size={15} /></button>
                     </div>
                   ))}
                 </div>

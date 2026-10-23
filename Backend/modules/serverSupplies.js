@@ -446,10 +446,14 @@ const decideServerSupplyRequest = async (requestId, decision, decidedBy, reason 
     if (!requests.length) throw new SuppliesError('Supply request was not found.', 404);
     const request = requests[0];
     if (request.status !== 'pending') throw new SuppliesError('This supply request has already been processed.', 409);
+    let hasCustomItems = false;
     if (decision === 'approved') {
       const requestItems = parseRequestItems(request).sort((a, b) => (a.item_id || Number.MAX_SAFE_INTEGER) - (b.item_id || Number.MAX_SAFE_INTEGER));
       for (const item of requestItems) {
-        if (item.is_custom || item.item_id == null) continue;
+        if (item.is_custom || item.item_id == null) {
+          hasCustomItems = true;
+          continue;
+        }
         const [availableItems] = await connection.execute(
           'SELECT id FROM server_supply_items WHERE id = ? AND deleted_at IS NULL FOR UPDATE',
           [item.item_id]
@@ -474,7 +478,7 @@ const decideServerSupplyRequest = async (requestId, decision, decidedBy, reason 
       [decision, decidedBy, decisionReason, requestId]
     );
     await connection.commit();
-    return { id: Number(requestId), status: decision };
+    return { id: Number(requestId), status: decision, hasCustomItems };
   } catch (error) {
     await connection.rollback();
     throw error;

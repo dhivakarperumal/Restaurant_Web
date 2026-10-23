@@ -101,7 +101,13 @@ router.patch('/requests/:requestId/approve', requireAdmin, withErrorHandler(asyn
     getActorName(req.auth),
     req.body?.reason
   );
-  res.json({ success: true, message: 'Supply request approved and stock updated.', data: request });
+  res.json({
+    success: true,
+    message: request.hasCustomItems
+      ? 'Supply request approved. Catalog stock updated; custom items require manual procurement.'
+      : 'Supply request approved and stock updated.',
+    data: request,
+  });
 }));
 
 router.patch('/requests/:requestId/reject', requireAdmin, withErrorHandler(async (req, res) => {
