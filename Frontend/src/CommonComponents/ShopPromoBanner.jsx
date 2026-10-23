@@ -17,14 +17,14 @@ const deliveryFeatures = [
 ];
 
 const bannerContent = {
-  fresh: {
-    eyebrow: "Fresh from our kitchen",
-    title: "Good food, made with care.",
-    description:
-      "Thoughtful ingredients and fresh preparation in every order.",
-    action: "Explore the menu",
-    icon: Leaf,
-  },
+  // fresh: {
+  //   eyebrow: "Fresh from our kitchen",
+  //   title: "Good food, made with care.",
+  //   description:
+  //     "Thoughtful ingredients and fresh preparation in every order.",
+  //   action: "Explore the menu",
+  //   icon: Leaf,
+  // },
   chef: {
     eyebrow: "Our Kitchen",
     title: "Where Great Taste",

@@ -267,7 +267,7 @@ function HomeProducts() {
           />
           <section className="px-4 py-4 sm:py-6">
             <PageContainer>
-              <ShopPromoBanner variant={['fresh', 'chef', 'share'][index]} />
+              <ShopPromoBanner variant={['chef', 'share'][index]} />
             </PageContainer>
           </section>
         </div>
