@@ -119,6 +119,36 @@ const getAddressFromCoordinates = async ({ latitude, longitude }) => {
   };
 };
 
+const getCoordinatesFromAddress = async (address, signal) => {
+  const query = new URLSearchParams({
+    format: 'jsonv2',
+    limit: '1',
+    countrycodes: 'in',
+    q: [
+      address.address_line,
+      address.area_locality,
+      address.city,
+      address.state,
+      address.pincode,
+      'India',
+    ].filter(Boolean).join(', '),
+  });
+  const response = await fetch(`https://nominatim.openstreetmap.org/search?${query}`, { signal });
+  if (!response.ok) {
+    throw new Error('The address could not be located. Please check it or use current location.');
+  }
+
+  const results = await response.json();
+  const latitude = Number(results?.[0]?.lat);
+  const longitude = Number(results?.[0]?.lon);
+  if (!Number.isFinite(latitude) || latitude < -90 || latitude > 90
+    || !Number.isFinite(longitude) || longitude < -180 || longitude > 180) {
+    throw new Error('We could not find that address. Check the address details or use current location.');
+  }
+
+  return { latitude, longitude };
+};
+
 const getCheckoutIdempotencyKey = async (userId, cart, checkoutDetails) => {
   const requestFingerprint = JSON.stringify({
     userId,
@@ -179,6 +209,8 @@ function Checkout() {
   const [deliveryQuote, setDeliveryQuote] = useState(null);
   const [deliveryQuoteError, setDeliveryQuoteError] = useState(null);
   const [fetchingLocation, setFetchingLocation] = useState(false);
+  const [geocodingAddressFingerprint, setGeocodingAddressFingerprint] = useState('');
+  const [addressGeocodingError, setAddressGeocodingError] = useState(null);
   const [submitting, setSubmitting] = useState(false);
   const [completedOrder, setCompletedOrder] = useState(null);
   const submissionInProgress = useRef(false);
@@ -205,6 +237,61 @@ function Checkout() {
       active = false;
     };
   }, [user?.user_id]);
+
+  const addressFingerprint = [
+    address.address_line,
+    address.area_locality,
+    address.city,
+    address.state,
+    address.pincode,
+  ].map((part) => String(part || '').trim()).join('|');
+  const geocodingAddress = fulfillmentType === 'home_delivery'
+    && !deliveryLocation
+    && !fetchingLocation
+    && Boolean(addressFingerprint)
+    && geocodingAddressFingerprint === addressFingerprint;
+  const currentAddressGeocodingError = fulfillmentType === 'home_delivery'
+    && !deliveryLocation
+    && addressGeocodingError?.fingerprint === addressFingerprint
+    ? addressGeocodingError.message
+    : '';
+
+  useEffect(() => {
+    if (fulfillmentType !== 'home_delivery' || deliveryLocation || fetchingLocation) return undefined;
+
+    const requiredAddressParts = [
+      address.address_line,
+      address.area_locality,
+      address.city,
+      address.state,
+      address.pincode,
+    ];
+    if (requiredAddressParts.some((part) => !String(part || '').trim())) return undefined;
+
+    const controller = new AbortController();
+    const timeout = window.setTimeout(async () => {
+      setGeocodingAddressFingerprint(addressFingerprint);
+      try {
+        const location = await getCoordinatesFromAddress(address, controller.signal);
+        if (!controller.signal.aborted) setDeliveryLocation(location);
+      } catch (error) {
+        if (!controller.signal.aborted) {
+          console.error('Could not locate the manually entered checkout address:', error);
+          setAddressGeocodingError({
+            fingerprint: addressFingerprint,
+            message: error.message || 'The address could not be located.',
+          });
+        }
+      } finally {
+        if (!controller.signal.aborted) setGeocodingAddressFingerprint('');
+      }
+    }, 700);
+
+    return () => {
+      window.clearTimeout(timeout);
+      controller.abort();
+    };
+  }, [address, addressFingerprint, deliveryLocation, fetchingLocation, fulfillmentType]);
 
   const subtotal = useMemo(() => cart.reduce(
     (sum, item) => sum + Number(item.price || 0) * Number(item.quantity || 1),
@@ -292,6 +379,7 @@ function Checkout() {
     setDeliveryLocation(null);
     setDeliveryQuote(null);
     setDeliveryQuoteError(null);
+    setAddressGeocodingError(null);
     setFetchingLocation(true);
     navigator.geolocation.getCurrentPosition(
       async ({ coords }) => {
@@ -358,7 +446,7 @@ function Checkout() {
       return;
     }
     if (fulfillmentType === 'home_delivery' && !deliveryLocation) {
-      toast.error('Use your current location to calculate the delivery charge.');
+      toast.error(currentAddressGeocodingError || 'Enter a complete address or use current location to calculate the delivery charge.');
       return;
     }
     if (fulfillmentType === 'home_delivery' && !currentDeliveryQuote) {
@@ -619,6 +707,16 @@ function Checkout() {
                           Delivery location captured. The delivery fee is calculated from the restaurant by straight-line distance.
                         </p>
                       )}
+                      {geocodingAddress && (
+                        <p role="status" className="text-xs font-medium text-[#8c5b21] sm:col-span-2">
+                          Finding your address to calculate the delivery fee…
+                        </p>
+                      )}
+                      {currentAddressGeocodingError && (
+                        <p role="alert" className="text-xs text-red-700 sm:col-span-2">
+                          {currentAddressGeocodingError}
+                        </p>
+                      )}
                       {addressFields.map((field) => (
                       <label key={field.name} className={`text-sm font-semibold text-[#263830] ${field.name === 'address_line' || field.name === 'area_locality' || field.name === 'landmark' ? 'sm:col-span-2' : ''}`}>
                         {field.label}{field.name !== 'landmark' && <span className="text-[#a34f32]"> *</span>}
@@ -732,16 +830,20 @@ function Checkout() {
                     ? '₹0.00'
                     : deliveryQuotePending
                       ? 'Calculating…'
+                      : geocodingAddress
+                        ? 'Finding address…'
                       : currentDeliveryQuote
                         ? `₹${currentDeliveryQuote.delivery_charge.toFixed(2)}`
-                        : 'Use current location'}
+                        : 'Enter address'}
                 </span>
               </div>
               {currentDeliveryQuoteError && (
                 <p role="alert" className="text-xs text-red-700">{currentDeliveryQuoteError}</p>
               )}
               {fulfillmentType === 'home_delivery' && !deliveryLocation && (
-                <p className="text-xs text-[#8c7a6b]">Use current location to calculate delivery charges.</p>
+                <p className="text-xs text-[#8c7a6b]">
+                  Enter the complete delivery address to calculate the charge, or use current location.
+                </p>
               )}
               <div className="flex justify-between border-t border-[#e9e0d5] pt-3 text-base font-bold text-[#263830]">
                 <span>Total</span>
@@ -753,7 +855,7 @@ function Checkout() {
               </div>
               <button
                 type="submit"
-                disabled={submitting || cart.length === 0 || (fulfillmentType === 'home_delivery' && (!deliveryLocation || deliveryQuotePending || !currentDeliveryQuote))}
+                disabled={submitting || cart.length === 0 || (fulfillmentType === 'home_delivery' && (!deliveryLocation || geocodingAddress || deliveryQuotePending || !currentDeliveryQuote))}
                 className="w-full rounded-xl bg-[#263830] px-5 py-3.5 text-sm font-bold text-white shadow-sm transition hover:bg-[#1a2822] disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {submitting ? 'Preparing your order…' : paymentMethod === 'online' ? 'Continue to Razorpay' : 'Place order'}
