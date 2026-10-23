@@ -46,92 +46,60 @@ function ShopPromoBanner({ variant }) {
     return (
       <article
         aria-label="Delivery Banner"
-        className="col-span-full isolate overflow-hidden rounded-2xl border border-[#ede8d8] bg-white shadow-sm"
+        className="col-span-full isolate overflow-hidden rounded-[18px] border border-[#e9d8b1] bg-[#f5f0e6] shadow-[0_0_0_1px_rgba(220,189,118,0.2)]"
       >
         <div className="relative flex min-h-[200px] items-stretch">
+          <div className="absolute inset-y-0 left-0 w-[22%] bg-[radial-gradient(circle_at_left,_rgba(196,214,138,0.35),transparent_55%)]" />
 
-          {/* ── Far-left leaf strip ─────────────────── */}
-          <div
-            aria-hidden="true"
-            className="pointer-events-none relative hidden w-[60px] shrink-0 select-none overflow-hidden lg:block"
-            style={{
-              background: 'linear-gradient(to right, #f5f0e0 60%, transparent 100%)',
-            }}
-          >
-            {/* Leaf SVG illustration */}
-            <svg viewBox="0 0 60 200" className="absolute inset-0 h-full w-full opacity-40" preserveAspectRatio="xMidYMid slice">
-              <ellipse cx="30" cy="90" rx="22" ry="55" fill="#c8d88a" transform="rotate(-20 30 90)" />
-              <ellipse cx="25" cy="140" rx="16" ry="40" fill="#b5cb72" transform="rotate(15 25 140)" />
-              <line x1="30" y1="35" x2="30" y2="145" stroke="#8aaa3a" strokeWidth="1.5" />
-            </svg>
-          </div>
-
-          {/* ── LEFT TEXT (35%) ──────────────────────── */}
-          <div className="relative z-10 flex flex-col justify-center px-6 py-8 sm:px-8 lg:w-[36%] lg:shrink-0">
-            {/* Eyebrow */}
-            <div className="mb-3 flex items-center gap-2">
-              <p className="text-[10px] font-black uppercase tracking-[0.22em] text-[#c8920a]">
+          <div className="relative z-10 flex w-full flex-col justify-center px-5 py-6 sm:px-7 lg:w-[42%] lg:shrink-0 lg:px-10 lg:py-8">
+            <div className="mb-3 flex items-center gap-3 text-[#d39d2d]">
+              <p className="text-[10px] font-black uppercase tracking-[0.28em] sm:text-[11px]">
                 {banner.eyebrow}
               </p>
-              <span className="h-px w-8 bg-[#c8920a]/50" />
+              <span className="h-px w-12 bg-[#d39d2d]/80" />
             </div>
 
-            {/* Headline — "Your Doorstep" in gold */}
-            <h3 className="text-[1.45rem] font-black leading-tight text-[#1a1a1a] sm:text-[1.65rem]">
+            <h3 className="max-w-[470px] font-serif text-[2.1rem] font-black leading-[0.95] tracking-[-0.04em] text-[#1a1a1a] sm:text-[2.5rem] lg:text-[3.3rem]">
               Authentic Flavours
               <br />
               Delivered to{' '}
-              <span className="text-[#c8920a]">Your Doorstep</span>
+              <span className="text-[#c99518]">Your Doorstep</span>
             </h3>
 
-            {/* Description */}
-            <p className="mt-3 max-w-[280px] text-[13px] leading-5 text-[#555]">
-              Enjoy a wide variety of tasty and hygienic meals prepared with fresh
-              ingredients, delivered fresh to your{' '}
-              <span className="font-semibold text-[#1a1a1a]">home</span>.
+            <p className="mt-4 max-w-[380px] text-[14px] leading-[1.65] text-[#4d4039] sm:text-[15px]">
+              Enjoy a wide variety of tasty and hygienic meals prepared with fresh ingredients,
+              delivered fresh to your home.
             </p>
 
-            {/* CTA button */}
-            <div className="mt-5">
+            <div className="mt-6 flex items-center">
               <Link
                 to="/shop"
-                className="inline-flex items-center gap-2 rounded-full bg-[#c8920a] px-5 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-[#b07d08]"
+                className="inline-flex items-center gap-2 rounded-xl bg-[#e2b14e] px-5 py-3 text-sm font-extrabold text-[#1d130d] shadow-[0_8px_18px_rgba(226,177,78,0.22)] transition hover:bg-[#d29c2f]"
               >
                 {banner.action}
                 <ArrowRight className="h-4 w-4" />
               </Link>
             </div>
 
-            {/* Delivery path: pin → dotted line → bike */}
-            <div className="mt-5 flex items-center gap-1 text-[#c8920a]">
-              {/* Pin */}
-              <svg viewBox="0 0 24 24" className="h-5 w-5 fill-[#c8920a]">
+            <div className="mt-7 flex items-center gap-2 text-[#d39d2d]">
+              <svg viewBox="0 0 24 24" className="h-5 w-5 fill-[#d39d2d]">
                 <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5S10.62 6.5 12 6.5s2.5 1.12 2.5 2.5S13.38 11.5 12 11.5z"/>
               </svg>
-              {/* Dotted curved path */}
-              <svg viewBox="0 0 80 20" className="h-4 w-16 sm:w-20" fill="none">
-                <path
-                  d="M2 14 Q20 4 40 10 Q60 16 78 6"
-                  stroke="#c8920a"
-                  strokeWidth="1.5"
-                  strokeDasharray="4 3"
-                  strokeLinecap="round"
-                />
+              <svg viewBox="0 0 120 30" className="h-5 w-28 sm:w-32" fill="none">
+                <path d="M2 18 Q20 4 40 10 T80 12 T118 8" stroke="#d39d2d" strokeWidth="1.8" strokeDasharray="4 5" strokeLinecap="round" />
               </svg>
-              {/* Bike */}
-              <Bike className="h-6 w-6" />
+              <Bike className="h-7 w-7" />
             </div>
           </div>
 
-          {/* ── MIDDLE FEATURES (25%) ────────────────── */}
-          <div className="relative z-10 hidden flex-col justify-center gap-5 border-l border-r border-[#ede8d8] px-6 py-8 lg:flex lg:w-[25%] lg:shrink-0">
+          <div className="relative z-10 hidden w-[28%] flex-col justify-center gap-5 px-3 py-6 lg:flex">
             <div className="grid grid-cols-2 gap-x-4 gap-y-5">
               {deliveryFeatures.map(({ Icon: FeatIcon, label }) => (
                 <div key={label} className="flex flex-col items-center gap-2 text-center">
-                  <span className="flex h-11 w-11 items-center justify-center rounded-full border border-[#e8d8a0] bg-[#fdf5e0] text-[#c8920a]">
-                    <FeatIcon className="h-5 w-5" strokeWidth={1.6} />
+                  <span className="flex h-14 w-14 items-center justify-center rounded-full border border-[#e8d6a0] bg-[#f8f0dc] text-[#c9941f] shadow-[0_0_0_4px_rgba(236,204,126,0.15)]">
+                    <FeatIcon className="h-6 w-6" strokeWidth={1.8} />
                   </span>
-                  <span className="whitespace-pre-line text-[11px] font-semibold leading-tight text-[#333]">
+                  <span className="whitespace-pre-line text-[11px] font-semibold leading-tight text-[#3d3128]">
                     {label}
                   </span>
                 </div>
@@ -139,53 +107,42 @@ function ShopPromoBanner({ variant }) {
             </div>
           </div>
 
-          {/* ── RIGHT PHOTO (remaining width) ────────── */}
-          <div className="relative flex-1 overflow-hidden">
-            {/* Photo */}
+          <div className="relative ml-auto flex w-[30%] min-w-[220px] flex-1 overflow-hidden">
             <img
               src="/images/delivery.png"
               alt="Fresh food delivery"
               className="absolute inset-0 h-full w-full object-cover object-center"
             />
-            {/* Left soft fade into white */}
-            <div className="absolute inset-0 bg-gradient-to-r from-white via-white/10 to-transparent" />
+            <div className="absolute inset-0 bg-gradient-to-r from-[#f5f0e7]/10 via-transparent to-transparent" />
 
-            {/* "Good Food Good Mood" — top right outside photo feel */}
-            <div className="absolute right-4 top-1/2 z-10 -translate-y-1/2 text-right">
-              <p
-                className="font-serif text-sm font-bold italic leading-snug text-[#2d2d2d]"
-                style={{ fontFamily: "'Dancing Script', cursive, serif" }}
-              >
-                Good Food
-              </p>
-              <p
-                className="font-serif text-sm font-bold italic leading-snug text-[#2d2d2d]"
-                style={{ fontFamily: "'Dancing Script', cursive, serif" }}
-              >
-                Good Mood{' '}
-                <span className="text-[#c8920a]">♥</span>
-              </p>
+            <div
+              className="absolute right-5 top-7 z-10 text-right font-serif italic text-[#2b251e]"
+              style={{ fontFamily: "'Dancing Script', cursive, serif" }}
+            >
+              <p className="text-[16px] sm:text-[20px]">Good Food</p>
+              <p className="text-[16px] sm:text-[20px]">Good Mood</p>
             </div>
 
-            {/* "Fresh Tasty Happiness" circular badge */}
-            <div className="absolute bottom-4 right-16 z-10 flex h-16 w-16 flex-col items-center justify-center rounded-full border-2 border-[#c8920a]/40 bg-white/90 text-center shadow backdrop-blur-sm">
-              <ChefHat className="h-4 w-4 text-[#c8920a]" />
-              <p className="mt-0.5 text-[8px] font-black leading-tight text-[#333]">
-                Fresh<br />Tasty<br />
-                <span className="text-[#c8920a]">Happiness</span>
+            <div className="absolute bottom-4 right-4 z-10 flex h-16 w-16 flex-col items-center justify-center rounded-full border-2 border-[#d5ad52] bg-[#f9f1db]/90 text-center shadow-md">
+              <ChefHat className="h-4 w-4 text-[#b17816]" />
+              <p className="mt-0.5 text-[7px] font-black uppercase leading-[1.1] text-[#312821]">
+                Fresh
+                <br />
+                Tasty
+                <br />
+                <span className="text-[#b17816]">Happiness</span>
               </p>
             </div>
           </div>
         </div>
 
-        {/* Mobile: show features in a row below */}
-        <div className="flex justify-around border-t border-[#ede8d8] px-4 py-4 lg:hidden">
+        <div className="flex justify-around border-t border-[#e8dac3] px-4 py-4 lg:hidden">
           {deliveryFeatures.map(({ Icon: FeatIcon, label }) => (
             <div key={label} className="flex flex-col items-center gap-1.5 text-center">
-              <span className="flex h-9 w-9 items-center justify-center rounded-full border border-[#e8d8a0] bg-[#fdf5e0] text-[#c8920a]">
-                <FeatIcon className="h-4 w-4" strokeWidth={1.6} />
+              <span className="flex h-10 w-10 items-center justify-center rounded-full border border-[#e6c678] bg-[#f7f0df] text-[#d08a17]">
+                <FeatIcon className="h-4 w-4" strokeWidth={1.8} />
               </span>
-              <span className="whitespace-pre-line text-[9px] font-semibold leading-tight text-[#333]">
+              <span className="whitespace-pre-line text-[9px] font-semibold leading-tight text-[#3d3128]">
                 {label}
               </span>
             </div>
