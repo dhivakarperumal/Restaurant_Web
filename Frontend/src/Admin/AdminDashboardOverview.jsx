@@ -99,33 +99,49 @@ const normalizeStatus = (status) => {
   return raw;
 };
 
-function MetricCard({ title, value, icon: Icon, tone, hint, surface, waveColor, percent }) {
+function MetricCard({ title, value, icon: Icon, tone, hint, accentColor, glowColor, percent }) {
   return (
-    <article className={`relative flex min-h-[104px] min-w-0 items-start gap-3 overflow-hidden rounded-xl border p-3 shadow-[0_2px_10px_rgba(20,56,34,0.04)] sm:min-h-[112px] sm:p-3.5 ${surface}`}>
-      <div className={`relative z-10 flex h-11 w-11 shrink-0 items-center justify-center rounded-lg sm:h-12 sm:w-12 ${tone}`}>
-        <Icon size={25} strokeWidth={2.5} />
-      </div>
-      <div className="relative z-10 min-w-0 flex-1 pt-0.5">
-        <h3 className="mb-1 truncate text-[11px] font-semibold leading-tight text-[#28303a]">{title}</h3>
-        <div className="truncate text-[22px] font-extrabold leading-none tracking-tight text-[#17191d] sm:text-[24px]">{value}</div>
-        <div className="mt-1.5 flex min-w-0 items-center gap-1 text-[10px] leading-none">
-          {percent && <span className="inline-flex shrink-0 items-center gap-0.5 font-bold text-[#119749]">{percent}</span>}
-          <span className="truncate text-[#78808a]">{hint}</span>
+    <article className="group relative flex flex-col justify-between overflow-hidden rounded-2xl border border-slate-200/90 bg-white p-4 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] transition-all duration-300 hover:-translate-y-1 hover:border-slate-300 hover:shadow-[0_12px_24px_-6px_rgba(0,0,0,0.1)] sm:p-5">
+      {/* Background soft glow gradient */}
+      <div
+        className="pointer-events-none absolute -right-6 -top-6 h-28 w-28 rounded-full opacity-20 blur-2xl transition-all duration-500 group-hover:scale-150 group-hover:opacity-35"
+        style={{ backgroundColor: glowColor || accentColor || '#3b82f6' }}
+      />
+
+      <div className="relative z-10 flex items-start justify-between gap-3">
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-[11px] font-bold tracking-wider text-slate-500 uppercase">{title}</p>
+          <div className="mt-2.5 truncate text-[23px] font-black tracking-tight text-slate-800 sm:text-[27px]">
+            {value}
+          </div>
+        </div>
+        <div
+          className={`relative flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl shadow-sm transition-transform duration-300 group-hover:scale-110 ${tone}`}
+        >
+          <Icon size={24} strokeWidth={2.3} />
         </div>
       </div>
 
-      <div className="pointer-events-none absolute bottom-1 right-1 z-0 h-10 w-14 opacity-90 sm:h-11 sm:w-16">
-        <svg viewBox="0 0 100 50" preserveAspectRatio="none" className="w-full h-full">
-          <defs>
-            <linearGradient id={`grad-${title.replace(/\s+/g, '')}`} x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor={waveColor} stopOpacity="0.22" />
-              <stop offset="100%" stopColor={waveColor} stopOpacity="0" />
-            </linearGradient>
-          </defs>
-          <path d="M0,50 L0,40 Q25,30 50,40 T100,20 L100,50 Z" fill={`url(#grad-${title.replace(/\s+/g, '')})`} />
-          <path d="M0,40 Q25,30 50,40 T100,20" fill="none" stroke={waveColor} strokeWidth="3" />
-        </svg>
+      <div className="relative z-10 mt-4 flex items-center justify-between border-t border-slate-100 pt-3 text-xs">
+        <div className="flex items-center gap-1.5 min-w-0">
+          {percent && (
+            <span className="inline-flex shrink-0 items-center rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-bold text-emerald-600 ring-1 ring-inset ring-emerald-500/20">
+              {percent}
+            </span>
+          )}
+          <span className="truncate text-slate-500 font-medium">{hint}</span>
+        </div>
+        <span
+          className="h-2 w-2 rounded-full shrink-0 shadow-sm"
+          style={{ backgroundColor: accentColor || '#10b981' }}
+        />
       </div>
+
+      {/* Modern gradient accent bar on hover */}
+      <div
+        className="absolute bottom-0 left-0 h-[3px] w-0 transition-all duration-300 group-hover:w-full"
+        style={{ backgroundColor: accentColor || '#3b82f6' }}
+      />
     </article>
   );
 }
@@ -368,14 +384,14 @@ const AdminDashboardOverview = () => {
     : Number(snapshot.inventory.pendingKitchenRequests || 0);
   const openBillsCount = snapshot.bills.filter((bill) => String(bill.status).toLowerCase() === 'active').length;
   const stats = [
-    { title: 'Total Orders', value: reportLoading ? '—' : statusTotal.toLocaleString('en-IN'), hint: 'vs last week', icon: ShoppingBag, tone: 'bg-[#ffeadf] text-[#f04b08]', surface: 'bg-[#fffaf5] border-[#f1e9e3]', waveColor: '#ff6b25', percent: '↑ 12%' },
-    { title: 'Total Revenue', value: reportLoading ? '—' : money(report.summary?.totalRevenue), hint: 'vs last week', icon: CircleDollarSign, tone: 'bg-[#def7e8] text-[#069c49]', surface: 'bg-[#f7fcf8] border-[#e6f0e8]', waveColor: '#17ae5b', percent: '↑ 18%' },
-    { title: 'Total Customers', value: loading ? '—' : customerCount.toLocaleString('en-IN'), hint: 'vs last week', icon: Users, tone: 'bg-[#e0edff] text-[#1475f8]', surface: 'bg-[#f6f9ff] border-[#e6edf8]', waveColor: '#267cff', percent: '↑ 10%' },
-    { title: 'Total Menu Items', value: loading ? '—' : snapshot.foods.length.toLocaleString('en-IN'), hint: 'vs last week', icon: ChefHat, tone: 'bg-[#ffe4f4] text-[#d82387]', surface: 'bg-[#fff7fb] border-[#f2e7ee]', waveColor: '#e31b91', percent: '↑ 5%' },
-    { title: 'Pending Orders', value: reportLoading ? '—' : pendingOrderCount.toLocaleString('en-IN'), hint: 'in selected period', icon: Clock3, tone: 'bg-[#fff4df] text-[#d99000]', surface: 'bg-[#fffaf5] border-[#f1e9e3]', waveColor: '#d99000' },
-    { title: 'Completed Orders', value: reportLoading ? '—' : completedOrderCount.toLocaleString('en-IN'), hint: 'in selected period', icon: PackageCheck, tone: 'bg-[#f0eaff] text-[#8055dc]', surface: 'bg-[#faf8ff] border-[#ebe5f5]', waveColor: '#8055dc' },
-    { title: "Today's Revenue", value: loading ? '—' : money(todayRevenue), hint: 'from completed orders', icon: CreditCard, tone: 'bg-[#e6f7fb] text-[#159bb8]', surface: 'bg-[#f7fcfd] border-[#e6f0f2]', waveColor: '#159bb8' },
-    { title: "Today's Orders", value: loading ? '—' : todayOrderCount.toLocaleString('en-IN'), hint: 'across all channels', icon: ShoppingBag, tone: 'bg-[#fff0f7] text-[#db468f]', surface: 'bg-[#fff7fb] border-[#f2e7ee]', waveColor: '#db468f' },
+    { title: 'Total Orders', value: reportLoading ? '—' : statusTotal.toLocaleString('en-IN'), hint: 'vs last week', icon: ShoppingBag, tone: 'bg-gradient-to-tr from-orange-500 to-amber-400 text-white shadow-orange-500/25', accentColor: '#f97316', glowColor: '#fb923c', percent: '↑ 12%' },
+    { title: 'Total Revenue', value: reportLoading ? '—' : money(report.summary?.totalRevenue), hint: 'vs last week', icon: CircleDollarSign, tone: 'bg-gradient-to-tr from-emerald-600 to-teal-400 text-white shadow-emerald-500/25', accentColor: '#10b981', glowColor: '#34d399', percent: '↑ 18%' },
+    { title: 'Total Customers', value: loading ? '—' : customerCount.toLocaleString('en-IN'), hint: 'vs last week', icon: Users, tone: 'bg-gradient-to-tr from-blue-600 to-cyan-400 text-white shadow-blue-500/25', accentColor: '#3b82f6', glowColor: '#60a5fa', percent: '↑ 10%' },
+    { title: 'Total Menu Items', value: loading ? '—' : snapshot.foods.length.toLocaleString('en-IN'), hint: 'vs last week', icon: ChefHat, tone: 'bg-gradient-to-tr from-pink-600 to-rose-400 text-white shadow-pink-500/25', accentColor: '#ec4899', glowColor: '#f472b6', percent: '↑ 5%' },
+    { title: 'Pending Orders', value: reportLoading ? '—' : pendingOrderCount.toLocaleString('en-IN'), hint: 'in selected period', icon: Clock3, tone: 'bg-gradient-to-tr from-amber-500 to-yellow-400 text-white shadow-amber-500/25', accentColor: '#f59e0b', glowColor: '#fbbf24' },
+    { title: 'Completed Orders', value: reportLoading ? '—' : completedOrderCount.toLocaleString('en-IN'), hint: 'in selected period', icon: PackageCheck, tone: 'bg-gradient-to-tr from-violet-600 to-purple-400 text-white shadow-purple-500/25', accentColor: '#8b5cf6', glowColor: '#a78bfa' },
+    { title: "Today's Revenue", value: loading ? '—' : money(todayRevenue), hint: 'from completed orders', icon: CreditCard, tone: 'bg-gradient-to-tr from-cyan-600 to-sky-400 text-white shadow-cyan-500/25', accentColor: '#06b6d4', glowColor: '#22d3ee' },
+    { title: "Today's Orders", value: loading ? '—' : todayOrderCount.toLocaleString('en-IN'), hint: 'across all channels', icon: ShoppingBag, tone: 'bg-gradient-to-tr from-rose-500 to-pink-400 text-white shadow-rose-500/25', accentColor: '#f43f5e', glowColor: '#fb7185' },
   ];
   const rangeUnfinished = period === 'custom' && (!customFrom || !customTo);
 
@@ -407,7 +423,7 @@ const AdminDashboardOverview = () => {
       {rangeUnfinished && <div role="status" className="text-xs text-[#88602a]">Select a start and end date to load the custom range.</div>}
 
       <section className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        {stats.map(({ title, value, hint, icon: Icon, tone, surface, waveColor, percent }) => <MetricCard key={title} title={title} value={value} hint={hint} icon={Icon} tone={tone} surface={surface} waveColor={waveColor} percent={percent} />)}
+        {stats.map(({ title, value, hint, icon: Icon, tone, accentColor, glowColor, percent }) => <MetricCard key={title} title={title} value={value} hint={hint} icon={Icon} tone={tone} accentColor={accentColor} glowColor={glowColor} percent={percent} />)}
       </section>
 
       <section aria-label="Menu categories" className="grid grid-cols-1 gap-2 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-6">
