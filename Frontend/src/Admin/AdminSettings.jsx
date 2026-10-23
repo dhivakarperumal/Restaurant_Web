@@ -992,6 +992,7 @@ const Settings = ({ initialTab = null }) => {
                   <span style={{ fontWeight: '700', fontSize: '0.85rem', color: '#10b981', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Restaurant Location</span>
                 </div>
                 <button
+                  type="button"
                   onClick={handleFetchLiveLocation}
                   disabled={isFetchingLocation}
                   style={{
@@ -1015,6 +1016,9 @@ const Settings = ({ initialTab = null }) => {
                     : <><Navigation size={15} /> Fetch Live Location</>}
                 </button>
               </div>
+              <p style={{ margin: '0 0 0.75rem', color: '#475569', fontSize: '0.85rem', lineHeight: 1.5 }}>
+                Enter the restaurant’s exact coordinates or use Fetch Live Location while at the restaurant. Save this profile to enable delivery-fee calculations.
+              </p>
             </div>
 
             {/* Coordinates row */}
@@ -1022,6 +1026,10 @@ const Settings = ({ initialTab = null }) => {
               <div style={{ flex: 1 }}>
                 <Input
                   label="Latitude"
+                  type="number"
+                  min="-90"
+                  max="90"
+                  step="any"
                   placeholder="e.g. 12.479808"
                   value={storeSettings.latitude}
                   onChange={(e) => updateStoreSetting('latitude', e.target.value)}
@@ -1030,6 +1038,10 @@ const Settings = ({ initialTab = null }) => {
               <div style={{ flex: 1 }}>
                 <Input
                   label="Longitude"
+                  type="number"
+                  min="-180"
+                  max="180"
+                  step="any"
                   placeholder="e.g. 78.573702"
                   value={storeSettings.longitude}
                   onChange={(e) => updateStoreSetting('longitude', e.target.value)}
@@ -1175,6 +1187,22 @@ const Settings = ({ initialTab = null }) => {
               <p style={{ margin: '0 0 1rem', color: '#475569', fontSize: '0.85rem', lineHeight: 1.5 }}>
                 Set the restaurant latitude and longitude in Restaurant Profile to enable distance-based charges.
               </p>
+              <button
+                type="button"
+                onClick={() => navigate('/admin/settings/restaurant-profile')}
+                style={{
+                  marginBottom: '1rem',
+                  border: '1px solid #cbd5e1',
+                  borderRadius: '8px',
+                  background: '#fff',
+                  color: '#1e293b',
+                  padding: '0.5rem 0.75rem',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                }}
+              >
+                Set Restaurant Location
+              </button>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '1rem' }}>
                 <Input label="Base Delivery Fee (₹)" type="number" min="0" step="0.01" placeholder="e.g. 50" value={deliverySettings.baseCharge} onChange={(event) => updateDeliverySetting('baseCharge', event.target.value)} />
                 <Input label="Free Delivery Minimum Order Value (₹)" type="number" min="0" step="0.01" placeholder="e.g. 500" value={deliverySettings.freeMinimum} onChange={(event) => updateDeliverySetting('freeMinimum', event.target.value)} />

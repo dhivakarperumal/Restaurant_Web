@@ -283,6 +283,10 @@ const router = createHashRouter([
             element: <AdminSettings />,
           },
           {
+            path: 'settings/restaurant-profile',
+            element: <AdminSettings key="restaurant-profile-settings" initialTab="store" />,
+          },
+          {
             path: 'delivery-charges',
             element: <AdminSettings key="delivery-charges" initialTab="delivery" />,
           },
