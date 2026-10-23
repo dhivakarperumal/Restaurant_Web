@@ -284,7 +284,7 @@ const router = createHashRouter([
           },
           {
             path: 'delivery-charges',
-            element: <AdminSettings initialTab="delivery" />,
+            element: <AdminSettings key="delivery-charges" initialTab="delivery" />,
           },
           {
             path: 'settings/profile',
