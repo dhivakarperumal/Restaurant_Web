@@ -78,11 +78,11 @@ const navItems = [
     label: "Foods",
     icon: Package,
     children: [
-     
+
       { path: "/admin/products", label: "All Foods", icon: Package },
       { path: "/admin/products/categories", label: "Category", icon: Layers },
       { path: "/admin/products/cuisines", label: "Cuisine", icon: Utensils },
-     
+
     ],
   },
 
@@ -103,7 +103,7 @@ const navItems = [
       // { path: "/admin/inventory/purchases", label: "Purchases", icon: ShoppingCart },
       { path: "/admin/inventory/kitchen-requests", label: "Kitchen Requests", icon: UtensilsCrossed },
       { path: "/admin/inventory/server-supplies", label: "Serving Supplies Requests", icon: Package },
-      
+
     ],
   },
 
@@ -118,7 +118,7 @@ const navItems = [
       { path: "/admin/orders", label: "All Orders", icon: List },
       { path: "/admin/orders/delivery", label: "Delivered Orders", icon: Package },
       { path: "/admin/orders/cancelled", label: "Cancelled Orders", icon: XCircle },
-     
+
     ],
   },
 
@@ -138,7 +138,7 @@ const navItems = [
   //   icon: PartyPopper,
   // },
 
- 
+
 
   {
     label: "Employee",
@@ -159,7 +159,7 @@ const navItems = [
     ],
   },
 
- 
+
 
   {
     path: "/admin/billing",
@@ -173,17 +173,7 @@ const navItems = [
     icon: CircleDollarSign,
   },
 
-  {
-    path: "/admin/expenses",
-    label: "Expenses",
-    icon: DollarSign,
-  },
 
-  {
-    path: "/admin/reviews",
-    label: "Reviews",
-    icon: Star,
-  },
 
   /* ---- MARKETING ---- */
   {
@@ -194,6 +184,17 @@ const navItems = [
       { path: "/admin/videos", label: "Videos Management", icon: Image },
       // { path: "/admin/gallery", label: "Gallery", icon: Image },
       { path: "/admin/coupons", label: "Coupons & Offers", icon: Tag },
+      {
+        path: "/admin/expenses",
+        label: "Expenses",
+        icon: DollarSign,
+      },
+
+      {
+        path: "/admin/reviews",
+        label: "Reviews",
+        icon: Star,
+      },
     ],
   },
 

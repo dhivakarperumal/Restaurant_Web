@@ -34,6 +34,9 @@ import ManageDeliveryPartners from './Admin/ManageDeliveryPartners.jsx'
 import AdminCustomers from './Admin/AdminCustomers.jsx'
 import BannerManagement from './Admin/Marketting/BannerManagement.jsx'
 import Coupons from './Admin/Marketting/Coupons.jsx'
+import GalleryManagement from './Admin/Marketting/GalleryManagement.jsx'
+import GalleryDetails from './Admin/Marketting/GalleryDetails.jsx'
+import AddGalleryAlbum from './Admin/Marketting/AddGalleryAlbum.jsx'
 import VideoManagement from './Admin/Marketting/VideoManagement.jsx'
 import AdminLayout from './Admin/Adminpanel.jsx'
 import AdminCategories from './Admin/AdminProducts/Categories.jsx'
@@ -297,6 +300,18 @@ const router = createHashRouter([
           {
             path: 'videos',
             element: <VideoManagement />,
+          },
+          {
+            path: 'gallery',
+            element: <GalleryManagement />,
+          },
+          {
+            path: 'gallery/add',
+            element: <AddGalleryAlbum />,
+          },
+          {
+            path: 'gallery/:albumId',
+            element: <GalleryDetails />,
           },
           {
             path: 'products',

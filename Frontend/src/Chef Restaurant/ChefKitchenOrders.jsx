@@ -80,11 +80,14 @@ const formatTimeAgo = (dateValue) => {
 };
 
 const formatKotNumber = (order) => {
-  if (order.kot_number) return order.kot_number;
+  const ticketId = String(order.kot_number || order.order_id || "").trim().toUpperCase();
+  const kotMatch = ticketId.match(/^(?:KOT-?)+(\d+)$/);
+  if (kotMatch) return `KOT${kotMatch[1].padStart(3, "0")}`;
   if (order.id !== null && order.id !== undefined && order.id !== "" && Number.isFinite(Number(order.id))) {
     return `KOT${String(order.id).padStart(3, "0")}`;
   }
-  return `KOT-${String(order.order_id || "").slice(0, 8).toUpperCase()}`;
+  if (ticketId.startsWith("KOT-")) return ticketId;
+  return `KOT-${ticketId.slice(0, 8)}`;
 };
 
 const ChefKitchenOrders = ({ defaultViewMode = "table", orderTypeFilter = "", todayOnly = false }) => {

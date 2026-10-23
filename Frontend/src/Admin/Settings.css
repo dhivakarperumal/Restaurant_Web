@@ -1,6 +1,6 @@
 .settings-page {
   min-height: calc(100vh - 120px);
-  padding: clamp(1rem, 3vw, 2.5rem);
+  padding: 0.5rem;
   color: #1f2937;
 }
 
@@ -361,7 +361,7 @@
 
 @media (max-width: 760px) {
   .settings-page {
-    padding: 1rem;
+    padding: 0.5rem;
   }
 
   .detail-content,
