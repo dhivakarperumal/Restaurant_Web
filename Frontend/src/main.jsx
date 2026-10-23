@@ -66,6 +66,7 @@ import ServerFood from './Server Restaurant/ServerFood/ServerFood.jsx'
 import ServerTables from './Server Restaurant/ServerTables/ServerTables.jsx'
 import ServerLayout from './Server Restaurant/Serverpanel.jsx'
 import ServerAttendance from './Server Restaurant/ServerAttendance.jsx'
+import ServerSupplies from './Server Restaurant/ServerSupplies.jsx'
 import DeliveryLayout from './Delivery Restaurant/Deliverypanel.jsx'
 import DeliveryAttendance from './Delivery Restaurant/DeliveryAttendance.jsx'
 import { DeliveryOrdersPage, DeliveryPartnerDashboard, DeliveryPartnerPages } from './Delivery Restaurant/DeliveryRoutePages.jsx'
@@ -460,6 +461,10 @@ const router = createHashRouter([
           {
             path: 'tables',
             element: <ServerTables />,
+          },
+          {
+            path: 'supplies',
+            element: <ServerSupplies />,
           },
           {
             path: 'attendance',

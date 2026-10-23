@@ -5,6 +5,7 @@ const path = require('path');
 const { initializeAuthSchema, initializeBannerSchema, initializeCategorySchema, initializeCouponSchema, initializeCuisineSchema, initializeFoodSchema, initializeInventorySchema, initializeKitchenOrderSchema, initializeReviewSchema, initializeVideoSchema, initializeEmployeeSchema, initializeServerTableSchema, initializeSettingsSchema, initializeOrderSchema, initializeEventOrderSchema, initializeWishlistSchema, initializeReservationSchema, initializeAttendanceSchema, initializeExpenseSchema, initializeSalarySchema, testConnection } = require('./modules/modules');
 const apiRouter = require('./routers/routes');
 const { initializeRevenueIndexes } = require('./modules/revenue');
+const { initializeServerSuppliesSchema } = require('./modules/serverSupplies');
 const { initializeNotificationSocket } = require('./utils/notificationSocket');
 
 require('dotenv').config({ path: path.join(__dirname, '.env') });
@@ -78,6 +79,8 @@ async function startServer() {
     console.log('Banner tables ready');
     await initializeInventorySchema();
     console.log('Inventory tables ready');
+    await initializeServerSuppliesSchema();
+    console.log('Server Supplies tables ready');
     await initializeCouponSchema();
     console.log('Coupon tables ready');
     await initializeReviewSchema();

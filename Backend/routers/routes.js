@@ -27,6 +27,7 @@ const settingsRouter = require('./settings');
 const cartRouter = require('./cartRouter');
 const wishlistRouter = require('./wishlistRouter');
 const inventoryRouter = require('./inventory');
+const serverSuppliesRouter = require('./serverSupplies');
 const { changeKitchenOrderStatus, getKitchenOrders, submitKitchenOrder } = require('../controllers/kitchenOrderController');
 const {
   getDeliveryPartnerDashboard,
@@ -56,7 +57,7 @@ const legacyEmployeeUploadDirectories = [
 
 fs.mkdirSync(uploadDirectory, { recursive: true });
 
-const uploadFolders = new Set(['categories', 'cuisines', 'foods', 'inventory', 'banners', 'review', 'settings', 'tables']);
+const uploadFolders = new Set(['categories', 'cuisines', 'foods', 'inventory', 'banners', 'review', 'settings', 'tables', 'server_supplies']);
 fs.mkdirSync(employeeUploadDirectory, { recursive: true });
 
 const createUploadFilename = (req, file, callback) => {
@@ -317,6 +318,7 @@ router.use('/event-orders', (req, res, next) => {
   return requireEventOrderAccess(req, res, next);
 }, eventOrdersRouter);
 router.use('/inventory', requireInventoryAccess, inventoryRouter);
+router.use('/server-supplies', serverSuppliesRouter);
 router.get('/employees', optionalAuth, requireEmployeeAdmin, listEmployees);
 router.get('/employees/documents/:filename', optionalAuth, requireEmployeeAdmin, (req, res) => {
   const filename = req.params.filename;
