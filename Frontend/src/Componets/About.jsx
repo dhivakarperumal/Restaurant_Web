@@ -14,14 +14,15 @@ import {
   BadgeCheck,
 } from "lucide-react";
 import PageContainer from "../CommonComponents/PageContainer";
+import PageHeader from "../CommonComponents/PageHeader";
 
 /* ─── Data ─────────────────────────────────────────── */
 
 const stats = [
-  { icon: Users,    value: "500+",  label: "Happy Customers" },
-  { icon: ChefHat,  value: "100+",  label: "Home Chefs" },
+  { icon: Users, value: "500+", label: "Happy Customers" },
+  { icon: ChefHat, value: "100+", label: "Home Chefs" },
   { icon: ShieldCheck, value: "1000+", label: "Delicious Meals" },
-  { icon: MapPin,   value: "10+",   label: "Cities & Towns" },
+  { icon: MapPin, value: "10+", label: "Cities & Towns" },
 ];
 
 const features = [
@@ -107,52 +108,9 @@ function About() {
   return (
     <main className="min-h-screen bg-[#f7f9f5] text-[#203129]">
 
-      {/* ── HERO BANNER ─────────────────────────────── */}
-      <section
-        className="relative flex min-h-[260px] w-full items-end overflow-hidden md:min-h-[320px]"
-        style={{
-          backgroundImage: "url(/images/header.png)",
-          backgroundSize: "cover",
-          backgroundPosition: "center",
-        }}
-      >
-        <div className="absolute inset-0 bg-gradient-to-r from-[#071C18]/85 via-[#071C18]/60 to-transparent" />
-
-        {/* Breadcrumb */}
-        <div className="absolute left-0 top-0 z-10 mt-4 px-8 pt-2 text-xs text-white/70">
-          <Link to="/" className="hover:text-white">Home</Link>
-          <span className="mx-2">›</span>
-          <span className="text-white">About Us</span>
-        </div>
-
-        {/* Hero text */}
-        <div className="relative z-10 px-8 pb-10 md:px-16 md:pb-14">
-          <h1 className="text-4xl font-black text-white md:text-5xl lg:text-6xl">
-            About <span className="text-[#a3c741]">Us</span>
-          </h1>
-          <p className="mt-2 text-sm text-white/80 md:text-base">
-            Homely food made with love, served with trust.
-          </p>
-          <div className="mt-5 flex flex-wrap gap-5 text-xs text-white/90 md:text-sm">
-            {[
-              { icon: Leaf,       label: "Fresh Ingredients" },
-              { icon: Heart,      label: "Homely Taste" },
-              { icon: ShieldCheck, label: "Trusted Chefs" },
-            ].map(({ icon: Icon, label }) => (
-              <span key={label} className="flex items-center gap-1.5">
-                <Icon className="h-4 w-4 text-[#a3c741]" />
-                {label}
-              </span>
-            ))}
-          </div>
-        </div>
-
-        {/* Decorative badge */}
-        <div className="absolute bottom-6 right-8 hidden rotate-12 rounded-2xl border border-white/20 bg-white/10 px-4 py-2 text-center text-white backdrop-blur-sm md:block">
-          <p className="text-xs font-semibold leading-tight">Good Food</p>
-          <p className="text-xs leading-tight opacity-80">Good Mood ♥</p>
-        </div>
-      </section>
+      <PageHeader
+        title="About Us"
+      />
 
       {/* ── OUR STORY ───────────────────────────────── */}
       <PageContainer>

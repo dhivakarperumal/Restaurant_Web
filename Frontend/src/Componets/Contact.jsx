@@ -17,6 +17,7 @@ import {
   Leaf,
 } from "lucide-react";
 import PageContainer from "../CommonComponents/PageContainer";
+import PageHeader from "../CommonComponents/PageHeader";
 
 /* ─── Static data ───────────────────────────────────── */
 
@@ -108,45 +109,7 @@ function Contact() {
   return (
     <main className="min-h-screen bg-[#f7f9f5] text-[#203129]">
 
-      {/* ── HERO BANNER ─────────────────────────────── */}
-      <section
-        className="relative flex min-h-[240px] w-full items-end overflow-hidden md:min-h-[300px]"
-        style={{
-          backgroundImage: "url(/images/header.png)",
-          backgroundSize: "cover",
-          backgroundPosition: "center",
-        }}
-      >
-        <div className="absolute inset-0 bg-gradient-to-r from-[#071C18]/88 via-[#071C18]/65 to-transparent" />
-
-        {/* Breadcrumb */}
-        <div className="absolute left-0 top-0 z-10 px-8 pt-5 text-xs text-white/70">
-          <Link to="/" className="hover:text-white">Home</Link>
-          <span className="mx-2">›</span>
-          <span className="text-white">Contact Us</span>
-        </div>
-
-        {/* Hero text */}
-        <div className="relative z-10 px-8 pb-10 md:px-16 md:pb-12">
-          <h1 className="text-4xl font-black text-white md:text-5xl lg:text-6xl">
-            Contact <span className="text-[#a3c741]">Us</span>
-          </h1>
-          <p className="mt-2 text-base font-semibold text-white/90">
-            We're here to help you!
-          </p>
-          <p className="mt-1 text-sm text-white/70">
-            Have a question, feedback, or need support?
-            <br />
-            Get in touch with us and we'll be happy to assist you.
-          </p>
-        </div>
-
-        {/* Decorative badge */}
-        <div className="absolute bottom-6 right-8 hidden rotate-6 rounded-2xl border border-white/20 bg-white/10 px-5 py-3 text-center text-white backdrop-blur-sm md:block">
-          <p className="text-xs font-semibold italic leading-tight">Good Food</p>
-          <p className="text-xs italic leading-tight opacity-80">Good Mood ♥</p>
-        </div>
-      </section>
+    <PageHeader title="Contact Us" />
 
       {/* ── 4-CARD INFO BAR ──────────────────────────── */}
       <PageContainer>
