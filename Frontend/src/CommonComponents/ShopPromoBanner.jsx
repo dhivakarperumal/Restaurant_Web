@@ -55,7 +55,7 @@ function ShopPromoBanner({ variant }) {
         }}
       >
         <div className="flex min-h-[260px] items-stretch">
-          <div className="relative z-10 flex w-full flex-col justify-center px-5 py-4 sm:px-7 lg:w-[44%] lg:shrink-0 lg:px-10 lg:py-5">
+          <div className="relative z-10 flex w-full flex-col justify-center px-5 py-4 sm:px-7 lg:w-[40%] lg:shrink-0 lg:px-10 lg:py-5">
             <div className="mb-2 flex items-center gap-3 text-[#d39d2d]">
               <p className="text-[10px] font-black uppercase tracking-[0.28em] sm:text-[11px]">
                 {banner.eyebrow}
@@ -96,14 +96,14 @@ function ShopPromoBanner({ variant }) {
             </div>
           </div>
 
-          <div className="relative z-10 hidden w-[40%] shrink-0 items-center px-1 py-6 lg:flex">
+          <div className="relative z-10 hidden w-[38%] shrink-0 items-center px-1 py-6 lg:flex">
             <div className="grid w-full grid-cols-4 gap-3">
               {deliveryFeatures.map(({ Icon: FeatIcon, label }) => (
                 <div key={label} className="flex min-w-0 flex-col items-center gap-2 text-center">
-                  <span className="flex h-12 w-12 items-center justify-center rounded-full border border-[#e8d6a0] bg-[#f8f0dc] text-[#c9941f] shadow-[0_0_0_4px_rgba(236,204,126,0.15)]">
-                    <FeatIcon className="h-[22px] w-[22px]" strokeWidth={1.8} />
+                  <span className="flex h-[52px] w-[52px] items-center justify-center rounded-full border border-[#e8d6a0] bg-[#f8f0dc] text-[#c9941f] shadow-[0_0_0_4px_rgba(236,204,126,0.15)]">
+                    <FeatIcon className="h-6 w-6" strokeWidth={1.8} />
                   </span>
-                  <span className="whitespace-pre-line text-[10px] font-semibold leading-tight text-[#3d3128]">
+                  <span className="whitespace-pre-line text-[11px] font-semibold leading-tight text-[#3d3128]">
                     {label}
                   </span>
                 </div>
@@ -111,7 +111,7 @@ function ShopPromoBanner({ variant }) {
             </div>
           </div>
 
-          <div className="relative ml-auto hidden w-[30%] min-w-[220px] flex-1 overflow-hidden lg:block">
+          <div className="relative ml-auto hidden w-[22%] min-w-[220px] flex-1 overflow-hidden lg:block">
             <div
               className="absolute right-5 top-7 z-10 text-right font-serif italic text-[#2b251e]"
               style={{ fontFamily: "'Dancing Script', cursive, serif" }}
