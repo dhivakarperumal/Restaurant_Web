@@ -158,6 +158,16 @@ router.post('/stock-out', withErrorHandler(async (req, res) => {
   res.status(201).json({ success: true, message: 'Stock updated successfully.', data: result });
 }));
 
+router.post('/chef-usage', withErrorHandler(async (req, res) => {
+  const result = await createStockOut({
+    ...req.body,
+    department: 'Kitchen',
+    reason: 'Kitchen Usage',
+    created_by: req.auth?.name || req.auth?.username || 'chef',
+  });
+  res.status(201).json({ success: true, message: 'Kitchen usage saved successfully.', data: result });
+}));
+
 router.post('/transfers', withErrorHandler(async (req, res) => {
   const result = await createTransfer(req.body);
   res.status(201).json({ success: true, message: 'Stock transfer completed successfully.', data: result });

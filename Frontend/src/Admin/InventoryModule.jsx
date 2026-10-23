@@ -334,6 +334,7 @@ function ProductsPage({ readOnly = false }) {
   const [isUsageCalculatorOpen, setIsUsageCalculatorOpen] = useState(false);
   const [calculatorProductId, setCalculatorProductId] = useState('');
   const [todayUsed, setTodayUsed] = useState('0');
+  const [isSavingUsage, setIsSavingUsage] = useState(false);
   const [viewProduct, setViewProduct] = useState(null);
   const [editingProductId, setEditingProductId] = useState(null);
   const [form, setForm] = useState(emptyGroceryForm);
@@ -342,6 +343,38 @@ function ProductsPage({ readOnly = false }) {
   const calculatorStock = Number(calculatorProduct?.current_stock) || 0;
   const usedQuantity = Number(todayUsed) || 0;
   const remainingStock = calculatorStock - usedQuantity;
+
+  const saveTodayUsage = async (event) => {
+    event.preventDefault();
+    if (!calculatorProduct || !Number.isFinite(usedQuantity) || usedQuantity <= 0) {
+      toast.error('Select a product and enter a usage quantity greater than zero.');
+      return;
+    }
+    if (usedQuantity > calculatorStock) {
+      toast.error('Today used cannot exceed total stock.');
+      return;
+    }
+
+    setIsSavingUsage(true);
+    try {
+      await api.post('/inventory/chef-usage', {
+        product_id: calculatorProduct.id ?? calculatorProduct.product_id,
+        quantity: usedQuantity,
+        unit: calculatorProduct.unit_name || 'pcs',
+        department: 'Kitchen',
+        reason: 'Kitchen Usage',
+        date: new Date().toISOString().slice(0, 10),
+        notes: `Chef daily usage: ${usedQuantity}`,
+      });
+      toast.success('Today’s usage saved and stock updated.');
+      setIsUsageCalculatorOpen(false);
+      await loadData();
+    } catch (error) {
+      toast.error(error?.response?.data?.message || 'Unable to save today’s usage.');
+    } finally {
+      setIsSavingUsage(false);
+    }
+  };
 
   const filtered = [...products]
     .filter((product) => {
@@ -440,6 +473,7 @@ function ProductsPage({ readOnly = false }) {
     { key: 'product_name', label: 'Grocery Name' },
     { key: 'sku', label: 'SKU' },
     { key: 'current_stock', label: 'Current Stock' },
+    ...(!readOnly ? [{ key: 'today_used', label: 'Today Used' }] : []),
     ...(!readOnly ? [
       { key: 'purchase_price', label: 'Purchase Price', render: (row) => formatCurrency(row.purchase_price) },
     ] : []),
@@ -659,6 +693,7 @@ function ProductsPage({ readOnly = false }) {
                   <dl className="mt-4 grid grid-cols-2 gap-3 text-sm">
                     <div><dt className="text-xs text-slate-500">SKU</dt><dd className="mt-1 font-medium text-slate-800">{product.sku || '—'}</dd></div>
                     <div><dt className="text-xs text-slate-500">Current Stock</dt><dd className="mt-1 font-medium text-slate-800">{product.current_stock ?? 0}</dd></div>
+                    {!readOnly && <div><dt className="text-xs text-slate-500">Today Used</dt><dd className="mt-1 font-medium text-slate-800">{formatNumber(product.today_used ?? 0)}</dd></div>}
                     {!readOnly && <div><dt className="text-xs text-slate-500">Reorder Level</dt><dd className="mt-1 font-medium text-slate-800">{product.reorder_level ?? 0}</dd></div>}
                     {!readOnly && <div><dt className="text-xs text-slate-500">Purchase Price</dt><dd className="mt-1 font-medium text-slate-800">{formatCurrency(product.purchase_price)}</dd></div>}
                   </dl>
@@ -682,7 +717,7 @@ function ProductsPage({ readOnly = false }) {
 
       {readOnly && isUsageCalculatorOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/45 p-4" role="presentation" onMouseDown={(event) => {
-          if (event.target === event.currentTarget) setIsUsageCalculatorOpen(false);
+          if (event.target === event.currentTarget && !isSavingUsage) setIsUsageCalculatorOpen(false);
         }}>
           <section className="w-full max-w-lg rounded-2xl border border-slate-200 bg-white p-5 shadow-2xl" role="dialog" aria-modal="true" aria-labelledby="stock-usage-calculator-title">
             <div className="mb-4 flex items-center justify-between">
@@ -717,6 +752,7 @@ function ProductsPage({ readOnly = false }) {
                   value={todayUsed}
                   onChange={(event) => setTodayUsed(event.target.value)}
                   className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm"
+                  disabled={isSavingUsage}
                 />
               </FormField>
               <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4">
@@ -728,7 +764,18 @@ function ProductsPage({ readOnly = false }) {
                   <p className="mt-1 text-xs text-rose-600">Today used cannot exceed total stock.</p>
                 )}
               </div>
-              <p className="text-xs text-slate-500">Calculator only. This does not save usage or change inventory.</p>
+              <p className="text-xs text-slate-500">Saving records today’s usage and deducts it from inventory stock.</p>
+              <div className="flex justify-end gap-3">
+                <button type="button" onClick={() => setIsUsageCalculatorOpen(false)} className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700" disabled={isSavingUsage}>Cancel</button>
+                <button
+                  type="button"
+                  onClick={saveTodayUsage}
+                  disabled={isSavingUsage || !calculatorProduct || usedQuantity <= 0 || usedQuantity > calculatorStock}
+                  className="rounded-xl bg-[#1a3c36] px-4 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {isSavingUsage ? 'Saving...' : 'Save Usage'}
+                </button>
+              </div>
             </div>
           </section>
         </div>
@@ -2104,7 +2151,7 @@ function InventoryFallbackPage() {
 
 const InventoryContextValue = createContext(null);
 
-const InventoryContext = ({ children }) => {
+const InventoryContext = ({ children, readOnly = false }) => {
   const [dashboard, setDashboard] = useState(EMPTY_DASHBOARD);
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
@@ -2121,6 +2168,18 @@ const InventoryContext = ({ children }) => {
 
   const loadData = async () => {
     setLoading(true);
+    if (readOnly) {
+      try {
+        const productsRes = await api.get('/inventory/products');
+        setProducts(productsRes.data?.data || []);
+      } catch (error) {
+        toast.error(error?.response?.data?.message || 'Unable to load inventory products.');
+      } finally {
+        setLoading(false);
+      }
+      return;
+    }
+
     try {
       const [summaryRes, productsRes, categoriesRes, unitsRes, suppliersRes, locationsRes, lowStockRes, expiryRes, historyRes, purchasesRes, reportsRes] = await Promise.all([
         api.get('/inventory/dashboard').catch(() => ({ data: { data: EMPTY_DASHBOARD } })),
@@ -2206,7 +2265,7 @@ export default function InventoryModule() {
 
 export function InventoryStockReadOnly() {
   return (
-    <InventoryContext>
+    <InventoryContext readOnly>
       <ProductsPage readOnly />
     </InventoryContext>
   );

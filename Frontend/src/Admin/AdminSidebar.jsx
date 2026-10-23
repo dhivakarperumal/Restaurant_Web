@@ -96,7 +96,7 @@ const navItems = [
     icon: Boxes,
     children: [
       // { path: "/admin/inventory", label: "Dashboard", icon: LayoutDashboard },
-      { path: "/admin/inventory/products", label: "Groceries", icon: Package },
+      { path: "/admin/inventory/products", label: "Stock Details", icon: Package },
       // { path: "/admin/inventory/categories", label: "Categories", icon: Layers },
       // { path: "/admin/inventory/units", label: "Units", icon: ClipboardList },
       // { path: "/admin/inventory/suppliers", label: "Suppliers", icon: Users },

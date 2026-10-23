@@ -443,7 +443,15 @@ const listSuppliers = async () => {
 
 const listProducts = async () => {
   const [rows] = await db.query(`
-    SELECT p.*, c.category_name, u.unit_name, s.supplier_name, l.location_name
+    SELECT p.*, c.category_name, u.unit_name, s.supplier_name, l.location_name,
+      COALESCE((
+        SELECT SUM(st.quantity)
+        FROM stock_transactions st
+        WHERE st.product_id = p.id
+          AND st.transaction_type = 'STOCK_OUT'
+          AND st.created_at >= CURDATE()
+          AND st.created_at < DATE_ADD(CURDATE(), INTERVAL 1 DAY)
+      ), 0) AS today_used
     FROM inventory_products p
     LEFT JOIN inventory_categories c ON c.id = p.category_id
     LEFT JOIN inventory_units u ON u.id = p.unit_id
@@ -460,6 +468,7 @@ const listProducts = async () => {
     reorder_level: toNumber(product.reorder_level),
     purchase_price: toNumber(product.purchase_price),
     selling_price: toNumber(product.selling_price),
+    today_used: toNumber(product.today_used),
     stock_value: toNumber(product.current_stock) * toNumber(product.purchase_price),
   }));
 };
@@ -710,21 +719,42 @@ const createStockIn = async (payload = {}) => {
 };
 
 const createStockOut = async (payload = {}) => {
-  const productId = payload.product_id;
+  const productId = Number(payload.product_id);
   const quantity = toNumber(payload.quantity || 0);
-  const [productRows] = await db.query('SELECT * FROM inventory_products WHERE id = ? AND deleted_at IS NULL', [productId]);
-  const previousStock = toNumber(productRows[0]?.current_stock || 0);
-  if (quantity > previousStock) {
-    throw new Error(`Insufficient stock. Available stock: ${previousStock}`);
-  }
+  if (!Number.isInteger(productId) || productId <= 0) throw new Error('Select a valid product.');
+  if (quantity <= 0) throw new Error('Usage quantity must be greater than zero.');
 
-  const newStock = previousStock - quantity;
-  await db.query('UPDATE inventory_products SET current_stock = ? WHERE id = ?', [newStock, productId]);
-  await db.query(
-    'INSERT INTO stock_transactions (product_id, batch_id, transaction_type, reference_type, reference_id, quantity, unit, previous_stock, new_stock, reason, notes, created_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-    [productId, payload.batch_id || null, 'STOCK_OUT', 'STOCK_OUT', payload.reference_id || null, quantity, payload.unit || 'pcs', previousStock, newStock, payload.reason || 'Stock out', payload.notes || '', payload.created_by || 'system']
-  );
-  return { previousStock, newStock };
+  const connection = await db.getConnection();
+  try {
+    await connection.beginTransaction();
+    const [productRows] = await connection.query(
+      'SELECT current_stock FROM inventory_products WHERE id = ? AND deleted_at IS NULL FOR UPDATE',
+      [productId]
+    );
+    if (!productRows.length) throw new Error('Product not found.');
+    const previousStock = toNumber(productRows[0].current_stock);
+    if (quantity > previousStock) {
+      throw new Error(`Insufficient stock. Available stock: ${previousStock}`);
+    }
+
+    const newStock = previousStock - quantity;
+    await connection.query('UPDATE inventory_products SET current_stock = ? WHERE id = ?', [newStock, productId]);
+    await connection.query(
+      'INSERT INTO stock_transactions (product_id, batch_id, transaction_type, reference_type, reference_id, quantity, unit, previous_stock, new_stock, reason, notes, created_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+      [productId, payload.batch_id || null, 'STOCK_OUT', 'STOCK_OUT', payload.reference_id || null, quantity, payload.unit || 'pcs', previousStock, newStock, payload.reason || 'Stock out', payload.notes || '', payload.created_by || 'system']
+    );
+    await connection.commit();
+    return { previousStock, newStock };
+  } catch (error) {
+    try {
+      await connection.rollback();
+    } catch (rollbackError) {
+      console.error('Unable to roll back stock out.', rollbackError);
+    }
+    throw error;
+  } finally {
+    connection.release();
+  }
 };
 
 const createTransfer = async (payload = {}) => {

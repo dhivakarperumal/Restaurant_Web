@@ -132,12 +132,11 @@ const requireInventoryAccess = async (req, res, next) => {
 
     const role = String(user.role || '').trim().toLowerCase();
     const isAdmin = ['admin', 'super admin', 'superadmin'].includes(role);
-    const requestPath = req.path.replace(/\/+$/, '') || '/';
-    const originalPath = req.originalUrl.split('?')[0].replace(/\/+$/, '');
-    const matchesInventoryPath = (path) => requestPath === path || originalPath.endsWith(`/inventory${path}`);
+    const originalPath = req.originalUrl.split('?')[0].replace(/\/+$/, '') || '/';
+    const inventoryPath = originalPath.replace(/^.*\/inventory(?=\/|$)/, '') || '/';
     const isChefRequestAccess = role === 'chef' && (
-      (req.method === 'GET' && ['/products', '/products/options', '/kitchen-requests'].some(matchesInventoryPath)) ||
-      (req.method === 'POST' && matchesInventoryPath('/kitchen-requests'))
+      (req.method === 'GET' && ['/products', '/products/options', '/kitchen-requests'].includes(inventoryPath)) ||
+      (req.method === 'POST' && ['/kitchen-requests', '/chef-usage'].includes(inventoryPath))
     );
 
     if (!isAdmin && !isChefRequestAccess) {
