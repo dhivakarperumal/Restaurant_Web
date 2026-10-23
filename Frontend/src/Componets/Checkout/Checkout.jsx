@@ -120,33 +120,48 @@ const getAddressFromCoordinates = async ({ latitude, longitude }) => {
 };
 
 const getCoordinatesFromAddress = async (address, signal) => {
-  const query = new URLSearchParams({
-    format: 'jsonv2',
-    limit: '1',
-    countrycodes: 'in',
-    q: [
+  const areaAndCity = [
+    address.area_locality,
+    address.city,
+    address.state,
+    address.pincode,
+    'India',
+  ].filter(Boolean);
+  const searches = [
+    [
       address.address_line,
-      address.area_locality,
-      address.city,
-      address.state,
-      address.pincode,
-      'India',
-    ].filter(Boolean).join(', '),
-  });
-  const response = await fetch(`https://nominatim.openstreetmap.org/search?${query}`, { signal });
-  if (!response.ok) {
-    throw new Error('The address could not be located. Please check it or use current location.');
+      ...areaAndCity,
+    ].filter(Boolean),
+    areaAndCity,
+    [address.city, address.state, address.pincode, 'India'].filter(Boolean),
+  ];
+
+  for (let index = 0; index < searches.length; index += 1) {
+    if (signal.aborted) throw new DOMException('Address lookup was cancelled.', 'AbortError');
+    if (index > 0) {
+      await new Promise((resolve) => window.setTimeout(resolve, 1100));
+    }
+    const query = new URLSearchParams({
+      format: 'jsonv2',
+      limit: '1',
+      countrycodes: 'in',
+      q: searches[index].join(', '),
+    });
+    const response = await fetch(`https://nominatim.openstreetmap.org/search?${query}`, { signal });
+    if (!response.ok) {
+      throw new Error('Address search is temporarily unavailable. Please try again or use current location.');
+    }
+
+    const results = await response.json();
+    const latitude = Number(results?.[0]?.lat);
+    const longitude = Number(results?.[0]?.lon);
+    if (Number.isFinite(latitude) && latitude >= -90 && latitude <= 90
+      && Number.isFinite(longitude) && longitude >= -180 && longitude <= 180) {
+      return { latitude, longitude };
+    }
   }
 
-  const results = await response.json();
-  const latitude = Number(results?.[0]?.lat);
-  const longitude = Number(results?.[0]?.lon);
-  if (!Number.isFinite(latitude) || latitude < -90 || latitude > 90
-    || !Number.isFinite(longitude) || longitude < -180 || longitude > 180) {
-    throw new Error('We could not find that address. Check the address details or use current location.');
-  }
-
-  return { latitude, longitude };
+  throw new Error('We could not find that address. Check the street, area, city, state, and pincode, or use current location.');
 };
 
 const getCheckoutIdempotencyKey = async (userId, cart, checkoutDetails) => {
@@ -352,6 +367,7 @@ function Checkout() {
   const updateAddress = (event) => {
     setSelectedAddress('new');
     setDeliveryLocation(null);
+    setAddressGeocodingError(null);
     setAddress((previous) => ({ ...previous, [event.target.name]: event.target.value }));
   };
 
