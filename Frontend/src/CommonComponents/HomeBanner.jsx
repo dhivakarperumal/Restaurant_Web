@@ -143,7 +143,7 @@ export default function HomeBanner() {
 
         <div
           aria-hidden="true"
-          className="pointer-events-none absolute inset-y-0 left-0 w-[58%] bg-white/[0.06] backdrop-blur-sm"
+          className="pointer-events-none absolute inset-y-0 left-0 w-[58%] bg-black/30 backdrop-blur-md"
           style={{
             maskImage: "linear-gradient(to right, black 0%, black 72%, transparent 100%)",
             WebkitMaskImage: "linear-gradient(to right, black 0%, black 72%, transparent 100%)",
