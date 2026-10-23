@@ -57,6 +57,7 @@ export default function ServerSupplies() {
   const [editingItem, setEditingItem] = useState(null);
   const [form, setForm] = useState(EMPTY_FORM);
   const [imageFile, setImageFile] = useState(null);
+  const [imageInputKey, setImageInputKey] = useState(0);
   const [saving, setSaving] = useState(false);
   const [viewingItem, setViewingItem] = useState(null);
   const [movements, setMovements] = useState([]);
@@ -126,6 +127,7 @@ export default function ServerSupplies() {
 
   const handleSubmit = async (event) => {
     event.preventDefault();
+    const addAnother = event.nativeEvent.submitter?.value === 'add-another' && !editingItem;
     const stock = Number(form.current_stock);
     const price = Number(form.purchase_price);
     if (![stock, price].every(Number.isFinite) || stock < 0 || price < 0) {
@@ -157,8 +159,13 @@ export default function ServerSupplies() {
         await api.post('/server-supplies', payload);
         toast.success('Supply item added.');
       }
-      setFormOpen(false);
       setImageFile(null);
+      setImageInputKey((key) => key + 1);
+      if (addAnother) {
+        setForm({ ...EMPTY_FORM, category: form.category });
+      } else {
+        setFormOpen(false);
+      }
       await loadData();
     } catch (error) {
       toast.error(error?.response?.data?.message || error.message || 'Unable to save supply item.');
@@ -353,10 +360,10 @@ export default function ServerSupplies() {
               <label className="text-sm font-medium text-slate-700">Unit<select value={form.unit} onChange={(e) => setForm({ ...form, unit: e.target.value })} className="mt-1.5 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5">{UNITS.map((unit) => <option key={unit}>{unit}</option>)}</select></label>
               <label className="text-sm font-medium text-slate-700">Current Stock<input required type="number" min="0" step="any" value={form.current_stock} onChange={(e) => setForm({ ...form, current_stock: e.target.value })} className="mt-1.5 w-full rounded-xl border border-slate-200 px-3 py-2.5" /></label>
               <label className="text-sm font-medium text-slate-700">Purchase Price<input required type="number" min="0" step="any" value={form.purchase_price} onChange={(e) => setForm({ ...form, purchase_price: e.target.value })} className="mt-1.5 w-full rounded-xl border border-slate-200 px-3 py-2.5" /></label>
-              <label className="text-sm font-medium text-slate-700">Item Image<input type="file" accept="image/jpeg,image/png,image/webp" onChange={(e) => { const file = e.target.files?.[0] || null; if (file && file.size > 5 * 1024 * 1024) { toast.error('Image size must be 5 MB or less.'); e.target.value = ''; return; } if (file && !['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) { toast.error('Choose a JPG, PNG, or WEBP image.'); e.target.value = ''; return; } setImageFile(file); }} className="mt-1.5 block w-full text-sm" /></label>
+              <label className="text-sm font-medium text-slate-700">Item Image<input key={imageInputKey} type="file" accept="image/jpeg,image/png,image/webp" onChange={(e) => { const file = e.target.files?.[0] || null; if (file && file.size > 5 * 1024 * 1024) { toast.error('Image size must be 5 MB or less.'); e.target.value = ''; return; } if (file && !['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) { toast.error('Choose a JPG, PNG, or WEBP image.'); e.target.value = ''; return; } setImageFile(file); }} className="mt-1.5 block w-full text-sm" /></label>
               <label className="text-sm font-medium text-slate-700">Status (automatic)<input readOnly value={getStatus({ ...form, current_stock: Number(form.current_stock), minimum_stock: editingItem?.minimum_stock ?? 1 })} className="mt-1.5 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5" /></label>
               <label className="text-sm font-medium text-slate-700 sm:col-span-2">Description<textarea rows={3} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} className="mt-1.5 w-full rounded-xl border border-slate-200 px-3 py-2.5" /></label>
-              <div className="flex justify-end gap-2 pt-2 sm:col-span-2"><button type="button" onClick={() => setFormOpen(false)} className="rounded-xl border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700">Cancel</button><button type="submit" disabled={saving} className="rounded-xl bg-[#1a3c36] px-4 py-2 text-sm font-semibold text-white disabled:opacity-60">{saving ? 'Saving…' : editingItem ? 'Save Changes' : 'Add Item'}</button></div>
+              <div className="flex flex-wrap justify-end gap-2 pt-2 sm:col-span-2"><button type="button" onClick={() => setFormOpen(false)} className="rounded-xl border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700">Cancel</button>{!editingItem && <button type="submit" value="add-another" disabled={saving} className="rounded-xl border border-[#1a3c36] px-4 py-2 text-sm font-semibold text-[#1a3c36] disabled:opacity-60">{saving ? 'Saving…' : 'Save & Add Another'}</button>}<button type="submit" disabled={saving} className="rounded-xl bg-[#1a3c36] px-4 py-2 text-sm font-semibold text-white disabled:opacity-60">{saving ? 'Saving…' : editingItem ? 'Save Changes' : 'Add Item'}</button></div>
             </form>
           </section>
         </div>
