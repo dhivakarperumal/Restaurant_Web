@@ -265,8 +265,6 @@ import {
   ArrowRight,
   Bike,
   ChefHat,
-  ChevronLeft,
-  ChevronRight,
   Leaf,
   ShieldCheck,
   Utensils,
@@ -344,13 +342,6 @@ export default function HomeBanner() {
 
     return () => window.clearInterval(timer);
   }, [banners.length]);
-
-  const moveSlide = (direction) => {
-    setActiveIndex(
-      (current) =>
-        (current + direction + banners.length) % banners.length
-    );
-  };
 
   const banner = banners[activeIndex];
   const image = resolveAssetUrl(banner?.image);
@@ -510,24 +501,6 @@ export default function HomeBanner() {
         {/* Slider controls */}
         {banners.length > 1 && (
           <>
-            <button
-              type="button"
-              onClick={() => moveSlide(-1)}
-              aria-label="Previous banner"
-              className="absolute left-3 top-1/2 z-30 hidden h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-white/30 bg-black/35 text-white backdrop-blur transition hover:bg-[#ff681d] md:flex"
-            >
-              <ChevronLeft size={22} />
-            </button>
-
-            <button
-              type="button"
-              onClick={() => moveSlide(1)}
-              aria-label="Next banner"
-              className="absolute right-3 top-1/2 z-30 hidden h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-white/30 bg-black/35 text-white backdrop-blur transition hover:bg-[#ff681d] md:flex"
-            >
-              <ChevronRight size={22} />
-            </button>
-
             <div className="absolute bottom-[108px] right-5 z-30 flex gap-2 sm:bottom-[112px] sm:right-10">
               {banners.map((item, index) => (
                 <button
