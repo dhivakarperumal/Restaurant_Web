@@ -331,10 +331,17 @@ function ProductsPage({ readOnly = false }) {
   const [sortBy, setSortBy] = useState('latest');
   const [viewMode, setViewMode] = useState('table');
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isUsageCalculatorOpen, setIsUsageCalculatorOpen] = useState(false);
+  const [calculatorProductId, setCalculatorProductId] = useState('');
+  const [todayUsed, setTodayUsed] = useState('0');
   const [viewProduct, setViewProduct] = useState(null);
   const [editingProductId, setEditingProductId] = useState(null);
   const [form, setForm] = useState(emptyGroceryForm);
   const [isSavingProduct, setIsSavingProduct] = useState(false);
+  const calculatorProduct = products.find((product) => String(product.id ?? product.product_id) === calculatorProductId);
+  const calculatorStock = Number(calculatorProduct?.current_stock) || 0;
+  const usedQuantity = Number(todayUsed) || 0;
+  const remainingStock = calculatorStock - usedQuantity;
 
   const filtered = [...products]
     .filter((product) => {
@@ -601,6 +608,20 @@ function ProductsPage({ readOnly = false }) {
                 <Plus className="h-4 w-4" />
                 Add Grocery
               </button>}
+              {readOnly && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setCalculatorProductId('');
+                    setTodayUsed('0');
+                    setIsUsageCalculatorOpen(true);
+                  }}
+                  className="inline-flex h-[46px] items-center gap-2 rounded-xl bg-[#1a3c36] px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-[#214a42]"
+                >
+                  <Plus className="h-4 w-4" />
+                  Usage Calculator
+                </button>
+              )}
             </div>
           </div>
           {viewMode === 'table' ? (
@@ -658,6 +679,60 @@ function ProductsPage({ readOnly = false }) {
           )}
         </div>
       </div>
+
+      {readOnly && isUsageCalculatorOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/45 p-4" role="presentation" onMouseDown={(event) => {
+          if (event.target === event.currentTarget) setIsUsageCalculatorOpen(false);
+        }}>
+          <section className="w-full max-w-lg rounded-2xl border border-slate-200 bg-white p-5 shadow-2xl" role="dialog" aria-modal="true" aria-labelledby="stock-usage-calculator-title">
+            <div className="mb-4 flex items-center justify-between">
+              <h2 id="stock-usage-calculator-title" className="text-xl font-bold text-slate-900">Today’s Stock Usage</h2>
+              <button type="button" onClick={() => setIsUsageCalculatorOpen(false)} aria-label="Close stock usage calculator" className="rounded-full bg-slate-100 px-2.5 py-1 text-sm font-semibold text-slate-600">×</button>
+            </div>
+            <div className="space-y-4">
+              <FormField label="Select product" required>
+                <select
+                  value={calculatorProductId}
+                  onChange={(event) => setCalculatorProductId(event.target.value)}
+                  className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm"
+                  required
+                >
+                  <option value="">Choose a product</option>
+                  {products.map((product) => (
+                    <option key={product.id ?? product.product_id} value={String(product.id ?? product.product_id)}>
+                      {product.product_name}
+                    </option>
+                  ))}
+                </select>
+              </FormField>
+              <FormField label="Total stock">
+                <input value={calculatorProduct ? formatNumber(calculatorStock) : ''} readOnly placeholder="Select a product" className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-600" />
+              </FormField>
+              <FormField label="Today used">
+                <input
+                  type="number"
+                  min="0"
+                  max={calculatorStock}
+                  step="any"
+                  value={todayUsed}
+                  onChange={(event) => setTodayUsed(event.target.value)}
+                  className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm"
+                />
+              </FormField>
+              <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4">
+                <p className="text-xs font-semibold uppercase tracking-wide text-emerald-700">Remaining stock</p>
+                <p className="mt-1 text-lg font-bold text-emerald-900">
+                  {calculatorProduct ? `${formatNumber(calculatorStock)} - ${formatNumber(usedQuantity)} = ${formatNumber(remainingStock)}` : 'Select a product to calculate'}
+                </p>
+                {calculatorProduct && usedQuantity > calculatorStock && (
+                  <p className="mt-1 text-xs text-rose-600">Today used cannot exceed total stock.</p>
+                )}
+              </div>
+              <p className="text-xs text-slate-500">Calculator only. This does not save usage or change inventory.</p>
+            </div>
+          </section>
+        </div>
+      )}
 
       {!readOnly && viewProduct && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/45 p-4" role="presentation" onMouseDown={(event) => {
