@@ -119,9 +119,15 @@ const getAddressFromCoordinates = async ({ latitude, longitude }) => {
   };
 };
 
-const getCheckoutIdempotencyKey = async (userId, cart) => {
+const getCheckoutIdempotencyKey = async (userId, cart, checkoutDetails) => {
   const requestFingerprint = JSON.stringify({
     userId,
+    fulfillmentType: checkoutDetails.fulfillmentType,
+    paymentMethod: checkoutDetails.paymentMethod,
+    address: checkoutDetails.fulfillmentType === 'home_delivery' ? checkoutDetails.address : null,
+    deliveryLocation: checkoutDetails.fulfillmentType === 'home_delivery'
+      ? checkoutDetails.deliveryLocation
+      : null,
     cart: cart.map((item) => ({
       id: item.id || item.cart_id,
       food_id: item.food_id,
@@ -169,6 +175,9 @@ function Checkout() {
   });
   const [savedAddresses, setSavedAddresses] = useState([]);
   const [selectedAddress, setSelectedAddress] = useState('new');
+  const [deliveryLocation, setDeliveryLocation] = useState(null);
+  const [deliveryQuote, setDeliveryQuote] = useState(null);
+  const [deliveryQuoteError, setDeliveryQuoteError] = useState(null);
   const [fetchingLocation, setFetchingLocation] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [completedOrder, setCompletedOrder] = useState(null);
@@ -202,6 +211,48 @@ function Checkout() {
     0
   ), [cart]);
   const itemCount = cart.reduce((sum, item) => sum + Number(item.quantity || 1), 0);
+  const quoteFingerprint = `${fulfillmentType}:${subtotal.toFixed(2)}:${deliveryLocation?.latitude ?? ''}:${deliveryLocation?.longitude ?? ''}`;
+  const currentDeliveryQuote = deliveryQuote?.fingerprint === quoteFingerprint ? deliveryQuote : null;
+  const currentDeliveryQuoteError = deliveryQuoteError?.fingerprint === quoteFingerprint
+    ? deliveryQuoteError.message
+    : '';
+  const deliveryQuotePending = fulfillmentType === 'home_delivery'
+    && Boolean(deliveryLocation)
+    && !currentDeliveryQuote
+    && !currentDeliveryQuoteError;
+
+  useEffect(() => {
+    if (fulfillmentType !== 'home_delivery' || !deliveryLocation) return undefined;
+    let active = true;
+    api.post('/orders/delivery-quote', {
+      location: deliveryLocation,
+      subtotal,
+    })
+      .then(({ data }) => {
+        if (!active) return;
+        if (!data?.success || !data?.data) {
+          throw new Error(data?.message || 'The delivery charge could not be calculated.');
+        }
+        setDeliveryQuote({ ...data.data, fingerprint: quoteFingerprint });
+      })
+      .catch((error) => {
+        if (!active) return;
+        console.error('Delivery charge could not be calculated:', error);
+        setDeliveryQuoteError({
+          fingerprint: quoteFingerprint,
+          message: error?.response?.data?.message || error.message || 'The delivery charge could not be calculated.',
+        });
+      });
+    return () => {
+      active = false;
+    };
+  }, [
+    deliveryLocation?.latitude,
+    deliveryLocation?.longitude,
+    fulfillmentType,
+    quoteFingerprint,
+    subtotal,
+  ]);
 
   const updateCustomer = (event) => {
     setCustomer((previous) => ({ ...previous, [event.target.name]: event.target.value }));
@@ -209,12 +260,14 @@ function Checkout() {
 
   const updateAddress = (event) => {
     setSelectedAddress('new');
+    setDeliveryLocation(null);
     setAddress((previous) => ({ ...previous, [event.target.name]: event.target.value }));
   };
 
   const selectAddress = (event) => {
     const addressId = event.target.value;
     setSelectedAddress(addressId);
+    setDeliveryLocation(null);
     const selected = savedAddresses.find((item) => String(item.id) === addressId);
     setAddress(selected || {
       address_line: '',
@@ -232,10 +285,18 @@ function Checkout() {
       return;
     }
 
+    setDeliveryLocation(null);
+    setDeliveryQuote(null);
+    setDeliveryQuoteError(null);
     setFetchingLocation(true);
     navigator.geolocation.getCurrentPosition(
       async ({ coords }) => {
         try {
+          const location = {
+            latitude: coords.latitude,
+            longitude: coords.longitude,
+          };
+          setDeliveryLocation(location);
           const detectedAddress = await getAddressFromCoordinates(coords);
           setSelectedAddress('new');
           setAddress((previous) => ({
@@ -298,6 +359,12 @@ function Checkout() {
       const requestKey = await getCheckoutIdempotencyKey(
         user.user_id,
         cart,
+        {
+          fulfillmentType,
+          paymentMethod,
+          address,
+          deliveryLocation,
+        },
       );
       idempotencyContext.current = requestKey;
       const { data } = await api.post(
@@ -306,6 +373,7 @@ function Checkout() {
           customer,
           order_type: fulfillmentType,
           address: fulfillmentType === 'home_delivery' ? address : null,
+          delivery_location: fulfillmentType === 'home_delivery' ? deliveryLocation : null,
           payment_method: paymentMethod,
         },
         { headers: { 'Idempotency-Key': requestKey.idempotencyKey } },
@@ -528,10 +596,15 @@ function Checkout() {
                           {fetchingLocation ? 'Finding your address…' : 'Use current location'}
                         </button>
                         <p className="mt-2 text-xs leading-5 text-[#8c7a6b]">
-                          If you continue, your device coordinates will be sent to OpenStreetMap to find an address. Please review the result; you can edit any field.
+                          Your device location is used to calculate delivery distance and sent to OpenStreetMap to find the address. Editing the address requires refreshing your location.
                           {' '}<a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer" className="underline hover:text-[#a34f32]">© OpenStreetMap contributors</a>
                         </p>
                       </div>
+                      {deliveryLocation && (
+                        <p className="text-xs font-medium text-emerald-700 sm:col-span-2">
+                          Delivery location captured. The delivery fee is calculated from the restaurant by straight-line distance.
+                        </p>
+                      )}
                       {addressFields.map((field) => (
                       <label key={field.name} className={`text-sm font-semibold text-[#263830] ${field.name === 'address_line' || field.name === 'area_locality' || field.name === 'landmark' ? 'sm:col-span-2' : ''}`}>
                         {field.label}{field.name !== 'landmark' && <span className="text-[#a34f32]"> *</span>}
@@ -635,8 +708,40 @@ function Checkout() {
             </div>
             <div className="space-y-3 border-t border-[#f0e9df] bg-[#faf8f5] p-5">
               <div className="flex justify-between text-sm text-[#68766e]"><span>Subtotal</span><span>₹{subtotal.toFixed(2)}</span></div>
-              <div className="flex justify-between border-t border-[#e9e0d5] pt-3 text-base font-bold text-[#263830]"><span>Total</span><span className="text-[#a34f32]">₹{subtotal.toFixed(2)}</span></div>
-              <button type="submit" disabled={submitting || cart.length === 0} className="w-full rounded-xl bg-[#263830] px-5 py-3.5 text-sm font-bold text-white shadow-sm transition hover:bg-[#1a2822] disabled:cursor-not-allowed disabled:opacity-60">
+              <div className="flex justify-between text-sm text-[#68766e]">
+                <span>
+                  Delivery charge
+                  {currentDeliveryQuote && ` (${currentDeliveryQuote.distance_km.toFixed(2)} km)`}
+                </span>
+                <span>
+                  {fulfillmentType === 'pickup'
+                    ? '₹0.00'
+                    : deliveryQuotePending
+                      ? 'Calculating…'
+                      : currentDeliveryQuote
+                        ? `₹${currentDeliveryQuote.delivery_charge.toFixed(2)}`
+                        : 'Use current location'}
+                </span>
+              </div>
+              {currentDeliveryQuoteError && (
+                <p role="alert" className="text-xs text-red-700">{currentDeliveryQuoteError}</p>
+              )}
+              {fulfillmentType === 'home_delivery' && !deliveryLocation && (
+                <p className="text-xs text-[#8c7a6b]">Use current location to calculate delivery charges.</p>
+              )}
+              <div className="flex justify-between border-t border-[#e9e0d5] pt-3 text-base font-bold text-[#263830]">
+                <span>Total</span>
+                <span className="text-[#a34f32]">
+                  ₹{(fulfillmentType === 'pickup'
+                    ? subtotal
+                    : currentDeliveryQuote?.total_amount ?? subtotal).toFixed(2)}
+                </span>
+              </div>
+              <button
+                type="submit"
+                disabled={submitting || cart.length === 0 || (fulfillmentType === 'home_delivery' && (!deliveryLocation || deliveryQuotePending || !currentDeliveryQuote))}
+                className="w-full rounded-xl bg-[#263830] px-5 py-3.5 text-sm font-bold text-white shadow-sm transition hover:bg-[#1a2822] disabled:cursor-not-allowed disabled:opacity-60"
+              >
                 {submitting ? 'Preparing your order…' : paymentMethod === 'online' ? 'Continue to Razorpay' : 'Place order'}
               </button>
               <p className="text-center text-xs text-[#8c7a6b]">Your order details are protected and securely submitted.</p>

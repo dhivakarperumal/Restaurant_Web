@@ -13,7 +13,7 @@ const revenueSourcesSql = `
     COALESCE(items.quantity, 0) AS quantity,
     o.subtotal,
     NULL AS discount,
-    NULL AS delivery_charge,
+    o.delivery_charge,
     NULL AS tax,
     o.total_amount AS total_amount,
     o.payment_method,

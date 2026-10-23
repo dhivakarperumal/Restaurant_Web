@@ -58,7 +58,8 @@ const getOrders = async (req, res, customerOnly, orderNumber = null) => {
     const where = conditions.length ? `WHERE ${conditions.join(' AND ')}` : '';
     const [orders] = await db.execute(
       `SELECT o.id, o.order_number, o.user_id, o.customer_name, o.customer_email,
-              o.customer_phone, o.order_type, o.address_id, o.subtotal, o.total_amount,
+              o.customer_phone, o.order_type, o.address_id, o.subtotal,
+              o.delivery_charge, o.delivery_distance_km, o.total_amount,
               o.payment_method, o.payment_status, o.assigned_delivery_partner_id,
               assigned_partner.full_name AS assigned_partner_name,
               CASE WHEN o.order_status = 'completed' THEN 'delivered' ELSE o.order_status END AS order_status,
@@ -101,6 +102,9 @@ const getOrders = async (req, res, customerOnly, orderNumber = null) => {
       }
       for (const order of orders) {
         order.subtotal = Number(order.subtotal);
+        order.delivery_charge = Number(order.delivery_charge);
+        order.distance_km = Number(order.delivery_distance_km);
+        delete order.delivery_distance_km;
         order.total_amount = Number(order.total_amount);
         order.address = order.address_id ? {
           address_line: order.address_line,

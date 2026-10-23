@@ -1,0 +1,107 @@
+const { getSettings } = require('../modules/settings');
+
+const DEFAULT_DELIVERY_SETTINGS = {
+  base_charge: 50,
+  free_minimum: 500,
+  per_km_charge: 10,
+  max_distance: 15,
+};
+
+const createDeliveryError = (message, statusCode) => {
+  const error = new Error(message);
+  error.statusCode = statusCode;
+  return error;
+};
+
+const readNonNegativeSetting = (settings, key, label) => {
+  const value = settings[key] ?? DEFAULT_DELIVERY_SETTINGS[key];
+  const number = Number(value);
+  if (value === '' || !Number.isFinite(number) || number < 0) {
+    throw createDeliveryError(`The configured ${label} is invalid. Please contact the restaurant.`, 503);
+  }
+  return number;
+};
+
+const readCoordinates = (location, label) => {
+  const latitude = Number(location?.latitude);
+  const longitude = Number(location?.longitude);
+  if (!Number.isFinite(latitude) || latitude < -90 || latitude > 90
+    || !Number.isFinite(longitude) || longitude < -180 || longitude > 180) {
+    throw createDeliveryError(`${label} coordinates are missing or invalid.`, 400);
+  }
+  return { latitude, longitude };
+};
+
+const distanceInKilometres = (origin, destination) => {
+  const radians = (degrees) => (degrees * Math.PI) / 180;
+  const latitudeDifference = radians(destination.latitude - origin.latitude);
+  const longitudeDifference = radians(destination.longitude - origin.longitude);
+  const haversine = Math.min(1, Math.sin(latitudeDifference / 2) ** 2
+    + Math.cos(radians(origin.latitude))
+      * Math.cos(radians(destination.latitude))
+      * Math.sin(longitudeDifference / 2) ** 2);
+  return 6371 * 2 * Math.atan2(Math.sqrt(haversine), Math.sqrt(1 - haversine));
+};
+
+const calculateDeliveryQuoteFromSettings = ({
+  location,
+  subtotal,
+  storeSettings,
+  deliverySettings,
+}) => {
+  const amount = Number(subtotal);
+  if (!Number.isFinite(amount) || amount < 0) {
+    throw createDeliveryError('The order subtotal is invalid.', 400);
+  }
+  const customerCoordinates = readCoordinates(location, 'Delivery location');
+  const restaurantCoordinates = readCoordinates({
+    latitude: storeSettings.latitude,
+    longitude: storeSettings.longitude,
+  }, 'Restaurant location');
+  const baseCharge = readNonNegativeSetting(deliverySettings, 'base_charge', 'base delivery charge');
+  const freeMinimum = readNonNegativeSetting(deliverySettings, 'free_minimum', 'free-delivery minimum');
+  const perKmCharge = readNonNegativeSetting(deliverySettings, 'per_km_charge', 'per-kilometre delivery charge');
+  const maxDistance = Number(deliverySettings.max_distance ?? DEFAULT_DELIVERY_SETTINGS.max_distance);
+  if (!Number.isFinite(maxDistance) || maxDistance <= 0) {
+    throw createDeliveryError('The configured delivery radius is invalid. Please contact the restaurant.', 503);
+  }
+
+  const exactDistance = distanceInKilometres(restaurantCoordinates, customerCoordinates);
+  const distanceKm = Number(exactDistance.toFixed(2));
+  if (exactDistance > maxDistance) {
+    throw createDeliveryError(
+      `This address is outside the delivery area. Delivery is available within ${maxDistance} km; your location is about ${distanceKm} km away.`,
+      400,
+    );
+  }
+
+  const freeDelivery = freeMinimum > 0 && amount >= freeMinimum;
+  const deliveryCharge = freeDelivery
+    ? 0
+    : Number((baseCharge + (exactDistance * perKmCharge)).toFixed(2));
+  return {
+    deliveryCharge,
+    distanceKm,
+    totalAmount: Number((amount + deliveryCharge).toFixed(2)),
+    freeDelivery,
+  };
+};
+
+const calculateDeliveryQuote = async ({ location, subtotal }) => {
+  const [storeSettings, deliverySettings] = await Promise.all([
+    getSettings('store'),
+    getSettings('delivery'),
+  ]);
+  return calculateDeliveryQuoteFromSettings({
+    location,
+    subtotal,
+    storeSettings,
+    deliverySettings,
+  });
+};
+
+module.exports = {
+  calculateDeliveryQuote,
+  calculateDeliveryQuoteFromSettings,
+  distanceInKilometres,
+};

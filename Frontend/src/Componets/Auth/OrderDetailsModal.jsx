@@ -243,9 +243,9 @@ const OrderDetailsModal = ({ order: initialOrder, orderId, isOpen, onClose, onEd
   const grandTotal = Number(currentOrder.total_amount) || itemsTotal || 0;
   const subtotal = Number(currentOrder.subtotal) || itemsTotal || grandTotal;
   const taxAmount = Number(currentOrder.tax_amount || currentOrder.tax) || 0;
-  const deliveryCharge =
-    Number(currentOrder.delivery_charge) ||
-    Math.max(0, grandTotal - subtotal - taxAmount);
+  const deliveryCharge = currentOrder.delivery_charge !== undefined
+    ? Number(currentOrder.delivery_charge)
+    : Math.max(0, grandTotal - subtotal - taxAmount);
   const heroImage = resolveImageUrl(
     items[0]?.product_image || items[0]?.image || items[0]?.food_images?.[0],
   );

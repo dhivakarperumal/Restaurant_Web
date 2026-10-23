@@ -13,6 +13,7 @@ const {
   updateUserAddress,
 } = require('../modules/orders');
 const { notifyChefs } = require('../utils/notificationSocket');
+const { calculateDeliveryQuote } = require('../utils/deliveryPricing');
 
 const RAZORPAY_KEY_ID = 'rzp_test_StTyzINJPsVmoj';
 const getUserId = (req) => req.auth?.user_id;
@@ -34,6 +35,13 @@ const validateCheckout = (body) => {
   if (!['home_delivery', 'pickup'].includes(orderType)) return 'Choose home delivery or pickup.';
   if (!['cod', 'online'].includes(paymentMethod)) return 'Choose cash on delivery or online payment.';
   if (orderType === 'home_delivery') {
+    const location = body.delivery_location;
+    const latitude = Number(location?.latitude);
+    const longitude = Number(location?.longitude);
+    if (!Number.isFinite(latitude) || latitude < -90 || latitude > 90
+      || !Number.isFinite(longitude) || longitude < -180 || longitude > 180) {
+      return 'Use your current location to calculate the delivery distance before placing your order.';
+    }
     const requiredAddressFields = ['address_line', 'area_locality', 'city', 'state', 'pincode'];
     if (requiredAddressFields.some((field) => !String(body.address?.[field] || '').trim())) {
       return 'Complete all required delivery address fields.';
@@ -152,6 +160,30 @@ const removeAddress = async (req, res) => {
   }
 };
 
+const quoteDelivery = async (req, res) => {
+  try {
+    const quote = await calculateDeliveryQuote({
+      location: req.body?.location,
+      subtotal: req.body?.subtotal,
+    });
+    return res.json({
+      success: true,
+      data: {
+        delivery_charge: quote.deliveryCharge,
+        distance_km: quote.distanceKm,
+        total_amount: quote.totalAmount,
+        free_delivery: quote.freeDelivery,
+      },
+    });
+  } catch (error) {
+    if (error.statusCode) {
+      return res.status(error.statusCode).json({ success: false, message: error.message });
+    }
+    console.error('Failed to calculate delivery quote:', error.message);
+    return res.status(500).json({ success: false, message: 'The delivery charge could not be calculated.' });
+  }
+};
+
 const create = async (req, res) => {
   const validationError = validateCheckout(req.body || {});
   if (validationError) {
@@ -169,6 +201,7 @@ const create = async (req, res) => {
       order_type: requestedOrderType,
       fulfillment_type: legacyFulfillmentType,
       address,
+      delivery_location: deliveryLocation,
       payment_method: paymentMethod,
     } = req.body;
     const requestedFulfillmentType = requestedOrderType ?? legacyFulfillmentType;
@@ -180,6 +213,7 @@ const create = async (req, res) => {
       fulfillmentType,
       orderType,
       address,
+      deliveryLocation,
       paymentMethod,
       idempotencyKey,
     });
@@ -197,7 +231,10 @@ const create = async (req, res) => {
         success: true,
         data: {
           order_number: createdOrder.orderNumber,
-          total_amount: createdOrder.subtotal,
+          subtotal: createdOrder.subtotal,
+          delivery_charge: createdOrder.deliveryCharge,
+          distance_km: createdOrder.distanceKm,
+          total_amount: createdOrder.totalAmount,
           payment_method: orderPaymentMethod,
         },
       });
@@ -215,7 +252,10 @@ const create = async (req, res) => {
         success: true,
         data: {
           order_number: createdOrder.orderNumber,
-          total_amount: createdOrder.subtotal,
+          subtotal: createdOrder.subtotal,
+          delivery_charge: createdOrder.deliveryCharge,
+          distance_km: createdOrder.distanceKm,
+          total_amount: createdOrder.totalAmount,
           payment_method: orderPaymentMethod,
           completed: true,
         },
@@ -234,12 +274,15 @@ const create = async (req, res) => {
         success: true,
         data: {
           order_number: createdOrder.orderNumber,
-          total_amount: createdOrder.subtotal,
+          subtotal: createdOrder.subtotal,
+          delivery_charge: createdOrder.deliveryCharge,
+          distance_km: createdOrder.distanceKm,
+          total_amount: createdOrder.totalAmount,
           payment_method: orderPaymentMethod,
           razorpay: {
             key_id: config.keyId,
             order_id: createdOrder.razorpayOrderId,
-            amount: Math.round(createdOrder.subtotal * 100),
+            amount: Math.round(createdOrder.totalAmount * 100),
             currency: 'INR',
           },
         },
@@ -270,7 +313,7 @@ const create = async (req, res) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        amount: Math.round(createdOrder.subtotal * 100),
+          amount: Math.round(createdOrder.totalAmount * 100),
         currency: 'INR',
         receipt: createdOrder.orderNumber,
       }),
@@ -285,7 +328,10 @@ const create = async (req, res) => {
       success: true,
       data: {
         order_number: createdOrder.orderNumber,
-        total_amount: createdOrder.subtotal,
+        subtotal: createdOrder.subtotal,
+        delivery_charge: createdOrder.deliveryCharge,
+        distance_km: createdOrder.distanceKm,
+        total_amount: createdOrder.totalAmount,
         payment_method: orderPaymentMethod,
         razorpay: {
           key_id: config.keyId,
@@ -366,6 +412,7 @@ const verifyPayment = async (req, res) => {
 
 module.exports = {
   create,
+  quoteDelivery,
   createAddress,
   listAddresses,
   removeAddress,

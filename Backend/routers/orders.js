@@ -8,6 +8,7 @@ router.get('/addresses', controller.listAddresses);
 router.post('/addresses', controller.createAddress);
 router.put('/addresses/:addressId', controller.updateAddress);
 router.delete('/addresses/:addressId', controller.removeAddress);
+router.post('/delivery-quote', controller.quoteDelivery);
 router.post('/', controller.create);
 router.post('/verify-payment', controller.verifyPayment);
 router.get('/mine/:orderNumber', customerOrderController.getMyOrder);
