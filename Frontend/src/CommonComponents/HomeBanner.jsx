@@ -265,7 +265,6 @@ import {
   ArrowRight,
   Bike,
   ChefHat,
-  Leaf,
   ShieldCheck,
   Utensils,
 } from "lucide-react";
@@ -405,8 +404,7 @@ export default function HomeBanner() {
         )}
 
         {/* Dark overlay keeps the text readable */}
-        <div className="absolute inset-0 bg-gradient-to-r from-[#160e08]/65 via-[#21150b]/40 to-transparent" />
-        <div className="absolute inset-0 bg-gradient-to-t from-[#101b0d]/40 via-transparent to-black/5" />
+        <div className="absolute inset-0 bg-gradient-to-r from-[#160e08]/45 via-[#21150b]/20 to-transparent" />
 
         {/* Decorative details */}
         <div className="pointer-events-none absolute left-0 top-0 h-40 w-40 rounded-full border border-[#f5a047]/10" />
