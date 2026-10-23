@@ -286,7 +286,7 @@ export default function ServerSupplies() {
           <div className="p-12 text-center text-sm text-slate-500">No supply items found.</div>
         ) : (
           <>
-            <div className="hidden overflow-x-auto lg:block">
+            <div className="scrollbar-hide hidden overflow-x-auto lg:block">
               <table className="min-w-[1180px] w-full text-left text-sm">
                 <thead className="bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
                   <tr>{['Image', 'Item Name', 'Item Code', 'Category', 'Material', 'Current Stock', 'Unit', 'Purchase Price', 'Stock Status', 'Actions'].map((heading) => <th key={heading} className="px-4 py-3 font-semibold">{heading}</th>)}</tr>
@@ -344,11 +344,10 @@ export default function ServerSupplies() {
 
       {formOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-3 sm:p-5">
-          <section className="max-h-[94vh] w-full max-w-3xl overflow-y-auto rounded-2xl bg-white p-5 shadow-2xl">
+          <section className="scrollbar-hide max-h-[94vh] w-full max-w-3xl overflow-y-auto rounded-2xl bg-white p-5 shadow-2xl">
             <div className="mb-5 flex items-center justify-between"><div><h2 className="text-xl font-bold text-slate-900">{editingItem ? 'Edit Supply Item' : 'Add Supply Item'}</h2><p className="mt-1 text-sm text-slate-500">Enter item details and stock levels.</p></div><button type="button" onClick={() => setFormOpen(false)} aria-label="Close form" className="rounded-lg p-2 text-slate-500 hover:bg-slate-100"><X size={18} /></button></div>
             <form onSubmit={handleSubmit} className="grid gap-4 sm:grid-cols-2">
               <label className="text-sm font-medium text-slate-700">Item Name<input required maxLength={200} value={form.item_name} onChange={(e) => setForm({ ...form, item_name: e.target.value })} className="mt-1.5 w-full rounded-xl border border-slate-200 px-3 py-2.5" /></label>
-              <label className="text-sm font-medium text-slate-700">Item Code / SKU<input value={form.item_code} onChange={(e) => setForm({ ...form, item_code: e.target.value })} placeholder={editingItem ? '' : 'Generated if blank'} className="mt-1.5 w-full rounded-xl border border-slate-200 px-3 py-2.5" /></label>
               <label className="text-sm font-medium text-slate-700">Category<select required value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} className="mt-1.5 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5"><option value="">Select category</option>{categories.map((category) => <option key={category.id || categoryName(category)} value={categoryName(category)}>{categoryName(category)}</option>)}</select></label>
               <label className="text-sm font-medium text-slate-700">Material<select value={form.material} onChange={(e) => setForm({ ...form, material: e.target.value })} className="mt-1.5 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5">{MATERIALS.map((material) => <option key={material}>{material}</option>)}</select></label>
               <label className="text-sm font-medium text-slate-700">Unit<select value={form.unit} onChange={(e) => setForm({ ...form, unit: e.target.value })} className="mt-1.5 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5">{UNITS.map((unit) => <option key={unit}>{unit}</option>)}</select></label>
@@ -379,7 +378,7 @@ export default function ServerSupplies() {
 
       {viewingItem && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-3" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) setViewingItem(null); }}>
-          <section className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-2xl bg-white p-5 shadow-2xl" role="dialog" aria-modal="true" aria-labelledby="supply-details-title">
+          <section className="scrollbar-hide max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-2xl bg-white p-5 shadow-2xl" role="dialog" aria-modal="true" aria-labelledby="supply-details-title">
             <div className="mb-4 flex items-center justify-between"><h2 id="supply-details-title" className="text-xl font-bold text-slate-900">Supply Details</h2><button type="button" onClick={() => setViewingItem(null)} aria-label="Close details" className="rounded-lg p-2 text-slate-500 hover:bg-slate-100"><X size={18} /></button></div>
             <div className="flex flex-col gap-4 sm:flex-row">
               <div className="flex h-32 w-32 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-slate-100">{viewingItem.image_url ? <img src={imageUrl(viewingItem.image_url)} alt={viewingItem.item_name} className="h-full w-full object-cover" /> : <Package size={32} className="text-slate-400" />}</div>

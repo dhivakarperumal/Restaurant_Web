@@ -1,13 +1,13 @@
 const db = require('../config/db');
 
 const defaultCategories = [
-  { category_name: 'Plates & Crockery', items: ['Dinner Plates', 'Quarter Plates', 'Side Plates', 'Dessert Plates', 'Soup Bowls', 'Serving Bowls', 'Katoris'] },
-  { category_name: 'Cutlery', items: ['Dinner Spoons', 'Tea Spoons', 'Soup Spoons', 'Serving Spoons', 'Forks', 'Dessert Forks'] },
-  { category_name: 'Glassware', items: ['Water Glasses', 'Juice Glasses', 'Tumblers', 'Cups', 'Tea Cups', 'Coffee Mugs', 'Saucers'] },
-  { category_name: 'Serving Equipment', items: ['Serving Trays', 'Food Trays', 'Serving Platters', 'Bread Baskets', 'Water Jugs', 'Serving Tongs', 'Ladles'] },
-  { category_name: 'Table Accessories', items: ['Napkin Holders', 'Tissue Paper', 'Toothpick Holders', 'Salt Shakers', 'Pepper Shakers', 'Sauce Bottles', 'Table Mats'] },
-  { category_name: 'Disposable Supplies', items: ['Paper Plates', 'Disposable Cups', 'Paper Bowls', 'Disposable Spoons', 'Takeaway Containers', 'Tissues'] },
-  { category_name: 'Cleaning & Storage', items: ['Plate Racks', 'Cup Racks', 'Cutlery Holders', 'Storage Containers', 'Dishwashing Supplies'] },
+  'Plates & Crockery',
+  'Cutlery',
+  'Glassware',
+  'Serving Equipment',
+  'Table Accessories',
+  'Disposable Supplies',
+  'Cleaning & Storage',
 ];
 
 class SuppliesError extends Error {
@@ -127,19 +127,7 @@ const initializeServerSuppliesSchema = async () => {
   `);
 
   for (const category of defaultCategories) {
-    await db.execute('INSERT IGNORE INTO server_supply_categories (category_name) VALUES (?)', [category.category_name]);
-    const [[categoryRow]] = await db.execute(
-      'SELECT id FROM server_supply_categories WHERE category_name = ?',
-      [category.category_name]
-    );
-    for (const itemName of category.items) {
-      await db.execute(
-        `INSERT IGNORE INTO server_supply_items
-           (item_name, category_id, unit, minimum_stock)
-         VALUES (?, ?, ?, 1)`,
-        [itemName, categoryRow.id, 'Pieces']
-      );
-    }
+    await db.execute('INSERT IGNORE INTO server_supply_categories (category_name) VALUES (?)', [category]);
   }
   const [itemsWithoutCodes] = await db.query(
     'SELECT id FROM server_supply_items WHERE item_code IS NULL'
