@@ -399,10 +399,10 @@ const AdminDashboardOverview = () => {
     <main className="min-h-screen space-y-3 pb-8 text-[#17231b] sm:space-y-4">
       <section className="flex flex-wrap items-center justify-between gap-3">
         <div className="min-w-0">
-          <h1 className="m-0 flex items-baseline gap-3 whitespace-nowrap leading-tight text-[#1c2c22]">
+          <h1 className="m-0 flex items-baseline gap-3 whitespace-nowrap leading-tight text-slate-800">
             <span className="shrink-0 text-[26px] font-bold sm:text-[18px]">Welcome My Dashboard</span>
           </h1>
-          <p className="mt-1 text-[10px] leading-5 text-[#718078] sm:text-[12px]">Here’s what’s happening at your restaurant today.</p>
+          <p className="mt-1 text-[10px] leading-5 text-slate-500 sm:text-[12px]">Here’s what’s happening at your restaurant today.</p>
         </div>
         <div className="flex flex-wrap items-center justify-end gap-2">
         <label className="flex h-9 items-center gap-2 rounded-xl border border-[#e4e9e3] bg-white px-2.5 text-xs shadow-sm sm:px-3">
@@ -428,17 +428,17 @@ const AdminDashboardOverview = () => {
 
       <section aria-label="Menu categories" className="grid grid-cols-1 gap-2 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-6">
         {loading ? [0, 1, 2, 3, 4, 5].map((item) => <div key={item} className="h-[76px] animate-pulse border border-[#e5ece6] bg-white" />) : categoryTiles.length ? categoryTiles.map((category) => (
-          <button type="button" key={category.name} onClick={() => navigate('/admin/products')} className="flex min-w-0 items-center gap-2.5 rounded-lg border border-[#e6ebe7] bg-[#fffaf5] p-2 text-left transition hover:-translate-y-0.5 hover:shadow-sm">
+          <button type="button" key={category.name} onClick={() => navigate('/admin/products')} className="flex min-w-0 items-center gap-2.5 rounded-lg border border-slate-200/80 bg-white shadow-[0_2px_12px_-3px_rgba(0,0,0,0.04)] rounded-xl border-slate-200/90 p-2 text-left transition hover:-translate-y-0.5 hover:shadow-sm">
             <span className="relative h-12 w-12 shrink-0 overflow-hidden rounded-lg bg-white/80"><UtensilsCrossed size={18} className="absolute inset-0 m-auto text-[#66816b]" /><img src={imageUrl(category.image)} alt="" className="relative z-10 h-full w-full object-cover" onError={(event) => { event.currentTarget.style.display = 'none'; }} /></span>
-            <span className="min-w-0 flex-1"><span className="block truncate text-[11px] font-bold text-[#304538]">{category.name}</span><span className="mt-1 block text-[9px] text-[#77847b]">{category.count} {category.count === 1 ? 'item' : 'items'}</span></span><ArrowRight size={13} className="shrink-0 rotate-[-45deg] text-[#718078]" />
+            <span className="min-w-0 flex-1"><span className="block truncate text-[11px] font-bold text-[#304538]">{category.name}</span><span className="mt-1 block text-[9px] text-[#77847b]">{category.count} {category.count === 1 ? 'item' : 'items'}</span></span><ArrowRight size={13} className="shrink-0 rotate-[-45deg] text-slate-500" />
           </button>
         )) : <div className="col-span-full border border-dashed border-[#dfe8e0] bg-white px-4 py-5 text-center text-xs text-[#7e8b82]">No visible food categories found.</div>}
       </section>
 
       <section className="grid gap-3 xl:grid-cols-[minmax(0,1.55fr)_minmax(260px,0.95fr)_minmax(260px,0.85fr)]">
-        <article className="min-w-0 border border-[#e1e5e2] bg-[#fffaf5] p-4 sm:p-5">
+        <article className="min-w-0 border border-slate-200/80 bg-white shadow-[0_2px_12px_-3px_rgba(0,0,0,0.04)] rounded-xl border-slate-200/90 p-4 sm:p-5">
           <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
-            <div><h2 className="text-sm font-bold text-[#1c2c22] sm:text-base">Sales &amp; Orders Overview</h2><p className="mt-0.5 text-[11px] text-[#7d8981]">Delivered revenue · {dateLabel}</p></div>
+            <div><h2 className="text-sm font-bold text-slate-800 sm:text-base">Sales &amp; Orders Overview</h2><p className="mt-0.5 text-[11px] text-slate-400">Delivered revenue · {dateLabel}</p></div>
             <div className="flex gap-1.5 text-[10px]">
               <span className="inline-flex items-center gap-1.5 border border-[#e5ebe6] px-2 py-1 text-[#506056]"><span className="h-2 w-2 rounded-full bg-[#20a342]" />Revenue (₹)</span>
               <button type="button" aria-pressed={includeOrders} onClick={() => setIncludeOrders((value) => !value)} className={`inline-flex items-center gap-1.5 border px-2 py-1 ${includeOrders ? 'border-[#d9eadc] bg-[#f3faf4] text-[#506056]' : 'border-[#e5ebe6] text-[#879189]'}`}><span className={`h-2 w-2 rounded-full ${includeOrders ? 'bg-[#b8edc2]' : 'bg-[#cdd4cf]'}`} />Orders</button>
@@ -459,8 +459,8 @@ const AdminDashboardOverview = () => {
           </div>
         </article>
 
-        <article className="min-w-0 border border-[#e6ebe7] bg-[#fffaf5] p-4 sm:p-5">
-          <div className="mb-1"><h2 className="text-sm font-bold text-[#1c2c22] sm:text-base">Order Status</h2><p className="mt-0.5 text-[11px] text-[#7d8981]">Orders in selected period</p></div>
+        <article className="min-w-0 border border-slate-200/80 bg-white shadow-[0_2px_12px_-3px_rgba(0,0,0,0.04)] rounded-xl border-slate-200/90 p-4 sm:p-5">
+          <div className="mb-1"><h2 className="text-sm font-bold text-slate-800 sm:text-base">Order Status</h2><p className="mt-0.5 text-[11px] text-slate-400">Orders in selected period</p></div>
           <div className="relative h-[230px] sm:h-[250px]">
             {reportLoading ? <div className="h-full animate-pulse bg-[#f1f5f1]" /> : statusData.length ? <>
               <ResponsiveContainer width="100%" height="100%"><PieChart><Pie data={statusData} dataKey="count" nameKey="status" cx="50%" cy="50%" innerRadius={66} outerRadius={95} paddingAngle={2} stroke="none">{statusData.map((entry) => <Cell key={entry.status} fill={entry.color} />)}</Pie><Tooltip /></PieChart></ResponsiveContainer>
@@ -472,8 +472,8 @@ const AdminDashboardOverview = () => {
           </ul>
         </article>
 
-        <article className="min-w-0 border border-[#e6ebe7] bg-[#fffaf5] p-4 sm:p-5">
-          <div className="mb-3 flex items-center justify-between"><h2 className="text-sm font-bold text-[#1c2c22] sm:text-base">Quick Actions</h2><button type="button" onClick={() => navigate('/admin')} className="text-[10px] font-medium text-[#66756b] hover:text-[#178a36]">View All <ArrowRight size={11} className="ml-1 inline" /></button></div>
+        <article className="min-w-0 border border-slate-200/80 bg-white shadow-[0_2px_12px_-3px_rgba(0,0,0,0.04)] rounded-xl border-slate-200/90 p-4 sm:p-5">
+          <div className="mb-3 flex items-center justify-between"><h2 className="text-sm font-bold text-slate-800 sm:text-base">Quick Actions</h2><button type="button" onClick={() => navigate('/admin')} className="text-[10px] font-medium text-[#66756b] hover:text-[#178a36]">View All <ArrowRight size={11} className="ml-1 inline" /></button></div>
           <div className="grid grid-cols-2 gap-2">
             {quickActions.map(({ label, icon: Icon, path, tone, surface }) => <button type="button" key={label} onClick={() => navigate(path)} className={`flex min-h-[74px] flex-col items-center justify-center gap-2 rounded-md border px-2 py-2 text-center text-white transition hover:shadow-sm ${surface}`}>
               <span className={`grid h-10 w-10 place-items-center rounded-full ${tone}`}><Icon size={20} /></span><span className="text-[10px] font-semibold text-white">{label}</span>
@@ -483,16 +483,16 @@ const AdminDashboardOverview = () => {
       </section>
 
       <section className="grid gap-3 xl:grid-cols-[minmax(0,2fr)_minmax(270px,0.85fr)]">
-        <article className="min-w-0 border border-[#e6ebe7] bg-[#fffaf5] p-4 sm:p-5">
-          <div className="mb-3 flex items-center justify-between"><h2 className="text-sm font-bold text-[#1c2c22] sm:text-base">Recent Orders</h2><button type="button" onClick={() => navigate('/admin/orders')} className="border border-[#e4e9e5] px-2.5 py-1 text-[10px] font-medium text-[#5d6c62] hover:bg-[#f6f8f6]">View All</button></div>
-          <div className="overflow-hidden rounded-xl border border-[#e6ebe7]">
+        <article className="min-w-0 border border-slate-200/80 bg-white shadow-[0_2px_12px_-3px_rgba(0,0,0,0.04)] rounded-xl border-slate-200/90 p-4 sm:p-5">
+          <div className="mb-3 flex items-center justify-between"><h2 className="text-sm font-bold text-slate-800 sm:text-base">Recent Orders</h2><button type="button" onClick={() => navigate('/admin/orders')} className="border border-[#e4e9e5] px-2.5 py-1 text-[10px] font-medium text-[#5d6c62] hover:bg-[#f6f8f6]">View All</button></div>
+          <div className="overflow-hidden rounded-xl border border-slate-200/80">
             <div className="overflow-x-auto">
               <table className="w-full min-w-[760px] text-left text-[11px]">
               <thead className="bg-[#d4a843] text-xs font-bold uppercase tracking-wide text-white"><tr>{['S No', 'Order ID', 'Customer', 'Items', 'Type', 'Amount', 'Status', 'Time', ''].map((heading) => <th key={heading} className="whitespace-nowrap px-4 py-4">{heading}</th>)}</tr></thead>
               <tbody className="divide-y divide-[#edf1ed]">
                 {loading ? [0, 1, 2, 3].map((row) => <tr key={row}>{[0, 1, 2, 3, 4, 5, 6, 7, 8].map((cell) => <td key={cell} className="px-2.5 py-3"><span className="block h-3 animate-pulse bg-[#f0f3f0]" /></td>)}</tr>) : recentOrders.length ? recentOrders.map((order, index) => {
                   const tone = order.status === 'Delivered' ? 'bg-[#e6f8e9] text-[#259346]' : order.status === 'Cancelled' ? 'bg-[#fff0ee] text-[#db5549]' : order.status === 'Preparing' || order.status === 'Out for Delivery' ? 'bg-[#f1eaff] text-[#7652c6]' : order.status === 'Ready' ? 'bg-[#eaf2ff] text-[#3979d8]' : 'bg-[#fff5df] text-[#d58400]';
-                  return <tr key={`${order.id}-${index}`} className="hover:bg-[#fafcfa]"><td className="whitespace-nowrap px-2.5 py-3 font-semibold text-[#4f5f54]">{index + 1}</td><td className="whitespace-nowrap px-2.5 py-3 font-mono text-[#3d4b41]">{order.id || '—'}</td><td className="max-w-36 truncate px-2.5 py-3 text-[#3d4b41]">{order.customer}</td><td className="whitespace-nowrap px-2.5 py-3 text-[#68766d]">{order.items}</td><td className="whitespace-nowrap px-2.5 py-3 text-[#68766d]">{order.type}</td><td className="whitespace-nowrap px-2.5 py-3 font-semibold">{money(order.amount)}</td><td className="px-2.5 py-3"><span className={`whitespace-nowrap px-2 py-1 text-[10px] font-semibold ${tone}`}>{order.status}</span></td><td className="whitespace-nowrap px-2.5 py-3 text-[#7d8981]">{formatDateTime(order.time)}</td><td className="px-2.5 py-3"><button type="button" onClick={() => navigate(order.path)} aria-label={`Open ${order.id}`} className="text-[#718078] hover:text-[#1c7c39]">•••</button></td></tr>;
+                  return <tr key={`${order.id}-${index}`} className="hover:bg-[#fafcfa]"><td className="whitespace-nowrap px-2.5 py-3 font-semibold text-[#4f5f54]">{index + 1}</td><td className="whitespace-nowrap px-2.5 py-3 font-mono text-[#3d4b41]">{order.id || '—'}</td><td className="max-w-36 truncate px-2.5 py-3 text-[#3d4b41]">{order.customer}</td><td className="whitespace-nowrap px-2.5 py-3 text-[#68766d]">{order.items}</td><td className="whitespace-nowrap px-2.5 py-3 text-[#68766d]">{order.type}</td><td className="whitespace-nowrap px-2.5 py-3 font-semibold">{money(order.amount)}</td><td className="px-2.5 py-3"><span className={`whitespace-nowrap px-2 py-1 text-[10px] font-semibold ${tone}`}>{order.status}</span></td><td className="whitespace-nowrap px-2.5 py-3 text-slate-400">{formatDateTime(order.time)}</td><td className="px-2.5 py-3"><button type="button" onClick={() => navigate(order.path)} aria-label={`Open ${order.id}`} className="text-slate-500 hover:text-[#1c7c39]">•••</button></td></tr>;
                 }) : <tr><td colSpan="9" className="px-3 py-8 text-center text-xs text-[#819087]">No orders for this period.</td></tr>}
               </tbody>
               </table>
@@ -500,8 +500,8 @@ const AdminDashboardOverview = () => {
           </div>
         </article>
 
-        <article className="min-w-0 border border-[#e6ebe7] bg-[#fffaf5] p-4 sm:p-5">
-          <div className="mb-3 flex items-center justify-between"><h2 className="text-sm font-bold text-[#1c2c22] sm:text-base">Top Selling Items</h2><button type="button" onClick={() => navigate('/admin/products')} className="border border-[#e4e9e5] px-2.5 py-1 text-[10px] font-medium text-[#5d6c62] hover:bg-[#f6f8f6]">View All</button></div>
+        <article className="min-w-0 border border-slate-200/80 bg-white shadow-[0_2px_12px_-3px_rgba(0,0,0,0.04)] rounded-xl border-slate-200/90 p-4 sm:p-5">
+          <div className="mb-3 flex items-center justify-between"><h2 className="text-sm font-bold text-slate-800 sm:text-base">Top Selling Items</h2><button type="button" onClick={() => navigate('/admin/products')} className="border border-[#e4e9e5] px-2.5 py-1 text-[10px] font-medium text-[#5d6c62] hover:bg-[#f6f8f6]">View All</button></div>
           <div className="divide-y divide-[#edf1ed]">
             {loading ? [0, 1, 2, 3].map((row) => <div key={row} className="flex items-center gap-3 py-2.5"><div className="h-10 w-10 animate-pulse bg-[#f0f3f0]" /><div className="flex-1"><div className="h-3 w-28 animate-pulse bg-[#f0f3f0]" /><div className="mt-2 h-2 w-16 animate-pulse bg-[#f0f3f0]" /></div></div>) : topSellingItems.length ? topSellingItems.map((item, index) => <div key={item.id} className="flex items-center gap-2.5 py-2.5 first:pt-0 last:pb-0">
               <span className={`grid h-5 w-5 shrink-0 place-items-center text-[10px] font-bold ${index === 0 ? 'rounded-full bg-[#f4a900] text-white' : 'rounded-full bg-[#f0f2f0] text-[#738077]'}`}>{index + 1}</span>
@@ -520,7 +520,7 @@ const AdminDashboardOverview = () => {
             value: loading ? '—' : snapshot.foods.length.toLocaleString('en-IN'),
             detail: 'Items in menu',
             icon: CookingPot,
-            bg: 'bg-[#fffaf5] border-[#e6ebe7] text-[#17231b]',
+            bg: 'bg-white shadow-[0_2px_12px_-3px_rgba(0,0,0,0.04)] rounded-xl border-slate-200/90 border-slate-200/80 text-[#17231b]',
             path: '/admin/products',
           },
           {
@@ -528,7 +528,7 @@ const AdminDashboardOverview = () => {
             value: loading ? '—' : Number(snapshot.inventory.lowStock || 0).toLocaleString('en-IN'),
             detail: 'Needs restocking',
             icon: AlertTriangle,
-            bg: 'bg-[#fffaf5] border-[#e6ebe7] text-[#17231b]',
+            bg: 'bg-white shadow-[0_2px_12px_-3px_rgba(0,0,0,0.04)] rounded-xl border-slate-200/90 border-slate-200/80 text-[#17231b]',
             path: '/admin/inventory/products',
           },
           {
@@ -536,7 +536,7 @@ const AdminDashboardOverview = () => {
             value: loading ? '—' : openBillsCount.toLocaleString('en-IN'),
             detail: 'Awaiting settlement',
             icon: Table2,
-            bg: 'bg-[#fffaf5] border-[#e6ebe7] text-[#17231b]',
+            bg: 'bg-white shadow-[0_2px_12px_-3px_rgba(0,0,0,0.04)] rounded-xl border-slate-200/90 border-slate-200/80 text-[#17231b]',
             path: '/admin/billing/history',
           },
           {
@@ -544,7 +544,7 @@ const AdminDashboardOverview = () => {
             value: loading ? '—' : pendingKitchenCount.toLocaleString('en-IN'),
             detail: 'Pending or approved',
             icon: ChefHat,
-            bg: 'bg-[#fffaf5] border-[#e6ebe7] text-[#17231b]',
+            bg: 'bg-white shadow-[0_2px_12px_-3px_rgba(0,0,0,0.04)] rounded-xl border-slate-200/90 border-slate-200/80 text-[#17231b]',
             path: '/admin/inventory/kitchen-requests',
           },
         ].map(({ title, value, detail, icon: Icon, bg, path }, index) => (
@@ -568,7 +568,7 @@ const AdminDashboardOverview = () => {
               <span className="inline-flex items-center gap-1 rounded-md bg-[#e8f7ed] px-1.5 py-0.5 text-[11px] font-bold text-[#168745]">
                 Live
               </span>
-              <span className="text-[11px] font-medium text-[#718078] truncate">{detail}</span>
+              <span className="text-[11px] font-medium text-slate-500 truncate">{detail}</span>
             </div>
 
             <div className="absolute right-0 bottom-0 w-24 h-16 pointer-events-none opacity-30">
