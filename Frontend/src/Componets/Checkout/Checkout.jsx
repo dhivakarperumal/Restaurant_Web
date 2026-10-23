@@ -667,7 +667,7 @@ function Checkout() {
                   <p className="text-sm text-[#8c7a6b]">Who should we contact about your order?</p>
                 </div>
               </div>
-              <div className="grid gap-4 sm:grid-cols-2">
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 <label className="text-sm font-semibold text-[#263830]">
                   Full name <span className="text-[#a34f32]">*</span>
                   <input name="name" value={customer.name} onChange={updateCustomer} required maxLength={150} autoComplete="name" className="mt-2 w-full rounded-xl border border-[#ded5c9] px-4 py-3 font-normal outline-none focus:border-[#a34f32] focus:ring-2 focus:ring-[#a34f32]/10" placeholder="Your name" />
@@ -676,7 +676,7 @@ function Checkout() {
                   Phone number <span className="text-[#a34f32]">*</span>
                   <input name="phone" type="tel" value={customer.phone} onChange={updateCustomer} required minLength={7} maxLength={32} autoComplete="tel" className="mt-2 w-full rounded-xl border border-[#ded5c9] px-4 py-3 font-normal outline-none focus:border-[#a34f32] focus:ring-2 focus:ring-[#a34f32]/10" placeholder="+91 98765 43210" />
                 </label>
-                <label className="text-sm font-semibold text-[#263830] sm:col-span-2">
+                <label className="text-sm font-semibold text-[#263830]">
                   Email address <span className="font-normal text-[#8c7a6b]">(optional)</span>
                   <input name="email" type="email" value={customer.email} onChange={updateCustomer} maxLength={255} autoComplete="email" className="mt-2 w-full rounded-xl border border-[#ded5c9] px-4 py-3 font-normal outline-none focus:border-[#a34f32] focus:ring-2 focus:ring-[#a34f32]/10" placeholder="you@example.com" />
                 </label>
