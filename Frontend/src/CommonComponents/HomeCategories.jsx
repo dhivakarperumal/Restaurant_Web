@@ -93,7 +93,7 @@ function HomeCategories() {
               loop={categories.length > 1}
               autoplay={categories.length > 1
                 && !window.matchMedia('(prefers-reduced-motion: reduce)').matches
-                ? { delay: 3000, disableOnInteraction: false, pauseOnMouseEnter: true }
+                ? { delay: 3600, disableOnInteraction: false, pauseOnMouseEnter: true }
                 : false}
               slidesPerView={2}
               slidesPerGroup={1}
