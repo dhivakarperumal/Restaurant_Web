@@ -622,12 +622,12 @@ export default function ServerSupplies() {
             {inventoryView === 'table' && <div className="scrollbar-hide overflow-x-auto">
               <table className="min-w-[1180px] w-full text-left text-sm">
                 <thead className="bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
-                  <tr>{['Image', 'Item Name', 'Item Code', 'Category', 'Material', 'Current Stock', 'Unit', 'Purchase Price', 'Stock Status', 'Actions'].map((heading) => <th key={heading} className="px-4 py-3 font-semibold">{heading}</th>)}</tr>
+                  <tr>{['S No', 'Item Name', 'Item Code', 'Category', 'Material', 'Current Stock', 'Unit', 'Purchase Price', 'Stock Status', 'Actions'].map((heading) => <th key={heading} className="px-4 py-3 font-semibold">{heading}</th>)}</tr>
                 </thead>
                 <tbody>
-                  {pageItems.map((item) => (
+                  {pageItems.map((item, index) => (
                     <tr key={item.id} className="border-t border-slate-100 hover:bg-slate-50/60">
-                      <td className="px-4 py-3"><div className="flex h-11 w-11 items-center justify-center overflow-hidden rounded-lg bg-slate-100">{item.image_url ? <img src={imageUrl(item.image_url)} alt={item.item_name} className="h-full w-full object-cover" /> : <Package size={18} className="text-slate-400" />}</div></td>
+                      <td className="px-4 py-3 font-medium text-slate-500">{(currentPage - 1) * PAGE_SIZE + index + 1}</td>
                       <td className="px-4 py-3 font-semibold text-slate-900">{item.item_name}</td><td className="px-4 py-3 font-mono text-slate-600">{item.item_code}</td><td className="px-4 py-3">{item.category}</td><td className="px-4 py-3">{item.material}</td><td className="px-4 py-3 font-semibold">{item.current_stock}</td><td className="px-4 py-3">{item.unit}</td><td className="px-4 py-3">{formatCurrency(item.purchase_price)}</td><td className="px-4 py-3">{renderStatus(item)}</td>
                       <td className="px-4 py-3"><div className="flex items-center gap-1">
                         {isAdmin ? <>
