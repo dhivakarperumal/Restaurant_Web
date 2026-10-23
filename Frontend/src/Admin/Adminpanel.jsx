@@ -26,10 +26,11 @@ const AdminLayout = () => {
   const location = useLocation();
   const isPrintPage = location.pathname.includes('/admin/pt-form/print/');
   const isPosPage = location.pathname === '/admin/billing';
+  const isDashboard = location.pathname === '/admin';
 
 
   return (
-    <div className={`admin-root flex min-h-screen ${isPosPage ? 'md:h-screen md:overflow-hidden' : ''} ${isPrintPage ? 'bg-gray-100 text-black' : 'bg-white text-gray-900'} print:bg-white print:text-black print:min-h-0 print:block`}>
+    <div className={`admin-root flex min-h-screen ${isPosPage ? 'md:h-screen md:overflow-hidden' : ''} ${isPrintPage ? 'bg-gray-100 text-black' : 'bg-gray-50 text-gray-900'} print:bg-white print:text-black print:min-h-0 print:block`}>
       
       {/* Sidebar */}
       {!isPrintPage && !isPosPage && (
@@ -62,8 +63,8 @@ const AdminLayout = () => {
         )}
 
         {/* Page Content */}
-        <main className={`flex-1 ${isPosPage ? 'md:min-h-0 overflow-y-auto md:overflow-hidden' : ''} ${isPrintPage || isPosPage ? 'p-0' : 'p-4 sm:p-5 lg:p-6'} ${!isPosPage && !isPrintPage ? 'overflow-y-auto' : ''} bg-white print:p-0 print:m-0 print:overflow-visible`}>
-          <div className={isPosPage ? 'md:h-full md:min-h-0' : isPrintPage ? '' : 'glass-container bg-white print:bg-transparent print:border-none print:p-0 print:m-0 print:shadow-none print:backdrop-filter-none'}>
+        <main className={`flex-1 ${isPosPage ? 'md:min-h-0 overflow-y-auto md:overflow-hidden' : ''} ${isPrintPage || isPosPage ? 'p-0' : 'p-4 sm:p-5 lg:p-6'} ${!isPosPage && !isPrintPage ? 'overflow-y-auto' : ''} bg-gray-50 print:p-0 print:m-0 print:overflow-visible`}>
+          <div className={isPosPage ? 'md:h-full md:min-h-0' : isPrintPage ? '' : isDashboard ? 'bg-transparent print:bg-transparent print:border-none print:p-0 print:m-0 print:shadow-none print:backdrop-filter-none' : 'glass-container bg-white print:bg-transparent print:border-none print:p-0 print:m-0 print:shadow-none print:backdrop-filter-none'}>
             <Suspense fallback={
               <div className="flex flex-col items-center justify-center min-h-[50vh] gap-4 print:hidden">
                 <PacmanLoader color="#ef4444" size={20} />

@@ -1,7 +1,7 @@
 
-@import url('https://fonts.googleapis.com/css2?family=Dancing+Script:wght@500;600;700&family=Josefin+Sans:ital,wght@0,100..700;1,100..700&display=swap');
+
 /* @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300..700;1,300..700&display=swap'); */
-/* @import url('https://fonts.googleapis.com/css2?family=Vollkorn:ital,wght@0,400..900;1,400..900&display=swap'); */
+@import url('https://fonts.googleapis.com/css2?family=Vollkorn:ital,wght@0,400..900;1,400..900&display=swap');
 @import "tailwindcss";
 
 @keyframes notification-progress {
@@ -91,11 +91,11 @@
   --admin-color-primary-light: #FF7A1A;
 
   --admin-sidebar-bg: linear-gradient(
-    180deg,
-    #FF7A1A 0%,
-    #FF5A00 55%,
-    #E94B00 100%
-  );
+      rgba(255, 90, 0, 0.82),
+      rgba(233, 75, 0, 0.78)
+    ),
+    url("/images/sidebar%20bg.png") center / cover no-repeat,
+    linear-gradient(180deg, #FF7A1A 0%, #FF5A00 55%, #E94B00 100%);
   --admin-sidebar-text: #FFFFFF;
   --admin-sidebar-hover: rgba(255, 255, 255, 0.15);
   --admin-sidebar-active-bg: #FFFFFF;
@@ -119,8 +119,8 @@
 }
 
 .admin-root [data-sidebar="admin-sidebar"] {
-  background: var(--admin-sidebar-bg);
-  color: var(--admin-sidebar-text);
+  background: var(--admin-sidebar-bg) !important;
+  color: var(--admin-sidebar-text) !important;
 }
 
 .admin-root .admin-sidebar-link:hover {

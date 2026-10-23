@@ -309,7 +309,7 @@ const Sidebar = ({ isOpen, onClose, collapsed, onToggleCollapse }) => {
                     title={collapsed ? item.label : ""}
                     className={`
                       w-full flex items-center gap-3 px-3 py-3 rounded-lg text-sm
-                      admin-sidebar-link transition-all duration-200 group
+                      admin-sidebar-link transition-colors duration-150 group
                       ${isAnyChildActive
                         ? "admin-sidebar-link-active border-l-2 border-white"
                         : ""
@@ -354,7 +354,7 @@ const Sidebar = ({ isOpen, onClose, collapsed, onToggleCollapse }) => {
                               isActive
                                 ? "admin-sidebar-link-active font-semibold"
                                 : "text-white"
-                            } flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-xs transition-all duration-200`}
+                            } flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-xs transition-colors duration-150`}
                             title={collapsed && sub.badge ? `${sub.label} (${pendingCount})` : ''}
                           >
                             <SubIcon className="w-3.5 h-3.5 shrink-0 text-white" />
@@ -382,7 +382,7 @@ const Sidebar = ({ isOpen, onClose, collapsed, onToggleCollapse }) => {
                 end={item.exact}
                 title={collapsed ? item.label : ""}
                 onClick={() => isOpen && onClose()}
-                className={`admin-sidebar-link flex items-center gap-3 rounded-lg px-3 py-3 text-sm transition-all duration-200 ${
+                className={`admin-sidebar-link flex items-center gap-3 rounded-lg px-3 py-3 text-sm transition-colors duration-150 ${
                   isActive
                     ? "admin-sidebar-link-active font-semibold shadow-md"
                     : "text-white"
@@ -400,7 +400,7 @@ const Sidebar = ({ isOpen, onClose, collapsed, onToggleCollapse }) => {
           to="/"
           title={collapsed ? "Back Home" : ""}
           onClick={() => isOpen && onClose()}
-          className={`admin-sidebar-link mx-3 mb-3 flex items-center gap-3 rounded-lg px-3 py-3 text-sm transition-all duration-200 ${
+          className={`admin-sidebar-link mx-3 mb-3 flex items-center gap-3 rounded-lg px-3 py-3 text-sm transition-colors duration-150 ${
             isRouteActive("/")
               ? "admin-sidebar-link-active font-semibold shadow-md"
               : "text-white"

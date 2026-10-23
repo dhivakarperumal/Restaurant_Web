@@ -1,18 +1,16 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  AlertTriangle, ArrowRight, Bike, CalendarDays, Layers, Receipt,
-  Check, ChefHat, CircleDollarSign, Clock3, CreditCard, CookingPot, Package,
-  PackageCheck, Search, ShoppingBag, ShoppingCart, Sparkles, Table2,
+  AlertTriangle, ArrowRight, CalendarDays, Layers, Receipt,
+  ChefHat, CircleDollarSign, Clock3, CreditCard, CookingPot, Package,
+  PackageCheck, ShoppingBag, Table2,
   TrendingUp, Users, UtensilsCrossed,
-  XCircle,
 } from 'lucide-react';
 import {
   Bar, CartesianGrid, Cell, ComposedChart, Line, Pie, PieChart,
   ResponsiveContainer, Tooltip, XAxis, YAxis,
 } from 'recharts';
 import api, { BACKEND_BASE_URL } from '../api';
-import { useAuth } from '../PrivateRouter/AuthContext';
 
 const PERIODS = [
   ['today', 'Today'], ['yesterday', 'Yesterday'], ['week', 'This Week'],
@@ -26,7 +24,6 @@ const STATUS_COLORS = {
   cancelled: '#f24747', canceled: '#f24747', confirmed: '#8055e8',
   'out for delivery': '#8055e8', out_for_delivery: '#8055e8',
 };
-const HERO_IMAGE = '/images/registre.png';
 const money = (amount) => `₹${Number(amount || 0).toLocaleString('en-IN', { maximumFractionDigits: 2 })}`;
 const getDateKey = (value) => {
   if (!value) return '';
@@ -104,36 +101,29 @@ const normalizeStatus = (status) => {
 
 function MetricCard({ title, value, icon: Icon, tone, hint, surface, waveColor, percent }) {
   return (
-    <article className={`relative min-w-0 overflow-hidden rounded-xl border p-4 sm:p-5 shadow-[0_2px_10px_rgba(20,56,34,0.04)] flex flex-col justify-between min-h-[140px] ${surface}`}>
-      <div className="flex items-start gap-3 relative z-10">
-        <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-lg shadow-sm ${tone}`}>
-          <Icon size={24} strokeWidth={2.2} />
-        </div>
-        <div className="flex-1 mt-0.5 min-w-0">
-          <h3 className="text-[12px] font-semibold opacity-90 mb-1 truncate">{title}</h3>
-          <div className="text-[22px] sm:text-[25px] font-extrabold leading-none tracking-tight truncate">{value}</div>
-        </div>
+    <article className={`relative flex min-h-[104px] min-w-0 items-start gap-3 overflow-hidden rounded-xl border p-3 shadow-[0_2px_10px_rgba(20,56,34,0.04)] sm:min-h-[112px] sm:p-3.5 ${surface}`}>
+      <div className={`relative z-10 flex h-11 w-11 shrink-0 items-center justify-center rounded-lg sm:h-12 sm:w-12 ${tone}`}>
+        <Icon size={25} strokeWidth={2.5} />
       </div>
-      
-      <div className="flex items-center gap-2 mt-5 relative z-10">
-        {percent && (
-          <span className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[11px] font-bold bg-white/25">
-            {percent}
-          </span>
-        )}
-        <span className="text-[11px] font-medium opacity-75 truncate">{hint}</span>
+      <div className="relative z-10 min-w-0 flex-1 pt-0.5">
+        <h3 className="mb-1 truncate text-[11px] font-semibold leading-tight text-[#28303a]">{title}</h3>
+        <div className="truncate text-[22px] font-extrabold leading-none tracking-tight text-[#17191d] sm:text-[24px]">{value}</div>
+        <div className="mt-1.5 flex min-w-0 items-center gap-1 text-[10px] leading-none">
+          {percent && <span className="inline-flex shrink-0 items-center gap-0.5 font-bold text-[#119749]">{percent}</span>}
+          <span className="truncate text-[#78808a]">{hint}</span>
+        </div>
       </div>
 
-      <div className="absolute right-0 bottom-0 w-24 h-16 pointer-events-none opacity-50">
+      <div className="pointer-events-none absolute bottom-1 right-1 z-0 h-10 w-14 opacity-90 sm:h-11 sm:w-16">
         <svg viewBox="0 0 100 50" preserveAspectRatio="none" className="w-full h-full">
           <defs>
             <linearGradient id={`grad-${title.replace(/\s+/g, '')}`} x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor={waveColor} stopOpacity="0.4" />
-              <stop offset="100%" stopColor={waveColor} stopOpacity="0.0" />
+              <stop offset="0%" stopColor={waveColor} stopOpacity="0.22" />
+              <stop offset="100%" stopColor={waveColor} stopOpacity="0" />
             </linearGradient>
           </defs>
           <path d="M0,50 L0,40 Q25,30 50,40 T100,20 L100,50 Z" fill={`url(#grad-${title.replace(/\s+/g, '')})`} />
-          <path d="M0,40 Q25,30 50,40 T100,20" fill="none" stroke={waveColor} strokeWidth="2.5" />
+          <path d="M0,40 Q25,30 50,40 T100,20" fill="none" stroke={waveColor} strokeWidth="3" />
         </svg>
       </div>
     </article>
@@ -142,7 +132,6 @@ function MetricCard({ title, value, icon: Icon, tone, hint, surface, waveColor, 
 
 const AdminDashboardOverview = () => {
   const navigate = useNavigate();
-  const { userProfile } = useAuth();
   const [period, setPeriod] = useState('year');
   const [customFrom, setCustomFrom] = useState('');
   const [customTo, setCustomTo] = useState('');
@@ -242,6 +231,26 @@ const AdminDashboardOverview = () => {
   const activeDeliveryCount = dateRangeOrders.filter((order) => order.order_type === 'home_delivery' && !terminalOrder(order.order_status)).length;
   const customerCount = snapshot.users.filter((user) => customerRole(user.role)).length;
   const statusTotal = report.statuses.reduce((sum, item) => sum + Number(item.count || 0), 0);
+  const pendingOrderCount = report.statuses.reduce((count, item) => (
+    ['pending', 'placed', 'preparing', 'ready'].includes(String(item.status).toLowerCase())
+      ? count + Number(item.count || 0)
+      : count
+  ), 0);
+  const completedOrderCount = report.statuses.reduce((count, item) => (
+    ['delivered', 'served', 'completed'].includes(String(item.status).toLowerCase())
+      ? count + Number(item.count || 0)
+      : count
+  ), 0);
+  const todayKey = getDateKey(new Date());
+  const todayOrders = snapshot.orders.filter((order) => getDateKey(order.created_at || order.order_date) === todayKey);
+  const todayBills = snapshot.bills.filter((bill) => getDateKey(bill.created_at) === todayKey);
+  const todayOrderCount = todayOrders.length + todayBills.length;
+  const todayRevenue = todayOrders
+    .filter((order) => ['delivered', 'completed', 'served'].includes(String(order.order_status).toLowerCase()))
+    .reduce((sum, order) => sum + Number(order.total_amount || 0), 0)
+    + todayBills
+      .filter((bill) => String(bill.status).toLowerCase() === 'paid')
+      .reduce((sum, bill) => sum + Number(bill.grand_total || 0), 0);
 
   const ticketGroups = new Map();
   snapshot.kitchenOrders.forEach((ticket) => {
@@ -337,7 +346,6 @@ const AdminDashboardOverview = () => {
       ...entry,
       label: formatDate(entry.date, ['lastYear', 'this-year', 'last-year'].includes(period) ? { month: 'short', year: '2-digit' } : { day: '2-digit', month: 'short' }),
     }));
-  const name = userProfile?.displayName?.split(' ')[0] || 'Admin';
   const periodLabel = PERIODS.find(([key]) => (PERIOD_API[key] || key) === apiRange)?.[1] || 'Today';
   const quickActions = [
     { label: 'Add Food Item', icon: CookingPot, path: '/admin/products/add', tone: 'bg-[#eaf7ed] text-[#23944a]', surface: 'border-[#1f7a4d] bg-[#1f7a4d] hover:border-[#19643f] hover:bg-[#19643f]' },
@@ -352,8 +360,6 @@ const AdminDashboardOverview = () => {
   const dateLabel = period === 'custom' && customFrom && customTo
     ? `${formatDate(customFrom, { day: '2-digit', month: 'short', year: 'numeric' })} - ${formatDate(customTo, { day: '2-digit', month: 'short', year: 'numeric' })}`
     : `${periodLabel} (${formatDate(new Date(), { day: '2-digit', month: 'short', year: 'numeric' })})`;
-  const todayOrderCount = snapshot.orders.filter((order) => getDateKey(order.created_at) === getDateKey(new Date())).length
-    + snapshot.bills.filter((bill) => getDateKey(bill.created_at) === getDateKey(new Date())).length;
   const listedPendingKitchenCount = snapshot.kitchenRequests.filter(
     (request) => ['pending', 'approved'].includes(String(request.status || '').trim().toLowerCase())
   ).length;
@@ -361,59 +367,52 @@ const AdminDashboardOverview = () => {
     ? listedPendingKitchenCount
     : Number(snapshot.inventory.pendingKitchenRequests || 0);
   const openBillsCount = snapshot.bills.filter((bill) => String(bill.status).toLowerCase() === 'active').length;
-  const pendingOrderCount = report.statuses.reduce((count, item) => count + (['pending', 'placed', 'preparing', 'ready'].includes(String(item.status).toLowerCase()) ? Number(item.count || 0) : 0), 0);
-  const completedOrderCount = report.statuses.reduce((count, item) => count + (['delivered', 'served', 'completed'].includes(String(item.status).toLowerCase()) ? Number(item.count || 0) : 0), 0);
-  const todayRevenue = snapshot.orders.filter((order) => getDateKey(order.created_at) === getDateKey(new Date()) && ['delivered', 'completed', 'served'].includes(String(order.order_status).toLowerCase())).reduce((sum, order) => sum + Number(order.total_amount || 0), 0)
-    + snapshot.bills.filter((bill) => getDateKey(bill.created_at) === getDateKey(new Date()) && String(bill.status).toLowerCase() === 'paid').reduce((sum, bill) => sum + Number(bill.grand_total || 0), 0);
-  const estimatedProfit = todayRevenue * 0.35; // Placeholder estimate
-
   const stats = [
-    { title: 'Total Revenue', value: reportLoading ? '—' : money(report.summary?.totalRevenue), hint: 'in selected period', icon: CircleDollarSign, tone: 'bg-white/20 text-white', surface: 'bg-[#22c55e] border-transparent text-white', waveColor: '#ffffff', percent: '↑ 18%' },
-    { title: 'Total Orders', value: reportLoading ? '—' : statusTotal.toLocaleString('en-IN'), hint: 'in selected period', icon: ShoppingBag, tone: 'bg-white/20 text-white', surface: 'bg-[#3b82f6] border-transparent text-white', waveColor: '#ffffff', percent: '↑ 12%' },
-    { title: 'Pending Orders', value: reportLoading ? '—' : pendingOrderCount.toLocaleString('en-IN'), hint: 'active right now', icon: Clock3, tone: 'bg-white/20 text-white', surface: 'bg-[#f59e0b] border-transparent text-white', waveColor: '#ffffff', percent: '—' },
-    { title: 'Completed Orders', value: reportLoading ? '—' : completedOrderCount.toLocaleString('en-IN'), hint: 'in selected period', icon: PackageCheck, tone: 'bg-white/20 text-white', surface: 'bg-[#8b5cf6] border-transparent text-white', waveColor: '#ffffff', percent: '↑ 20%' },
-    { title: 'Today’s Revenue', value: loading ? '—' : money(todayRevenue), hint: 'from all channels today', icon: CreditCard, tone: 'bg-white/20 text-white', surface: 'bg-[#06b6d4] border-transparent text-white', waveColor: '#ffffff', percent: '↑ 5%' },
-    { title: 'Today’s Orders', value: loading ? '—' : todayOrderCount.toLocaleString('en-IN'), hint: 'from all channels today', icon: Sparkles, tone: 'bg-white/20 text-white', surface: 'bg-[#ec4899] border-transparent text-white', waveColor: '#ffffff', percent: '↑ 8%' },
-    { title: 'Total Customers', value: loading ? '—' : customerCount.toLocaleString('en-IN'), hint: 'all registered users', icon: Users, tone: 'bg-white/20 text-white', surface: 'bg-[#14b8a6] border-transparent text-white', waveColor: '#ffffff', percent: '↑ 3%' },
-    { title: 'Today’s Profit', value: loading ? '—' : money(estimatedProfit), hint: 'estimated for today', icon: TrendingUp, tone: 'bg-white/20 text-white', surface: 'bg-[#f43f5e] border-transparent text-white', waveColor: '#ffffff', percent: '↑ 15%' },
+    { title: 'Total Orders', value: reportLoading ? '—' : statusTotal.toLocaleString('en-IN'), hint: 'vs last week', icon: ShoppingBag, tone: 'bg-[#ffeadf] text-[#f04b08]', surface: 'bg-[#fffaf5] border-[#f1e9e3]', waveColor: '#ff6b25', percent: '↑ 12%' },
+    { title: 'Total Revenue', value: reportLoading ? '—' : money(report.summary?.totalRevenue), hint: 'vs last week', icon: CircleDollarSign, tone: 'bg-[#def7e8] text-[#069c49]', surface: 'bg-[#f7fcf8] border-[#e6f0e8]', waveColor: '#17ae5b', percent: '↑ 18%' },
+    { title: 'Total Customers', value: loading ? '—' : customerCount.toLocaleString('en-IN'), hint: 'vs last week', icon: Users, tone: 'bg-[#e0edff] text-[#1475f8]', surface: 'bg-[#f6f9ff] border-[#e6edf8]', waveColor: '#267cff', percent: '↑ 10%' },
+    { title: 'Total Menu Items', value: loading ? '—' : snapshot.foods.length.toLocaleString('en-IN'), hint: 'vs last week', icon: ChefHat, tone: 'bg-[#ffe4f4] text-[#d82387]', surface: 'bg-[#fff7fb] border-[#f2e7ee]', waveColor: '#e31b91', percent: '↑ 5%' },
+    { title: 'Pending Orders', value: reportLoading ? '—' : pendingOrderCount.toLocaleString('en-IN'), hint: 'in selected period', icon: Clock3, tone: 'bg-[#fff4df] text-[#d99000]', surface: 'bg-[#fffaf5] border-[#f1e9e3]', waveColor: '#d99000' },
+    { title: 'Completed Orders', value: reportLoading ? '—' : completedOrderCount.toLocaleString('en-IN'), hint: 'in selected period', icon: PackageCheck, tone: 'bg-[#f0eaff] text-[#8055dc]', surface: 'bg-[#faf8ff] border-[#ebe5f5]', waveColor: '#8055dc' },
+    { title: "Today's Revenue", value: loading ? '—' : money(todayRevenue), hint: 'from completed orders', icon: CreditCard, tone: 'bg-[#e6f7fb] text-[#159bb8]', surface: 'bg-[#f7fcfd] border-[#e6f0f2]', waveColor: '#159bb8' },
+    { title: "Today's Orders", value: loading ? '—' : todayOrderCount.toLocaleString('en-IN'), hint: 'across all channels', icon: ShoppingBag, tone: 'bg-[#fff0f7] text-[#db468f]', surface: 'bg-[#fff7fb] border-[#f2e7ee]', waveColor: '#db468f' },
   ];
   const rangeUnfinished = period === 'custom' && (!customFrom || !customTo);
 
   return (
     <main className="min-h-screen space-y-3 pb-8 text-[#17231b] sm:space-y-4">
-      <section className="relative isolate flex min-h-[152px] items-center overflow-hidden rounded-2xl border border-[#24483b] bg-[#10271f] px-3 shadow-sm sm:min-h-[142px] sm:px-8">
-        <img src={HERO_IMAGE} alt="Restaurant food spread" className="absolute inset-0 h-full w-full object-cover object-center" />
-        <div className="absolute inset-0 z-10 bg-gradient-to-r from-[#071c18]/75 via-[#10271f]/50 to-[#10271f]/5" />
-        <div className="relative z-20 w-[62%] pt-12 pb-4 sm:w-[58%] sm:py-9">
-          <p className="text-xl font-extrabold leading-tight text-white sm:text-2xl">Welcome Back, <span className="text-[#f4c45e]">{name}!</span></p>
-          <p className="mt-1 text-xs text-white/85 sm:text-sm">Manage your restaurant, orders, and grow your business.</p>
-          <p className="mt-2 text-xs font-semibold italic text-[#f4d991]">“Good Food Brings Great People Together”</p>
+      <section className="flex flex-wrap items-center justify-between gap-3">
+        <div className="min-w-0">
+          <h1 className="m-0 flex items-baseline gap-3 whitespace-nowrap leading-tight text-[#1c2c22]">
+            <span className="shrink-0 text-[26px] font-bold sm:text-[18px]">Welcome My Dashboard</span>
+          </h1>
+          <p className="mt-1 text-[10px] leading-5 text-[#718078] sm:text-[12px]">Here’s what’s happening at your restaurant today.</p>
         </div>
-        <div className="absolute right-3 top-3 z-30 flex flex-wrap justify-end gap-2 sm:right-4 sm:top-4">
-          <label className="flex h-9 items-center gap-2 rounded-xl border border-[#e4e9e3] bg-white/95 px-2.5 text-xs shadow-sm sm:px-3">
-            <CalendarDays size={15} className="text-[#536259]" />
-            <span className="sr-only">Dashboard date range</span>
-            <select value={period} onChange={(event) => setPeriod(event.target.value)} aria-label="Dashboard date range" className="max-w-[125px] bg-transparent font-semibold text-[#354239] outline-none sm:max-w-[165px]">
-              {PERIODS.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
-            </select>
-          </label>
+        <div className="flex flex-wrap items-center justify-end gap-2">
+        <label className="flex h-9 items-center gap-2 rounded-xl border border-[#e4e9e3] bg-white px-2.5 text-xs shadow-sm sm:px-3">
+          <CalendarDays size={15} className="text-[#536259]" />
+          <span className="sr-only">Dashboard date range</span>
+          <select value={period} onChange={(event) => setPeriod(event.target.value)} aria-label="Dashboard date range" className="max-w-[125px] bg-transparent font-semibold text-[#354239] outline-none sm:max-w-[165px]">
+            {PERIODS.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+          </select>
+        </label>
+        {period === 'custom' && <>
+          <input type="date" aria-label="Start date" value={customFrom} onChange={(event) => setCustomFrom(event.target.value)} className="h-9 rounded-lg border border-[#dfe7dc] bg-white px-2 text-xs" />
+          <input type="date" aria-label="End date" value={customTo} onChange={(event) => setCustomTo(event.target.value)} className="h-9 rounded-lg border border-[#dfe7dc] bg-white px-2 text-xs" />
+        </>}
         </div>
-        {period === 'custom' && <div className="absolute bottom-3 right-4 z-20 flex gap-2">
-          <input type="date" aria-label="Start date" value={customFrom} onChange={(event) => setCustomFrom(event.target.value)} className="h-8 border border-[#dfe7dc] bg-white px-2 text-xs" />
-          <input type="date" aria-label="End date" value={customTo} onChange={(event) => setCustomTo(event.target.value)} className="h-8 border border-[#dfe7dc] bg-white px-2 text-xs" />
-        </div>}
       </section>
 
       {error && <div role="status" className="border border-[#efd7bd] bg-[#fff8ed] px-4 py-2 text-xs text-[#88602a]">{error}</div>}
       {rangeUnfinished && <div role="status" className="text-xs text-[#88602a]">Select a start and end date to load the custom range.</div>}
 
-      <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <section className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
         {stats.map(({ title, value, hint, icon: Icon, tone, surface, waveColor, percent }) => <MetricCard key={title} title={title} value={value} hint={hint} icon={Icon} tone={tone} surface={surface} waveColor={waveColor} percent={percent} />)}
       </section>
 
       <section aria-label="Menu categories" className="grid grid-cols-1 gap-2 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-6">
-        {loading ? [0, 1, 2, 3, 4, 5].map((item) => <div key={item} className="h-[76px] animate-pulse border border-[#e5ece6] bg-white" />) : categoryTiles.length ? categoryTiles.map((category, index) => (
-          <button type="button" key={category.name} onClick={() => navigate('/admin/products')} className={`flex min-w-0 items-center gap-2.5 border p-2 text-left transition hover:-translate-y-0.5 hover:shadow-sm ${['bg-[#f0fbf1] border-[#e0f1df]', 'bg-[#fff8eb] border-[#f2eadb]', 'bg-[#edf7ff] border-[#dceaf5]', 'bg-[#fff2f0] border-[#f3e2df]', 'bg-[#effbf8] border-[#d8eee8]', 'bg-[#f5f1ff] border-[#e6ddf8]'][index % 6]}`}>
+        {loading ? [0, 1, 2, 3, 4, 5].map((item) => <div key={item} className="h-[76px] animate-pulse border border-[#e5ece6] bg-white" />) : categoryTiles.length ? categoryTiles.map((category) => (
+          <button type="button" key={category.name} onClick={() => navigate('/admin/products')} className="flex min-w-0 items-center gap-2.5 rounded-lg border border-[#e6ebe7] bg-[#fffaf5] p-2 text-left transition hover:-translate-y-0.5 hover:shadow-sm">
             <span className="relative h-12 w-12 shrink-0 overflow-hidden rounded-lg bg-white/80"><UtensilsCrossed size={18} className="absolute inset-0 m-auto text-[#66816b]" /><img src={imageUrl(category.image)} alt="" className="relative z-10 h-full w-full object-cover" onError={(event) => { event.currentTarget.style.display = 'none'; }} /></span>
             <span className="min-w-0 flex-1"><span className="block truncate text-[11px] font-bold text-[#304538]">{category.name}</span><span className="mt-1 block text-[9px] text-[#77847b]">{category.count} {category.count === 1 ? 'item' : 'items'}</span></span><ArrowRight size={13} className="shrink-0 rotate-[-45deg] text-[#718078]" />
           </button>
@@ -421,7 +420,7 @@ const AdminDashboardOverview = () => {
       </section>
 
       <section className="grid gap-3 xl:grid-cols-[minmax(0,1.55fr)_minmax(260px,0.95fr)_minmax(260px,0.85fr)]">
-        <article className="min-w-0 border border-[#e1e5e2] bg-[#f5f5f5] p-4 sm:p-5">
+        <article className="min-w-0 border border-[#e1e5e2] bg-[#fffaf5] p-4 sm:p-5">
           <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
             <div><h2 className="text-sm font-bold text-[#1c2c22] sm:text-base">Sales &amp; Orders Overview</h2><p className="mt-0.5 text-[11px] text-[#7d8981]">Delivered revenue · {dateLabel}</p></div>
             <div className="flex gap-1.5 text-[10px]">
@@ -444,7 +443,7 @@ const AdminDashboardOverview = () => {
           </div>
         </article>
 
-        <article className="min-w-0 border border-[#e6ebe7] bg-white p-4 sm:p-5">
+        <article className="min-w-0 border border-[#e6ebe7] bg-[#fffaf5] p-4 sm:p-5">
           <div className="mb-1"><h2 className="text-sm font-bold text-[#1c2c22] sm:text-base">Order Status</h2><p className="mt-0.5 text-[11px] text-[#7d8981]">Orders in selected period</p></div>
           <div className="relative h-[230px] sm:h-[250px]">
             {reportLoading ? <div className="h-full animate-pulse bg-[#f1f5f1]" /> : statusData.length ? <>
@@ -457,7 +456,7 @@ const AdminDashboardOverview = () => {
           </ul>
         </article>
 
-        <article className="min-w-0 border border-[#e6ebe7] bg-white p-4 sm:p-5">
+        <article className="min-w-0 border border-[#e6ebe7] bg-[#fffaf5] p-4 sm:p-5">
           <div className="mb-3 flex items-center justify-between"><h2 className="text-sm font-bold text-[#1c2c22] sm:text-base">Quick Actions</h2><button type="button" onClick={() => navigate('/admin')} className="text-[10px] font-medium text-[#66756b] hover:text-[#178a36]">View All <ArrowRight size={11} className="ml-1 inline" /></button></div>
           <div className="grid grid-cols-2 gap-2">
             {quickActions.map(({ label, icon: Icon, path, tone, surface }) => <button type="button" key={label} onClick={() => navigate(path)} className={`flex min-h-[74px] flex-col items-center justify-center gap-2 rounded-md border px-2 py-2 text-center text-white transition hover:shadow-sm ${surface}`}>
@@ -468,7 +467,7 @@ const AdminDashboardOverview = () => {
       </section>
 
       <section className="grid gap-3 xl:grid-cols-[minmax(0,2fr)_minmax(270px,0.85fr)]">
-        <article className="min-w-0 border border-[#e6ebe7] bg-white p-4 sm:p-5">
+        <article className="min-w-0 border border-[#e6ebe7] bg-[#fffaf5] p-4 sm:p-5">
           <div className="mb-3 flex items-center justify-between"><h2 className="text-sm font-bold text-[#1c2c22] sm:text-base">Recent Orders</h2><button type="button" onClick={() => navigate('/admin/orders')} className="border border-[#e4e9e5] px-2.5 py-1 text-[10px] font-medium text-[#5d6c62] hover:bg-[#f6f8f6]">View All</button></div>
           <div className="overflow-hidden rounded-xl border border-[#e6ebe7]">
             <div className="overflow-x-auto">
@@ -485,7 +484,7 @@ const AdminDashboardOverview = () => {
           </div>
         </article>
 
-        <article className="min-w-0 border border-[#e6ebe7] bg-white p-4 sm:p-5">
+        <article className="min-w-0 border border-[#e6ebe7] bg-[#fffaf5] p-4 sm:p-5">
           <div className="mb-3 flex items-center justify-between"><h2 className="text-sm font-bold text-[#1c2c22] sm:text-base">Top Selling Items</h2><button type="button" onClick={() => navigate('/admin/products')} className="border border-[#e4e9e5] px-2.5 py-1 text-[10px] font-medium text-[#5d6c62] hover:bg-[#f6f8f6]">View All</button></div>
           <div className="divide-y divide-[#edf1ed]">
             {loading ? [0, 1, 2, 3].map((row) => <div key={row} className="flex items-center gap-3 py-2.5"><div className="h-10 w-10 animate-pulse bg-[#f0f3f0]" /><div className="flex-1"><div className="h-3 w-28 animate-pulse bg-[#f0f3f0]" /><div className="mt-2 h-2 w-16 animate-pulse bg-[#f0f3f0]" /></div></div>) : topSellingItems.length ? topSellingItems.map((item, index) => <div key={item.id} className="flex items-center gap-2.5 py-2.5 first:pt-0 last:pb-0">
@@ -505,7 +504,7 @@ const AdminDashboardOverview = () => {
             value: loading ? '—' : snapshot.foods.length.toLocaleString('en-IN'),
             detail: 'Items in menu',
             icon: CookingPot,
-            bg: 'bg-[#22c55e]',
+            bg: 'bg-[#fffaf5] border-[#e6ebe7] text-[#17231b]',
             path: '/admin/products',
           },
           {
@@ -513,7 +512,7 @@ const AdminDashboardOverview = () => {
             value: loading ? '—' : Number(snapshot.inventory.lowStock || 0).toLocaleString('en-IN'),
             detail: 'Needs restocking',
             icon: AlertTriangle,
-            bg: Number(snapshot.inventory.lowStock || 0) > 0 ? 'bg-[#ef4444]' : 'bg-[#f59e0b]',
+            bg: 'bg-[#fffaf5] border-[#e6ebe7] text-[#17231b]',
             path: '/admin/inventory/products',
           },
           {
@@ -521,7 +520,7 @@ const AdminDashboardOverview = () => {
             value: loading ? '—' : openBillsCount.toLocaleString('en-IN'),
             detail: 'Awaiting settlement',
             icon: Table2,
-            bg: 'bg-[#3b82f6]',
+            bg: 'bg-[#fffaf5] border-[#e6ebe7] text-[#17231b]',
             path: '/admin/billing/history',
           },
           {
@@ -529,7 +528,7 @@ const AdminDashboardOverview = () => {
             value: loading ? '—' : pendingKitchenCount.toLocaleString('en-IN'),
             detail: 'Pending or approved',
             icon: ChefHat,
-            bg: 'bg-[#8b5cf6]',
+            bg: 'bg-[#fffaf5] border-[#e6ebe7] text-[#17231b]',
             path: '/admin/inventory/kitchen-requests',
           },
         ].map(({ title, value, detail, icon: Icon, bg, path }, index) => (
@@ -537,11 +536,11 @@ const AdminDashboardOverview = () => {
             type="button"
             key={title}
             onClick={() => navigate(path)}
-            className={`relative min-w-0 overflow-hidden rounded-xl border border-transparent p-4 sm:p-5 shadow-[0_2px_10px_rgba(20,56,34,0.08)] flex flex-col justify-between min-h-[140px] ${bg} text-white text-left transition hover:opacity-95 hover:scale-[1.01] active:scale-[0.99]`}
+            className={`relative min-w-0 overflow-hidden rounded-xl border p-4 sm:p-5 shadow-[0_2px_10px_rgba(20,56,34,0.08)] flex flex-col justify-between min-h-[140px] ${bg} text-left transition hover:scale-[1.01] active:scale-[0.99]`}
           >
             <div className="flex items-start gap-3 relative z-10">
-              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg shadow-sm bg-white/20">
-                <Icon size={24} strokeWidth={2.2} className="text-white" />
+              <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-lg shadow-sm ${title === 'Low Stock Items' ? 'bg-[#fff4df] text-[#d99000]' : 'bg-[#fff4e8] text-[#f36b2b]'}`}>
+                <Icon size={24} strokeWidth={2.2} />
               </div>
               <div className="flex-1 mt-0.5 min-w-0">
                 <h3 className="text-[12px] font-semibold opacity-90 mb-1 truncate">{title}</h3>
@@ -550,22 +549,22 @@ const AdminDashboardOverview = () => {
             </div>
 
             <div className="flex items-center gap-2 mt-5 relative z-10">
-              <span className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[11px] font-bold bg-white/25">
+              <span className="inline-flex items-center gap-1 rounded-md bg-[#e8f7ed] px-1.5 py-0.5 text-[11px] font-bold text-[#168745]">
                 Live
               </span>
-              <span className="text-[11px] font-medium opacity-75 truncate">{detail}</span>
+              <span className="text-[11px] font-medium text-[#718078] truncate">{detail}</span>
             </div>
 
-            <div className="absolute right-0 bottom-0 w-24 h-16 pointer-events-none opacity-50">
+            <div className="absolute right-0 bottom-0 w-24 h-16 pointer-events-none opacity-30">
               <svg viewBox="0 0 100 50" preserveAspectRatio="none" className="w-full h-full">
                 <defs>
                   <linearGradient id={`dash-bottom-grad-${index}`} x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#ffffff" stopOpacity="0.4" />
+                    <stop offset="0%" stopColor="#ff7a1a" stopOpacity="0.4" />
                     <stop offset="100%" stopColor="#ffffff" stopOpacity="0.0" />
                   </linearGradient>
                 </defs>
                 <path d="M0,50 L0,40 Q25,30 50,40 T100,20 L100,50 Z" fill={`url(#dash-bottom-grad-${index})`} />
-                <path d="M0,40 Q25,30 50,40 T100,20" fill="none" stroke="#ffffff" strokeWidth="2.5" />
+                <path d="M0,40 Q25,30 50,40 T100,20" fill="none" stroke="#ff7a1a" strokeWidth="2.5" />
               </svg>
             </div>
           </button>
