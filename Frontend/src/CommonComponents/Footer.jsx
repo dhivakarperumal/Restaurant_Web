@@ -32,13 +32,13 @@ const quickLinks = [
   { name: "Contact",     path: "/contact" },
 ];
 
-const serviceLinks = [
-  { name: "Dine In",          path: "/contact?service=dine-in" },
-  { name: "Takeaway",         path: "/contact?service=takeaway" },
-  { name: "Home Delivery",    path: "/contact?service=delivery" },
-  { name: "Catering",         path: "/contact?service=catering" },
-  { name: "Party Orders",     path: "/contact?service=party-orders" },
-  { name: "Corporate Events", path: "/contact?service=corporate-events" },
+const serviceNames = [
+  "Dine In",
+  "Takeaway",
+  "Home Delivery",
+  "Catering",
+  "Party Orders",
+  "Corporate Events",
 ];
 
 /* ─── Sub-components ────────────────────────────────── */
@@ -60,7 +60,7 @@ const SectionHeading = ({ icon: Icon, label }) => (
   </div>
 );
 
-/** A single footer nav link row */
+/** Clickable footer nav link row */
 const FooterLink = ({ to, children }) => (
   <li>
     <Link
@@ -70,6 +70,14 @@ const FooterLink = ({ to, children }) => (
       <FiChevronRight className="h-3.5 w-3.5 shrink-0 text-[#396F0B] transition-colors group-hover:text-[#FEB914]" />
       <span>{children}</span>
     </Link>
+  </li>
+);
+
+/** Plain (non-link) service item */
+const ServiceItem = ({ children }) => (
+  <li className="flex cursor-default items-center gap-2 py-[5px] text-[13px] text-[#d0dbd5] select-none">
+    <FiChevronRight className="h-3.5 w-3.5 shrink-0 text-[#396F0B]" />
+    <span>{children}</span>
   </li>
 );
 
@@ -106,9 +114,7 @@ const Footer = () => {
       <div
         aria-hidden="true"
         className="pointer-events-none absolute left-0 top-0 h-[340px] w-[340px] rounded-full opacity-20"
-        style={{
-          background: "radial-gradient(circle, #396F0B 0%, transparent 70%)",
-        }}
+        style={{ background: "radial-gradient(circle, #396F0B 0%, transparent 70%)" }}
       />
 
       {/* ── Food image (right side) ─────────────────── */}
@@ -131,7 +137,6 @@ const Footer = () => {
 
           {/* ── Col 1 · Brand ── */}
           <section className="flex flex-col gap-5 lg:pr-4">
-            {/* Logo */}
             <Link to="/" className="inline-block" aria-label="Foodie Restaurant home">
               <img
                 src="/images/logo.png"
@@ -145,49 +150,28 @@ const Footer = () => {
               authentic recipes and a memorable dining experience.
             </p>
 
-            {/* Social icons */}
             <div className="flex items-center gap-2" aria-label="Social media links">
-              <a
-                href="https://facebook.com"
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label="Facebook"
-                className="flex h-9 w-9 items-center justify-center rounded-full bg-[#1877F2]/90 text-white shadow-lg shadow-[#1877F2]/20 transition hover:scale-110 hover:bg-[#1877F2]"
-              >
+              <a href="https://facebook.com" target="_blank" rel="noopener noreferrer" aria-label="Facebook"
+                className="flex h-9 w-9 items-center justify-center rounded-full bg-[#1877F2]/90 text-white shadow-lg shadow-[#1877F2]/20 transition hover:scale-110 hover:bg-[#1877F2]">
                 <FaFacebookF className="text-sm" />
               </a>
-              <a
-                href="https://instagram.com"
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label="Instagram"
-                className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-[#f9ce34] via-[#ee2a7b] to-[#6228d7] text-white shadow-lg shadow-pink-500/20 transition hover:scale-110"
-              >
+              <a href="https://instagram.com" target="_blank" rel="noopener noreferrer" aria-label="Instagram"
+                className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-[#f9ce34] via-[#ee2a7b] to-[#6228d7] text-white shadow-lg shadow-pink-500/20 transition hover:scale-110">
                 <FaInstagram className="text-sm" />
               </a>
-              <a
-                href="https://youtube.com"
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label="YouTube"
-                className="flex h-9 w-9 items-center justify-center rounded-full bg-[#FF0000]/90 text-white shadow-lg shadow-red-500/20 transition hover:scale-110 hover:bg-[#FF0000]"
-              >
+              <a href="https://youtube.com" target="_blank" rel="noopener noreferrer" aria-label="YouTube"
+                className="flex h-9 w-9 items-center justify-center rounded-full bg-[#FF0000]/90 text-white shadow-lg shadow-red-500/20 transition hover:scale-110 hover:bg-[#FF0000]">
                 <FaYoutube className="text-sm" />
               </a>
-              <a
-                href="https://wa.me/919876543210"
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label="WhatsApp"
-                className="flex h-9 w-9 items-center justify-center rounded-full bg-[#25D366]/90 text-white shadow-lg shadow-green-500/20 transition hover:scale-110 hover:bg-[#25D366]"
-              >
+              <a href="https://wa.me/919876543210" target="_blank" rel="noopener noreferrer" aria-label="WhatsApp"
+                className="flex h-9 w-9 items-center justify-center rounded-full bg-[#25D366]/90 text-white shadow-lg shadow-green-500/20 transition hover:scale-110 hover:bg-[#25D366]">
                 <FaWhatsapp className="text-sm" />
               </a>
             </div>
           </section>
 
           {/* ── Col 2 · Quick Links ── */}
-          <section className="border-t border-white/8 pt-6 sm:border-t-0 lg:border-l lg:border-white/8 lg:pl-7 lg:pt-0">
+          <section className="border-t border-white/10 pt-6 sm:border-t-0 lg:border-l lg:border-white/10 lg:pl-7 lg:pt-0">
             <SectionHeading icon={HiOutlineHome} label="Quick Links" />
             <ul className="space-y-0">
               {quickLinks.map((lnk) => (
@@ -198,20 +182,18 @@ const Footer = () => {
             </ul>
           </section>
 
-          {/* ── Col 3 · Our Services ── */}
-          <section className="border-t border-white/8 pt-6 sm:border-t-0 lg:border-l lg:border-white/8 lg:pl-7 lg:pt-0">
+          {/* ── Col 3 · Our Services — plain text, no links ── */}
+          <section className="border-t border-white/10 pt-6 sm:border-t-0 lg:border-l lg:border-white/10 lg:pl-7 lg:pt-0">
             <SectionHeading icon={MdOutlineRoomService} label="Our Services" />
             <ul className="space-y-0">
-              {serviceLinks.map((lnk) => (
-                <FooterLink key={lnk.name} to={lnk.path}>
-                  {lnk.name}
-                </FooterLink>
+              {serviceNames.map((name) => (
+                <ServiceItem key={name}>{name}</ServiceItem>
               ))}
             </ul>
           </section>
 
           {/* ── Col 4 · Contact Info ── */}
-          <section className="border-t border-white/8 pt-6 sm:border-t-0 lg:border-l lg:border-white/8 lg:pl-7 lg:pt-0">
+          <section className="border-t border-white/10 pt-6 sm:border-t-0 lg:border-l lg:border-white/10 lg:pl-7 lg:pt-0">
             <SectionHeading icon={HiOutlineLocationMarker} label="Contact Info" />
             <address className="space-y-3.5 not-italic text-[13px] text-[#d0dbd5]">
 
@@ -249,7 +231,7 @@ const Footer = () => {
           </section>
 
           {/* ── Col 5 · Newsletter ── */}
-          <section className="border-t border-white/8 pt-6 sm:col-span-2 lg:col-span-1 lg:border-l lg:border-white/8 lg:pl-7 lg:pt-0">
+          <section className="border-t border-white/10 pt-6 sm:col-span-2 lg:col-span-1 lg:border-l lg:border-white/10 lg:pl-7 lg:pt-0">
             <SectionHeading icon={FiMail} label="Newsletter" />
             <p className="text-[13px] leading-6 text-[#d0dbd5]">
               Subscribe to get the latest offers, new dishes and exciting updates.
@@ -290,13 +272,10 @@ const Footer = () => {
 
         {/* ── Bottom bar ──────────────────────────────── */}
         <div className="relative z-10 border-t border-white/10">
-          {/* Gradient line above bottom bar */}
           <div className="h-px w-full bg-gradient-to-r from-transparent via-[#FEB914]/30 to-transparent" />
-
           <div className="flex flex-col items-center gap-3 py-4 text-center text-[12px] text-[#b0bbb6] sm:flex-row sm:justify-between sm:text-left">
             <p>© {new Date().getFullYear()} Foodie Restaurant. All Rights Reserved.</p>
 
-            {/* Decorative center divider */}
             <div className="hidden items-center gap-2 sm:flex">
               <span className="h-px w-12 bg-white/10" />
               <FaLeaf className="text-[#396F0B]/50" />
@@ -304,17 +283,11 @@ const Footer = () => {
             </div>
 
             <nav aria-label="Legal links" className="flex flex-wrap items-center justify-center gap-2 sm:justify-end">
-              <Link to="/privacy-policy" className="transition-colors hover:text-[#FEB914]">
-                Privacy Policy
-              </Link>
+              <Link to="/privacy-policy" className="transition-colors hover:text-[#FEB914]">Privacy Policy</Link>
               <span aria-hidden="true" className="text-white/15">|</span>
-              <Link to="/terms" className="transition-colors hover:text-[#FEB914]">
-                Terms &amp; Conditions
-              </Link>
+              <Link to="/terms" className="transition-colors hover:text-[#FEB914]">Terms &amp; Conditions</Link>
               <span aria-hidden="true" className="text-white/15">|</span>
-              <Link to="/refund-policy" className="transition-colors hover:text-[#FEB914]">
-                Refund Policy
-              </Link>
+              <Link to="/refund-policy" className="transition-colors hover:text-[#FEB914]">Refund Policy</Link>
             </nav>
           </div>
         </div>
