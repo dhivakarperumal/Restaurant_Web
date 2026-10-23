@@ -86,7 +86,68 @@ const isOrderFromToday = (order) => {
     && createdAt.getDate() === today.getDate();
 };
 
-function CustomerOrdersPage({ audience = 'admin', view = 'all', showOrderFilters = false, todayOnly = false }) {
+const KITCHEN_STATUS_TO_ORDER_STATUS = {
+  Pending: 'placed',
+  Preparing: 'preparing',
+  'Ready to Serve': 'ready',
+  Served: 'delivered',
+  Cancelled: 'cancelled',
+};
+
+const normalizeKitchenOrder = (order) => ({
+  order_number: `KOT${String(order.id).padStart(3, '0')}`,
+  kitchen_order_id: order.order_id,
+  customer_name: `Table ${order.table_number}`,
+  customer_phone: 'Dining order',
+  customer_email: '',
+  order_type: 'dine-in',
+  order_status: KITCHEN_STATUS_TO_ORDER_STATUS[order.status] || 'placed',
+  kitchen_status: order.status || 'Pending',
+  is_kitchen_order: true,
+  created_at: order.created_at,
+  table_number: order.table_number,
+  bill_number: order.bill_number,
+  round_number: order.round_number || 1,
+  payment_method: 'Table bill',
+  payment_status: order.bill_status || 'Active',
+  total_amount: (order.items || []).reduce(
+    (total, item) => total + Number(item.unit_price || 0) * Number(item.quantity || 1),
+    0
+  ),
+  items: (order.items || []).map((item) => ({
+    food_id: item.food_id,
+    product_name: item.food_name,
+    quantity: Number(item.quantity || 1),
+    unit_price: Number(item.unit_price || 0),
+    total_price: Number(item.unit_price || 0) * Number(item.quantity || 1),
+  })),
+});
+
+const fetchOrderLists = async ({ isCustomer, params, includeKitchenOrders }) => {
+  const requests = [
+    api.get(isCustomer ? '/orders/mine' : '/orders/management', {
+      params: isCustomer ? undefined : params,
+    }),
+  ];
+  if (includeKitchenOrders) {
+    requests.push(api.get('/kitchen-orders', { params: { all: 1 } }));
+  }
+
+  const [customerResponse, kitchenResponse] = await Promise.all(requests);
+  const customerOrders = Array.isArray(customerResponse.data?.data) ? customerResponse.data.data : [];
+  const kitchenOrders = Array.isArray(kitchenResponse?.data?.orders)
+    ? kitchenResponse.data.orders.map(normalizeKitchenOrder)
+    : [];
+  return [...customerOrders, ...kitchenOrders];
+};
+
+function CustomerOrdersPage({
+  audience = 'admin',
+  view = 'all',
+  showOrderFilters = false,
+  todayOnly = false,
+  includeKitchenOrders = false,
+}) {
   const getInitialOrderType = (v) => (v === 'delivery' ? 'home_delivery' : v === 'pickup' ? 'pickup' : 'all');
   const getInitialStatus = (v) => (v === 'new' ? 'placed' : v === 'cancelled' ? 'cancelled' : v === 'delivered' ? 'delivered' : 'all');
 
@@ -155,6 +216,8 @@ function CustomerOrdersPage({ audience = 'admin', view = 'all', showOrderFilters
           order.customer_name,
           order.customer_phone,
           order.customer_email,
+          order.table_number,
+          order.bill_number,
           ...(order.items || []).map((item) => item.product_name),
         ].join(' ').toLowerCase();
         return text.includes(query);
@@ -184,9 +247,7 @@ function CustomerOrdersPage({ audience = 'admin', view = 'all', showOrderFilters
         ...(filterStatus ? { status: filterStatus } : {}),
         ...(activeOrderType ? { order_type: activeOrderType } : {}),
       };
-      const endpoint = isCustomer ? '/orders/mine' : '/orders/management';
-      const { data } = await api.get(endpoint, { params: isCustomer ? undefined : params });
-      const fetchedOrders = Array.isArray(data?.data) ? data.data : [];
+      const fetchedOrders = await fetchOrderLists({ isCustomer, params, includeKitchenOrders });
       const visibleOrders = todayOnly
         ? fetchedOrders.filter(isOrderFromToday)
         : fetchedOrders;
@@ -199,7 +260,7 @@ function CustomerOrdersPage({ audience = 'admin', view = 'all', showOrderFilters
       setLoading(false);
       setRefreshing(false);
     }
-  }, [filterStatus, filterOrderType, isCustomer, orderTypeFilter, showOrderFilters, todayOnly]);
+  }, [filterStatus, filterOrderType, includeKitchenOrders, isCustomer, orderTypeFilter, showOrderFilters, todayOnly]);
 
   const fetchDeliveryPartners = useCallback(async () => {
     if (!canAssignDelivery) return;
@@ -240,10 +301,8 @@ function CustomerOrdersPage({ audience = 'admin', view = 'all', showOrderFilters
           ...(filterStatus ? { status: filterStatus } : {}),
           ...(activeOrderType ? { order_type: activeOrderType } : {}),
         };
-        const endpoint = isCustomer ? '/orders/mine' : '/orders/management';
-        const { data } = await api.get(endpoint, { params: isCustomer ? undefined : params });
+        const fetchedOrders = await fetchOrderLists({ isCustomer, params, includeKitchenOrders });
         if (isCancelled) return;
-        const fetchedOrders = Array.isArray(data?.data) ? data.data : [];
         setOrders(todayOnly ? fetchedOrders.filter(isOrderFromToday) : fetchedOrders);
         setError('');
         if (canAssignDelivery) {
@@ -267,7 +326,7 @@ function CustomerOrdersPage({ audience = 'admin', view = 'all', showOrderFilters
       isCancelled = true;
       window.clearInterval(intervalId);
     };
-  }, [canAssignDelivery, fetchDeliveryPartners, filterStatus, filterOrderType, isCustomer, orderTypeFilter, showOrderFilters, todayOnly]);
+  }, [canAssignDelivery, fetchDeliveryPartners, filterStatus, filterOrderType, includeKitchenOrders, isCustomer, orderTypeFilter, showOrderFilters, todayOnly]);
 
   const changeStatus = async (order, status, deliveryPartnerId = '') => {
     setUpdatingOrder(order.order_number);
@@ -438,6 +497,7 @@ function CustomerOrdersPage({ audience = 'admin', view = 'all', showOrderFilters
                 <option value="all">All Types</option>
                 <option value="home_delivery">Home Delivery</option>
                 <option value="pickup">Pickup</option>
+                {includeKitchenOrders && <option value="dine-in">Dining</option>}
               </select>
               <select value={statusFilter} onChange={(event) => { setStatusFilter(event.target.value); setPage(1); }} aria-label="Filter orders by status" className="h-[46px] rounded-xl border border-[#dfe2e5] bg-white px-3 text-sm text-[#263830] outline-none focus:border-[#6d9a79]">
                 <option value="all">All Status ({orders.length})</option>
@@ -479,23 +539,27 @@ function CustomerOrdersPage({ audience = 'admin', view = 'all', showOrderFilters
                 </thead>
                 <tbody className="divide-y divide-[#edf0eb]">
                   {paginatedOrders.map((order) => (
-                    <tr key={order.order_number} className="hover:bg-[#fbfcfa]">
+                    <tr key={`${order.is_kitchen_order ? 'kitchen' : 'customer'}-${order.order_number}`} className="hover:bg-[#fbfcfa]">
                       <td className="whitespace-nowrap px-4 py-3 font-mono text-xs font-bold text-[#263830]">{order.order_number}</td>
                       <td className="px-4 py-3"><p className="font-semibold text-[#263830]">{order.customer_name}</p><p className="text-xs text-[#68766e]">{order.customer_phone}</p></td>
                       <td className="max-w-56 px-4 py-3 text-xs text-[#435047]">{order.items.map((item) => `${item.product_name} ×${item.quantity}`).join(', ')}</td>
-                      <td className="whitespace-nowrap px-4 py-3 text-[#435047]">{order.order_type === 'home_delivery' ? 'Home Delivery' : 'Pickup'}</td>
+                      <td className="whitespace-nowrap px-4 py-3 text-[#435047]">{order.order_type === 'home_delivery' ? 'Home Delivery' : order.order_type === 'dine-in' ? 'Dining' : 'Pickup'}</td>
                       <td className="px-4 py-3">
-                        <select
-                          value={Object.prototype.hasOwnProperty.call(assignmentDrafts, order.order_number) ? 'assigned' : order.order_status}
-                          disabled={updatingOrder === order.order_number || order.payment_status === 'failed' || ['delivered', 'completed', 'cancelled'].includes(String(order.order_status || '').toLowerCase())}
-                          onChange={(event) => selectOrderStatus(order, event.target.value)}
-                          aria-label={`Update order ${order.order_number} status`}
-                          className="rounded-lg border border-[#d9ded8] bg-white px-2 py-1.5 text-xs font-semibold capitalize text-[#263830] disabled:opacity-50"
-                        >
-                          {getAvailableStatusOptions(order).map((status) => (
-                            <option key={status.value} value={status.value}>{status.label}</option>
-                          ))}
-                        </select>
+                        {order.is_kitchen_order ? (
+                          <span className="whitespace-nowrap rounded-full bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-800">{order.kitchen_status}</span>
+                        ) : (
+                          <select
+                            value={Object.prototype.hasOwnProperty.call(assignmentDrafts, order.order_number) ? 'assigned' : order.order_status}
+                            disabled={updatingOrder === order.order_number || order.payment_status === 'failed' || ['delivered', 'completed', 'cancelled'].includes(String(order.order_status || '').toLowerCase())}
+                            onChange={(event) => selectOrderStatus(order, event.target.value)}
+                            aria-label={`Update order ${order.order_number} status`}
+                            className="rounded-lg border border-[#d9ded8] bg-white px-2 py-1.5 text-xs font-semibold capitalize text-[#263830] disabled:opacity-50"
+                          >
+                            {getAvailableStatusOptions(order).map((status) => (
+                              <option key={status.value} value={status.value}>{status.label}</option>
+                            ))}
+                          </select>
+                        )}
                       </td>
                       {canAssignDelivery && <td className="px-4 py-3 text-xs text-[#435047]">{renderPartnerAssignment(order)}</td>}
                       <td className="whitespace-nowrap px-4 py-3 text-xs capitalize text-[#435047]">{order.payment_method} · {order.payment_status}</td>
@@ -510,7 +574,7 @@ function CustomerOrdersPage({ audience = 'admin', view = 'all', showOrderFilters
         ) : (
           <div className={`grid gap-5 ${showOrderFilters ? 'md:grid-cols-2' : 'xl:grid-cols-2'}`}>
             {paginatedOrders.map((order) => (
-              <article key={order.order_number} className="overflow-hidden rounded-2xl border border-[#e3e7e1] bg-white shadow-sm">
+              <article key={`${order.is_kitchen_order ? 'kitchen' : 'customer'}-${order.order_number}`} className="overflow-hidden rounded-2xl border border-[#e3e7e1] bg-white shadow-sm">
                 <div className="flex flex-wrap items-start justify-between gap-3 border-b border-[#edf0eb] p-5">
                   <div className="min-w-0">
                     <p className="break-all font-mono text-sm font-bold text-[#263830]">{order.order_number}</p>
@@ -524,7 +588,7 @@ function CustomerOrdersPage({ audience = 'admin', view = 'all', showOrderFilters
                         : ['assigned', 'ready'].includes(order.order_status) ? 'bg-blue-50 text-blue-700'
                           : 'bg-amber-50 text-amber-800'
                   }`}>
-                    {formatStatus(order.order_status)}
+                    {order.is_kitchen_order ? order.kitchen_status : formatStatus(order.order_status)}
                   </span>
                 </div>
 
@@ -537,9 +601,13 @@ function CustomerOrdersPage({ audience = 'admin', view = 'all', showOrderFilters
                   </div>
                   <div>
                     <p className="mb-2 flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-[#879088]">
-                      <MapPin size={14} /> {order.order_type === 'pickup' ? 'Pickup' : 'Home Delivery address'}
+                      <MapPin size={14} /> {order.is_kitchen_order ? 'Dining table' : order.order_type === 'pickup' ? 'Pickup' : 'Home Delivery address'}
                     </p>
-                    {order.address ? (
+                    {order.is_kitchen_order ? (
+                      <p className="text-sm leading-6 text-[#435047]">
+                        Table {order.table_number}{order.bill_number ? ` · Bill ${order.bill_number}` : ''} · Round {order.round_number}
+                      </p>
+                    ) : order.address ? (
                       <p className="text-sm leading-6 text-[#435047]">
                         {[order.address.address_line, order.address.area_locality, order.address.landmark, order.address.city, order.address.state, order.address.pincode].filter(Boolean).join(', ')}
                       </p>
@@ -561,7 +629,7 @@ function CustomerOrdersPage({ audience = 'admin', view = 'all', showOrderFilters
                       <div className="min-w-0 flex-1">
                         <p className="truncate text-sm font-semibold text-[#263830]">{item.product_name}</p>
                         <p className="text-xs text-[#7a857d]">
-                          {item.portion_size} · Qty {item.quantity}
+                          {item.portion_size ? `${item.portion_size} · ` : ''}Qty {item.quantity}
                           {Array.isArray(item.selected_addons) && item.selected_addons.length > 0
                             ? ` · ${item.selected_addons.join(', ')}`
                             : ''}
@@ -588,7 +656,7 @@ function CustomerOrdersPage({ audience = 'admin', view = 'all', showOrderFilters
                     </p>
                     <p className="mt-1 text-lg font-extrabold text-[#263830]">₹{Number(order.total_amount).toFixed(2)}</p>
                   </div>
-                  {!isCustomer && (
+                  {!isCustomer && !order.is_kitchen_order && (
                     <label className="text-xs font-semibold text-[#68766e]">
                       Update order
                       <select

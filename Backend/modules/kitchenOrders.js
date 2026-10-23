@@ -327,7 +327,7 @@ async function updateKitchenOrderStatus({ orderId, status }) {
 }
 
 async function listKitchenOrders(filters = {}) {
-  let query = `SELECT ko.order_id, ko.bill_id, ko.round_number, ko.table_id, ko.table_number,
+  let query = `SELECT ko.id, ko.order_id, ko.bill_id, ko.round_number, ko.table_id, ko.table_number,
                       ko.order_type, ko.status, ko.created_by, ko.user_id, ko.created_at, ko.updated_at,
                       tb.bill_number, tb.status AS bill_status
                FROM kitchen_orders ko
@@ -350,7 +350,7 @@ async function listKitchenOrders(filters = {}) {
   if (conditions.length > 0) {
     query += ` WHERE ${conditions.join(' AND ')}`;
   }
-  query += ` ORDER BY ko.created_at DESC LIMIT 100`;
+  query += ` ORDER BY ko.created_at DESC${filters.includeAll ? '' : ' LIMIT 100'}`;
 
   const [orders] = await db.execute(query, params);
   if (!orders.length) return [];

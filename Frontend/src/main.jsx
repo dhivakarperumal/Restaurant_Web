@@ -244,7 +244,7 @@ const router = createHashRouter([
           },
           {
             path: 'orders',
-            element: <CustomerOrdersPage key="admin-orders-all" audience="admin" view="all" showOrderFilters />,
+            element: <CustomerOrdersPage key="admin-orders-all" audience="admin" view="all" showOrderFilters includeKitchenOrders />,
           },
           {
             path: 'kitchen-orders',

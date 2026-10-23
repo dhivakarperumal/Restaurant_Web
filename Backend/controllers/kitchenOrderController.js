@@ -61,8 +61,13 @@ async function submitKitchenOrder(req, res) {
 
 async function getKitchenOrders(req, res) {
   try {
-    const { status, table_id, order_type } = req.query || {};
-    const orders = await listKitchenOrders({ status, table_id, order_type });
+    const { status, table_id, order_type, all } = req.query || {};
+    const orders = await listKitchenOrders({
+      status,
+      table_id,
+      order_type,
+      includeAll: all === '1',
+    });
     return res.json({ success: true, orders });
   } catch (error) {
     console.error('Failed to load kitchen orders:', error.message);
