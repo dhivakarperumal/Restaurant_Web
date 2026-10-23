@@ -54,9 +54,7 @@ function ShopPromoBanner({ variant }) {
           backgroundRepeat: 'no-repeat',
         }}
       >
-        <div className="flex min-h-[150px] items-stretch bg-[linear-gradient(90deg,rgba(244,239,230,0.82)_0%,rgba(244,239,230,0.78)_42%,rgba(244,239,230,0.45)_58%,rgba(244,239,230,0.08)_100%)]">
-          <div className="absolute inset-y-0 left-0 w-[18%] bg-[radial-gradient(circle_at_left,_rgba(196,214,138,0.2),transparent_60%)]" />
-
+        <div className="flex min-h-[150px] items-stretch">
           <div className="relative z-10 flex w-full flex-col justify-center px-5 py-6 sm:px-7 lg:w-[44%] lg:shrink-0 lg:px-10 lg:py-8">
             <div className="mb-3 flex items-center gap-3 text-[#d39d2d]">
               <p className="text-[10px] font-black uppercase tracking-[0.28em] sm:text-[11px]">
@@ -114,7 +112,6 @@ function ShopPromoBanner({ variant }) {
           </div>
 
           <div className="relative ml-auto hidden w-[30%] min-w-[220px] flex-1 overflow-hidden lg:block">
-            <div className="absolute inset-0 bg-[linear-gradient(to_left,rgba(244,239,230,0.08),rgba(244,239,230,0.02))]" />
             <div
               className="absolute right-5 top-7 z-10 text-right font-serif italic text-[#2b251e]"
               style={{ fontFamily: "'Dancing Script', cursive, serif" }}
