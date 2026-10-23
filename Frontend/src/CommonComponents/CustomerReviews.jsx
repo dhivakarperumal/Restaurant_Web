@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ChevronLeft, ChevronRight, Leaf, Quote, Star, UsersRound } from "lucide-react";
 import { Swiper, SwiperSlide } from "swiper/react";
+import { Autoplay } from "swiper/modules";
 import api, { BACKEND_BASE_URL } from "../api";
 import PageContainer from "./PageContainer";
 import "swiper/css";
@@ -196,12 +197,19 @@ const CustomerReviews = () => {
                 )}
                 <Swiper
                   className="customer-reviews-swiper !overflow-hidden !py-2"
+                  modules={[Autoplay]}
                   onSwiper={(swiper) => {
                     swiperRef.current = swiper;
                   }}
                   spaceBetween={14}
                   slidesPerView={1}
                   loop={reviews.length > 3}
+                  rewind={reviews.length > 1 && reviews.length <= 3}
+                  autoplay={reviews.length > 1 ? {
+                    delay: 4000,
+                    disableOnInteraction: false,
+                    pauseOnMouseEnter: true,
+                  } : false}
                   breakpoints={{
                     640: { slidesPerView: 2, spaceBetween: 16 },
                     1024: { slidesPerView: 3, spaceBetween: 20 },
