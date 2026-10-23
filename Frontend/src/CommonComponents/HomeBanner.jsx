@@ -352,9 +352,10 @@ export default function HomeBanner() {
   const link = getBannerLink(banner?.link);
   const isExternal = /^https?:\/\//i.test(link);
 
-  const title = banner?.title?.trim() || "";
-  const subtitle = banner?.subtitle?.trim() || "";
-  const description = banner?.description?.trim() || "";
+  const title = banner?.title || "Authentic Homemade Food";
+  const description =
+    banner?.description ||
+    "Delicious, hygienic and freshly prepared meals from our trusted home chefs, delivered to your doorstep.";
 
   const renderOrderButton = () =>
     isExternal ? (
@@ -413,24 +414,40 @@ export default function HomeBanner() {
         {/* Content */}
         <PageContainer className="relative z-10 flex min-h-[600px] items-center pb-36 pt-12 sm:min-h-[620px] sm:pb-40 lg:min-h-[570px] lg:pb-40">
           <div className="max-w-[650px]">
-            {subtitle && (
-              <p className="mb-5 flex items-center gap-3 text-[10px] font-bold uppercase tracking-[0.28em] text-[#f6c88b] sm:text-xs sm:tracking-[0.35em]">
-                <span className="h-px w-8 bg-[#f6a34b]" />
-                {subtitle}
-              </p>
-            )}
+            <p className="mb-5 flex items-center gap-3 text-[10px] font-bold uppercase tracking-[0.28em] text-[#f6c88b] sm:text-xs sm:tracking-[0.35em]">
+              <span className="h-px w-8 bg-[#f6a34b]" />
+              Homemade Food, Healthy Life
+            </p>
 
-            {title && (
-              <h1 className="max-w-[650px] whitespace-pre-line font-serif text-[clamp(2.7rem,6.5vw,5.5rem)] font-black leading-[1.02] tracking-[-0.045em] text-white">
-                {title}
-              </h1>
-            )}
+            <h1 className="max-w-[650px] font-serif text-[clamp(2.7rem,6.5vw,5.5rem)] font-black leading-[1.02] tracking-[-0.045em] text-white">
+              {title.toLowerCase().includes("homemade") ? (
+                <>
+                  {title.slice(
+                    0,
+                    title.toLowerCase().indexOf("homemade")
+                  )}
+                  <span className="text-[#ff6b20]">
+                    {title.slice(
+                      title.toLowerCase().indexOf("homemade"),
+                      title.toLowerCase().indexOf("homemade") + 9
+                    )}
+                  </span>
+                  {title.slice(
+                    title.toLowerCase().indexOf("homemade") + 9
+                  )}
+                </>
+              ) : (
+                <>
+                  Authentic
+                  <br />
+                  <span className="text-[#ff6b20]">Homemade</span> Food
+                </>
+              )}
+            </h1>
 
-            {description && (
-              <p className="mt-5 max-w-[480px] text-sm leading-6 text-white/85 sm:text-base sm:leading-7">
-                {description}
-              </p>
-            )}
+            <p className="mt-5 max-w-[480px] text-sm leading-6 text-white/85 sm:text-base sm:leading-7">
+              {description}
+            </p>
 
             <div className="mt-7 flex flex-wrap items-center gap-3.5">
               {renderOrderButton()}
