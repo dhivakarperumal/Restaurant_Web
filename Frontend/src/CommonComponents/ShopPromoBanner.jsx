@@ -46,10 +46,16 @@ function ShopPromoBanner({ variant }) {
     return (
       <article
         aria-label="Delivery Banner"
-        className="col-span-full isolate overflow-hidden rounded-[18px] border border-[#e9d8b1] bg-[#f4efe6] shadow-[0_0_0_1px_rgba(220,189,118,0.2)]"
+        className="col-span-full isolate overflow-hidden rounded-[18px] border border-[#e9d8b1] shadow-[0_0_0_1px_rgba(220,189,118,0.2)]"
+        style={{
+          backgroundImage: "linear-gradient(90deg, rgba(245,240,230,0.96) 0%, rgba(245,240,230,0.94) 36%, rgba(243,234,216,0.76) 52%, rgba(243,234,216,0.35) 100%), url('/images/delivery.png')",
+          backgroundSize: 'cover',
+          backgroundPosition: 'center right',
+          backgroundRepeat: 'no-repeat',
+        }}
       >
         <div className="relative flex min-h-[200px] items-stretch">
-          <div className="absolute inset-y-0 left-0 w-[18%] bg-[radial-gradient(circle_at_left,_rgba(196,214,138,0.28),transparent_60%)]" />
+          <div className="absolute inset-y-0 left-0 w-[18%] bg-[radial-gradient(circle_at_left,_rgba(196,214,138,0.2),transparent_60%)]" />
 
           <div className="relative z-10 flex w-full flex-col justify-center px-5 py-6 sm:px-7 lg:w-[44%] lg:shrink-0 lg:px-10 lg:py-8">
             <div className="mb-3 flex items-center gap-3 text-[#d39d2d]">
