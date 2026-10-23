@@ -255,8 +255,7 @@ const Sidebar = ({ isOpen, onClose, collapsed, onToggleCollapse }) => {
         data-sidebar="admin-sidebar"
         className={`
           fixed top-0 left-0 z-50 h-full flex flex-col
-          bg-brand-bg
-          border-r border-[#1f3228]
+          border-r border-white/20
           
           transition-all duration-300
           ${isOpen ? "translate-x-0" : "-translate-x-full"}
@@ -265,8 +264,8 @@ const Sidebar = ({ isOpen, onClose, collapsed, onToggleCollapse }) => {
         `}
       >
         {/* ========== LOGO ========== */}
-        <div className={`flex items-center gap-3 border-b border-[#1f3228] shrink-0 ${collapsed ? "px-3 py-3 justify-center" : "px-5 py-3"}`}>
-          <div className={`flex shrink-0 items-center justify-center overflow-hidden rounded-xl border border-[#d4a843]/30 bg-white shadow-sm ${collapsed ? "h-12 w-12 p-1" : "h-16 w-16"}`}>
+        <div className={`flex items-center gap-3 border-b border-white/20 shrink-0 ${collapsed ? "px-3 py-3 justify-center" : "px-5 py-3"}`}>
+          <div className={`flex shrink-0 items-center justify-center overflow-hidden rounded-xl border border-white/30 bg-white shadow-sm ${collapsed ? "h-12 w-12 p-1" : "h-16 w-16"}`}>
             <img src={Logo} alt="Admin restaurant logo" className="w-full h-full object-contain" />
           </div>
 
@@ -310,10 +309,10 @@ const Sidebar = ({ isOpen, onClose, collapsed, onToggleCollapse }) => {
                     title={collapsed ? item.label : ""}
                     className={`
                       w-full flex items-center gap-3 px-3 py-3 rounded-lg text-sm
-                      transition-all duration-200 group
+                      admin-sidebar-link transition-all duration-200 group
                       ${isAnyChildActive
-                        ? "bg-[#1f3228] text-white border-l-2 border-white"
-                        : "text-white hover:text-white hover:bg-[#1f3228]/70"
+                        ? "admin-sidebar-link-active border-l-2 border-white"
+                        : ""
                       }
                     `}
                   >
@@ -351,18 +350,15 @@ const Sidebar = ({ isOpen, onClose, collapsed, onToggleCollapse }) => {
                             key={sub.path}
                             to={sub.path}
                             onClick={() => isOpen && onClose()}
-                            className={`
-                              flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-xs
-                              transition-all duration-200
-                              ${isActive
-                                ? "bg-[#d4a843] text-[#162420] font-semibold"
-                                : "text-white hover:text-white hover:bg-[#1f3228]"
-                              }
-                            `}
+                            className={`admin-sidebar-link ${
+                              isActive
+                                ? "admin-sidebar-link-active font-semibold"
+                                : "text-white"
+                            } flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-xs transition-all duration-200`}
                             title={collapsed && sub.badge ? `${sub.label} (${pendingCount})` : ''}
                           >
-                            <SubIcon className={`w-3.5 h-3.5 shrink-0 ${isActive ? "text-[#162420]" : "text-white"}`} />
-                            <span className={`truncate flex-1 ${isActive ? "text-[#162420]" : "text-white"}`}>{sub.label}</span>
+                            <SubIcon className="w-3.5 h-3.5 shrink-0 text-white" />
+                            <span className="truncate flex-1 text-white">{sub.label}</span>
                             {sub.badge === 'pending' && pendingCount > 0 && !collapsed && (
                               <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/20 text-amber-400 border border-amber-500/30 ml-2 shrink-0">
                                 {pendingCount}
@@ -386,18 +382,14 @@ const Sidebar = ({ isOpen, onClose, collapsed, onToggleCollapse }) => {
                 end={item.exact}
                 title={collapsed ? item.label : ""}
                 onClick={() => isOpen && onClose()}
-                className={`
-                  flex items-center gap-3 px-3 py-3 rounded-lg text-sm
-                  transition-all duration-200
-                  ${isActive
-                    ? "bg-[#d4a843] text-[#162420] font-semibold shadow-md"
-                    : "text-white hover:text-white hover:bg-[#1f3228]/70"
-                  }
-                  ${collapsed ? "justify-center" : ""}
-                `}
+                className={`admin-sidebar-link flex items-center gap-3 rounded-lg px-3 py-3 text-sm transition-all duration-200 ${
+                  isActive
+                    ? "admin-sidebar-link-active font-semibold shadow-md"
+                    : "text-white"
+                } ${collapsed ? "justify-center" : ""}`}
               >
-                <Icon className={`w-[17px] h-[17px] shrink-0 ${isActive ? "text-[#162420]" : "text-white"}`} />
-                {!collapsed && <span className={`font-medium truncate ${isActive ? "text-[#162420]" : "text-white"}`}>{item.label}</span>}
+                <Icon className="w-[17px] h-[17px] shrink-0 text-white" />
+                {!collapsed && <span className="font-medium truncate text-white">{item.label}</span>}
               </NavLink>
             );
           })}
@@ -408,30 +400,26 @@ const Sidebar = ({ isOpen, onClose, collapsed, onToggleCollapse }) => {
           to="/"
           title={collapsed ? "Back Home" : ""}
           onClick={() => isOpen && onClose()}
-          className={`
-            mx-3 mb-3 flex items-center gap-3 px-3 py-3 rounded-lg text-sm
-            transition-all duration-200
-            ${isRouteActive("/")
-              ? "bg-[#d4a843] text-[#162420] font-semibold shadow-md"
-              : "text-white hover:text-white hover:bg-[#1f3228]/70"
-            }
-            ${collapsed ? "justify-center" : ""}
-          `}
+          className={`admin-sidebar-link mx-3 mb-3 flex items-center gap-3 rounded-lg px-3 py-3 text-sm transition-all duration-200 ${
+            isRouteActive("/")
+              ? "admin-sidebar-link-active font-semibold shadow-md"
+              : "text-white"
+          } ${collapsed ? "justify-center" : ""}`}
         >
-          <Home className={`w-[17px] h-[17px] shrink-0 ${isRouteActive("/") ? "text-[#162420]" : "text-white"}`} />
-          {!collapsed && <span className={`font-medium truncate ${isRouteActive("/") ? "text-[#162420]" : "text-white"}`}>Back Home</span>}
+          <Home className="w-[17px] h-[17px] shrink-0 text-white" />
+          {!collapsed && <span className="font-medium truncate text-white">Back Home</span>}
         </NavLink>
 
         {/* ========== COLLAPSE BUTTON ========== */}
         <button
           onClick={onToggleCollapse}
-          className="
+          className="admin-sidebar-collapse
             hidden lg:flex absolute -right-3 top-1/2 -translate-y-1/2
             w-7 h-7 rounded-full
-            bg-[#d4a843] shadow-lg
-            border border-[#162420]
+            bg-white shadow-lg
+            border border-white
             items-center justify-center
-            text-[#162420] hover:scale-105 transition-all duration-200
+            hover:scale-105 transition-all duration-200
           "
           aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
         >
@@ -442,9 +430,9 @@ const Sidebar = ({ isOpen, onClose, collapsed, onToggleCollapse }) => {
 
         {/* ========== BOTTOM USER STRIP ========== */}
         {!collapsed && (
-          <div className="px-3 py-4 border-t border-[#1f3228] shrink-0">
-            <div className="flex items-center gap-3 px-3 py-3 rounded-xl bg-[#1f3228] border border-white/5 shadow-inner">
-              <div className="w-9 h-9 rounded-lg bg-[#d4a843] flex items-center justify-center text-[#162420] text-sm font-bold shrink-0">
+          <div className="px-3 py-4 border-t border-white/20 shrink-0">
+            <div className="flex items-center gap-3 px-3 py-3 rounded-xl bg-white/15 border border-white/15 shadow-inner">
+              <div className="w-9 h-9 rounded-lg bg-white flex items-center justify-center text-[#FF5A00] text-sm font-bold shrink-0">
                 {(userProfile?.displayName?.[0] || "A").toUpperCase()}
               </div>
               <div className="overflow-hidden">
