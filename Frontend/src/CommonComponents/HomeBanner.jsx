@@ -271,6 +271,7 @@ import {
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import api, { BACKEND_BASE_URL } from "../api";
+import PageContainer from "./PageContainer";
 
 function resolveAssetUrl(asset) {
   if (!asset || typeof asset !== "string") return "";
@@ -413,7 +414,7 @@ export default function HomeBanner() {
         <div className="pointer-events-none absolute left-5 top-5 h-28 w-28 rounded-full border border-[#f5a047]/10" />
 
         {/* Content */}
-        <div className="relative z-10 mx-auto flex min-h-[600px] max-w-[1500px] items-center px-5 pb-36 pt-12 sm:min-h-[620px] sm:px-10 sm:pb-40 lg:min-h-[570px] lg:px-[6%] lg:pb-40">
+        <PageContainer className="relative z-10 flex min-h-[600px] items-center pb-36 pt-12 sm:min-h-[620px] sm:pb-40 lg:min-h-[570px] lg:pb-40">
           <div className="max-w-[650px]">
             <p className="mb-5 flex items-center gap-3 text-[10px] font-bold uppercase tracking-[0.28em] text-[#f6c88b] sm:text-xs sm:tracking-[0.35em]">
               <span className="h-px w-8 bg-[#f6a34b]" />
@@ -471,11 +472,11 @@ export default function HomeBanner() {
               <span>Made with love, served fresh every day</span>
             </div>
           </div>
-        </div>
+        </PageContainer>
 
         {/* Bottom benefits strip */}
         <div className="absolute inset-x-0 bottom-0 z-20 border-t border-white/10 bg-[#071c0d]/75 backdrop-blur-sm">
-          <div className="mx-auto grid max-w-[1500px] grid-cols-2 divide-x divide-y divide-white/10 sm:grid-cols-4 sm:divide-y-0 lg:px-[3%]">
+          <PageContainer className="grid grid-cols-2 divide-x divide-y divide-white/10 sm:grid-cols-4 sm:divide-y-0">
             {benefits.map(({ Icon, title, subtitle }) => (
               <div
                 key={title}
@@ -495,7 +496,7 @@ export default function HomeBanner() {
                 </div>
               </div>
             ))}
-          </div>
+          </PageContainer>
         </div>
 
         {/* Slider controls */}
