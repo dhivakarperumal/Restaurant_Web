@@ -48,13 +48,13 @@ function ShopPromoBanner({ variant }) {
         aria-label="Delivery Banner"
         className="col-span-full isolate overflow-hidden rounded-[18px] border border-[#e9d8b1] shadow-[0_0_0_1px_rgba(220,189,118,0.2)]"
         style={{
-          backgroundImage: "linear-gradient(90deg, rgba(245,240,230,0.96) 0%, rgba(245,240,230,0.94) 36%, rgba(243,234,216,0.76) 52%, rgba(243,234,216,0.35) 100%), url('/images/delivery.png')",
+          backgroundImage: "url('/images/delivery.png')",
           backgroundSize: 'cover',
           backgroundPosition: 'center right',
           backgroundRepeat: 'no-repeat',
         }}
       >
-        <div className="relative flex min-h-[200px] items-stretch">
+        <div className="flex min-h-[200px] items-stretch bg-[linear-gradient(90deg,rgba(244,239,230,0.96)_0%,rgba(244,239,230,0.95)_42%,rgba(244,239,230,0.8)_58%,rgba(244,239,230,0.05)_100%)]">
           <div className="absolute inset-y-0 left-0 w-[18%] bg-[radial-gradient(circle_at_left,_rgba(196,214,138,0.2),transparent_60%)]" />
 
           <div className="relative z-10 flex w-full flex-col justify-center px-5 py-6 sm:px-7 lg:w-[44%] lg:shrink-0 lg:px-10 lg:py-8">
@@ -113,14 +113,8 @@ function ShopPromoBanner({ variant }) {
             </div>
           </div>
 
-          <div className="relative ml-auto flex w-[30%] min-w-[220px] flex-1 overflow-hidden">
-            <img
-              src="/images/delivery.png"
-              alt="Fresh food delivery"
-              className="absolute inset-0 h-full w-full object-cover object-center"
-            />
-            <div className="absolute inset-0 bg-gradient-to-r from-[#f5f0e7]/10 via-transparent to-transparent" />
-
+          <div className="relative ml-auto hidden w-[30%] min-w-[220px] flex-1 overflow-hidden lg:block">
+            <div className="absolute inset-0 bg-[linear-gradient(to_left,rgba(244,239,230,0.08),rgba(244,239,230,0.02))]" />
             <div
               className="absolute right-5 top-7 z-10 text-right font-serif italic text-[#2b251e]"
               style={{ fontFamily: "'Dancing Script', cursive, serif" }}
