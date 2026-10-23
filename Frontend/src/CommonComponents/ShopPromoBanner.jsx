@@ -149,83 +149,106 @@ function ShopPromoBanner({ variant }) {
     );
   }
 
+  /* ── Chef banner (chef variant) – matches reference design ── */
   if (isChef) {
     const featureItems = [
-      { Icon: Leaf, label: 'Fresh\nIngredients' },
-      { Icon: ChefHat, label: 'Skilled\nChefs' },
-      { Icon: UtensilsCrossed, label: 'Authentic\nFlavours' },
-      { Icon: ShieldCheck, label: 'Quality\nYou Can Trust' },
+      { Icon: Leaf,            label: 'Fresh\nIngredients'     },
+      { Icon: ChefHat,         label: 'Skilled\nChefs'         },
+      { Icon: UtensilsCrossed, label: 'Authentic\nFlavours'    },
+      { Icon: ShieldCheck,     label: 'Quality\nYou Can Trust' },
     ];
 
     return (
       <article
         aria-label={banner.eyebrow}
-        className="group relative col-span-full isolate overflow-hidden rounded-[18px] border border-[#c9a866] shadow-[0_18px_45px_rgba(31,18,11,0.18)]"
+        className="group relative col-span-full isolate overflow-hidden rounded-[18px] border border-[#c9a866] shadow-[0_18px_45px_rgba(31,18,11,0.22)]"
+        style={{ minHeight: '200px' }}
       >
+        {/* ── Background: banner.png ── */}
         <img
-          src="https://images.unsplash.com/photo-1556910103-1c02745aae4d?auto=format&fit=crop&w=1600&q=80"
+          src="/images/banner.png"
           alt="Chef cooking in a restaurant kitchen"
-          className="absolute inset-0 h-full w-full object-cover object-center opacity-90"
+          className="absolute inset-0 h-full w-full object-cover object-left"
         />
 
-        <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(34,23,17,0.62)_0%,rgba(34,23,17,0.38)_36%,rgba(34,23,17,0.78)_100%)]" />
-        <div className="absolute inset-y-0 left-0 w-[40%] bg-gradient-to-r from-[#f6d98a]/10 to-transparent" />
+        {/* ── Dark gradient overlay – lighter on left (chef visible), dark on right (text readable) ── */}
+        <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(15,9,4,0.08)_0%,rgba(15,9,4,0.25)_38%,rgba(15,9,4,0.82)_62%,rgba(15,9,4,0.94)_100%)]" />
 
-        <svg
-          aria-hidden="true"
-          viewBox="0 0 120 260"
-          className="pointer-events-none absolute -left-6 top-0 h-full w-[110px] opacity-60"
-          preserveAspectRatio="xMidYMid meet"
-        >
-          <path d="M78 16c-16 24-18 52-2 72 7 8 13 15 18 26 11 24 8 48-6 64-15 18-38 28-57 36 15-12 29-26 36-42 8-18 8-37 5-58-4-26-7-35-1-53 5-16 8-27 7-45Z" fill="none" stroke="#e9d18f" strokeWidth="2" strokeLinecap="round" />
-          <path d="M53 58c8 17 12 36 5 52" fill="none" stroke="#e9d18f" strokeWidth="2" strokeLinecap="round" />
-          <path d="M75 118c-14 9-18 23-22 40" fill="none" stroke="#e9d18f" strokeWidth="2" strokeLinecap="round" />
+        {/* ── Decorative gold leaf – top-left ── */}
+        <svg aria-hidden="true" viewBox="0 0 80 120" className="pointer-events-none absolute left-0 top-0 h-[130px] w-[80px] opacity-80">
+          <path d="M55 6C38 26 30 52 38 70c4 9 10 16 12 26 6 22 0 44-12 56 14-14 24-30 28-50 5-20 2-40-6-60C56 30 54 18 55 6Z" fill="#b8840e" opacity="0.5"/>
+          <path d="M55 6C38 26 30 52 38 70c4 9 10 16 12 26 6 22 0 44-12 56 14-14 24-30 28-50 5-20 2-40-6-60C56 30 54 18 55 6Z" fill="none" stroke="#e9cc6e" strokeWidth="1.6"/>
+          <path d="M50 38c3 14 4 28 0 42" fill="none" stroke="#e9cc6e" strokeWidth="1.2" strokeLinecap="round"/>
+          <circle cx="57" cy="66" r="3" fill="#e9cc6e" opacity="0.8"/>
         </svg>
 
-        <svg
-          aria-hidden="true"
-          viewBox="0 0 120 260"
-          className="pointer-events-none absolute -right-6 top-0 h-full w-[110px] rotate-180 opacity-60"
-          preserveAspectRatio="xMidYMid meet"
-        >
-          <path d="M78 16c-16 24-18 52-2 72 7 8 13 15 18 26 11 24 8 48-6 64-15 18-38 28-57 36 15-12 29-26 36-42 8-18 8-37 5-58-4-26-7-35-1-53 5-16 8-27 7-45Z" fill="none" stroke="#e9d18f" strokeWidth="2" strokeLinecap="round" />
-          <path d="M53 58c8 17 12 36 5 52" fill="none" stroke="#e9d18f" strokeWidth="2" strokeLinecap="round" />
-          <path d="M75 118c-14 9-18 23-22 40" fill="none" stroke="#e9d18f" strokeWidth="2" strokeLinecap="round" />
+        {/* ── Decorative gold leaf – bottom-right ── */}
+        <svg aria-hidden="true" viewBox="0 0 80 120" className="pointer-events-none absolute bottom-0 right-0 h-[110px] w-[70px] rotate-180 opacity-75">
+          <path d="M55 6C38 26 30 52 38 70c4 9 10 16 12 26 6 22 0 44-12 56 14-14 24-30 28-50 5-20 2-40-6-60C56 30 54 18 55 6Z" fill="#b8840e" opacity="0.45"/>
+          <path d="M55 6C38 26 30 52 38 70c4 9 10 16 12 26 6 22 0 44-12 56 14-14 24-30 28-50 5-20 2-40-6-60C56 30 54 18 55 6Z" fill="none" stroke="#e9cc6e" strokeWidth="1.6"/>
+          <path d="M50 38c3 14 4 28 0 42" fill="none" stroke="#e9cc6e" strokeWidth="1.2" strokeLinecap="round"/>
         </svg>
 
-        <div className="relative z-10 flex flex-col gap-6 px-4 py-6 sm:px-8 lg:flex-row lg:items-center lg:justify-between lg:px-10 lg:py-8">
-          <div className="flex w-full flex-wrap items-center justify-center gap-3 sm:gap-5 lg:w-[45%] lg:justify-start">
+        {/* ── Small green leaves – top-right corner ── */}
+        <svg aria-hidden="true" viewBox="0 0 36 50" className="pointer-events-none absolute right-7 top-2 h-10 w-8 opacity-90">
+          <path d="M18 2C10 12 6 26 10 36c2 5 6 9 8 9s6-4 8-9c4-10 0-24-8-34Z" fill="#3a7a30" opacity="0.9"/>
+          <path d="M18 8v26" stroke="#2a5e22" strokeWidth="1" strokeLinecap="round"/>
+        </svg>
+        <svg aria-hidden="true" viewBox="0 0 30 44" className="pointer-events-none absolute right-14 top-0 h-8 w-6 opacity-70 -rotate-12">
+          <path d="M15 2C8 10 5 22 8 30c2 4 5 8 7 8s5-4 7-8c3-8 0-20-7-28Z" fill="#3a7a30" opacity="0.8"/>
+          <path d="M15 6v22" stroke="#2a5e22" strokeWidth="1" strokeLinecap="round"/>
+        </svg>
+
+        {/* ── Gold brush stroke at bottom ── */}
+        <svg aria-hidden="true" viewBox="0 0 900 22" className="pointer-events-none absolute bottom-0 left-0 w-full" preserveAspectRatio="none">
+          <path d="M0 14 Q225 2 450 10 T900 8 L900 22 L0 22Z" fill="#b8840e" opacity="0.55"/>
+          <path d="M0 18 Q225 6 450 13 T900 11" stroke="#e9cc6e" strokeWidth="1.4" fill="none" opacity="0.7"/>
+        </svg>
+
+        {/* ── Main content ── */}
+        <div className="relative z-10 flex min-h-[200px] flex-col gap-5 px-4 py-6 sm:px-7 lg:flex-row lg:items-center lg:justify-end lg:gap-10 lg:px-10 lg:py-8">
+
+          {/* Feature icons row – positioned in the centre-right area */}
+          <div className="flex w-full flex-wrap items-center justify-center gap-4 sm:gap-5 lg:w-auto lg:flex-nowrap">
             {featureItems.map(({ Icon: FeatureIcon, label }) => (
-              <div key={label} className="flex flex-col items-center gap-2 text-center text-[#f6dfb2]">
-                <span className="flex h-16 w-16 items-center justify-center rounded-full border border-[#f3d486] bg-[#f9f4e6] text-[#3f250f] shadow-[0_0_0_8px_rgba(244,211,138,0.14)] sm:h-20 sm:w-20">
-                  <FeatureIcon className="h-7 w-7 sm:h-8 sm:w-8" strokeWidth={1.8} />
+              <div key={label} className="flex flex-col items-center gap-1.5 text-center">
+                <span className="flex h-14 w-14 items-center justify-center rounded-full border-2 border-[#e8c96a] bg-[#f9f4e8] text-[#3d2208] shadow-[0_0_0_5px_rgba(233,200,106,0.2)] sm:h-16 sm:w-16">
+                  <FeatureIcon className="h-6 w-6 sm:h-7 sm:w-7" strokeWidth={1.8} />
                 </span>
-                <span className="whitespace-pre-line text-[10px] font-extrabold uppercase leading-[1.1] tracking-[0.03em] text-[#f6dfb2] sm:text-[11px]">
+                <span className="whitespace-pre-line text-[10px] font-extrabold uppercase leading-tight tracking-wide text-white [text-shadow:0_1px_3px_rgba(0,0,0,0.9)] sm:text-[11px]">
                   {label}
                 </span>
               </div>
             ))}
           </div>
 
-          <div className="flex w-full max-w-[560px] flex-col items-center text-center text-[#fdf3d8] lg:items-end lg:text-right">
-            <div className="mb-3 flex items-center justify-center gap-3 text-[10px] font-black uppercase tracking-[0.32em] text-[#f3cc7a] lg:justify-end">
-              <span className="h-px w-14 bg-[#f1c96c]/80" />
-              {banner.eyebrow}
-              <span className="h-px w-14 bg-[#f1c96c]/80" />
+          {/* Right text block */}
+          <div className="flex w-full flex-col items-center text-center lg:w-auto lg:max-w-[360px] lg:items-end lg:text-right">
+            {/* Eyebrow line */}
+            <div className="mb-2 flex items-center justify-center gap-2 lg:justify-end">
+              <span className="h-px w-10 bg-[#e8bc5c]" />
+              <p className="text-[10px] font-black uppercase tracking-[0.32em] text-[#e8bc5c]">
+                {banner.eyebrow}
+              </p>
             </div>
 
-            <h3 className="max-w-[500px] font-serif text-[2.1rem] font-black leading-[0.95] text-[#f8f0dc] sm:text-[3rem] lg:text-[4.1rem]">
+            {/* Headline */}
+            <h3 className="font-serif text-[1.7rem] font-black leading-[1.06] text-white [text-shadow:0_2px_8px_rgba(0,0,0,0.7)] sm:text-[2.2rem] lg:text-[2.55rem]">
               {banner.title}
-              <span className="mt-1 block text-[#f4d28d]">Comes to Life</span>
+              <span className="mt-0.5 block text-[#f4c83a] [text-shadow:0_2px_8px_rgba(0,0,0,0.5)]">
+                Comes to Life
+              </span>
             </h3>
 
-            <p className="mt-4 max-w-[490px] text-sm leading-6 text-[#f6e8d3] sm:text-base">
+            {/* Description */}
+            <p className="mt-3 max-w-[320px] text-[12px] leading-[1.6] text-[#eedcbc] [text-shadow:0_1px_4px_rgba(0,0,0,0.6)] sm:text-[13px]">
               {banner.description}
             </p>
 
+            {/* CTA */}
             <Link
               to="/shop"
-              className="mt-7 inline-flex items-center gap-3 rounded-xl border border-[#e5bb61] bg-[#f7cf73] px-7 py-3 text-base font-extrabold text-[#1d120d] shadow-[0_10px_20px_rgba(247,207,115,0.25)] transition-transform duration-200 hover:-translate-y-0.5 hover:bg-[#f9d77e]"
+              className="mt-4 inline-flex items-center gap-2.5 rounded-lg border border-[#b8840e] bg-[#d4a017] px-6 py-2.5 text-sm font-extrabold text-[#1a0e04] shadow-[0_6px_18px_rgba(212,160,23,0.35)] transition-all duration-200 hover:bg-[#e0b820] hover:shadow-[0_8px_24px_rgba(212,160,23,0.45)] hover:-translate-y-0.5"
             >
               {banner.action}
               <ArrowRight className="h-4 w-4" />
