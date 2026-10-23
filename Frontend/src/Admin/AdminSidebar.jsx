@@ -79,7 +79,7 @@ const navItems = [
     icon: Package,
     children: [
      
-      { path: "/admin/products", label: "All Products", icon: Package },
+      { path: "/admin/products", label: "All Foods", icon: Package },
       { path: "/admin/products/categories", label: "Category", icon: Layers },
       { path: "/admin/products/cuisines", label: "Cuisine", icon: Utensils },
      
