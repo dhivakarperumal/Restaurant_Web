@@ -260,15 +260,15 @@ const router = createHashRouter([
           },
           {
             path: 'orders/homedelivery',
-            element: <CustomerOrdersPage key="admin-orders-homedelivery" audience="admin" view="delivery" showOrderFilters />,
+            element: <CustomerOrdersPage key="admin-orders-homedelivery" audience="admin" view="delivery" showOrderFilters todayOnly />,
           },
           {
             path: 'orders/pickup',
-            element: <CustomerOrdersPage key="admin-orders-pickup" audience="admin" view="pickup" showOrderFilters />,
+            element: <CustomerOrdersPage key="admin-orders-pickup" audience="admin" view="pickup" showOrderFilters todayOnly />,
           },
           {
             path: 'orders/dining',
-            element: <ChefKitchenOrders key="admin-orders-dining" defaultViewMode="table" orderTypeFilter="dine-in" />,
+            element: <ChefKitchenOrders key="admin-orders-dining" defaultViewMode="table" orderTypeFilter="dine-in" todayOnly />,
           },
           {
             path: 'orders/cancelled',

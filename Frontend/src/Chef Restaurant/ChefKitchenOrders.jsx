@@ -79,7 +79,7 @@ const formatTimeAgo = (dateValue) => {
   return `${diffHours}h ${diffMins % 60}m ago`;
 };
 
-const ChefKitchenOrders = ({ defaultViewMode = "table", orderTypeFilter = "" }) => {
+const ChefKitchenOrders = ({ defaultViewMode = "table", orderTypeFilter = "", todayOnly = false }) => {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -97,14 +97,20 @@ const ChefKitchenOrders = ({ defaultViewMode = "table", orderTypeFilter = "" }) 
         params: orderTypeFilter ? { order_type: orderTypeFilter } : undefined,
       });
       const list = Array.isArray(response.data?.orders) ? response.data.orders : [];
-      setOrders(list);
+      const visibleOrders = todayOnly
+        ? list.filter((order) =>
+          order.created_at &&
+          new Date(order.created_at).toLocaleDateString() === new Date().toLocaleDateString()
+        )
+        : list;
+      setOrders(visibleOrders);
       setError("");
     } catch (requestError) {
       setError(requestError.response?.data?.message || "Kitchen orders could not be loaded.");
     } finally {
       setLoading(false);
     }
-  }, [orderTypeFilter]);
+  }, [orderTypeFilter, todayOnly]);
 
   useEffect(() => {
     fetchOrders(true);

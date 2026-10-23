@@ -76,7 +76,7 @@ const formatDate = (value) => {
   });
 };
 
-function CustomerOrdersPage({ audience = 'admin', view = 'all', showOrderFilters = false }) {
+function CustomerOrdersPage({ audience = 'admin', view = 'all', showOrderFilters = false, todayOnly = false }) {
   const getInitialOrderType = (v) => (v === 'delivery' ? 'home_delivery' : v === 'pickup' ? 'pickup' : 'all');
   const getInitialStatus = (v) => (v === 'new' ? 'placed' : v === 'cancelled' ? 'cancelled' : v === 'delivered' ? 'delivered' : 'all');
 
@@ -170,7 +170,14 @@ function CustomerOrdersPage({ audience = 'admin', view = 'all', showOrderFilters
       };
       const endpoint = isCustomer ? '/orders/mine' : '/orders/management';
       const { data } = await api.get(endpoint, { params: isCustomer ? undefined : params });
-      setOrders(Array.isArray(data?.data) ? data.data : []);
+      const fetchedOrders = Array.isArray(data?.data) ? data.data : [];
+      const visibleOrders = todayOnly
+        ? fetchedOrders.filter((order) =>
+          order.created_at &&
+          new Date(order.created_at).toLocaleDateString() === new Date().toLocaleDateString()
+        )
+        : fetchedOrders;
+      setOrders(visibleOrders);
       setError('');
     } catch (requestError) {
       const message = requestError.response?.data?.message || 'Customer orders could not be loaded.';
@@ -179,7 +186,7 @@ function CustomerOrdersPage({ audience = 'admin', view = 'all', showOrderFilters
       setLoading(false);
       setRefreshing(false);
     }
-  }, [filterStatus, filterOrderType, isCustomer, orderTypeFilter, showOrderFilters]);
+  }, [filterStatus, filterOrderType, isCustomer, orderTypeFilter, showOrderFilters, todayOnly]);
 
   const fetchDeliveryPartners = useCallback(async () => {
     if (!canAssignDelivery) return;

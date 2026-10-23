@@ -114,10 +114,11 @@ const navItems = [
       { path: "/admin/orders/dining", label: "Dining Orders", icon: PlusSquare },
       { path: "/admin/orders/pickup", label: "Pickup Orders", icon: PlusSquare },
       { path: "/admin/orders/homedelivery", label: "Home Delivery Orders", icon: PlusSquare },
+      { path: "/admin/event-orders", label: "Event & Bulk Orders", icon: PartyPopper },
       { path: "/admin/orders", label: "All Orders", icon: List },
       { path: "/admin/orders/delivery", label: "Delivered Orders", icon: Package },
       { path: "/admin/orders/cancelled", label: "Cancelled Orders", icon: XCircle },
-      { path: "/admin/event-orders", label: "Event & Bulk Orders", icon: PartyPopper },
+     
     ],
   },
 
@@ -131,11 +132,11 @@ const navItems = [
     label: "Reservations",
     icon: CalendarDays,
   },
-  {
-    path: "/admin/event-orders",
-    label: "Event & Bulk Orders",
-    icon: PartyPopper,
-  },
+  // {
+  //   path: "/admin/event-orders",
+  //   label: "Event & Bulk Orders",
+  //   icon: PartyPopper,
+  // },
 
  
 
