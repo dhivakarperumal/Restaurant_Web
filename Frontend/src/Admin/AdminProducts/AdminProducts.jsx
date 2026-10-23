@@ -44,7 +44,7 @@ const AdminProducts = () => {
   const [selectedCuisine, setSelectedCuisine] = useState('All Cuisines');
   const [selectedStatus, setSelectedStatus] = useState('All Status');
   const [sortBy, setSortBy] = useState('latest');
-  const [viewMode, setViewMode] = useState('table');
+  const [viewMode, setViewMode] = useState('card');
   const [selectedProductView, setSelectedProductView] = useState(null);
   const [addFoodOpen, setAddFoodOpen] = useState(false);
 
