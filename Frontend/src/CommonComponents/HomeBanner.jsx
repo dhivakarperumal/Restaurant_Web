@@ -120,7 +120,7 @@ export default function HomeBanner() {
   return (
     <section className="relative isolate w-full overflow-hidden bg-[#20170e] text-white">
       {/* Main hero */}
-      <div className="relative min-h-[600px] sm:min-h-[620px] lg:min-h-[570px]">
+      <div className="relative h-[600px] overflow-hidden sm:h-[620px] lg:h-[570px]">
         {/* Chef and food background image */}
         {image ? (
           <picture key={banner?.id || image}>
@@ -149,7 +149,7 @@ export default function HomeBanner() {
         <div className="pointer-events-none absolute left-5 top-5 h-28 w-28 rounded-full border border-[#f5a047]/10" />
 
         {/* Content */}
-        <PageContainer className="relative z-10 flex min-h-[600px] items-center pb-36 pt-12 sm:min-h-[620px] sm:pb-40 lg:min-h-[570px] lg:pb-40">
+        <PageContainer className="relative z-10 flex h-[600px] items-center pb-36 pt-12 sm:h-[620px] sm:pb-40 lg:h-[570px] lg:pb-40">
           <div className="max-w-[650px]">
             {subtitle && (
               <p className="mb-5 flex items-center gap-3 text-[10px] font-bold uppercase tracking-[0.28em] text-[#f6c88b] sm:text-xs sm:tracking-[0.35em]">
