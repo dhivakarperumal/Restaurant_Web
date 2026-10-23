@@ -430,7 +430,8 @@ export default function ServerSupplies() {
         </div>
       </header>}
 
-      <div className="flex gap-2 border-b border-slate-200" role="tablist" aria-label="Serving supplies sections">
+      <div className="flex items-center justify-between gap-3 border-b border-slate-200">
+      <div className="flex gap-2" role="tablist" aria-label="Serving supplies sections">
         {[
           { id: 'items', label: 'All Supply Items', count: items.length },
           { id: 'requests', label: 'Supply Requests', count: requests.length },
@@ -449,6 +450,10 @@ export default function ServerSupplies() {
             <span className={`rounded-full px-2 py-0.5 text-xs ${activeTab === tab.id ? 'bg-emerald-50 text-[#1a3c36]' : 'bg-slate-100 text-slate-500'}`}>{tab.count}</span>
           </button>
         ))}
+      </div>
+      {!isAdmin && <button type="button" onClick={() => openRequestForm()} className="mb-1 inline-flex h-11 shrink-0 items-center justify-center gap-2 rounded-xl bg-[#1a3c36] px-4 text-sm font-semibold text-white hover:bg-[#244e45]">
+        <Plus size={18} /> Request Supplies
+      </button>}
       </div>
 
       {activeTab === 'items' && <div id="supplies-panel-items" role="tabpanel" aria-labelledby="supplies-tab-items" className="space-y-6">
@@ -491,7 +496,9 @@ export default function ServerSupplies() {
           </div>
           <span className="rounded-full bg-amber-50 px-3 py-1 text-sm font-semibold text-amber-800">{requests.filter((request) => request.status === 'pending').length} pending</span>
         </div>
-        <div className="flex flex-col gap-3 border-b border-slate-100 p-4 xl:flex-row xl:items-center">
+      </section>
+
+      <div className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm xl:flex-row xl:items-center">
           <label className="relative min-w-0 flex-1">
             <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
             <input
@@ -523,10 +530,9 @@ export default function ServerSupplies() {
             <button type="button" onClick={() => setRequestView('grid')} aria-label="Grid view" aria-pressed={requestView === 'grid'} className={`flex w-14 items-center justify-center ${requestView === 'grid' ? 'bg-[#1a3c36] text-white' : 'bg-white text-slate-600 hover:bg-slate-50'}`}><LayoutGrid size={19} /></button>
             <button type="button" onClick={() => setRequestView('table')} aria-label="Table view" aria-pressed={requestView === 'table'} className={`flex w-14 items-center justify-center border-l border-slate-200 ${requestView === 'table' ? 'bg-[#1a3c36] text-white' : 'bg-white text-slate-600 hover:bg-slate-50'}`}><Table2 size={19} /></button>
           </div>
-          {!isAdmin && <button type="button" onClick={() => openRequestForm()} className="inline-flex h-[52px] shrink-0 items-center justify-center gap-2 rounded-xl bg-[#1a3c36] px-5 text-sm font-semibold text-white hover:bg-[#244e45]">
-            <Plus size={18} /> Request Supplies
-          </button>}
-        </div>
+      </div>
+
+      <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
         {requests.length === 0 ? (
           <p className="p-5 text-sm text-slate-500">{isAdmin ? 'There are no supply requests yet.' : 'You have not submitted any supply requests yet.'}</p>
         ) : filteredRequests.length === 0 ? (
