@@ -414,8 +414,8 @@ export default function HomeBanner() {
         )}
 
         {/* Dark overlay keeps the text readable */}
-        <div className="absolute inset-0 bg-gradient-to-r from-[#160e08]/95 via-[#21150b]/75 to-transparent" />
-        <div className="absolute inset-0 bg-gradient-to-t from-[#101b0d]/75 via-transparent to-black/15" />
+        <div className="absolute inset-0 bg-gradient-to-r from-[#160e08]/65 via-[#21150b]/40 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-t from-[#101b0d]/40 via-transparent to-black/5" />
 
         {/* Decorative details */}
         <div className="pointer-events-none absolute left-0 top-0 h-40 w-40 rounded-full border border-[#f5a047]/10" />
@@ -483,7 +483,7 @@ export default function HomeBanner() {
         </div>
 
         {/* Bottom benefits strip */}
-        <div className="absolute inset-x-0 bottom-0 z-20 border-t border-white/10 bg-[#071c0d]/90 backdrop-blur-md">
+        <div className="absolute inset-x-0 bottom-0 z-20 border-t border-white/10 bg-[#071c0d]/75 backdrop-blur-sm">
           <div className="mx-auto grid max-w-[1500px] grid-cols-2 divide-x divide-y divide-white/10 sm:grid-cols-4 sm:divide-y-0 lg:px-[3%]">
             {benefits.map(({ Icon, title, subtitle }) => (
               <div
