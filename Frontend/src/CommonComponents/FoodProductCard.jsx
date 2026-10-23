@@ -132,9 +132,9 @@ function FoodProductCard({
           </button>
         </div>
 
-        <div className="mt-3 flex items-center justify-between gap-2 border-t border-slate-100 pt-3">
-          <div>
-            <div className="flex items-baseline gap-1.5">
+        <div className="mt-3 flex flex-wrap items-center justify-between gap-x-2 gap-y-3 border-t border-slate-100 pt-3">
+          <div className="min-w-0 flex-1">
+            <div className="flex flex-wrap items-baseline gap-x-1.5">
               <span className="text-lg font-black text-[#1a3c36]">₹{price.toFixed(2)}</span>
               {discount > 0 && mrp > price && (
                 <span className="text-xs text-slate-400 line-through">₹{mrp.toFixed(2)}</span>
@@ -142,7 +142,7 @@ function FoodProductCard({
             </div>
             {food.portion_size && <p className="text-[10px] font-medium text-slate-400">{food.portion_size}</p>}
           </div>
-          <div className="flex shrink-0 items-center gap-1.5">
+          <div className="ml-auto flex shrink-0 items-center gap-1.5">
             <button
               type="button"
               onClick={(event) => {
@@ -150,7 +150,7 @@ function FoodProductCard({
                 onCustomize?.(food);
               }}
               disabled={!isAvailable}
-              className="inline-flex items-center rounded-xl border border-[#1a3c36] px-2.5 py-2 text-[11px] font-bold text-[#1a3c36] transition hover:bg-emerald-50 active:scale-95 disabled:cursor-not-allowed disabled:border-slate-200 disabled:text-slate-400"
+              className="inline-flex items-center justify-center whitespace-nowrap rounded-xl border border-[#1a3c36] px-2.5 py-2 text-[11px] font-bold text-[#1a3c36] transition hover:bg-emerald-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 focus-visible:ring-offset-2 active:scale-95 disabled:cursor-not-allowed disabled:border-slate-200 disabled:text-slate-400"
             >
               Customize
             </button>
@@ -161,7 +161,7 @@ function FoodProductCard({
                 onAdd?.(food);
               }}
               disabled={!isAvailable}
-              className="inline-flex items-center gap-1 rounded-xl bg-[#1a3c36] px-2.5 py-2 text-xs font-bold text-white shadow-sm transition hover:bg-[#245048] active:scale-95 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400"
+              className="inline-flex items-center justify-center gap-1 whitespace-nowrap rounded-xl bg-[#1a3c36] px-2.5 py-2 text-xs font-bold text-white shadow-sm transition hover:bg-[#245048] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 focus-visible:ring-offset-2 active:scale-95 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400"
             >
               {isAvailable && <Plus className="h-3.5 w-3.5 text-emerald-300" />}
               {isAvailable ? (cartQuantity > 0 ? `Add (${cartQuantity})` : 'Add') : 'Unavailable'}
