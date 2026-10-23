@@ -1,4 +1,3 @@
-const { randomUUID } = require('crypto');
 const db = require('../config/db');
 const { isFoodScheduledNow } = require('./foodAvailability');
 const {
@@ -6,6 +5,82 @@ const {
   initializeTableBillsSchema,
   recalculateBillTotals,
 } = require('./tableBills');
+
+const formatKotNumber = (number) => `KOT${String(number).padStart(3, '0')}`;
+
+async function migrateKitchenOrderIdsToKot() {
+  const connection = await db.getConnection();
+  try {
+    await connection.query(`
+      CREATE TABLE IF NOT EXISTS kitchen_order_kot_sequence (
+        id TINYINT UNSIGNED NOT NULL PRIMARY KEY,
+        last_number BIGINT UNSIGNED NOT NULL DEFAULT 0
+      ) ENGINE=InnoDB
+    `);
+    const [sequenceInsert] = await connection.execute(
+      'INSERT IGNORE INTO kitchen_order_kot_sequence (id, last_number) VALUES (1, 0)'
+    );
+
+    await connection.query('SET FOREIGN_KEY_CHECKS = 0');
+    await connection.beginTransaction();
+    const [orders] = await connection.execute(
+      'SELECT id, order_id FROM kitchen_orders ORDER BY id'
+    );
+    const [[sequence]] = await connection.execute(
+      'SELECT last_number FROM kitchen_order_kot_sequence WHERE id = 1 FOR UPDATE'
+    );
+    let lastNumber = Number(sequence.last_number);
+
+    if (sequenceInsert.affectedRows > 0) {
+      lastNumber = 0;
+      for (const order of orders) {
+        lastNumber += 1;
+        const kotNumber = formatKotNumber(lastNumber);
+        await connection.execute(
+          'UPDATE kitchen_order_items SET order_id = ? WHERE order_id = ?',
+          [kotNumber, order.order_id]
+        );
+        await connection.execute(
+          'UPDATE kitchen_orders SET order_id = ? WHERE id = ?',
+          [kotNumber, order.id]
+        );
+      }
+    } else {
+      for (const order of orders) {
+        const currentNumber = /^KOT(\d+)$/i.exec(String(order.order_id || ''));
+        if (currentNumber) {
+          lastNumber = Math.max(lastNumber, Number(currentNumber[1]));
+          continue;
+        }
+        lastNumber += 1;
+        const kotNumber = formatKotNumber(lastNumber);
+        await connection.execute(
+          'UPDATE kitchen_order_items SET order_id = ? WHERE order_id = ?',
+          [kotNumber, order.order_id]
+        );
+        await connection.execute(
+          'UPDATE kitchen_orders SET order_id = ? WHERE id = ?',
+          [kotNumber, order.id]
+        );
+      }
+    }
+
+    await connection.execute(
+      'UPDATE kitchen_order_kot_sequence SET last_number = ? WHERE id = 1',
+      [lastNumber]
+    );
+    await connection.commit();
+  } catch (error) {
+    await connection.rollback();
+    throw error;
+  } finally {
+    try {
+      await connection.query('SET FOREIGN_KEY_CHECKS = 1');
+    } finally {
+      connection.release();
+    }
+  }
+}
 
 async function initializeKitchenOrderSchema() {
   await db.query(`
@@ -66,12 +141,12 @@ async function initializeKitchenOrderSchema() {
     await db.query('ALTER TABLE kitchen_order_items ADD COLUMN selected_customizations LONGTEXT NULL AFTER selected_addons');
   }
 
+  await migrateKitchenOrderIdsToKot();
   await initializeTableBillsSchema();
 }
 
 async function createKitchenOrder({ tableId, userId, items, localMinutes }) {
   const connection = await db.getConnection();
-  const orderId = randomUUID();
 
   try {
     await connection.beginTransaction();
@@ -238,6 +313,16 @@ async function createKitchenOrder({ tableId, userId, items, localMinutes }) {
     );
     const roundNumber = Number(existingOrders[0]?.count || 0) + 1;
 
+    const [[kotSequence]] = await connection.execute(
+      'SELECT last_number FROM kitchen_order_kot_sequence WHERE id = 1 FOR UPDATE'
+    );
+    const kotNumberValue = Number(kotSequence.last_number) + 1;
+    const orderId = formatKotNumber(kotNumberValue);
+    await connection.execute(
+      'UPDATE kitchen_order_kot_sequence SET last_number = ? WHERE id = 1',
+      [kotNumberValue]
+    );
+
     await connection.execute(
       `INSERT INTO kitchen_orders
          (order_id, bill_id, round_number, table_id, table_number, order_type, status, created_by, user_id)
@@ -285,6 +370,7 @@ async function createKitchenOrder({ tableId, userId, items, localMinutes }) {
       };
     });
     return {
+      kot_number: orderId,
       order_id: orderId,
       bill_id: activeBill.bill_id,
       bill_number: activeBill.bill_number,
@@ -378,6 +464,7 @@ async function listKitchenOrders(filters = {}) {
 
   return orders.map((order) => ({
     ...order,
+    kot_number: order.order_id,
     round_number: order.round_number || 1,
     items: itemsByOrder.get(order.order_id) || [],
   }));

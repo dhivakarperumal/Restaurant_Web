@@ -94,8 +94,16 @@ const KITCHEN_STATUS_TO_ORDER_STATUS = {
   Cancelled: 'cancelled',
 };
 
+const formatKotNumber = (order) => {
+  if (order.kot_number) return order.kot_number;
+  if (order.id !== null && order.id !== undefined && order.id !== '' && Number.isFinite(Number(order.id))) {
+    return `KOT${String(order.id).padStart(3, '0')}`;
+  }
+  return `KOT-${String(order.order_id || '').slice(0, 8).toUpperCase()}`;
+};
+
 const normalizeKitchenOrder = (order) => ({
-  order_number: `KOT${String(order.id).padStart(3, '0')}`,
+  order_number: formatKotNumber(order),
   kitchen_order_id: order.order_id,
   customer_name: `Table ${order.table_number}`,
   customer_phone: 'Dining order',

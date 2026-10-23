@@ -397,12 +397,13 @@ export default function ServerFood() {
         })),
       });
       setCart({});
+      const kotNumber = response.data?.order?.kot_number;
       const roundNum = response.data?.order?.round_number || (activeBill ? (activeBill.rounds?.length || 1) + 1 : 1);
       const billNum = response.data?.order?.bill_number || activeBill?.bill_number;
       if (roundNum > 1) {
-        toast.success(`Round ${roundNum} (Add-on) added to Bill ${billNum ? `#${billNum}` : ''} for Table ${selectedTable.table_number}!`);
+        toast.success(`${kotNumber ? `${kotNumber} · ` : ''}Round ${roundNum} (Add-on) sent to kitchen for Table ${selectedTable.table_number}! Bill ${billNum ? `#${billNum}` : ''}.`);
       } else {
-        toast.success(`Order sent to kitchen for Table ${selectedTable.table_number}! Bill ${billNum ? `#${billNum}` : ''} opened.`);
+        toast.success(`${kotNumber ? `${kotNumber} · ` : ''}Order sent to kitchen for Table ${selectedTable.table_number}! Bill ${billNum ? `#${billNum}` : ''} opened.`);
       }
       fetchActiveBill();
     } catch (error) {
