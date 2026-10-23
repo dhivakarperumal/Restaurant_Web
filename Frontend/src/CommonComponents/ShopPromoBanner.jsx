@@ -54,7 +54,7 @@ function ShopPromoBanner({ variant }) {
           backgroundRepeat: 'no-repeat',
         }}
       >
-        <div className="flex min-h-[180px] items-stretch bg-[linear-gradient(90deg,rgba(244,239,230,0.96)_0%,rgba(244,239,230,0.95)_42%,rgba(244,239,230,0.7)_58%,rgba(244,239,230,0.05)_100%)]">
+        <div className="flex min-h-[150px] items-stretch bg-[linear-gradient(90deg,rgba(244,239,230,0.82)_0%,rgba(244,239,230,0.78)_42%,rgba(244,239,230,0.45)_58%,rgba(244,239,230,0.08)_100%)]">
           <div className="absolute inset-y-0 left-0 w-[18%] bg-[radial-gradient(circle_at_left,_rgba(196,214,138,0.2),transparent_60%)]" />
 
           <div className="relative z-10 flex w-full flex-col justify-center px-5 py-6 sm:px-7 lg:w-[44%] lg:shrink-0 lg:px-10 lg:py-8">
