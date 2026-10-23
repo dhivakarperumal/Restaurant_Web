@@ -125,6 +125,24 @@ const initializeServerSuppliesSchema = async () => {
         REFERENCES server_supply_items (id)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
   `);
+  await db.query(`
+    CREATE TABLE IF NOT EXISTS server_supply_requests (
+      id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+      item_id INT UNSIGNED NOT NULL,
+      requested_quantity DECIMAL(12,2) NOT NULL,
+      remarks TEXT NULL,
+      status ENUM('pending', 'approved', 'rejected') NOT NULL DEFAULT 'pending',
+      requested_by VARCHAR(255) NOT NULL,
+      decided_by VARCHAR(255) NULL,
+      decision_reason TEXT NULL,
+      requested_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      decided_at TIMESTAMP NULL DEFAULT NULL,
+      INDEX server_supply_requests_status_date_idx (status, requested_at),
+      INDEX server_supply_requests_requester_idx (requested_by, requested_at),
+      CONSTRAINT server_supply_requests_item_fk FOREIGN KEY (item_id)
+        REFERENCES server_supply_items (id)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+  `);
 
   for (const category of defaultCategories) {
     await db.execute('INSERT IGNORE INTO server_supply_categories (category_name) VALUES (?)', [category]);
@@ -300,6 +318,84 @@ const listServerSupplyMovements = async (id) => {
   return rows.map((row) => ({ ...row, quantity: Number(row.quantity) }));
 };
 
+const listServerSupplyRequests = async (requester = null) => {
+  const requesterFilter = requester ? 'AND r.requested_by = ?' : '';
+  const params = requester ? [requester] : [];
+  const [rows] = await db.execute(
+    `SELECT r.id, r.item_id, i.item_name, i.item_code, i.unit, r.requested_quantity,
+       r.remarks, r.status, r.requested_by, r.decided_by, r.decision_reason,
+       r.requested_at, r.decided_at
+     FROM server_supply_requests r
+     JOIN server_supply_items i ON i.id = r.item_id
+     WHERE 1 = 1 ${requesterFilter}
+     ORDER BY CASE r.status WHEN 'pending' THEN 0 ELSE 1 END, r.requested_at DESC, r.id DESC`,
+    params
+  );
+  return rows.map((row) => ({
+    ...row,
+    requested_quantity: Number(row.requested_quantity),
+  }));
+};
+
+const createServerSupplyRequest = async (itemId, payload = {}, requestedBy) => {
+  const quantity = validateAmount(payload.quantity, 'quantity', { required: true, allowZero: false });
+  const remarks = validateText(payload.remarks, 'remarks', { maxLength: 5000 });
+  const item = await getItemById(itemId);
+  const [result] = await db.execute(
+    `INSERT INTO server_supply_requests (item_id, requested_quantity, remarks, requested_by)
+     VALUES (?, ?, ?, ?)`,
+    [item.id, quantity, remarks, requestedBy]
+  );
+  return { id: result.insertId, item_id: item.id, item_name: item.item_name, requested_quantity: Number(quantity), remarks, status: 'pending' };
+};
+
+const decideServerSupplyRequest = async (requestId, decision, decidedBy, reason = null) => {
+  const decisionReason = decision === 'rejected'
+    ? validateText(reason, 'rejection reason', { required: true, maxLength: 5000 })
+    : validateText(reason, 'decision reason', { maxLength: 5000 });
+  const connection = await db.getConnection();
+  try {
+    await connection.beginTransaction();
+    const [requests] = await connection.execute(
+      'SELECT id, item_id, requested_quantity, remarks, status FROM server_supply_requests WHERE id = ? FOR UPDATE',
+      [requestId]
+    );
+    if (!requests.length) throw new SuppliesError('Supply request was not found.', 404);
+    const request = requests[0];
+    if (request.status !== 'pending') throw new SuppliesError('This supply request has already been processed.', 409);
+    if (decision === 'approved') {
+      const [items] = await connection.execute(
+        'SELECT id FROM server_supply_items WHERE id = ? AND deleted_at IS NULL FOR UPDATE',
+        [request.item_id]
+      );
+      if (!items.length) throw new SuppliesError('The requested supply item is no longer available.', 404);
+      await connection.execute(
+        'UPDATE server_supply_items SET current_stock = current_stock + ? WHERE id = ?',
+        [request.requested_quantity, request.item_id]
+      );
+      const remarks = [`Approved request #${request.id}`, request.remarks].filter(Boolean).join(' — ');
+      await connection.execute(
+        `INSERT INTO server_supply_movements (item_id, movement_type, quantity, movement_date, remarks, created_by)
+         VALUES (?, 'stock-in', ?, CURRENT_DATE, ?, ?)`,
+        [request.item_id, request.requested_quantity, remarks, decidedBy]
+      );
+    }
+    await connection.execute(
+      `UPDATE server_supply_requests
+       SET status = ?, decided_by = ?, decision_reason = ?, decided_at = CURRENT_TIMESTAMP
+       WHERE id = ?`,
+      [decision, decidedBy, decisionReason, requestId]
+    );
+    await connection.commit();
+    return { id: Number(requestId), status: decision };
+  } catch (error) {
+    await connection.rollback();
+    throw error;
+  } finally {
+    connection.release();
+  }
+};
+
 const createServerSupplyMovement = async (id, payload = {}, movementType, createdBy) => {
   const quantity = validateAmount(payload.quantity, 'quantity', { required: true, allowZero: false });
   const date = validateDate(payload.date);
@@ -345,5 +441,8 @@ module.exports = {
   updateServerSupplyItem,
   deleteServerSupplyItem,
   listServerSupplyMovements,
+  listServerSupplyRequests,
+  createServerSupplyRequest,
+  decideServerSupplyRequest,
   createServerSupplyMovement,
 };

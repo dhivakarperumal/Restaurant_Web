@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { AlertTriangle, Boxes, Eye, Package, Pencil, Plus, Search, Trash2, TrendingDown, TrendingUp, X } from 'lucide-react';
+import { AlertTriangle, Boxes, Check, ClipboardList, Eye, Package, Pencil, Plus, Search, Trash2, TrendingDown, TrendingUp, X, XCircle } from 'lucide-react';
 import toast, { Toaster } from 'react-hot-toast';
 import api, { BACKEND_BASE_URL } from '../api';
+import { useAuth } from '../PrivateRouter/AuthContext';
 
 const PAGE_SIZE = 10;
 const MATERIALS = ['Stainless Steel', 'Plastic', 'Ceramic', 'Glass', 'Melamine', 'Paper'];
@@ -46,8 +47,11 @@ const emptyMovement = (type) => ({
 });
 
 export default function ServerSupplies() {
+  const { role } = useAuth();
+  const isAdmin = ['admin', 'super admin', 'superadmin'].includes(String(role || '').trim().toLowerCase());
   const [items, setItems] = useState([]);
   const [categories, setCategories] = useState([]);
+  const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
@@ -64,16 +68,23 @@ export default function ServerSupplies() {
   const [movementItem, setMovementItem] = useState(null);
   const [movementForm, setMovementForm] = useState(emptyMovement('in'));
   const [savingMovement, setSavingMovement] = useState(false);
+  const [requestFormOpen, setRequestFormOpen] = useState(false);
+  const [requestItem, setRequestItem] = useState(null);
+  const [requestForm, setRequestForm] = useState({ quantity: '', remarks: '' });
+  const [savingRequest, setSavingRequest] = useState(false);
+  const [processingRequestId, setProcessingRequestId] = useState(null);
 
   const loadData = useCallback(async () => {
     setLoading(true);
     try {
-      const [itemsResponse, categoriesResponse] = await Promise.all([
+      const [itemsResponse, categoriesResponse, requestsResponse] = await Promise.all([
         api.get('/server-supplies'),
         api.get('/server-supplies/categories'),
+        api.get('/server-supplies/requests'),
       ]);
       setItems(itemsResponse.data?.data || []);
       setCategories(categoriesResponse.data?.data || []);
+      setRequests(requestsResponse.data?.data || []);
     } catch (error) {
       toast.error(error?.response?.data?.message || 'Unable to load serving supplies.');
     } finally {
@@ -221,6 +232,66 @@ export default function ServerSupplies() {
     }
   };
 
+  const submitSupplyRequest = async (event) => {
+    event.preventDefault();
+    const quantity = Number(requestForm.quantity);
+    if (!requestItem || !Number.isFinite(quantity) || quantity <= 0) {
+      toast.error('Enter a quantity greater than zero.');
+      return;
+    }
+    setSavingRequest(true);
+    try {
+      await api.post('/server-supplies/requests', {
+        item_id: requestItem.id,
+        quantity,
+        remarks: requestForm.remarks,
+      });
+      toast.success('Request sent to Admin for approval.');
+      setRequestFormOpen(false);
+      setRequestItem(null);
+      setRequestForm({ quantity: '', remarks: '' });
+      await loadData();
+    } catch (error) {
+      toast.error(error?.response?.data?.message || 'Unable to submit supply request.');
+    } finally {
+      setSavingRequest(false);
+    }
+  };
+
+  const openRequestForm = (item = null) => {
+    setRequestItem(item);
+    setRequestForm({ quantity: '', remarks: '' });
+    setRequestFormOpen(true);
+  };
+
+  const closeRequestForm = () => {
+    setRequestFormOpen(false);
+    setRequestItem(null);
+    setRequestForm({ quantity: '', remarks: '' });
+  };
+
+  const decideRequest = async (request, decision) => {
+    const approved = decision === 'approve';
+    const reason = approved
+      ? ''
+      : window.prompt(`Enter a reason for rejecting the request for ${request.item_name}:`);
+    if (!approved && (reason === null || !reason.trim())) {
+      if (reason !== null) toast.error('A rejection reason is required.');
+      return;
+    }
+    if (approved && !window.confirm(`Approve ${request.requested_quantity} ${request.unit} of ${request.item_name}? Stock will be updated.`)) return;
+    setProcessingRequestId(request.id);
+    try {
+      await api.patch(`/server-supplies/requests/${request.id}/${decision === 'approve' ? 'approve' : 'reject'}`, { reason });
+      toast.success(approved ? 'Request approved and stock updated.' : 'Request rejected.');
+      await loadData();
+    } catch (error) {
+      toast.error(error?.response?.data?.message || 'Unable to process supply request.');
+    } finally {
+      setProcessingRequestId(null);
+    }
+  };
+
   const statusClass = (status) => {
     if (status === 'Available') return 'bg-emerald-50 text-emerald-700';
     if (status === 'Low Stock') return 'bg-amber-50 text-amber-700';
@@ -237,13 +308,18 @@ export default function ServerSupplies() {
       <Toaster position="top-right" />
       <header className="flex flex-col gap-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Server Workspace</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">{isAdmin ? 'Admin Workspace' : 'Server Workspace'}</p>
           <h1 className="mt-1 text-2xl font-bold text-slate-900">Serving Supplies</h1>
-          <p className="mt-1 text-sm text-slate-500">Manage dining items, stock levels, and supply movements.</p>
+          <p className="mt-1 text-sm text-slate-500">{isAdmin ? 'Review server requests and manage dining supply inventory.' : 'Browse supplies and request stock. Inventory changes after Admin approval.'}</p>
         </div>
-        <button type="button" onClick={openAddForm} className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-[#1a3c36] px-4 text-sm font-semibold text-white hover:bg-[#214a42]">
-          <Plus size={17} /> Add Supply Item
-        </button>
+        <div className="flex flex-wrap gap-2">
+          {!isAdmin && <button type="button" onClick={() => openRequestForm()} className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-[#1a3c36] px-4 text-sm font-semibold text-white hover:bg-[#214a42]">
+            <Plus size={17} /> Request Supplies
+          </button>}
+          {isAdmin && <button type="button" onClick={openAddForm} className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-[#1a3c36] px-4 text-sm font-semibold text-white hover:bg-[#214a42]">
+            <Plus size={17} /> Add Supply Item
+          </button>}
+        </div>
       </header>
 
       <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
@@ -258,6 +334,49 @@ export default function ServerSupplies() {
             <div><p className="text-sm text-slate-500">{label}</p><p className="mt-1 text-2xl font-bold text-slate-900">{value}</p></div>
           </article>
         ))}
+      </section>
+
+      <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+        <div className="flex items-center justify-between border-b border-slate-100 p-4">
+          <div>
+            <h2 className="flex items-center gap-2 text-lg font-bold text-slate-900"><ClipboardList size={19} />{isAdmin ? 'Supply Requests' : 'My Supply Requests'}</h2>
+            <p className="mt-1 text-sm text-slate-500">{isAdmin ? 'Approve a request to add the quantity to inventory, or reject it with a reason.' : 'Requests are sent to Admin. Stock is not changed until approved.'}</p>
+          </div>
+          <span className="rounded-full bg-amber-50 px-3 py-1 text-sm font-semibold text-amber-800">{requests.filter((request) => request.status === 'pending').length} pending</span>
+        </div>
+        {requests.length === 0 ? (
+          <p className="p-5 text-sm text-slate-500">{isAdmin ? 'There are no supply requests yet.' : 'You have not submitted any supply requests yet.'}</p>
+        ) : (
+          <div className="scrollbar-hide overflow-x-auto">
+            <table className="min-w-[760px] w-full text-left text-sm">
+              <thead className="bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
+                <tr>{['Item', ...(isAdmin ? ['Requested By'] : []), 'Quantity', 'Remarks', 'Status', 'Date', ...(isAdmin ? ['Actions'] : ['Decision'])].map((heading) => <th key={heading} className="px-4 py-3 font-semibold">{heading}</th>)}</tr>
+              </thead>
+              <tbody>
+                {requests.map((request) => (
+                  <tr key={request.id} className="border-t border-slate-100">
+                    <td className="px-4 py-3 font-semibold text-slate-900">{request.item_name}</td>
+                    {isAdmin && <td className="px-4 py-3 text-slate-600">{request.requested_by}</td>}
+                    <td className="px-4 py-3">{request.requested_quantity} {request.unit}</td>
+                    <td className="max-w-56 truncate px-4 py-3 text-slate-600" title={request.remarks || ''}>{request.remarks || '—'}</td>
+                    <td className="px-4 py-3"><span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${request.status === 'approved' ? 'bg-emerald-50 text-emerald-700' : request.status === 'rejected' ? 'bg-rose-50 text-rose-700' : 'bg-amber-50 text-amber-800'}`}>{request.status}</span></td>
+                    <td className="px-4 py-3 text-slate-600">{String(request.requested_at || '').slice(0, 10)}</td>
+                    {isAdmin ? (
+                      <td className="px-4 py-3">
+                        {request.status === 'pending' ? <div className="flex gap-1">
+                          <button type="button" disabled={processingRequestId === request.id} onClick={() => decideRequest(request, 'approve')} className="inline-flex items-center gap-1 rounded-lg bg-emerald-50 px-2.5 py-1.5 text-xs font-semibold text-emerald-700 disabled:opacity-50"><Check size={14} /> Approve</button>
+                          <button type="button" disabled={processingRequestId === request.id} onClick={() => decideRequest(request, 'reject')} className="inline-flex items-center gap-1 rounded-lg bg-rose-50 px-2.5 py-1.5 text-xs font-semibold text-rose-700 disabled:opacity-50"><XCircle size={14} /> Reject</button>
+                        </div> : <span className="text-xs text-slate-500">{request.decided_by || '—'}{request.decision_reason ? ` · ${request.decision_reason}` : ''}</span>}
+                      </td>
+                    ) : (
+                      <td className="max-w-56 truncate px-4 py-3 text-slate-600" title={request.decision_reason || ''}>{request.decision_reason || (request.status === 'pending' ? 'Awaiting Admin approval' : '—')}</td>
+                    )}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </section>
 
       <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
@@ -304,11 +423,16 @@ export default function ServerSupplies() {
                       <td className="px-4 py-3"><div className="flex h-11 w-11 items-center justify-center overflow-hidden rounded-lg bg-slate-100">{item.image_url ? <img src={imageUrl(item.image_url)} alt={item.item_name} className="h-full w-full object-cover" /> : <Package size={18} className="text-slate-400" />}</div></td>
                       <td className="px-4 py-3 font-semibold text-slate-900">{item.item_name}</td><td className="px-4 py-3 font-mono text-slate-600">{item.item_code}</td><td className="px-4 py-3">{item.category}</td><td className="px-4 py-3">{item.material}</td><td className="px-4 py-3 font-semibold">{item.current_stock}</td><td className="px-4 py-3">{item.unit}</td><td className="px-4 py-3">{formatCurrency(item.purchase_price)}</td><td className="px-4 py-3">{renderStatus(item)}</td>
                       <td className="px-4 py-3"><div className="flex items-center gap-1">
-                        <button type="button" title="View and movement history" aria-label={`View ${item.item_name}`} onClick={() => openItemDetails(item)} className="rounded-lg p-2 text-sky-700 hover:bg-sky-50"><Eye size={16} /></button>
-                        <button type="button" title="Stock in" aria-label={`Receive stock for ${item.item_name}`} onClick={() => { setMovementItem(item); setMovementForm(emptyMovement('in')); }} className="rounded-lg p-2 text-emerald-700 hover:bg-emerald-50"><TrendingUp size={16} /></button>
-                        <button type="button" title="Stock out" aria-label={`Record usage for ${item.item_name}`} onClick={() => { setMovementItem(item); setMovementForm(emptyMovement('out')); }} className="rounded-lg p-2 text-amber-700 hover:bg-amber-50"><TrendingDown size={16} /></button>
-                        <button type="button" title="Edit" aria-label={`Edit ${item.item_name}`} onClick={() => openEditForm(item)} className="rounded-lg p-2 text-slate-600 hover:bg-slate-100"><Pencil size={16} /></button>
-                        <button type="button" title="Delete" aria-label={`Delete ${item.item_name}`} onClick={() => deleteItem(item)} className="rounded-lg p-2 text-rose-600 hover:bg-rose-50"><Trash2 size={16} /></button>
+                        {isAdmin ? <>
+                          <button type="button" title="View and movement history" aria-label={`View ${item.item_name}`} onClick={() => openItemDetails(item)} className="rounded-lg p-2 text-sky-700 hover:bg-sky-50"><Eye size={16} /></button>
+                          <button type="button" title="Stock in" aria-label={`Receive stock for ${item.item_name}`} onClick={() => { setMovementItem(item); setMovementForm(emptyMovement('in')); }} className="rounded-lg p-2 text-emerald-700 hover:bg-emerald-50"><TrendingUp size={16} /></button>
+                          <button type="button" title="Stock out" aria-label={`Record usage for ${item.item_name}`} onClick={() => { setMovementItem(item); setMovementForm(emptyMovement('out')); }} className="rounded-lg p-2 text-amber-700 hover:bg-amber-50"><TrendingDown size={16} /></button>
+                          <button type="button" title="Edit" aria-label={`Edit ${item.item_name}`} onClick={() => openEditForm(item)} className="rounded-lg p-2 text-slate-600 hover:bg-slate-100"><Pencil size={16} /></button>
+                          <button type="button" title="Delete" aria-label={`Delete ${item.item_name}`} onClick={() => deleteItem(item)} className="rounded-lg p-2 text-rose-600 hover:bg-rose-50"><Trash2 size={16} /></button>
+                        </> : <>
+                          <button type="button" title="Request stock" aria-label={`Request stock for ${item.item_name}`} onClick={() => openRequestForm(item)} className="inline-flex items-center gap-1 rounded-lg bg-[#1a3c36] px-2.5 py-2 text-xs font-semibold text-white hover:bg-[#214a42]"><Plus size={14} /> Request</button>
+                          <button type="button" title="View item details" aria-label={`View ${item.item_name}`} onClick={() => openItemDetails(item)} className="rounded-lg p-2 text-sky-700 hover:bg-sky-50"><Eye size={16} /></button>
+                        </>}
                       </div></td>
                     </tr>
                   ))}
@@ -328,11 +452,16 @@ export default function ServerSupplies() {
                     </div>
                   </div>
                   <div className="mt-3 flex justify-end gap-1 border-t border-slate-100 pt-2">
-                    <button type="button" onClick={() => openItemDetails(item)} title="View and movement history" className="rounded-lg p-2 text-sky-700 hover:bg-sky-50"><Eye size={17} /></button>
-                    <button type="button" onClick={() => { setMovementItem(item); setMovementForm(emptyMovement('in')); }} title="Stock in" className="rounded-lg p-2 text-emerald-700 hover:bg-emerald-50"><TrendingUp size={17} /></button>
-                    <button type="button" onClick={() => { setMovementItem(item); setMovementForm(emptyMovement('out')); }} title="Stock out" className="rounded-lg p-2 text-amber-700 hover:bg-amber-50"><TrendingDown size={17} /></button>
-                    <button type="button" onClick={() => openEditForm(item)} title="Edit" className="rounded-lg p-2 text-slate-600 hover:bg-slate-100"><Pencil size={17} /></button>
-                    <button type="button" onClick={() => deleteItem(item)} title="Delete" className="rounded-lg p-2 text-rose-600 hover:bg-rose-50"><Trash2 size={17} /></button>
+                    {isAdmin ? <>
+                      <button type="button" onClick={() => openItemDetails(item)} title="View and movement history" className="rounded-lg p-2 text-sky-700 hover:bg-sky-50"><Eye size={17} /></button>
+                      <button type="button" onClick={() => { setMovementItem(item); setMovementForm(emptyMovement('in')); }} title="Stock in" className="rounded-lg p-2 text-emerald-700 hover:bg-emerald-50"><TrendingUp size={17} /></button>
+                      <button type="button" onClick={() => { setMovementItem(item); setMovementForm(emptyMovement('out')); }} title="Stock out" className="rounded-lg p-2 text-amber-700 hover:bg-amber-50"><TrendingDown size={17} /></button>
+                      <button type="button" onClick={() => openEditForm(item)} title="Edit" className="rounded-lg p-2 text-slate-600 hover:bg-slate-100"><Pencil size={17} /></button>
+                      <button type="button" onClick={() => deleteItem(item)} title="Delete" className="rounded-lg p-2 text-rose-600 hover:bg-rose-50"><Trash2 size={17} /></button>
+                    </> : <>
+                      <button type="button" onClick={() => openRequestForm(item)} title="Request stock" className="inline-flex items-center gap-1 rounded-lg bg-[#1a3c36] px-3 py-2 text-xs font-semibold text-white"><Plus size={14} /> Request</button>
+                      <button type="button" onClick={() => openItemDetails(item)} title="View item details" className="rounded-lg p-2 text-sky-700 hover:bg-sky-50"><Eye size={17} /></button>
+                    </>}
                   </div>
                 </article>
               ))}
@@ -364,6 +493,24 @@ export default function ServerSupplies() {
               <label className="text-sm font-medium text-slate-700">Status (automatic)<input readOnly value={getStatus({ ...form, current_stock: Number(form.current_stock), minimum_stock: editingItem?.minimum_stock ?? 1 })} className="mt-1.5 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5" /></label>
               <label className="text-sm font-medium text-slate-700 sm:col-span-2">Description<textarea rows={3} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} className="mt-1.5 w-full rounded-xl border border-slate-200 px-3 py-2.5" /></label>
               <div className="flex flex-wrap justify-end gap-2 pt-2 sm:col-span-2"><button type="button" onClick={() => setFormOpen(false)} className="rounded-xl border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700">Cancel</button>{!editingItem && <button type="submit" value="add-another" disabled={saving} className="rounded-xl border border-[#1a3c36] px-4 py-2 text-sm font-semibold text-[#1a3c36] disabled:opacity-60">{saving ? 'Saving…' : 'Save & Add Another'}</button>}<button type="submit" disabled={saving} className="rounded-xl bg-[#1a3c36] px-4 py-2 text-sm font-semibold text-white disabled:opacity-60">{saving ? 'Saving…' : editingItem ? 'Save Changes' : 'Add Item'}</button></div>
+            </form>
+          </section>
+        </div>
+      )}
+
+      {requestFormOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-3">
+          <section className="w-full max-w-lg rounded-2xl bg-white p-5 shadow-2xl">
+            <div className="mb-5 flex items-start justify-between">
+              <div><h2 className="text-xl font-bold text-slate-900">Request Supply Stock</h2><p className="mt-1 text-sm text-slate-500">{requestItem ? `${requestItem.item_name} · Available: ${requestItem.current_stock} ${requestItem.unit}` : 'Choose an item and enter the quantity needed.'}</p></div>
+              <button type="button" onClick={closeRequestForm} aria-label="Close request form" className="rounded-lg p-2 text-slate-500 hover:bg-slate-100"><X size={18} /></button>
+            </div>
+            <form onSubmit={submitSupplyRequest} className="space-y-4">
+              <label className="block text-sm font-medium text-slate-700">Supply Item<select required value={requestItem?.id || ''} onChange={(event) => { const selectedItem = items.find((item) => String(item.id) === event.target.value) || null; setRequestItem(selectedItem); setRequestForm({ ...requestForm, quantity: '' }); }} className="mt-1.5 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5"><option value="">Select supply item</option>{items.map((item) => <option key={item.id} value={item.id}>{item.item_name} · {item.current_stock} {item.unit} available</option>)}</select></label>
+              <label className="block text-sm font-medium text-slate-700">Requested Quantity<input required autoFocus type="number" min="0.01" step="any" value={requestForm.quantity} onChange={(event) => setRequestForm({ ...requestForm, quantity: event.target.value })} className="mt-1.5 w-full rounded-xl border border-slate-200 px-3 py-2.5" /></label>
+              <label className="block text-sm font-medium text-slate-700">Remarks<textarea rows={3} value={requestForm.remarks} onChange={(event) => setRequestForm({ ...requestForm, remarks: event.target.value })} placeholder="Reason or additional details" className="mt-1.5 w-full rounded-xl border border-slate-200 px-3 py-2.5" /></label>
+              <p className="rounded-xl bg-amber-50 p-3 text-sm text-amber-800">This request will not change stock until an Admin approves it.</p>
+              <div className="flex justify-end gap-2"><button type="button" onClick={closeRequestForm} className="rounded-xl border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700">Cancel</button><button type="submit" disabled={savingRequest || !requestItem} className="rounded-xl bg-[#1a3c36] px-4 py-2 text-sm font-semibold text-white disabled:opacity-60">{savingRequest ? 'Sending…' : 'Send Request'}</button></div>
             </form>
           </section>
         </div>

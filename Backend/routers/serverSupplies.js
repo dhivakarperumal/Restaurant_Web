@@ -8,6 +8,9 @@ const {
   updateServerSupplyItem,
   deleteServerSupplyItem,
   listServerSupplyMovements,
+  listServerSupplyRequests,
+  createServerSupplyRequest,
+  decideServerSupplyRequest,
   createServerSupplyMovement,
 } = require('../modules/serverSupplies');
 
@@ -32,6 +35,25 @@ const requireSuppliesAccess = async (req, res, next) => {
     return res.status(500).json({ success: false, message: 'Unable to verify access.' });
   }
 };
+
+const requireAdmin = (req, res, next) => {
+  const role = String(req.auth?.role || '').trim().toLowerCase();
+  if (!adminRoles.includes(role)) {
+    return res.status(403).json({ success: false, message: 'Administrator approval is required.' });
+  }
+  return next();
+};
+
+const requireServer = (req, res, next) => {
+  if (String(req.auth?.role || '').trim().toLowerCase() !== 'server') {
+    return res.status(403).json({ success: false, message: 'Only Server staff can submit supply requests.' });
+  }
+  return next();
+};
+
+const getActorName = (user) => String(
+  user?.username || user?.name || user?.email || user?.user_id || 'Unknown user'
+);
 
 const withErrorHandler = (handler) => async (req, res) => {
   try {
@@ -61,17 +83,52 @@ router.get('/categories', withErrorHandler(async (_req, res) => {
   res.json({ success: true, data: await listServerSupplyCategories() });
 }));
 
-router.post('/', withErrorHandler(async (req, res) => {
+router.get('/requests', withErrorHandler(async (req, res) => {
+  const isAdmin = adminRoles.includes(String(req.auth.role || '').trim().toLowerCase());
+  const requests = await listServerSupplyRequests(isAdmin ? null : getActorName(req.auth));
+  res.json({ success: true, data: requests });
+}));
+
+router.post('/requests', requireServer, withErrorHandler(async (req, res) => {
+  const request = await createServerSupplyRequest(
+    parseId(String(req.body.item_id || '')),
+    req.body,
+    getActorName(req.auth)
+  );
+  res.status(201).json({ success: true, message: 'Supply request sent to Admin for approval.', data: request });
+}));
+
+router.patch('/requests/:requestId/approve', requireAdmin, withErrorHandler(async (req, res) => {
+  const request = await decideServerSupplyRequest(
+    parseId(req.params.requestId),
+    'approved',
+    getActorName(req.auth),
+    req.body?.reason
+  );
+  res.json({ success: true, message: 'Supply request approved and stock updated.', data: request });
+}));
+
+router.patch('/requests/:requestId/reject', requireAdmin, withErrorHandler(async (req, res) => {
+  const request = await decideServerSupplyRequest(
+    parseId(req.params.requestId),
+    'rejected',
+    getActorName(req.auth),
+    req.body?.reason
+  );
+  res.json({ success: true, message: 'Supply request rejected.', data: request });
+}));
+
+router.post('/', requireAdmin, withErrorHandler(async (req, res) => {
   const item = await createServerSupplyItem(req.body);
   res.status(201).json({ success: true, message: 'Server supply item created.', data: item });
 }));
 
-router.put('/:id', withErrorHandler(async (req, res) => {
+router.put('/:id', requireAdmin, withErrorHandler(async (req, res) => {
   const item = await updateServerSupplyItem(parseId(req.params.id), req.body);
   res.json({ success: true, message: 'Server supply item updated.', data: item });
 }));
 
-router.delete('/:id', withErrorHandler(async (req, res) => {
+router.delete('/:id', requireAdmin, withErrorHandler(async (req, res) => {
   await deleteServerSupplyItem(parseId(req.params.id));
   res.json({ success: true, message: 'Server supply item deleted.' });
 }));
@@ -81,16 +138,16 @@ router.get('/:id/movements', withErrorHandler(async (req, res) => {
   res.json({ success: true, data: movements });
 }));
 
-router.post('/:id/stock-in', withErrorHandler(async (req, res) => {
+router.post('/:id/stock-in', requireAdmin, withErrorHandler(async (req, res) => {
   const item = await createServerSupplyMovement(
-    parseId(req.params.id), req.body, 'stock-in', req.auth.user_id || req.auth.username
+    parseId(req.params.id), req.body, 'stock-in', getActorName(req.auth)
   );
   res.json({ success: true, message: 'Stock added successfully.', data: item });
 }));
 
-router.post('/:id/stock-out', withErrorHandler(async (req, res) => {
+router.post('/:id/stock-out', requireAdmin, withErrorHandler(async (req, res) => {
   const item = await createServerSupplyMovement(
-    parseId(req.params.id), req.body, 'stock-out', req.auth.user_id || req.auth.username
+    parseId(req.params.id), req.body, 'stock-out', getActorName(req.auth)
   );
   res.json({ success: true, message: 'Stock issued successfully.', data: item });
 }));

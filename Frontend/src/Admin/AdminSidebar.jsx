@@ -102,6 +102,7 @@ const navItems = [
       // { path: "/admin/inventory/suppliers", label: "Suppliers", icon: Users },
       // { path: "/admin/inventory/purchases", label: "Purchases", icon: ShoppingCart },
       { path: "/admin/inventory/kitchen-requests", label: "Kitchen Requests", icon: UtensilsCrossed },
+      { path: "/admin/inventory/server-supplies", label: "Serving Supplies Requests", icon: Package },
       
     ],
   },

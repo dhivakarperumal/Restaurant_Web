@@ -331,6 +331,10 @@ const router = createHashRouter([
             element: <StockDetails />,
           },
           {
+            path: 'inventory/server-supplies',
+            element: <ServerSupplies />,
+          },
+          {
             path: 'inventory/*',
             element: <InventoryModule />,
           },
@@ -445,7 +449,7 @@ const router = createHashRouter([
       {
         path: 'server',
         element: (
-          <PrivateRoute allowedRoles={["Super Admin", "server"]}>
+          <PrivateRoute allowedRoles={["Super Admin", "Admin", "superadmin", "server"]}>
             <ServerLayout />
           </PrivateRoute>
         ),
