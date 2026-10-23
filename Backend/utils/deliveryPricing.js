@@ -22,12 +22,21 @@ const readNonNegativeSetting = (settings, key, label) => {
   return number;
 };
 
-const readCoordinates = (location, label) => {
+const readCoordinates = (location, label, statusCode = 400) => {
+  const hasLatitude = location?.latitude !== null
+    && location?.latitude !== undefined
+    && String(location.latitude).trim() !== '';
+  const hasLongitude = location?.longitude !== null
+    && location?.longitude !== undefined
+    && String(location.longitude).trim() !== '';
   const latitude = Number(location?.latitude);
   const longitude = Number(location?.longitude);
-  if (!Number.isFinite(latitude) || latitude < -90 || latitude > 90
+  if (!hasLatitude || !hasLongitude || !Number.isFinite(latitude) || latitude < -90 || latitude > 90
     || !Number.isFinite(longitude) || longitude < -180 || longitude > 180) {
-    throw createDeliveryError(`${label} coordinates are missing or invalid.`, 400);
+    const guidance = label === 'Restaurant location'
+      ? ' Set restaurant latitude and longitude under Admin Settings > Restaurant Profile.'
+      : '';
+    throw createDeliveryError(`${label} coordinates are missing or invalid.${guidance}`, statusCode);
   }
   return { latitude, longitude };
 };
@@ -57,7 +66,7 @@ const calculateDeliveryQuoteFromSettings = ({
   const restaurantCoordinates = readCoordinates({
     latitude: storeSettings.latitude,
     longitude: storeSettings.longitude,
-  }, 'Restaurant location');
+  }, 'Restaurant location', 503);
   const baseCharge = readNonNegativeSetting(deliverySettings, 'base_charge', 'base delivery charge');
   const freeMinimum = readNonNegativeSetting(deliverySettings, 'free_minimum', 'free-delivery minimum');
   const perKmCharge = readNonNegativeSetting(deliverySettings, 'per_km_charge', 'per-kilometre delivery charge');

@@ -1,5 +1,5 @@
 import { useContext, useEffect, useMemo, useRef, useState } from 'react';
-import { ArrowLeft, CheckCircle2, LocateFixed, MapPin, PackageCheck, ShoppingBag, UtensilsCrossed } from 'lucide-react';
+import { CheckCircle2, LocateFixed, MapPin, PackageCheck, ShoppingBag, UtensilsCrossed } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 import api, { BACKEND_BASE_URL } from '../../api';
@@ -212,6 +212,8 @@ function Checkout() {
   ), [cart]);
   const itemCount = cart.reduce((sum, item) => sum + Number(item.quantity || 1), 0);
   const quoteFingerprint = `${fulfillmentType}:${subtotal.toFixed(2)}:${deliveryLocation?.latitude ?? ''}:${deliveryLocation?.longitude ?? ''}`;
+  const deliveryLatitude = deliveryLocation?.latitude;
+  const deliveryLongitude = deliveryLocation?.longitude;
   const currentDeliveryQuote = deliveryQuote?.fingerprint === quoteFingerprint ? deliveryQuote : null;
   const currentDeliveryQuoteError = deliveryQuoteError?.fingerprint === quoteFingerprint
     ? deliveryQuoteError.message
@@ -222,10 +224,12 @@ function Checkout() {
     && !currentDeliveryQuoteError;
 
   useEffect(() => {
-    if (fulfillmentType !== 'home_delivery' || !deliveryLocation) return undefined;
+    if (fulfillmentType !== 'home_delivery'
+      || deliveryLatitude === undefined
+      || deliveryLongitude === undefined) return undefined;
     let active = true;
     api.post('/orders/delivery-quote', {
-      location: deliveryLocation,
+      location: { latitude: deliveryLatitude, longitude: deliveryLongitude },
       subtotal,
     })
       .then(({ data }) => {
@@ -247,8 +251,8 @@ function Checkout() {
       active = false;
     };
   }, [
-    deliveryLocation?.latitude,
-    deliveryLocation?.longitude,
+    deliveryLatitude,
+    deliveryLongitude,
     fulfillmentType,
     quoteFingerprint,
     subtotal,
@@ -281,7 +285,7 @@ function Checkout() {
 
   const useCurrentLocation = () => {
     if (!navigator.geolocation) {
-      toast.error('Location is not supported by this browser. Please enter your address manually.');
+      toast.error('Location is not supported by this browser. Delivery requires device location to calculate the charge.');
       return;
     }
 
@@ -302,7 +306,9 @@ function Checkout() {
           setAddress((previous) => ({
             ...previous,
             ...Object.fromEntries(
-              Object.entries(detectedAddress).filter(([, value]) => value),
+              Object.entries(detectedAddress).filter(
+                ([field, value]) => value && !String(previous[field] || '').trim(),
+              ),
             ),
           }));
           toast.success('Location found. Please review your address before placing the order.');
@@ -349,6 +355,14 @@ function Checkout() {
     }
     if (!cart.length) {
       toast.error('Your cart is empty.');
+      return;
+    }
+    if (fulfillmentType === 'home_delivery' && !deliveryLocation) {
+      toast.error('Use your current location to calculate the delivery charge.');
+      return;
+    }
+    if (fulfillmentType === 'home_delivery' && !currentDeliveryQuote) {
+      toast.error(currentDeliveryQuoteError || 'Wait for the delivery charge to finish calculating.');
       return;
     }
     if (submissionInProgress.current) return;
@@ -596,7 +610,7 @@ function Checkout() {
                           {fetchingLocation ? 'Finding your address…' : 'Use current location'}
                         </button>
                         <p className="mt-2 text-xs leading-5 text-[#8c7a6b]">
-                          Your device location is used to calculate delivery distance and sent to OpenStreetMap to find the address. Editing the address requires refreshing your location.
+                          Enter or review your address, then use the matching current location to calculate the delivery fee. Your device coordinates are used for distance and sent to OpenStreetMap for address lookup. Editing the address requires refreshing your location.
                           {' '}<a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer" className="underline hover:text-[#a34f32]">© OpenStreetMap contributors</a>
                         </p>
                       </div>

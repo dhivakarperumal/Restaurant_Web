@@ -313,7 +313,7 @@ const create = async (req, res) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-          amount: Math.round(createdOrder.totalAmount * 100),
+        amount: Math.round(createdOrder.totalAmount * 100),
         currency: 'INR',
         receipt: createdOrder.orderNumber,
       }),

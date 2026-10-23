@@ -679,6 +679,9 @@ const OrderDetailsModal = ({ order: initialOrder, orderId, isOpen, onClose, onEd
               <div className="order-5 space-y-1 rounded-xl border border-[#e5e9e4] bg-white p-2.5 text-xs text-[#505a68]">
                 <div className="flex justify-between gap-3"><span>Subtotal</span><span>₹{subtotal.toLocaleString("en-IN")}</span></div>
                 <div className="flex justify-between gap-3"><span>Delivery Charge</span><span>₹{deliveryCharge.toLocaleString("en-IN")}</span></div>
+                {Number(currentOrder.distance_km) > 0 && (
+                  <div className="flex justify-between gap-3"><span>Delivery Distance</span><span>{Number(currentOrder.distance_km).toFixed(2)} km</span></div>
+                )}
                 {taxAmount > 0 && <div className="flex justify-between gap-3"><span>GST / Tax</span><span>₹{taxAmount.toLocaleString("en-IN")}</span></div>}
                 <div className="flex justify-between gap-3 rounded-lg bg-[#eff8f0] px-2.5 py-2 text-sm font-bold text-[#075b20]">
                   <span>{["paid", "completed"].includes(String(currentOrder.payment_status || "").toLowerCase()) ? "Total Paid" : "Total"}</span>
