@@ -54,28 +54,28 @@ function ShopPromoBanner({ variant }) {
           backgroundRepeat: 'no-repeat',
         }}
       >
-        <div className="flex min-h-[150px] items-stretch">
-          <div className="relative z-10 flex w-full flex-col justify-center px-5 py-6 sm:px-7 lg:w-[44%] lg:shrink-0 lg:px-10 lg:py-8">
-            <div className="mb-3 flex items-center gap-3 text-[#d39d2d]">
+        <div className="flex min-h-[260px] items-stretch">
+          <div className="relative z-10 flex w-full flex-col justify-center px-5 py-4 sm:px-7 lg:w-[44%] lg:shrink-0 lg:px-10 lg:py-5">
+            <div className="mb-2 flex items-center gap-3 text-[#d39d2d]">
               <p className="text-[10px] font-black uppercase tracking-[0.28em] sm:text-[11px]">
                 {banner.eyebrow}
               </p>
               <span className="h-px w-12 bg-[#d39d2d]/80" />
             </div>
 
-            <h3 className="max-w-[470px] font-serif text-[2.1rem] font-black leading-[0.95] tracking-[-0.04em] text-[#1a1a1a] sm:text-[2.5rem] lg:text-[3.3rem]">
+            <h3 className="max-w-[470px] font-serif text-[1.8rem] font-black leading-[0.95] tracking-[-0.04em] text-[#1a1a1a] sm:text-[2.2rem] lg:text-[2.55rem]">
               Authentic Flavours
               <br />
               Delivered to{' '}
               <span className="text-[#c99518]">Your Doorstep</span>
             </h3>
 
-            <p className="mt-4 max-w-[380px] text-[14px] leading-[1.65] text-[#4d4039] sm:text-[15px]">
+            <p className="mt-2 max-w-[380px] text-[13px] leading-[1.45] text-[#4d4039] sm:text-[14px]">
               Enjoy a wide variety of tasty and hygienic meals prepared with fresh ingredients,
               delivered fresh to your home.
             </p>
 
-            <div className="mt-6 flex items-center">
+            <div className="mt-3 flex items-center">
               <Link
                 to="/shop"
                 className="inline-flex items-center gap-2 rounded-xl bg-[#e2b14e] px-5 py-3 text-sm font-extrabold text-[#1d130d] shadow-[0_8px_18px_rgba(226,177,78,0.22)] transition hover:bg-[#d29c2f]"
@@ -85,7 +85,7 @@ function ShopPromoBanner({ variant }) {
               </Link>
             </div>
 
-            <div className="mt-7 flex items-center gap-2 text-[#d39d2d]">
+            <div className="mt-3 flex items-center gap-2 text-[#d39d2d]">
               <svg viewBox="0 0 24 24" className="h-5 w-5 fill-[#d39d2d]">
                 <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5S10.62 6.5 12 6.5s2.5 1.12 2.5 2.5S13.38 11.5 12 11.5z"/>
               </svg>
