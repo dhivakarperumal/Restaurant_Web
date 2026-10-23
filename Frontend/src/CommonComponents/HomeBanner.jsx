@@ -141,8 +141,14 @@ export default function HomeBanner() {
           <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_75%_35%,#77502b_0%,#382416_45%,#17170f_100%)]" />
         )}
 
-        {/* Dark overlay keeps the text readable */}
-        <div className="absolute inset-0 bg-gradient-to-r from-[#160e08]/45 via-[#21150b]/20 to-transparent" />
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-y-0 left-0 w-[58%] bg-white/[0.06] backdrop-blur-sm"
+          style={{
+            maskImage: "linear-gradient(to right, black 0%, black 72%, transparent 100%)",
+            WebkitMaskImage: "linear-gradient(to right, black 0%, black 72%, transparent 100%)",
+          }}
+        />
 
         {/* Decorative details */}
         <div className="pointer-events-none absolute left-0 top-0 h-40 w-40 rounded-full border border-[#f5a047]/10" />
