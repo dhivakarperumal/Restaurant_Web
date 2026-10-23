@@ -314,6 +314,7 @@ const initializeInventorySchema = async () => {
   `);
   await ensureColumn('kitchen_requests', 'start_date', 'DATE NULL');
   await ensureColumn('kitchen_requests', 'end_date', 'DATE NULL');
+  await ensureColumn('kitchen_requests', 'rejection_reason', 'TEXT NULL');
 
   await ensureTable('kitchen_request_items', `
     CREATE TABLE IF NOT EXISTS kitchen_request_items (
@@ -820,7 +821,7 @@ const updateKitchenRequest = async (requestId, payload = {}) => {
     }
 
     await connection.query(
-      'UPDATE kitchen_requests SET request_number = ?, requested_by = ?, department = ?, request_date = ?, start_date = ?, end_date = ?, priority = ?, status = ?, notes = ? WHERE id = ?',
+      'UPDATE kitchen_requests SET request_number = ?, requested_by = ?, department = ?, request_date = ?, start_date = ?, end_date = ?, priority = ?, status = ?, notes = ?, rejection_reason = NULL WHERE id = ?',
       [
         payload.request_number,
         payload.requested_by || '',
@@ -879,17 +880,33 @@ const deleteKitchenRequest = async (requestId) => {
   }
 };
 
-const issueKitchenRequest = async (requestId, payload = {}) => {
+const rejectKitchenRequest = async (requestId, reason) => {
+  const rejectionReason = String(reason || '').trim();
+  if (!rejectionReason) throw new Error('A rejection reason is required.');
+
+  const [result] = await db.query(
+    'UPDATE kitchen_requests SET status = ?, rejection_reason = ? WHERE id = ? AND status = ?',
+    ['Rejected', rejectionReason, requestId, 'Pending']
+  );
+  if (!result.affectedRows) {
+    throw new Error('Only pending kitchen requests can be rejected.');
+  }
+};
+
+const approveKitchenRequest = async (requestId, payload = {}) => {
   const connection = await db.getConnection();
   try {
     await connection.beginTransaction();
     const [requests] = await connection.query('SELECT status FROM kitchen_requests WHERE id = ? FOR UPDATE', [requestId]);
     if (!requests.length) throw new Error('Kitchen request not found.');
-    if (requests[0].status !== 'Approved') {
-      throw new Error('Only approved kitchen requests can be issued.');
+    if (requests[0].status !== 'Pending') {
+      throw new Error('Only pending kitchen requests can be approved.');
     }
 
     const [items] = await connection.query('SELECT * FROM kitchen_request_items WHERE request_id = ?', [requestId]);
+    if (!items.some((item) => item.product_id)) {
+      throw new Error('This kitchen request has no stock items to approve.');
+    }
     for (const item of items) {
       if (!item.product_id) continue;
       const [productRows] = await connection.query(
@@ -904,17 +921,17 @@ const issueKitchenRequest = async (requestId, payload = {}) => {
       await connection.query('UPDATE inventory_products SET current_stock = ? WHERE id = ?', [newStock, item.product_id]);
       await connection.query(
         'INSERT INTO stock_transactions (product_id, transaction_type, reference_type, reference_id, quantity, unit, previous_stock, new_stock, reason, notes, created_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-        [item.product_id, 'KITCHEN_STOCK_IN', 'KITCHEN_REQUEST', requestId, quantity, item.unit || 'pcs', previousStock, newStock, 'Kitchen request stock added', 'Issued kitchen request stock', payload.created_by || 'system']
+        [item.product_id, 'KITCHEN_STOCK_IN', 'KITCHEN_REQUEST', requestId, quantity, item.unit || 'pcs', previousStock, newStock, 'Kitchen request approved', 'Stock added when kitchen request was approved', payload.created_by || 'system']
       );
     }
-    await connection.query('UPDATE kitchen_requests SET status = ? WHERE id = ?', ['Issued', requestId]);
+    await connection.query('UPDATE kitchen_requests SET status = ? WHERE id = ?', ['Approved', requestId]);
     await connection.commit();
     return true;
   } catch (error) {
     try {
       await connection.rollback();
     } catch (rollbackError) {
-      console.error('Unable to roll back kitchen stock issue.', rollbackError);
+      console.error('Unable to roll back kitchen request approval.', rollbackError);
     }
     throw error;
   } finally {
@@ -990,7 +1007,8 @@ module.exports = {
   createKitchenRequest,
   updateKitchenRequest,
   deleteKitchenRequest,
-  issueKitchenRequest,
+  rejectKitchenRequest,
+  approveKitchenRequest,
   createWastage,
   createRecipe,
   getExpiryItems,

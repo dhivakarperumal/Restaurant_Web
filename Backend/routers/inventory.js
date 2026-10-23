@@ -26,7 +26,8 @@ const {
   createKitchenRequest,
   updateKitchenRequest,
   deleteKitchenRequest,
-  issueKitchenRequest,
+  rejectKitchenRequest,
+  approveKitchenRequest,
   createWastage,
   createRecipe,
   getExpiryItems,
@@ -211,23 +212,13 @@ router.delete('/kitchen-requests/:id', withErrorHandler(async (req, res) => {
 }));
 
 router.put('/kitchen-requests/:id/approve', withErrorHandler(async (req, res) => {
-  await require('../config/db').query('UPDATE kitchen_requests SET status = ? WHERE id = ?', ['Approved', Number(req.params.id)]);
-  res.json({ success: true, message: 'Kitchen request approved.' });
+  await approveKitchenRequest(Number(req.params.id), { created_by: req.auth?.name || 'admin' });
+  res.json({ success: true, message: 'Kitchen request approved and stock added.' });
 }));
 
 router.put('/kitchen-requests/:id/reject', withErrorHandler(async (req, res) => {
-  await require('../config/db').query('UPDATE kitchen_requests SET status = ? WHERE id = ?', ['Rejected', Number(req.params.id)]);
+  await rejectKitchenRequest(Number(req.params.id), req.body?.reason);
   res.json({ success: true, message: 'Kitchen request rejected.' });
-}));
-
-router.put('/kitchen-requests/:id/issue', withErrorHandler(async (req, res) => {
-  await issueKitchenRequest(Number(req.params.id), req.body);
-  res.json({ success: true, message: 'Stock issued successfully.' });
-}));
-
-router.put('/kitchen-requests/:id/complete', withErrorHandler(async (req, res) => {
-  await require('../config/db').query('UPDATE kitchen_requests SET status = ? WHERE id = ?', ['Completed', Number(req.params.id)]);
-  res.json({ success: true, message: 'Kitchen request completed.' });
 }));
 
 router.get('/recipes', withErrorHandler(async (req, res) => {

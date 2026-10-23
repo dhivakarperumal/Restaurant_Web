@@ -1437,6 +1437,8 @@ function KitchenRequestsPage() {
   const [editingRequestId, setEditingRequestId] = useState(null);
   const [viewRequest, setViewRequest] = useState(null);
   const [approvalRequest, setApprovalRequest] = useState(null);
+  const [rejectionRequest, setRejectionRequest] = useState(null);
+  const [rejectionReason, setRejectionReason] = useState('');
   const [form, setForm] = useState({
     request_number: `KR-${Date.now()}`,
     requested_by: 'Admin',
@@ -1581,22 +1583,14 @@ function KitchenRequestsPage() {
       }
 
       if (action === 'reject') {
-        await api.put(`/inventory/kitchen-requests/${requestId}/reject`);
+        await api.put(`/inventory/kitchen-requests/${requestId}/reject`, { reason: rejectionReason });
         toast.success('Kitchen request rejected.');
+        setRejectionRequest(null);
+        setRejectionReason('');
       }
 
-      if (action === 'issue') {
-        await api.put(`/inventory/kitchen-requests/${requestId}/issue`);
-        toast.success('Stock issued to kitchen.');
-      }
-
-      if (action === 'complete') {
-        await api.put(`/inventory/kitchen-requests/${requestId}/complete`);
-        toast.success('Kitchen request completed.');
-      }
-
-      fetchRequests();
-      loadData();
+      await fetchRequests();
+      await loadData();
     } catch (error) {
       toast.error(error?.response?.data?.message || 'Unable to update kitchen request.');
     }
@@ -1611,17 +1605,9 @@ function KitchenRequestsPage() {
       workflowAction = (
         <>
           <button type="button" onClick={() => setApprovalRequest(request)} className="rounded-lg bg-sky-600 px-2.5 py-1.5 text-xs font-semibold text-white">Approve</button>
-          <button type="button" onClick={() => handleRequestAction(request.id, 'reject')} className="rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-slate-700">Reject</button>
+          <button type="button" onClick={() => { setRejectionRequest(request); setRejectionReason(''); }} className="rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-slate-700">Reject</button>
         </>
       );
-    }
-
-    if (status === 'Approved') {
-      workflowAction = <button type="button" onClick={() => handleRequestAction(request.id, 'issue')} className="rounded-lg bg-emerald-600 px-2.5 py-1.5 text-xs font-semibold text-white">Issue Stock</button>;
-    }
-
-    if (status === 'Issued') {
-      workflowAction = <button type="button" onClick={() => handleRequestAction(request.id, 'complete')} className="rounded-lg bg-[#1a3c36] px-2.5 py-1.5 text-xs font-semibold text-white">Complete</button>;
     }
 
     return (
@@ -1909,6 +1895,7 @@ function KitchenRequestsPage() {
               <div><dt className="text-slate-500">Request period</dt><dd className="font-semibold text-slate-900">{formatRequestPeriod(viewRequest)}</dd></div>
               <div><dt className="text-slate-500">Priority</dt><dd className="font-semibold text-slate-900">{viewRequest.priority || 'Normal'}</dd></div>
               <div className="sm:col-span-2"><dt className="text-slate-500">Notes</dt><dd className="font-semibold text-slate-900">{viewRequest.notes || '—'}</dd></div>
+              {viewRequest.rejection_reason && <div className="sm:col-span-2"><dt className="text-slate-500">Rejection reason</dt><dd className="font-semibold text-rose-700">{viewRequest.rejection_reason}</dd></div>}
             </dl>
             <div className="mt-5">
               <h3 className="mb-2 text-sm font-semibold text-slate-800">Requested items</h3>
@@ -1930,15 +1917,15 @@ function KitchenRequestsPage() {
         <div className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-900/45 p-4" role="presentation" onMouseDown={(event) => {
           if (event.target === event.currentTarget) setApprovalRequest(null);
         }}>
-          <section className="w-full max-w-lg rounded-2xl border border-slate-200 bg-white p-5 shadow-2xl" role="dialog" aria-modal="true" aria-labelledby="approve-kitchen-request-title">
+          <section className="w-full max-w-lg rounded-2xl border border-slate-200 bg-white p-5 shadow-2xl" role="dialog" aria-modal="true" aria-labelledby="issue-kitchen-request-title">
             <div className="mb-4 flex items-start justify-between gap-4">
               <div>
-                <h2 id="approve-kitchen-request-title" className="text-xl font-bold text-slate-900">Approve Kitchen Request</h2>
+                <h2 id="issue-kitchen-request-title" className="text-xl font-bold text-slate-900">Approve Kitchen Request</h2>
                 <p className="mt-1 text-sm text-slate-500">{approvalRequest.request_number}</p>
               </div>
               <button type="button" onClick={() => setApprovalRequest(null)} aria-label="Close approval confirmation" className="rounded-full bg-slate-100 px-2.5 py-1 text-sm font-semibold text-slate-600">×</button>
             </div>
-            <p className="mb-3 text-sm text-slate-700">Confirm the requested stock details before approving:</p>
+            <p className="mb-3 text-sm text-slate-700">Confirm approval to add these requested quantities to current stock:</p>
             {approvalRequest.items?.length ? (
               <div className="overflow-x-auto rounded-xl border border-slate-200">
                 <table className="min-w-full text-left text-sm">
@@ -1947,18 +1934,22 @@ function KitchenRequestsPage() {
                       <th className="px-3 py-2 font-semibold">Product</th>
                       <th className="px-3 py-2 font-semibold">Current stock</th>
                       <th className="px-3 py-2 font-semibold">Requested</th>
-                      <th className="px-3 py-2 font-semibold">After issue</th>
+                      <th className="px-3 py-2 font-semibold">After approval</th>
                     </tr>
                   </thead>
                   <tbody>
                     {approvalRequest.items.map((item) => {
                       const product = products.find((entry) => String(entry.id) === String(item.product_id));
+                      const currentStock = Number(product?.current_stock ?? 0);
+                      const requestedQuantity = Number(item.quantity ?? 0);
                       return (
                         <tr key={item.id || `${item.product_id}-${item.quantity}`} className="border-t border-slate-100">
                           <td className="px-3 py-2.5 font-medium text-slate-800">{item.item_name || item.product_name || product?.product_name || 'Unknown product'}</td>
-                          <td className="px-3 py-2.5 text-slate-600">{formatNumber(product?.current_stock ?? 0)} {item.unit || 'pcs'}</td>
-                          <td className="px-3 py-2.5 text-slate-600">{formatNumber(item.quantity)} {item.unit || 'pcs'}</td>
-                          <td className="px-3 py-2.5 font-semibold text-emerald-700">{formatNumber(Number(product?.current_stock ?? 0) + Number(item.quantity ?? 0))} {item.unit || 'pcs'}</td>
+                          <td className="px-3 py-2.5 text-slate-600">{formatNumber(currentStock)} {item.unit || 'pcs'}</td>
+                          <td className="px-3 py-2.5 text-slate-600">{formatNumber(requestedQuantity)} {item.unit || 'pcs'}</td>
+                          <td className="px-3 py-2.5 font-semibold text-emerald-700">
+                            {formatNumber(currentStock)} + {formatNumber(requestedQuantity)} = {formatNumber(currentStock + requestedQuantity)} {item.unit || 'pcs'}
+                          </td>
                         </tr>
                       );
                     })}
@@ -1979,9 +1970,48 @@ function KitchenRequestsPage() {
                 }}
                 className="rounded-xl bg-sky-600 px-4 py-2 text-sm font-semibold text-white hover:bg-sky-700"
               >
-                Confirm Approval
+                Approve & Add Stock
               </button>
             </div>
+          </section>
+        </div>
+      )}
+
+      {rejectionRequest && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-900/45 p-4" role="presentation" onMouseDown={(event) => {
+          if (event.target === event.currentTarget) setRejectionRequest(null);
+        }}>
+          <section className="w-full max-w-lg rounded-2xl border border-slate-200 bg-white p-5 shadow-2xl" role="dialog" aria-modal="true" aria-labelledby="reject-kitchen-request-title">
+            <div className="mb-4 flex items-start justify-between gap-4">
+              <div>
+                <h2 id="reject-kitchen-request-title" className="text-xl font-bold text-slate-900">Reject Kitchen Request</h2>
+                <p className="mt-1 text-sm text-slate-500">{rejectionRequest.request_number}</p>
+              </div>
+              <button type="button" onClick={() => setRejectionRequest(null)} aria-label="Close rejection dialog" className="rounded-full bg-slate-100 px-2.5 py-1 text-sm font-semibold text-slate-600">×</button>
+            </div>
+            <form onSubmit={(event) => {
+              event.preventDefault();
+              if (!rejectionReason.trim()) {
+                toast.error('Enter a reason for rejecting this request.');
+                return;
+              }
+              handleRequestAction(rejectionRequest.id, 'reject');
+            }}>
+              <label htmlFor="kitchen-request-rejection-reason" className="mb-2 block text-sm font-medium text-slate-700">Rejection reason</label>
+              <textarea
+                id="kitchen-request-rejection-reason"
+                value={rejectionReason}
+                onChange={(event) => setRejectionReason(event.target.value)}
+                className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-rose-500"
+                rows={4}
+                placeholder="Explain why this request is being rejected"
+                required
+              />
+              <div className="mt-5 flex justify-end gap-3">
+                <button type="button" onClick={() => setRejectionRequest(null)} className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700">Cancel</button>
+                <button type="submit" className="rounded-xl bg-rose-600 px-4 py-2 text-sm font-semibold text-white hover:bg-rose-700">Submit Rejection</button>
+              </div>
+            </form>
           </section>
         </div>
       )}
