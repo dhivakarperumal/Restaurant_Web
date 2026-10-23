@@ -177,7 +177,7 @@ const Navbar = () => {
       location.pathname.startsWith("/products/") ||
       location.pathname.startsWith("/product/"));
 
-  const isPagesRoute = ["/gallery", "/about", "/contact", "/privacy-policy"].includes(
+  const isPagesRoute = ["/about", "/contact", "/privacy-policy"].includes(
     location.pathname,
   );
 
@@ -249,22 +249,16 @@ const Navbar = () => {
         >
           <PageContainer>
             <div className="flex h-[72px] items-center justify-between gap-2 bg-brand-bg sm:gap-4 lg:h-[88px]">
-              <Link to="/" className="flex min-w-0 items-center gap-2.5 sm:gap-3">
-                {/* <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-[#d79d4a]/50 bg-white shadow-inner sm:h-14 sm:w-14">
-                  <img
-                    src="/images/logo.png"
-                    alt="Restaurant Name logo"
-                    className="h-full bg-white w-full object-contain"
-                  />
-                </div> */}
-                <div className="min-w-0 leading-none">
-                  <div className="text-[22px] font-black tracking-[-0.06em] text-brand-text sm:text-[26px]">
-                    Buy Food
-                  </div>
-                  <div className="mt-1 hidden text-[9px] font-semibold tracking-[0.28em] text-gold sm:block">
-                    Buy Food &amp; Snacks Online
-                  </div>
-                </div>
+              <Link
+                to="/"
+                className="flex min-w-0 items-center gap-2.5 sm:gap-3"
+                aria-label="Buy Food home"
+              >
+                <img
+                  src="/images/logo.png"
+                  alt="Buy Food"
+                  className="h-[58px] w-[87px] shrink-0 object-contain sm:h-[68px] sm:w-[102px]"
+                />
               </Link>
 
               <nav className="hidden items-center gap-6 xl:flex">
@@ -283,23 +277,6 @@ const Navbar = () => {
                     Menu
                   </NavLink>
                 </div>
-
-                <div className="flex items-center gap-1 text-sm font-semibold text-brand-text">
-                  <NavLink
-                    to="/about"
-                    className={desktopLinkClass}
-                  >
-                    About
-                  </NavLink>
-                </div>
-                
-
-                {/* <NavLink
-                  to="/gallery"
-                  className={desktopLinkClass}
-                >
-                  Gallery
-                </NavLink> */}
 
                 <NavLink
                   to="/reservation"
@@ -320,9 +297,40 @@ const Navbar = () => {
                 <NavLink to="/offers" className={desktopLinkClass}>
                   Offers
                 </NavLink>
-                <NavLink to="/contact" className={desktopLinkClass}>
-                  Contact
+                <NavLink to="/gallery" className={desktopLinkClass}>
+                  Gallery
                 </NavLink>
+                <div className="group relative">
+                  <button
+                    type="button"
+                    className={`${desktopLinkClass({ isActive: isPagesRoute })} flex items-center gap-1`}
+                    aria-haspopup="true"
+                  >
+                    Pages
+                    <FiChevronDown className="transition-transform group-hover:rotate-180 group-focus-within:rotate-180" />
+                  </button>
+                  <div className="invisible absolute right-0 top-full z-50 min-w-44 translate-y-1 rounded-xl border border-brand-border bg-brand-bg p-2 opacity-0 shadow-xl transition-all group-hover:visible group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:visible group-focus-within:translate-y-0 group-focus-within:opacity-100">
+                    {[
+                      ["About Us", "/about"],
+                      ["Contact Us", "/contact"],
+                      ["Privacy Policy", "/privacy-policy"],
+                    ].map(([label, path]) => (
+                      <NavLink
+                        key={path}
+                        to={path}
+                        className={({ isActive }) =>
+                          `block rounded-lg px-3 py-2 text-sm font-semibold transition-colors ${
+                            isActive
+                              ? "bg-primary/20 text-gold"
+                              : "text-brand-text hover:bg-brand-surface hover:text-gold"
+                          }`
+                        }
+                      >
+                        {label}
+                      </NavLink>
+                    ))}
+                  </div>
+                </div>
               </nav>
 
               <div className="flex shrink-0 items-center gap-1.5 sm:gap-2.5 lg:gap-3">
@@ -445,12 +453,15 @@ const Navbar = () => {
                     )}
                   </div>
                 ) : (
-                  <Link
-                    to="/login"
-                    className="hidden rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-brand-text shadow-md transition hover:bg-primary-soft hover:text-brand-bg sm:block"
+                  <button
+                    type="button"
+                    onClick={() => navigate("/login")}
+                    className="flex h-9 w-9 items-center justify-center rounded-full border border-brand-border bg-brand-surface text-brand-text transition hover:border-gold hover:bg-brand-surface-strong sm:h-11 sm:w-11"
+                    aria-label="Sign in to your account"
+                    title="Sign in"
                   >
-                    Login
-                  </Link>
+                    <FiUser className="text-base sm:text-lg" />
+                  </button>
                 )}
 
                 <button
@@ -477,12 +488,6 @@ const Navbar = () => {
                 <NavLink to="/shop" onClick={() => setMobileMenu(false)} className={() => mobileLinkClass({ isActive: isShopPage })}>
                   Menu
                 </NavLink>
-                <NavLink to="/about" onClick={() => setMobileMenu(false)} className={mobileLinkClass}>
-                  About
-                </NavLink>
-                {/* <NavLink to="/gallery" onClick={() => setMobileMenu(false)} className={mobileLinkClass}>
-                  Gallery
-                </NavLink> */}
                 <NavLink to="/reservation" onClick={() => setMobileMenu(false)} className={mobileLinkClass}>
                   Reservation
                 </NavLink>
@@ -491,6 +496,9 @@ const Navbar = () => {
                 </NavLink>
                 <NavLink to="/offers" onClick={() => setMobileMenu(false)} className={mobileLinkClass}>
                   Offers
+                </NavLink>
+                <NavLink to="/gallery" onClick={() => setMobileMenu(false)} className={mobileLinkClass}>
+                  Gallery
                 </NavLink>
 
                 <button
@@ -506,7 +514,6 @@ const Navbar = () => {
                 {mobileSubMenu === "pages" && (
                   <div className="ml-3 space-y-1 border-l border-primary/20 pl-3">
                     {[
-                      ["Gallery", "/gallery"],
                       ["About Us", "/about"],
                       ["Contact Us", "/contact"],
                       ["Privacy Policy", "/privacy-policy"],
@@ -533,15 +540,6 @@ const Navbar = () => {
                   <button type="button" onClick={() => { setMobileMenu(false); openCart ? openCart() : navigate("/cart"); }} className="col-span-2 flex items-center justify-center gap-2 rounded-xl bg-orange px-3 py-3 text-xs font-bold text-brand-bg transition hover:bg-orange-light sm:col-span-1">
                     <FiShoppingCart /> Cart {cart.length > 0 ? `(${cart.length})` : ""}
                   </button>
-                  {!isLoggedIn && (
-                    <Link
-                      to="/login"
-                      onClick={() => setMobileMenu(false)}
-                      className="col-span-2 flex items-center justify-center gap-2 rounded-xl border border-gold px-3 py-3 text-xs font-bold text-gold transition hover:bg-brand-surface sm:col-span-3"
-                    >
-                      <FiUser /> Login
-                    </Link>
-                  )}
                   {isLoggedIn && (
                     <button
                       type="button"

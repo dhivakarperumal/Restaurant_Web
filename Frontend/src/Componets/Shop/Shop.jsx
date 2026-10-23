@@ -186,10 +186,31 @@ export default function Shop({ offersOnly = false }) {
     return true;
   };
 
-  // Direct quick add
-  const handleQuickAdd = async (e, food) => {
-    e.stopPropagation();
-    openCustomizer(food);
+  // Add a food's base option directly; customization remains an explicit action.
+  const handleQuickAdd = async (food) => {
+    if (!addToCart) {
+      toast.error("Unable to add this item to your cart.");
+      return false;
+    }
+    const price = Number(food.final_price || food.mrp || 0);
+    const size = food.portion_size || "Standard";
+    return addToCart({
+      ...food,
+      id: food.food_id || food.id,
+      food_id: food.food_id || food.id,
+      product_id: food.food_id || food.id,
+      product_name: food.food_name,
+      name: food.food_name,
+      price,
+      portion_size: size,
+      product_image: food.food_images?.[0] || "",
+      image: food.food_images?.[0] || "",
+      quantity: 1,
+    }, {
+      size,
+      price,
+      quantity: 1,
+    });
   };
 
   // Filtered & Sorted Foods
@@ -738,9 +759,10 @@ export default function Shop({ offersOnly = false }) {
                 <FoodProductCard
                   key={food.food_id || food.id}
                   food={food}
-                  onSelect={() => openCustomizer(food)}
+                  onSelect={() => navigate(`/food/${encodeURIComponent(food.food_id || food.id)}`, { state: { food } })}
                   onImageClick={() => navigate(`/food/${encodeURIComponent(food.food_id || food.id)}`, { state: { food } })}
-                  onAdd={() => openCustomizer(food)}
+                  onCustomize={openCustomizer}
+                  onAdd={handleQuickAdd}
                   cartQuantity={getItemCartQty(food.food_id || food.id)}
                   isInWishlist={isItemInWishlist(food.food_id || food.id)}
                   onToggleWishlist={toggleWishlist}
@@ -757,6 +779,9 @@ export default function Shop({ offersOnly = false }) {
                 const mrp = Number(food.mrp || 0);
                 const hasDiscount = discount > 0 && mrp > finalPrice;
                 const isAvailable = food.is_available !== false;
+                const hasOptions = (food.addons || []).some(
+                  (addon) => String(addon.status || "Active").toLowerCase() === "active",
+                ) || (food.customizations || []).length > 0;
                 const primaryImage =
                   Array.isArray(food.food_images) && food.food_images.length > 0
                     ? resolveImageUrl(food.food_images[0])
@@ -765,7 +790,7 @@ export default function Shop({ offersOnly = false }) {
                 return (
                   <article
                     key={food.food_id || food.id}
-                    onClick={() => openCustomizer(food)}
+                    onClick={() => navigate(`/food/${encodeURIComponent(food.food_id || food.id)}`, { state: { food } })}
                     className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 rounded-3xl border border-slate-200/80 bg-white p-4 shadow-xs hover:border-emerald-200 hover:shadow-md transition cursor-pointer"
                   >
                     <div className="flex items-center gap-4 min-w-0">
@@ -837,12 +862,16 @@ export default function Shop({ offersOnly = false }) {
 
                       <button
                         type="button"
-                        onClick={(e) => handleQuickAdd(e, food)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (hasOptions) openCustomizer(food);
+                          else handleQuickAdd(food);
+                        }}
                         disabled={!isAvailable}
                         className="inline-flex items-center gap-1.5 rounded-xl bg-[#1a3c36] px-4 py-2 text-xs font-bold text-white shadow-2xs hover:bg-[#245048] transition disabled:opacity-50"
                       >
                         <Plus className="h-3.5 w-3.5 text-emerald-300" />
-                        <span>Add</span>
+                        <span>{hasOptions ? "Customize" : "Add"}</span>
                       </button>
                     </div>
                   </article>

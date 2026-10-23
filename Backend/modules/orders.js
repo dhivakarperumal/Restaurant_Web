@@ -1,6 +1,7 @@
 const { createHash, randomUUID } = require('crypto');
 const db = require('../config/db');
 const { isFoodScheduledNow } = require('./foodAvailability');
+const { calculateDeliveryQuote } = require('../utils/deliveryPricing');
 
 const initializeOrderSchema = async () => {
   await db.query(`
@@ -44,6 +45,8 @@ const initializeOrderSchema = async () => {
       order_type ENUM('home_delivery', 'pickup') NOT NULL,
       address_id BIGINT UNSIGNED NULL,
       subtotal DECIMAL(10,2) NOT NULL,
+      delivery_charge DECIMAL(10,2) NOT NULL DEFAULT 0,
+      delivery_distance_km DECIMAL(8,2) NOT NULL DEFAULT 0,
       total_amount DECIMAL(10,2) NOT NULL,
       payment_method ENUM('cod', 'online') NOT NULL,
       payment_status VARCHAR(24) NOT NULL DEFAULT 'pending',
@@ -59,6 +62,23 @@ const initializeOrderSchema = async () => {
       INDEX orders_status_idx (order_status)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
   `);
+
+  const [deliveryChargeColumn] = await db.execute(
+    `SELECT COLUMN_NAME FROM information_schema.COLUMNS
+     WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'orders'
+       AND COLUMN_NAME = 'delivery_charge'`
+  );
+  if (deliveryChargeColumn.length === 0) {
+    await db.query('ALTER TABLE orders ADD COLUMN delivery_charge DECIMAL(10,2) NOT NULL DEFAULT 0');
+  }
+  const [deliveryDistanceColumn] = await db.execute(
+    `SELECT COLUMN_NAME FROM information_schema.COLUMNS
+     WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'orders'
+       AND COLUMN_NAME = 'delivery_distance_km'`
+  );
+  if (deliveryDistanceColumn.length === 0) {
+    await db.query('ALTER TABLE orders ADD COLUMN delivery_distance_km DECIMAL(8,2) NOT NULL DEFAULT 0');
+  }
 
   const [deliveryPartnerColumn] = await db.execute(
     `SELECT COLUMN_NAME FROM information_schema.COLUMNS
@@ -259,6 +279,7 @@ const createOrderFromCart = async ({
   fulfillmentType,
   orderType,
   address,
+  deliveryLocation,
   paymentMethod,
   idempotencyKey,
   localMinutes,
@@ -271,7 +292,8 @@ const createOrderFromCart = async ({
       [userId]
     );
     const [existingOrders] = await connection.execute(
-      `SELECT order_number, total_amount, payment_method, payment_status, razorpay_order_id
+      `SELECT order_number, subtotal, delivery_charge, delivery_distance_km, total_amount,
+              payment_method, payment_status, razorpay_order_id
        FROM orders WHERE user_id = ? AND idempotency_key = ? LIMIT 1 FOR UPDATE`,
       [userId, idempotencyKey]
     );
@@ -280,7 +302,10 @@ const createOrderFromCart = async ({
       await connection.commit();
       return {
         orderNumber: existing.order_number,
-        subtotal: Number(existing.total_amount),
+        subtotal: Number(existing.subtotal),
+        deliveryCharge: Number(existing.delivery_charge),
+        distanceKm: Number(existing.delivery_distance_km),
+        totalAmount: Number(existing.total_amount),
         paymentMethod: existing.payment_method,
         paymentStatus: existing.payment_status,
         razorpayOrderId: existing.razorpay_order_id,
@@ -404,6 +429,12 @@ const createOrderFromCart = async ({
       };
     });
     const subtotal = Number(items.reduce((sum, item) => sum + item.totalPrice, 0).toFixed(2));
+    const deliveryQuote = fulfillmentType === 'delivery'
+      ? await calculateDeliveryQuote({
+        location: deliveryLocation,
+        subtotal,
+      })
+      : { deliveryCharge: 0, distanceKm: 0, totalAmount: subtotal };
     const temporaryOrderNumber = randomUUID();
     let addressId = null;
 
@@ -432,9 +463,10 @@ const createOrderFromCart = async ({
     const [orderResult] = await connection.execute(
       `INSERT INTO orders
         (order_number, user_id, customer_name, customer_email, customer_phone,
-         order_type, address_id, subtotal, total_amount, payment_method,
+         order_type, address_id, subtotal, delivery_charge, delivery_distance_km,
+         total_amount, payment_method,
          payment_status, order_status, idempotency_key)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?, ?)`,
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?, ?)`,
       [
         temporaryOrderNumber,
         userId,
@@ -444,7 +476,9 @@ const createOrderFromCart = async ({
         orderType || (fulfillmentType === 'delivery' ? 'home_delivery' : fulfillmentType),
         addressId,
         subtotal,
-        subtotal,
+        deliveryQuote.deliveryCharge,
+        deliveryQuote.distanceKm,
+        deliveryQuote.totalAmount,
         paymentMethod,
         paymentMethod === 'online' ? 'awaiting_payment' : 'placed',
         idempotencyKey,
@@ -484,6 +518,9 @@ const createOrderFromCart = async ({
     return {
       orderNumber,
       subtotal,
+      deliveryCharge: deliveryQuote.deliveryCharge,
+      distanceKm: deliveryQuote.distanceKm,
+      totalAmount: deliveryQuote.totalAmount,
       items,
       paymentMethod,
       paymentStatus: 'pending',

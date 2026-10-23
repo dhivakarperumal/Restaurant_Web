@@ -50,6 +50,7 @@ const pageInfo = {
   "/admin/gallery":                 { title: "Gallery",                icon: Boxes },
   "/admin/coupons":                 { title: "Coupons & Offers",        icon: Tag },
   "/admin/delivery-charges":        { title: "Delivery & Service Charges", icon: Package },
+  "/admin/settings/restaurant-profile": { title: "Restaurant Profile", icon: Settings },
   "/admin/settings":                { title: "Settings",              icon: Settings },
   "/admin/settings/profile":        { title: "Profile",               icon: User },
   "/admin/send-message":            { title: "Bulk Messaging",        icon: Send },

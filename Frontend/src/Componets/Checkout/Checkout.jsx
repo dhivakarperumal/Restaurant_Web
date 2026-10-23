@@ -1,10 +1,12 @@
 import { useContext, useEffect, useMemo, useRef, useState } from 'react';
-import { ArrowLeft, CheckCircle2, MapPin, PackageCheck, ShoppingBag, UtensilsCrossed } from 'lucide-react';
+import { CheckCircle2, LocateFixed, MapPin, PackageCheck, ShoppingBag, Store, Truck, UtensilsCrossed } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 import api, { BACKEND_BASE_URL } from '../../api';
 import { useAuth } from '../../PrivateRouter/AuthContext';
 import { StoreContext } from '../../PrivateRouter/StoreContext';
+import PageContainer from '../../CommonComponents/PageContainer';
+import PageHeader from '../../CommonComponents/PageHeader';
 
 let razorpayScriptPromise;
 
@@ -79,10 +81,98 @@ const addressFields = [
   { name: 'pincode', label: 'Pincode', placeholder: '6-digit pincode' },
   { name: 'landmark', label: 'Landmark (optional)', placeholder: 'Nearby landmark' },
 ];
+const getAddressFromCoordinates = async ({ latitude, longitude }) => {
+  const query = new URLSearchParams({
+    format: 'jsonv2',
+    addressdetails: '1',
+    zoom: '18',
+    lat: String(latitude),
+    lon: String(longitude),
+  });
+  const response = await fetch(`https://nominatim.openstreetmap.org/reverse?${query}`);
+  if (!response.ok) {
+    throw new Error('Your location could not be converted to an address. Please enter it manually.');
+  }
 
-const getCheckoutIdempotencyKey = async (userId, cart) => {
+  const result = await response.json();
+  const parts = result.address || {};
+  const resolvedState = parts.state === 'NCT of Delhi' ? 'Delhi' : parts.state;
+  const matchedState = indianStatesAndTerritories.find(
+    (state) => state.toLowerCase() === String(resolvedState || '').toLowerCase(),
+  );
+  const street = [parts.house_number, parts.road || parts.pedestrian || parts.footway]
+    .filter(Boolean)
+    .join(' ');
+  const area = parts.neighbourhood || parts.suburb || parts.quarter || parts.city_district;
+  const city = parts.city || parts.town || parts.village || parts.municipality || parts.county;
+
+  if (!result.address || (!street && !area && !city && !parts.state)) {
+    throw new Error('No address details were found for your current location. Please enter it manually.');
+  }
+
+  return {
+    address_line: street || parts.house_name || '',
+    area_locality: area || '',
+    city: city || '',
+    state: matchedState || '',
+    pincode: String(parts.postcode || '').replace(/\s/g, '').slice(0, 6),
+  };
+};
+
+const getCoordinatesFromAddress = async (address, signal) => {
+  const areaAndCity = [
+    address.area_locality,
+    address.city,
+    address.state,
+    address.pincode,
+    'India',
+  ].filter(Boolean);
+  const searches = [
+    [
+      address.address_line,
+      ...areaAndCity,
+    ].filter(Boolean),
+    areaAndCity,
+    [address.city, address.state, address.pincode, 'India'].filter(Boolean),
+  ];
+
+  for (let index = 0; index < searches.length; index += 1) {
+    if (signal.aborted) throw new DOMException('Address lookup was cancelled.', 'AbortError');
+    if (index > 0) {
+      await new Promise((resolve) => window.setTimeout(resolve, 1100));
+    }
+    const query = new URLSearchParams({
+      format: 'jsonv2',
+      limit: '1',
+      countrycodes: 'in',
+      q: searches[index].join(', '),
+    });
+    const response = await fetch(`https://nominatim.openstreetmap.org/search?${query}`, { signal });
+    if (!response.ok) {
+      throw new Error('Address search is temporarily unavailable. Please try again or use current location.');
+    }
+
+    const results = await response.json();
+    const latitude = Number(results?.[0]?.lat);
+    const longitude = Number(results?.[0]?.lon);
+    if (Number.isFinite(latitude) && latitude >= -90 && latitude <= 90
+      && Number.isFinite(longitude) && longitude >= -180 && longitude <= 180) {
+      return { latitude, longitude };
+    }
+  }
+
+  throw new Error('We could not find that address. Check the street, area, city, state, and pincode, or use current location.');
+};
+
+const getCheckoutIdempotencyKey = async (userId, cart, checkoutDetails) => {
   const requestFingerprint = JSON.stringify({
     userId,
+    fulfillmentType: checkoutDetails.fulfillmentType,
+    paymentMethod: checkoutDetails.paymentMethod,
+    address: checkoutDetails.fulfillmentType === 'home_delivery' ? checkoutDetails.address : null,
+    deliveryLocation: checkoutDetails.fulfillmentType === 'home_delivery'
+      ? checkoutDetails.deliveryLocation
+      : null,
     cart: cart.map((item) => ({
       id: item.id || item.cart_id,
       food_id: item.food_id,
@@ -130,6 +220,12 @@ function Checkout() {
   });
   const [savedAddresses, setSavedAddresses] = useState([]);
   const [selectedAddress, setSelectedAddress] = useState('new');
+  const [deliveryLocation, setDeliveryLocation] = useState(null);
+  const [deliveryQuote, setDeliveryQuote] = useState(null);
+  const [deliveryQuoteError, setDeliveryQuoteError] = useState(null);
+  const [fetchingLocation, setFetchingLocation] = useState(false);
+  const [geocodingAddressFingerprint, setGeocodingAddressFingerprint] = useState('');
+  const [addressGeocodingError, setAddressGeocodingError] = useState(null);
   const [submitting, setSubmitting] = useState(false);
   const [completedOrder, setCompletedOrder] = useState(null);
   const submissionInProgress = useRef(false);
@@ -157,11 +253,112 @@ function Checkout() {
     };
   }, [user?.user_id]);
 
+  const addressFingerprint = [
+    address.address_line,
+    address.area_locality,
+    address.city,
+    address.state,
+    address.pincode,
+  ].map((part) => String(part || '').trim()).join('|');
+  const geocodingAddress = fulfillmentType === 'home_delivery'
+    && !deliveryLocation
+    && !fetchingLocation
+    && Boolean(addressFingerprint)
+    && geocodingAddressFingerprint === addressFingerprint;
+  const currentAddressGeocodingError = fulfillmentType === 'home_delivery'
+    && !deliveryLocation
+    && addressGeocodingError?.fingerprint === addressFingerprint
+    ? addressGeocodingError.message
+    : '';
+
+  useEffect(() => {
+    if (fulfillmentType !== 'home_delivery' || deliveryLocation || fetchingLocation) return undefined;
+
+    const requiredAddressParts = [
+      address.address_line,
+      address.area_locality,
+      address.city,
+      address.state,
+      address.pincode,
+    ];
+    if (requiredAddressParts.some((part) => !String(part || '').trim())) return undefined;
+
+    const controller = new AbortController();
+    const timeout = window.setTimeout(async () => {
+      setGeocodingAddressFingerprint(addressFingerprint);
+      try {
+        const location = await getCoordinatesFromAddress(address, controller.signal);
+        if (!controller.signal.aborted) setDeliveryLocation(location);
+      } catch (error) {
+        if (!controller.signal.aborted) {
+          console.error('Could not locate the manually entered checkout address:', error);
+          setAddressGeocodingError({
+            fingerprint: addressFingerprint,
+            message: error.message || 'The address could not be located.',
+          });
+        }
+      } finally {
+        if (!controller.signal.aborted) setGeocodingAddressFingerprint('');
+      }
+    }, 700);
+
+    return () => {
+      window.clearTimeout(timeout);
+      controller.abort();
+    };
+  }, [address, addressFingerprint, deliveryLocation, fetchingLocation, fulfillmentType]);
+
   const subtotal = useMemo(() => cart.reduce(
     (sum, item) => sum + Number(item.price || 0) * Number(item.quantity || 1),
     0
   ), [cart]);
   const itemCount = cart.reduce((sum, item) => sum + Number(item.quantity || 1), 0);
+  const quoteFingerprint = `${fulfillmentType}:${subtotal.toFixed(2)}:${deliveryLocation?.latitude ?? ''}:${deliveryLocation?.longitude ?? ''}`;
+  const deliveryLatitude = deliveryLocation?.latitude;
+  const deliveryLongitude = deliveryLocation?.longitude;
+  const currentDeliveryQuote = deliveryQuote?.fingerprint === quoteFingerprint ? deliveryQuote : null;
+  const currentDeliveryQuoteError = deliveryQuoteError?.fingerprint === quoteFingerprint
+    ? deliveryQuoteError.message
+    : '';
+  const deliveryQuotePending = fulfillmentType === 'home_delivery'
+    && Boolean(deliveryLocation)
+    && !currentDeliveryQuote
+    && !currentDeliveryQuoteError;
+
+  useEffect(() => {
+    if (fulfillmentType !== 'home_delivery'
+      || deliveryLatitude === undefined
+      || deliveryLongitude === undefined) return undefined;
+    let active = true;
+    api.post('/orders/delivery-quote', {
+      location: { latitude: deliveryLatitude, longitude: deliveryLongitude },
+      subtotal,
+    })
+      .then(({ data }) => {
+        if (!active) return;
+        if (!data?.success || !data?.data) {
+          throw new Error(data?.message || 'The delivery charge could not be calculated.');
+        }
+        setDeliveryQuote({ ...data.data, fingerprint: quoteFingerprint });
+      })
+      .catch((error) => {
+        if (!active) return;
+        console.error('Delivery charge could not be calculated:', error);
+        setDeliveryQuoteError({
+          fingerprint: quoteFingerprint,
+          message: error?.response?.data?.message || error.message || 'The delivery charge could not be calculated.',
+        });
+      });
+    return () => {
+      active = false;
+    };
+  }, [
+    deliveryLatitude,
+    deliveryLongitude,
+    fulfillmentType,
+    quoteFingerprint,
+    subtotal,
+  ]);
 
   const updateCustomer = (event) => {
     setCustomer((previous) => ({ ...previous, [event.target.name]: event.target.value }));
@@ -169,12 +366,15 @@ function Checkout() {
 
   const updateAddress = (event) => {
     setSelectedAddress('new');
+    setDeliveryLocation(null);
+    setAddressGeocodingError(null);
     setAddress((previous) => ({ ...previous, [event.target.name]: event.target.value }));
   };
 
   const selectAddress = (event) => {
     const addressId = event.target.value;
     setSelectedAddress(addressId);
+    setDeliveryLocation(null);
     const selected = savedAddresses.find((item) => String(item.id) === addressId);
     setAddress(selected || {
       address_line: '',
@@ -184,6 +384,56 @@ function Checkout() {
       pincode: '',
       landmark: '',
     });
+  };
+
+  const useCurrentLocation = () => {
+    if (!navigator.geolocation) {
+      toast.error('Location is not supported by this browser. Delivery requires device location to calculate the charge.');
+      return;
+    }
+
+    setDeliveryLocation(null);
+    setDeliveryQuote(null);
+    setDeliveryQuoteError(null);
+    setAddressGeocodingError(null);
+    setFetchingLocation(true);
+    navigator.geolocation.getCurrentPosition(
+      async ({ coords }) => {
+        try {
+          const location = {
+            latitude: coords.latitude,
+            longitude: coords.longitude,
+          };
+          setDeliveryLocation(location);
+          const detectedAddress = await getAddressFromCoordinates(coords);
+          setSelectedAddress('new');
+          setAddress((previous) => ({
+            ...previous,
+            ...Object.fromEntries(
+              Object.entries(detectedAddress).filter(
+                ([field, value]) => value && !String(previous[field] || '').trim(),
+              ),
+            ),
+          }));
+          toast.success('Location found. Please review your address before placing the order.');
+        } catch (error) {
+          console.error('Could not resolve current checkout location:', error);
+          toast.error(error.message || 'Could not fetch your address. Please enter it manually.');
+        } finally {
+          setFetchingLocation(false);
+        }
+      },
+      (error) => {
+        const message = error.code === error.PERMISSION_DENIED
+          ? 'Location permission was denied. Allow location access or enter your address manually.'
+          : error.code === error.TIMEOUT
+            ? 'Location lookup timed out. Please try again or enter your address manually.'
+            : 'Your current location could not be detected. Please enter your address manually.';
+        toast.error(message);
+        setFetchingLocation(false);
+      },
+      { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 },
+    );
   };
 
   const finishOrder = async (orderNumber, message) => {
@@ -211,6 +461,14 @@ function Checkout() {
       toast.error('Your cart is empty.');
       return;
     }
+    if (fulfillmentType === 'home_delivery' && !deliveryLocation) {
+      toast.error(currentAddressGeocodingError || 'Enter a complete address or use current location to calculate the delivery charge.');
+      return;
+    }
+    if (fulfillmentType === 'home_delivery' && !currentDeliveryQuote) {
+      toast.error(currentDeliveryQuoteError || 'Wait for the delivery charge to finish calculating.');
+      return;
+    }
     if (submissionInProgress.current) return;
 
     submissionInProgress.current = true;
@@ -219,6 +477,12 @@ function Checkout() {
       const requestKey = await getCheckoutIdempotencyKey(
         user.user_id,
         cart,
+        {
+          fulfillmentType,
+          paymentMethod,
+          address,
+          deliveryLocation,
+        },
       );
       idempotencyContext.current = requestKey;
       const { data } = await api.post(
@@ -227,6 +491,7 @@ function Checkout() {
           customer,
           order_type: fulfillmentType,
           address: fulfillmentType === 'home_delivery' ? address : null,
+          delivery_location: fulfillmentType === 'home_delivery' ? deliveryLocation : null,
           payment_method: paymentMethod,
         },
         { headers: { 'Idempotency-Key': requestKey.idempotencyKey } },
@@ -245,14 +510,21 @@ function Checkout() {
         return;
       }
 
+      const paymentDetails = data.data.razorpay;
+      if (!paymentDetails?.key_id || !paymentDetails.order_id || !Number(paymentDetails.amount)) {
+        throw new Error('Razorpay payment details are incomplete. Please contact the restaurant.');
+      }
       await loadRazorpay();
+      if (!window.Razorpay) {
+        throw new Error('Razorpay checkout could not be initialized. Please try again.');
+      }
       const checkout = new window.Razorpay({
-        key: data.data.razorpay.key_id,
-        amount: data.data.razorpay.amount,
-        currency: data.data.razorpay.currency,
+        key: paymentDetails.key_id,
+        amount: paymentDetails.amount,
+        currency: paymentDetails.currency,
         name: 'Restaurant',
         description: `Order ${data.data.order_number}`,
-        order_id: data.data.razorpay.order_id,
+        order_id: paymentDetails.order_id,
         prefill: {
           name: customer.name,
           email: customer.email,
@@ -304,76 +576,98 @@ function Checkout() {
 
   if (!user?.user_id) {
     return (
-      <main className="min-h-[65vh] bg-[#faf8f5] px-4 py-16">
-        <div className="mx-auto max-w-lg rounded-3xl border border-[#eadfd2] bg-white p-8 text-center shadow-sm">
-          <ShoppingBag className="mx-auto mb-4 h-10 w-10 text-[#a34f32]" />
-          <h1 className="text-2xl font-bold text-[#263830]">Log in to checkout</h1>
-          <p className="mt-2 text-sm text-[#68766e]">Sign in to save your address and place your order.</p>
-          <Link to="/login" state={{ from: '/checkout' }} className="mt-6 inline-flex rounded-xl bg-[#263830] px-6 py-3 font-semibold text-white hover:bg-[#1a2822]">
-            Log in
-          </Link>
-        </div>
+      <main className="min-h-[65vh] bg-[#faf8f5] pb-16">
+        <PageHeader title="Log in to checkout" />
+        <PageContainer className="pt-12">
+          <div className="mx-auto max-w-lg rounded-3xl border border-[#eadfd2] bg-white p-8 text-center shadow-sm">
+            <ShoppingBag className="mx-auto mb-4 h-10 w-10 text-[#a34f32]" />
+            <p className="text-sm text-[#68766e]">Sign in to save your address and place your order.</p>
+            <Link to="/login" state={{ from: '/checkout' }} className="mt-6 inline-flex rounded-xl bg-[#263830] px-6 py-3 font-semibold text-white hover:bg-[#1a2822]">
+              Log in
+            </Link>
+          </div>
+        </PageContainer>
       </main>
     );
   }
 
   if (completedOrder) {
     return (
-      <main className="min-h-[65vh] bg-[#faf8f5] px-4 py-16">
-        <div className="mx-auto max-w-xl rounded-3xl border border-[#eadfd2] bg-white p-8 text-center shadow-sm">
-          <CheckCircle2 className="mx-auto mb-4 h-14 w-14 text-emerald-600" />
-          <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[#a34f32]">Order confirmed</p>
-          <h1 className="mt-2 text-3xl font-bold text-[#263830]">Thank you, {customer.name}!</h1>
-          <p className="mt-3 text-sm text-[#68766e]">Your order reference is</p>
-          <p className="mt-1 break-all font-mono text-sm font-bold text-[#263830]">{completedOrder}</p>
-          <Link to="/shop" className="mt-7 inline-flex items-center gap-2 rounded-xl bg-[#263830] px-6 py-3 font-semibold text-white hover:bg-[#1a2822]">
-            <ShoppingBag size={17} /> Continue browsing
-          </Link>
-        </div>
+      <main className="min-h-[65vh] bg-[#faf8f5] pb-16">
+        <PageHeader title="Order confirmed" />
+        <PageContainer className="pt-12">
+          <div className="mx-auto max-w-xl rounded-3xl border border-[#eadfd2] bg-white p-8 text-center shadow-sm">
+            <CheckCircle2 className="mx-auto mb-4 h-14 w-14 text-emerald-600" />
+            <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[#a34f32]">Order confirmed</p>
+            <h1 className="mt-2 text-3xl font-bold text-[#263830]">Thank you, {customer.name}!</h1>
+            <p className="mt-3 text-sm text-[#68766e]">Your order reference is</p>
+            <p className="mt-1 break-all font-mono text-sm font-bold text-[#263830]">{completedOrder}</p>
+            <Link to="/shop" className="mt-7 inline-flex items-center gap-2 rounded-xl bg-[#263830] px-6 py-3 font-semibold text-white hover:bg-[#1a2822]">
+              <ShoppingBag size={17} /> Continue browsing
+            </Link>
+          </div>
+        </PageContainer>
       </main>
     );
   }
 
   if (loadingCart) {
-    return <main className="min-h-[60vh] bg-[#faf8f5] px-4 py-20 text-center text-[#68766e]">Loading your cart…</main>;
+    return (
+      <main className="min-h-[60vh] bg-[#faf8f5] pb-16">
+        <PageHeader title="Checkout" />
+        <PageContainer className="py-16 text-center text-[#68766e]">Loading your cart…</PageContainer>
+      </main>
+    );
   }
 
   if (!cart.length) {
     return (
-      <main className="min-h-[60vh] bg-[#faf8f5] px-4 py-16">
-        <div className="mx-auto max-w-lg rounded-3xl border border-[#eadfd2] bg-white p-8 text-center">
-          <ShoppingBag className="mx-auto mb-4 h-10 w-10 text-[#a34f32]" />
-          <h1 className="text-2xl font-bold text-[#263830]">Your cart is empty</h1>
-          <p className="mt-2 text-sm text-[#68766e]">Add something delicious before checking out.</p>
-          <Link to="/shop" className="mt-6 inline-flex rounded-xl bg-[#263830] px-6 py-3 font-semibold text-white">Browse food</Link>
-        </div>
+      <main className="min-h-[60vh] bg-[#faf8f5] pb-16">
+        <PageHeader title="Checkout" />
+        <PageContainer className="pt-12">
+          <div className="mx-auto max-w-lg rounded-3xl border border-[#eadfd2] bg-white p-8 text-center">
+            <ShoppingBag className="mx-auto mb-4 h-10 w-10 text-[#a34f32]" />
+            <h1 className="text-2xl font-bold text-[#263830]">Your cart is empty</h1>
+            <p className="mt-2 text-sm text-[#68766e]">Add something delicious before checking out.</p>
+            <Link to="/shop" className="mt-6 inline-flex rounded-xl bg-[#263830] px-6 py-3 font-semibold text-white">Browse food</Link>
+          </div>
+        </PageContainer>
       </main>
     );
   }
 
   return (
-    <main className="min-h-screen bg-[#faf8f5] px-4 py-8 sm:px-6 lg:px-8">
-      <div className="mx-auto max-w-7xl">
-        <Link to="/shop" className="mb-6 inline-flex items-center gap-2 text-sm font-semibold text-[#68766e] hover:text-[#a34f32]">
-          <ArrowLeft size={17} /> Continue shopping
-        </Link>
-        <div className="mb-8">
-          <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[#a34f32]">Almost there</p>
-          <h1 className="mt-1 text-3xl font-bold text-[#263830] sm:text-4xl">Checkout</h1>
-          <p className="mt-2 text-[#68766e]">Your details, your food, and the finishing touch.</p>
+    <main className="min-h-screen bg-[#faf8f5] pb-12">
+      <PageHeader title="Checkout" />
+      <PageContainer className="py-8">
+        <div className="mb-8 rounded-3xl border border-[#eadfd2] bg-gradient-to-r from-white via-[#fffdfa] to-[#f7eee6] p-6 shadow-sm sm:p-8">
+          <div className="flex flex-col justify-between gap-6 sm:flex-row sm:items-center">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-[0.22em] text-[#a34f32]">Almost there</p>
+              <h1 className="mt-2 text-3xl font-bold tracking-tight text-[#263830] sm:text-4xl">Checkout</h1>
+              <p className="mt-2 text-sm text-[#68766e]">Confirm your details and choose how you’d like to receive your food.</p>
+            </div>
+            <div className="flex items-center gap-2 self-start rounded-full border border-[#e8ddd0] bg-white/80 px-4 py-2 text-sm font-semibold text-[#68766e] sm:self-auto">
+              <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[#263830] text-xs text-white">1</span>
+              <span className="text-[#263830]">Your details</span>
+              <span className="mx-1 h-px w-6 bg-[#ded5c9]" />
+              <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[#f7eee6] text-xs text-[#a34f32]">2</span>
+              <span>Review</span>
+            </div>
+          </div>
         </div>
 
-        <form onSubmit={placeOrder} className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_390px]">
-          <div className="space-y-6">
-            <section className="rounded-2xl border border-[#eadfd2] bg-white p-5 shadow-sm sm:p-7">
-              <div className="mb-5 flex items-center gap-3">
-                <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#f7eee6] text-[#a34f32]"><ShoppingBag size={19} /></span>
+        <form onSubmit={placeOrder} className="grid items-start gap-7 lg:grid-cols-[minmax(0,1fr)_390px]">
+          <div className="space-y-5">
+            <section className="rounded-3xl border border-[#eadfd2] bg-white p-5 shadow-[0_8px_30px_rgba(60,45,30,0.04)] sm:p-7">
+              <div className="mb-6 flex items-center gap-4">
+                <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#f7eee6] text-[#a34f32]"><ShoppingBag size={20} /></span>
                 <div>
-                  <h2 className="text-lg font-bold text-[#263830]">Customer details</h2>
+                  <h2 className="text-lg font-bold text-[#263830]">Contact details</h2>
                   <p className="text-sm text-[#8c7a6b]">Who should we contact about your order?</p>
                 </div>
               </div>
-              <div className="grid gap-4 sm:grid-cols-2">
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 <label className="text-sm font-semibold text-[#263830]">
                   Full name <span className="text-[#a34f32]">*</span>
                   <input name="name" value={customer.name} onChange={updateCustomer} required maxLength={150} autoComplete="name" className="mt-2 w-full rounded-xl border border-[#ded5c9] px-4 py-3 font-normal outline-none focus:border-[#a34f32] focus:ring-2 focus:ring-[#a34f32]/10" placeholder="Your name" />
@@ -382,35 +676,76 @@ function Checkout() {
                   Phone number <span className="text-[#a34f32]">*</span>
                   <input name="phone" type="tel" value={customer.phone} onChange={updateCustomer} required minLength={7} maxLength={32} autoComplete="tel" className="mt-2 w-full rounded-xl border border-[#ded5c9] px-4 py-3 font-normal outline-none focus:border-[#a34f32] focus:ring-2 focus:ring-[#a34f32]/10" placeholder="+91 98765 43210" />
                 </label>
-                <label className="text-sm font-semibold text-[#263830] sm:col-span-2">
+                <label className="text-sm font-semibold text-[#263830]">
                   Email address <span className="font-normal text-[#8c7a6b]">(optional)</span>
                   <input name="email" type="email" value={customer.email} onChange={updateCustomer} maxLength={255} autoComplete="email" className="mt-2 w-full rounded-xl border border-[#ded5c9] px-4 py-3 font-normal outline-none focus:border-[#a34f32] focus:ring-2 focus:ring-[#a34f32]/10" placeholder="you@example.com" />
                 </label>
               </div>
             </section>
 
-            <section className="rounded-2xl border border-[#eadfd2] bg-white p-5 shadow-sm sm:p-7">
-              <div className="mb-5 flex items-center gap-3">
-                <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#f7eee6] text-[#a34f32]"><MapPin size={19} /></span>
+            <section className="rounded-3xl border border-[#eadfd2] bg-white p-5 shadow-[0_8px_30px_rgba(60,45,30,0.04)] sm:p-7">
+              <div className="mb-6 flex items-center gap-4">
+                <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#f7eee6] text-[#a34f32]"><MapPin size={20} /></span>
                 <div>
-                  <h2 className="text-lg font-bold text-[#263830]">Fulfilment</h2>
+                  <h2 className="text-lg font-bold text-[#263830]">How would you like your order?</h2>
                   <p className="text-sm text-[#8c7a6b]">Choose how you would like to receive your order.</p>
                 </div>
               </div>
-              <label className="block text-sm font-semibold text-[#263830]">
-                Home delivery or pickup
-                <select value={fulfillmentType} onChange={(event) => setFulfillmentType(event.target.value)} className="mt-2 w-full rounded-xl border border-[#ded5c9] bg-white px-4 py-3 outline-none focus:border-[#a34f32] focus:ring-2 focus:ring-[#a34f32]/10 sm:max-w-sm">
-                  <option value="home_delivery">Home Delivery</option>
-                  <option value="pickup">Pickup</option>
-                </select>
-              </label>
+              <div role="radiogroup" aria-label="Order fulfilment method" className="grid gap-3 sm:grid-cols-2">
+                {[
+                  {
+                    value: 'home_delivery',
+                    label: 'Home delivery',
+                    detail: 'Delivered to your address',
+                    icon: Truck,
+                  },
+                  {
+                    value: 'pickup',
+                    label: 'Pickup',
+                    detail: 'Collect your order at the restaurant',
+                    icon: Store,
+                  },
+                ].map((option) => {
+                  const OptionIcon = option.icon;
+                  const selected = fulfillmentType === option.value;
+                  return (
+                    <label
+                      key={option.value}
+                      className={`flex cursor-pointer items-start gap-3 rounded-2xl border p-4 transition-all focus-within:ring-2 focus-within:ring-[#a34f32]/20 ${
+                        selected
+                          ? 'border-[#a34f32] bg-[#fbf6f1] shadow-sm'
+                          : 'border-[#e8e0d6] bg-white hover:border-[#cbb9a5] hover:bg-[#fffdfa]'
+                      }`}
+                    >
+                      <input
+                        type="radio"
+                        name="fulfillment_type"
+                        value={option.value}
+                        checked={selected}
+                        onChange={(event) => setFulfillmentType(event.target.value)}
+                        className="sr-only"
+                      />
+                      <span className={`mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${selected ? 'bg-[#a34f32] text-white' : 'bg-[#f7eee6] text-[#a34f32]'}`}>
+                        <OptionIcon size={19} />
+                      </span>
+                      <span className="min-w-0 flex-1">
+                        <span className="block font-bold text-[#263830]">{option.label}</span>
+                        <span className="mt-1 block text-xs leading-5 text-[#8c7a6b]">{option.detail}</span>
+                      </span>
+                      <span className={`mt-1 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border ${selected ? 'border-[#a34f32]' : 'border-[#c9c0b5]'}`}>
+                        {selected && <span className="h-2.5 w-2.5 rounded-full bg-[#a34f32]" />}
+                      </span>
+                    </label>
+                  );
+                })}
+              </div>
 
               {fulfillmentType === 'home_delivery' && (
-                <div className="mt-5 border-t border-[#f0e9df] pt-5">
+                <div className="mt-6 border-t border-[#f0e9df] pt-6">
                   {savedAddresses.length > 0 && (
-                    <label className="mb-4 block text-sm font-semibold text-[#263830]">
-                      Saved address
-                      <select value={selectedAddress} onChange={selectAddress} className="mt-2 w-full rounded-xl border border-[#ded5c9] bg-white px-4 py-3 outline-none focus:border-[#a34f32] sm:max-w-lg">
+                    <label className="mb-5 flex flex-col gap-2 text-sm font-semibold text-[#263830] sm:flex-row sm:items-center">
+                      <span className="shrink-0 sm:w-28">Saved address</span>
+                      <select value={selectedAddress} onChange={selectAddress} className="block w-full rounded-xl border border-[#ded5c9] bg-white px-4 py-3 font-normal outline-none focus:border-[#a34f32] sm:max-w-xl">
                         {savedAddresses.map((saved) => (
                           <option key={saved.id} value={String(saved.id)}>
                             {[saved.address_line, saved.area_locality, saved.city, saved.pincode].filter(Boolean).join(', ')}
@@ -420,9 +755,39 @@ function Checkout() {
                       </select>
                     </label>
                   )}
-                  <div className="grid gap-4 sm:grid-cols-2">
-                    {addressFields.map((field) => (
-                      <label key={field.name} className={`text-sm font-semibold text-[#263830] ${field.name === 'address_line' || field.name === 'area_locality' || field.name === 'landmark' ? 'sm:col-span-2' : ''}`}>
+                  <div className="grid gap-x-5 gap-y-4 sm:grid-cols-2">
+                      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:col-span-2">
+                        <button
+                          type="button"
+                          onClick={useCurrentLocation}
+                          disabled={fetchingLocation}
+                          className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl border border-[#a34f32] px-4 py-2.5 text-sm font-semibold text-[#a34f32] transition hover:bg-[#fbf6f1] disabled:cursor-wait disabled:opacity-60"
+                        >
+                          <LocateFixed size={17} />
+                          {fetchingLocation ? 'Finding your address…' : 'Use current location'}
+                        </button>
+                        <p className="text-xs leading-5 text-[#8c7a6b]">
+                          Enter a complete address to calculate the delivery fee automatically, or use your current location for a more precise result.
+                          {' '}<a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer" className="underline hover:text-[#a34f32]">© OpenStreetMap contributors</a>
+                        </p>
+                      </div>
+                      {deliveryLocation && (
+                        <p className="text-xs font-medium text-emerald-700 sm:col-span-2">
+                          Delivery location captured. The delivery fee is calculated from the restaurant by straight-line distance.
+                        </p>
+                      )}
+                      {geocodingAddress && (
+                        <p role="status" className="text-xs font-medium text-[#8c5b21] sm:col-span-2">
+                          Finding your address to calculate the delivery fee…
+                        </p>
+                      )}
+                      {currentAddressGeocodingError && (
+                        <p role="alert" className="text-xs text-red-700 sm:col-span-2">
+                          {currentAddressGeocodingError}
+                        </p>
+                      )}
+                      {addressFields.map((field) => (
+                      <label key={field.name} className="text-sm font-semibold text-[#263830]">
                         {field.label}{field.name !== 'landmark' && <span className="text-[#a34f32]"> *</span>}
                         {field.name === 'state' ? (
                           <select
@@ -460,9 +825,9 @@ function Checkout() {
               )}
             </section>
 
-            <section className="rounded-2xl border border-[#eadfd2] bg-white p-5 shadow-sm sm:p-7">
-              <div className="mb-5 flex items-center gap-3">
-                <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#f7eee6] text-[#a34f32]"><PackageCheck size={19} /></span>
+            <section className="rounded-3xl border border-[#eadfd2] bg-white p-5 shadow-[0_8px_30px_rgba(60,45,30,0.04)] sm:p-7">
+              <div className="mb-6 flex items-center gap-4">
+                <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#f7eee6] text-[#a34f32]"><PackageCheck size={20} /></span>
                 <div>
                   <h2 className="text-lg font-bold text-[#263830]">Payment method</h2>
                   <p className="text-sm text-[#8c7a6b]">Choose how you want to pay.</p>
@@ -473,7 +838,7 @@ function Checkout() {
                   { value: 'cod', label: 'Cash on delivery', detail: 'Pay when your order arrives.' },
                   { value: 'online', label: 'Online payment', detail: 'Secure checkout powered by Razorpay.' },
                 ].map((method) => (
-                  <label key={method.value} className={`flex cursor-pointer gap-3 rounded-xl border p-4 transition-colors ${paymentMethod === method.value ? 'border-[#a34f32] bg-[#fbf6f1]' : 'border-[#e8e0d6] hover:border-[#cbb9a5]'}`}>
+                  <label key={method.value} className={`flex cursor-pointer gap-3 rounded-2xl border p-4 transition-all focus-within:ring-2 focus-within:ring-[#a34f32]/20 ${paymentMethod === method.value ? 'border-[#a34f32] bg-[#fbf6f1] shadow-sm' : 'border-[#e8e0d6] hover:border-[#cbb9a5] hover:bg-[#fffdfa]'}`}>
                     <input type="radio" name="payment_method" value={method.value} checked={paymentMethod === method.value} onChange={(event) => setPaymentMethod(event.target.value)} className="mt-1 accent-[#a34f32]" />
                     <span>
                       <span className="block text-sm font-bold text-[#263830]">{method.label}</span>
@@ -485,18 +850,18 @@ function Checkout() {
             </section>
           </div>
 
-          <aside className="overflow-hidden rounded-2xl border border-[#eadfd2] bg-white shadow-sm lg:sticky lg:top-6">
-            <div className="border-b border-[#f0e9df] px-5 py-5">
-              <h2 className="flex items-center gap-2 text-lg font-bold text-[#263830]"><UtensilsCrossed size={19} className="text-[#a34f32]" /> Your food</h2>
+          <aside className="overflow-hidden rounded-3xl border border-[#eadfd2] bg-white shadow-[0_12px_40px_rgba(60,45,30,0.08)] lg:sticky lg:top-6">
+            <div className="border-b border-[#f0e9df] bg-gradient-to-r from-white to-[#fffaf5] px-5 py-5">
+              <h2 className="flex items-center gap-2 text-lg font-bold text-[#263830]"><UtensilsCrossed size={19} className="text-[#a34f32]" /> Order summary</h2>
               <p className="mt-1 text-sm text-[#8c7a6b]">{itemCount} item{itemCount === 1 ? '' : 's'} in your order</p>
             </div>
-            <div className="max-h-[380px] space-y-4 overflow-y-auto p-5">
+            <div className="max-h-[420px] space-y-4 overflow-y-auto p-5">
               {cart.map((item) => (
-                <div key={item.id || item.food_id} className="flex gap-3">
+                <div key={item.id || item.food_id} className="flex gap-3 rounded-2xl border border-[#f0e9df] bg-white p-3">
                   {getItemImage(item) ? (
-                    <img src={resolveImageUrl(getItemImage(item))} alt={getItemName(item)} className="h-16 w-16 shrink-0 rounded-xl object-cover" onError={(event) => { event.currentTarget.style.display = 'none'; }} />
+                    <img src={resolveImageUrl(getItemImage(item))} alt={getItemName(item)} className="h-[68px] w-[68px] shrink-0 rounded-xl object-cover" onError={(event) => { event.currentTarget.style.display = 'none'; }} />
                   ) : (
-                    <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-xl bg-[#f7eee6] text-[#a34f32]"><UtensilsCrossed size={22} /></div>
+                    <div className="flex h-[68px] w-[68px] shrink-0 items-center justify-center rounded-xl bg-[#f7eee6] text-[#a34f32]"><UtensilsCrossed size={22} /></div>
                   )}
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-bold text-[#263830]">{getItemName(item)}</p>
@@ -522,17 +887,53 @@ function Checkout() {
                 </div>
               ))}
             </div>
-            <div className="space-y-3 border-t border-[#f0e9df] bg-[#faf8f5] p-5">
-              <div className="flex justify-between text-sm text-[#68766e]"><span>Subtotal</span><span>₹{subtotal.toFixed(2)}</span></div>
-              <div className="flex justify-between border-t border-[#e9e0d5] pt-3 text-base font-bold text-[#263830]"><span>Total</span><span className="text-[#a34f32]">₹{subtotal.toFixed(2)}</span></div>
-              <button type="submit" disabled={submitting || cart.length === 0} className="w-full rounded-xl bg-[#263830] px-5 py-3.5 text-sm font-bold text-white shadow-sm transition hover:bg-[#1a2822] disabled:cursor-not-allowed disabled:opacity-60">
+            <div className="space-y-4 border-t border-[#f0e9df] bg-[#faf8f5] p-5">
+              <div className="flex justify-between text-sm text-[#68766e]"><span>Subtotal</span><span className="font-medium text-[#263830]">₹{subtotal.toFixed(2)}</span></div>
+              <div className="flex justify-between gap-3 text-sm text-[#68766e]">
+                <span>
+                  {fulfillmentType === 'pickup' ? 'Pickup' : 'Delivery charge'}
+                  {currentDeliveryQuote && ` (${currentDeliveryQuote.distance_km.toFixed(2)} km)`}
+                </span>
+                <span className="text-right font-medium text-[#263830]">
+                  {fulfillmentType === 'pickup'
+                    ? 'No delivery fee'
+                    : deliveryQuotePending
+                      ? 'Calculating…'
+                      : geocodingAddress
+                        ? 'Finding address…'
+                      : currentDeliveryQuote
+                        ? `₹${currentDeliveryQuote.delivery_charge.toFixed(2)}`
+                        : 'Enter address'}
+                </span>
+              </div>
+              {currentDeliveryQuoteError && (
+                <p role="alert" className="text-xs text-red-700">{currentDeliveryQuoteError}</p>
+              )}
+              {fulfillmentType === 'home_delivery' && !deliveryLocation && (
+                <p className="text-xs text-[#8c7a6b]">
+                  Enter the complete delivery address to calculate the charge, or use current location.
+                </p>
+              )}
+              <div className="flex justify-between border-t border-[#e9e0d5] pt-4 text-base font-bold text-[#263830]">
+                <span>Total</span>
+                <span className="text-xl text-[#a34f32]">
+                  ₹{(fulfillmentType === 'pickup'
+                    ? subtotal
+                    : currentDeliveryQuote?.total_amount ?? subtotal).toFixed(2)}
+                </span>
+              </div>
+              <button
+                type="submit"
+                disabled={submitting || cart.length === 0 || (fulfillmentType === 'home_delivery' && (!deliveryLocation || geocodingAddress || deliveryQuotePending || !currentDeliveryQuote))}
+                className="w-full rounded-xl bg-[#263830] px-5 py-4 text-sm font-bold text-white shadow-md shadow-[#263830]/15 transition hover:-translate-y-0.5 hover:bg-[#1a2822] disabled:translate-y-0 disabled:cursor-not-allowed disabled:opacity-60"
+              >
                 {submitting ? 'Preparing your order…' : paymentMethod === 'online' ? 'Continue to Razorpay' : 'Place order'}
               </button>
               <p className="text-center text-xs text-[#8c7a6b]">Your order details are protected and securely submitted.</p>
             </div>
           </aside>
         </form>
-      </div>
+      </PageContainer>
     </main>
   );
 }

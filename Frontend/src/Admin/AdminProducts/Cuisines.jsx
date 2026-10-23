@@ -372,7 +372,7 @@ const Cuisines = () => {
                     {form.image && !preview && <span className="inline-flex items-center gap-1 text-xs text-emerald-700"><ImagePlus className="h-4 w-4" /> Image saved</span>}
                   </div>
                 </div>
-                <label className="flex items-center gap-2 text-sm text-gray-700"><input type="checkbox" checked={form.featured} onChange={(event) => setForm((current) => ({ ...current, featured: event.target.checked }))} className="h-4 w-4 accent-emerald-800" /> Featured cuisine</label>
+                {/* <label className="flex items-center gap-2 text-sm text-gray-700"><input type="checkbox" checked={form.featured} onChange={(event) => setForm((current) => ({ ...current, featured: event.target.checked }))} className="h-4 w-4 accent-emerald-800" /> Featured cuisine</label> */}
                 <label className="space-y-1.5 text-sm font-medium text-gray-700">Status
                   <select value={form.status} onChange={(event) => setForm((current) => ({ ...current, status: event.target.value }))} className="h-10 w-full rounded-md border border-gray-300 px-3"><option>Active</option><option>Inactive</option></select>
                 </label>

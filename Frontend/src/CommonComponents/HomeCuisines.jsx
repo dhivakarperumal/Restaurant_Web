@@ -57,7 +57,7 @@ function HomeCuisines() {
             Our Cuisines
           </p>
           <h2 id="home-cuisines-heading" className="mt-2 text-2xl font-extrabold text-[#17251e] sm:text-3xl">
-            A World of <span className="font-serif italic text-[#1a6a3b]">Flavors</span>
+            Choose your <span className="font-serif italic text-[#1a6a3b]">Cuisine</span>
           </h2>
         </div>
 
@@ -65,7 +65,8 @@ function HomeCuisines() {
           <div className="scrollbar-hide flex gap-4 overflow-hidden px-2">
             {[1, 2, 3, 4].map((item) => (
               <div key={item} className="basis-[calc((100%-1rem)/2)] shrink-0 animate-pulse overflow-hidden rounded-xl bg-slate-200 sm:basis-[calc((100%-2rem)/3)] lg:basis-[calc((100%-3rem)/4)] xl:basis-[calc((100%-4rem)/5)]">
-                <div className="aspect-[3/2] bg-slate-300" />
+                <div className="aspect-square bg-slate-300" />
+                <div className="h-12 bg-slate-200" />
               </div>
             ))}
           </div>
@@ -114,33 +115,27 @@ function HomeCuisines() {
                     <Link
                       to={`/shop?cuisine=${encodeURIComponent(cuisineFilter)}`}
                       aria-label={`Browse ${cuisineName} cuisine`}
-                      className="group relative block h-full overflow-hidden rounded-xl bg-[#17251e] shadow-sm transition hover:-translate-y-1 hover:shadow-lg"
+                      className="group block h-full overflow-hidden rounded-xl border border-[#e7e0d8] bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-lg"
                     >
-                      <div className="relative aspect-[3/2] overflow-hidden bg-[#17251e]">
+                      <div className="relative aspect-square overflow-hidden bg-[#17251e]">
                         {image ? (
-                          <>
-                            <img
-                              src={image}
-                              alt=""
-                              aria-hidden="true"
-                              loading="lazy"
-                              className="absolute inset-0 h-full w-full scale-110 object-cover opacity-70 blur-sm"
-                            />
-                            <img
-                              src={image}
-                              alt={cuisineName}
-                              loading="lazy"
-                              className="relative h-full w-full object-contain"
-                            />
-                          </>
+                          <img
+                            src={image}
+                            alt={cuisineName}
+                            loading="lazy"
+                            className="absolute inset-0 h-full w-full object-cover"
+                          />
                         ) : (
                           <div className="flex h-full items-center justify-center bg-[#315d2d] text-white/80">
                             <Utensils className="h-12 w-12" />
                           </div>
                         )}
                       </div>
-                      <div className="absolute inset-x-0 bottom-0 flex justify-end p-3">
-                        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white text-[#203129] transition group-hover:bg-[#fff8ed]">
+                      <div className="flex min-h-12 items-center justify-between gap-2 px-3 py-2">
+                        <span className="truncate text-sm font-bold text-[#203129]">
+                          {cuisineName}
+                        </span>
+                        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#fff8ed] text-[#203129] transition group-hover:bg-[#edc783]">
                           <ArrowRight className="h-4 w-4" />
                         </span>
                       </div>

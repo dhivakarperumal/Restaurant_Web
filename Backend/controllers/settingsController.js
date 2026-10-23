@@ -14,6 +14,30 @@ const normalizeSettings = (section, settings) => Object.fromEntries(
   ])
 );
 
+const validateDeliverySettings = (settings) => {
+  const fields = [
+    ['base_charge', 'Base delivery fee', false],
+    ['free_minimum', 'Free-delivery minimum', false],
+    ['per_km_charge', 'Delivery fee per kilometre', false],
+    ['max_distance', 'Maximum delivery radius', true],
+  ];
+  for (const [key, label, mustBePositive] of fields) {
+    const rawValue = settings[key];
+    const value = Number(rawValue);
+    if (rawValue === undefined || rawValue === null || String(rawValue).trim() === ''
+      || !Number.isFinite(value) || value < 0 || (mustBePositive && value === 0)) {
+      return `${label} must be a valid ${mustBePositive ? 'positive' : 'non-negative'} number.`;
+    }
+  }
+  if (settings.express_charge !== undefined) {
+    const expressCharge = Number(settings.express_charge);
+    if (!Number.isFinite(expressCharge) || expressCharge < 0) {
+      return 'Express delivery charge must be a non-negative number.';
+    }
+  }
+  return null;
+};
+
 const get = async (req, res) => {
   if (!sections.has(req.params.section)) {
     return res.status(404).json({ success: false, message: 'Settings section not found.' });
@@ -37,6 +61,12 @@ const save = async (req, res) => {
 
   try {
     const settings = normalizeSettings(req.params.section, req.body);
+    if (req.params.section === 'delivery') {
+      const validationError = validateDeliverySettings(settings);
+      if (validationError) {
+        return res.status(400).json({ success: false, message: validationError });
+      }
+    }
     const savedSettings = await saveSettings(req.params.section, settings);
     return res.json({ success: true, data: savedSettings });
   } catch (error) {
