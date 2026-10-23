@@ -86,7 +86,9 @@ async function login(req, res) {
     const { password_hash: _passwordHash, ...user } = userRecord;
 
     const roleNormalized = String(userRecord.role || '').trim().toLowerCase();
-    const isStaff = ['chef', 'server', 'delivery', 'delivery partner', 'cashier', 'manager', 'cleaner'].includes(roleNormalized) || Boolean(userRecord.employee_id);
+    const isDeliveryPartner = ['delivery', 'delivery partner'].includes(roleNormalized);
+    const isStaff = !isDeliveryPartner
+      && (['chef', 'server', 'cashier', 'manager', 'cleaner'].includes(roleNormalized) || Boolean(userRecord.employee_id));
     if (isStaff) {
       try {
         const attendance = await recordLoginAttendance(userRecord.user_id, userRecord.employee_id);
@@ -245,7 +247,9 @@ async function googleLogin(req, res) {
     const { password_hash: _passwordHash, ...user } = userRecord;
 
     const roleNormalized = String(userRecord.role || '').trim().toLowerCase();
-    const isStaff = ['chef', 'server', 'delivery', 'delivery partner', 'cashier', 'manager', 'cleaner'].includes(roleNormalized) || Boolean(userRecord.employee_id);
+    const isDeliveryPartner = ['delivery', 'delivery partner'].includes(roleNormalized);
+    const isStaff = !isDeliveryPartner
+      && (['chef', 'server', 'cashier', 'manager', 'cleaner'].includes(roleNormalized) || Boolean(userRecord.employee_id));
     if (isStaff) {
       try {
         const attendance = await recordLoginAttendance(userRecord.user_id, userRecord.employee_id);
