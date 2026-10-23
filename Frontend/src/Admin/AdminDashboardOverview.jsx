@@ -7,7 +7,7 @@ import {
   TrendingUp, Users, UtensilsCrossed,
 } from 'lucide-react';
 import {
-  Bar, CartesianGrid, Cell, ComposedChart, Line, Pie, PieChart,
+  Area, AreaChart, Bar, BarChart, CartesianGrid, Cell, Pie, PieChart,
   ResponsiveContainer, Tooltip, XAxis, YAxis,
 } from 'recharts';
 import api, { BACKEND_BASE_URL } from '../api';
@@ -151,7 +151,6 @@ const AdminDashboardOverview = () => {
   const [period, setPeriod] = useState('year');
   const [customFrom, setCustomFrom] = useState('');
   const [customTo, setCustomTo] = useState('');
-  const [includeOrders, setIncludeOrders] = useState(true);
   const [snapshot, setSnapshot] = useState({ orders: [], bills: [], kitchenOrders: [], users: [], foods: [], categories: [], inventory: {}, kitchenRequests: [] });
   const [report, setReport] = useState({ summary: null, trend: [], statuses: [] });
   const [loading, setLoading] = useState(true);
@@ -346,7 +345,16 @@ const AdminDashboardOverview = () => {
     ...item,
     color: STATUS_COLORS[String(item.status).toLowerCase()] || '#8a9690',
   }));
-  const chartData = period === 'year'
+  const orderCountsByBucket = new Map();
+  const addOrderCount = (dateValue) => {
+    const dateKey = getDateKey(dateValue);
+    if (!dateKey) return;
+    const bucket = ['year', 'lastYear'].includes(period) ? dateKey.slice(0, 7) : dateKey;
+    orderCountsByBucket.set(bucket, (orderCountsByBucket.get(bucket) || 0) + 1);
+  };
+  snapshot.orders.forEach((order) => addOrderCount(order.created_at || order.order_date));
+  snapshot.bills.forEach((bill) => addOrderCount(bill.created_at));
+  const rawChartData = period === 'year'
     ? Array.from({ length: 12 }, (_, monthIndex) => {
       const monthDate = new Date(new Date().getFullYear(), monthIndex, 1);
       const monthKey = `${monthDate.getFullYear()}-${String(monthIndex + 1).padStart(2, '0')}`;
@@ -354,15 +362,33 @@ const AdminDashboardOverview = () => {
       return {
         date: monthKey,
         revenue: Number(entry?.revenue || 0),
-        orders: Number(entry?.orders || 0),
         label: formatDate(monthDate, { month: 'short' }),
       };
     })
-    : report.trend.map((entry) => ({
+    : ['week', 'lastWeek'].includes(period)
+      ? Array.from({ length: 7 }, (_, dayIndex) => {
+        const weekStart = new Date();
+        weekStart.setHours(0, 0, 0, 0);
+        weekStart.setDate(weekStart.getDate() - ((weekStart.getDay() + 6) % 7) - (period === 'lastWeek' ? 7 : 0));
+        const date = new Date(weekStart);
+        date.setDate(date.getDate() + dayIndex);
+        const dateKey = getDateKey(date);
+        const entry = report.trend.find((item) => String(item.date).slice(0, 10) === dateKey);
+        return {
+          date: dateKey,
+          revenue: Number(entry?.revenue || 0),
+          label: formatDate(date, { weekday: 'short' }),
+        };
+      })
+      : report.trend.map((entry) => ({
       ...entry,
       label: formatDate(entry.date, ['lastYear', 'this-year', 'last-year'].includes(period) ? { month: 'short', year: '2-digit' } : { day: '2-digit', month: 'short' }),
     }));
-  const periodLabel = PERIODS.find(([key]) => (PERIOD_API[key] || key) === apiRange)?.[1] || 'Today';
+  const chartData = rawChartData.map((entry) => {
+    const bucketLength = ['year', 'lastYear'].includes(period) ? 7 : 10;
+    const bucket = String(entry.date).slice(0, bucketLength);
+    return { ...entry, orders: orderCountsByBucket.get(bucket) || 0 };
+  });
   const quickActions = [
     { label: 'Add Food Item', icon: CookingPot, path: '/admin/products/add', tone: 'bg-[#eaf7ed] text-[#23944a]', surface: 'border-[#1f7a4d] bg-[#1f7a4d] hover:border-[#19643f] hover:bg-[#19643f]' },
     { label: 'New Order', icon: ShoppingBag, path: '/admin/billing/new', tone: 'bg-[#eaf2ff] text-[#2475dc]', surface: 'border-[#2864b3] bg-[#2864b3] hover:border-[#20518f] hover:bg-[#20518f]' },
@@ -373,9 +399,6 @@ const AdminDashboardOverview = () => {
     { label: 'Categories', icon: Layers, path: '/admin/products/categories', tone: 'bg-[#f3f6df] text-[#687a24]', surface: 'border-[#63752a] bg-[#63752a] hover:border-[#4f5e21] hover:bg-[#4f5e21]' },
     { label: 'Expenses', icon: Receipt, path: '/admin/expenses', tone: 'bg-[#fff0ef] text-[#c4483a]', surface: 'border-[#a64039] bg-[#a64039] hover:border-[#87342e] hover:bg-[#87342e]' },
   ];
-  const dateLabel = period === 'custom' && customFrom && customTo
-    ? `${formatDate(customFrom, { day: '2-digit', month: 'short', year: 'numeric' })} - ${formatDate(customTo, { day: '2-digit', month: 'short', year: 'numeric' })}`
-    : `${periodLabel} (${formatDate(new Date(), { day: '2-digit', month: 'short', year: 'numeric' })})`;
   const listedPendingKitchenCount = snapshot.kitchenRequests.filter(
     (request) => ['pending', 'approved'].includes(String(request.status || '').trim().toLowerCase())
   ).length;
@@ -405,13 +428,6 @@ const AdminDashboardOverview = () => {
           <p className="mt-1 text-[10px] leading-5 text-slate-500 sm:text-[12px]">Here’s what’s happening at your restaurant today.</p>
         </div>
         <div className="flex flex-wrap items-center justify-end gap-2">
-        <label className="flex h-9 items-center gap-2 rounded-xl border border-[#e4e9e3] bg-white px-2.5 text-xs shadow-sm sm:px-3">
-          <CalendarDays size={15} className="text-[#536259]" />
-          <span className="sr-only">Dashboard date range</span>
-          <select value={period} onChange={(event) => setPeriod(event.target.value)} aria-label="Dashboard date range" className="max-w-[125px] bg-transparent font-semibold text-[#354239] outline-none sm:max-w-[165px]">
-            {PERIODS.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
-          </select>
-        </label>
         {period === 'custom' && <>
           <input type="date" aria-label="Start date" value={customFrom} onChange={(event) => setCustomFrom(event.target.value)} className="h-9 rounded-lg border border-[#dfe7dc] bg-white px-2 text-xs" />
           <input type="date" aria-label="End date" value={customTo} onChange={(event) => setCustomTo(event.target.value)} className="h-9 rounded-lg border border-[#dfe7dc] bg-white px-2 text-xs" />
@@ -426,36 +442,104 @@ const AdminDashboardOverview = () => {
         {stats.map(({ title, value, hint, icon: Icon, tone, accentColor, glowColor, percent }) => <MetricCard key={title} title={title} value={value} hint={hint} icon={Icon} tone={tone} accentColor={accentColor} glowColor={glowColor} percent={percent} />)}
       </section>
 
-      <section aria-label="Menu categories" className="grid grid-cols-1 gap-2 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-6">
-        {loading ? [0, 1, 2, 3, 4, 5].map((item) => <div key={item} className="h-[76px] animate-pulse border border-[#e5ece6] bg-white" />) : categoryTiles.length ? categoryTiles.map((category) => (
-          <button type="button" key={category.name} onClick={() => navigate('/admin/products')} className="flex min-w-0 items-center gap-2.5 rounded-lg border border-slate-200/80 bg-white shadow-[0_2px_12px_-3px_rgba(0,0,0,0.04)] rounded-xl border-slate-200/90 p-2 text-left transition hover:-translate-y-0.5 hover:shadow-sm">
-            <span className="relative h-12 w-12 shrink-0 overflow-hidden rounded-lg bg-white/80"><UtensilsCrossed size={18} className="absolute inset-0 m-auto text-[#66816b]" /><img src={imageUrl(category.image)} alt="" className="relative z-10 h-full w-full object-cover" onError={(event) => { event.currentTarget.style.display = 'none'; }} /></span>
-            <span className="min-w-0 flex-1"><span className="block truncate text-[11px] font-bold text-[#304538]">{category.name}</span><span className="mt-1 block text-[9px] text-[#77847b]">{category.count} {category.count === 1 ? 'item' : 'items'}</span></span><ArrowRight size={13} className="shrink-0 rotate-[-45deg] text-slate-500" />
+      <section aria-label="Menu categories" className="grid grid-cols-2 gap-3.5 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
+        {loading ? [0, 1, 2, 3, 4, 5].map((item) => (
+          <div key={item} className="h-36 animate-pulse rounded-2xl border border-slate-200 bg-white shadow-sm" />
+        )) : categoryTiles.length ? categoryTiles.map((category) => (
+          <button
+            type="button"
+            key={category.name}
+            onClick={() => navigate('/admin/products')}
+            className="group relative flex flex-col items-center justify-between rounded-2xl border-2 border-slate-200/90 bg-white p-3.5 text-center shadow-md transition-all duration-300 hover:-translate-y-1.5 hover:border-orange-500 hover:shadow-xl"
+          >
+            {/* High-Contrast Category Image Frame */}
+            <div className="relative mb-2.5 h-16 w-16 shrink-0 overflow-hidden rounded-2xl border-2 border-orange-500/20 bg-slate-100 p-0.5 shadow-md transition-all duration-300 group-hover:scale-105 group-hover:border-orange-500 group-hover:shadow-orange-500/30">
+              <UtensilsCrossed size={22} className="absolute inset-0 m-auto text-slate-300" />
+              <img
+                src={imageUrl(category.image)}
+                alt={category.name}
+                className="relative z-10 h-full w-full rounded-xl object-cover"
+                onError={(event) => { event.currentTarget.style.display = 'none'; }}
+              />
+            </div>
+
+            {/* High-Visibility Category Name & Bold Pill Badge */}
+            <div className="w-full min-w-0">
+              <h4 className="truncate text-xs font-black tracking-tight text-slate-900 group-hover:text-orange-600 transition-colors">
+                {category.name}
+              </h4>
+              <div className="mt-1.5 flex items-center justify-center">
+                <span className="inline-flex items-center gap-1 rounded-full bg-orange-50 px-2.5 py-0.5 text-[11px] font-bold text-orange-600 border border-orange-200/60 shadow-xs transition-colors group-hover:bg-orange-500 group-hover:text-white group-hover:border-orange-500">
+                  <span>{category.count}</span>
+                  <span className="text-[10px] font-medium opacity-90">{category.count === 1 ? 'item' : 'items'}</span>
+                </span>
+              </div>
+            </div>
+
+            {/* Corner Action Arrow */}
+            <div className="absolute top-2 right-2 flex h-5 w-5 items-center justify-center rounded-full bg-slate-100 text-slate-400 transition-all duration-300 group-hover:bg-orange-500 group-hover:text-white">
+              <ArrowRight size={11} className="rotate-[-45deg]" />
+            </div>
           </button>
-        )) : <div className="col-span-full border border-dashed border-[#dfe8e0] bg-white px-4 py-5 text-center text-xs text-[#7e8b82]">No visible food categories found.</div>}
+        )) : (
+          <div className="col-span-full rounded-2xl border border-dashed border-slate-300 bg-white px-4 py-8 text-center text-xs font-medium text-slate-500">
+            No visible food categories found.
+          </div>
+        )}
       </section>
 
-      <section className="grid gap-3 xl:grid-cols-[minmax(0,1.55fr)_minmax(260px,0.95fr)_minmax(260px,0.85fr)]">
+      <section className="grid gap-3 xl:grid-cols-2">
         <article className="min-w-0 border border-slate-200/80 bg-white shadow-[0_2px_12px_-3px_rgba(0,0,0,0.04)] rounded-xl border-slate-200/90 p-4 sm:p-5">
-          <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
-            <div><h2 className="text-sm font-bold text-slate-800 sm:text-base">Sales &amp; Orders Overview</h2><p className="mt-0.5 text-[11px] text-slate-400">Delivered revenue · {dateLabel}</p></div>
-            <div className="flex gap-1.5 text-[10px]">
-              <span className="inline-flex items-center gap-1.5 border border-[#e5ebe6] px-2 py-1 text-[#506056]"><span className="h-2 w-2 rounded-full bg-[#20a342]" />Revenue (₹)</span>
-              <button type="button" aria-pressed={includeOrders} onClick={() => setIncludeOrders((value) => !value)} className={`inline-flex items-center gap-1.5 border px-2 py-1 ${includeOrders ? 'border-[#d9eadc] bg-[#f3faf4] text-[#506056]' : 'border-[#e5ebe6] text-[#879189]'}`}><span className={`h-2 w-2 rounded-full ${includeOrders ? 'bg-[#b8edc2]' : 'bg-[#cdd4cf]'}`} />Orders</button>
-            </div>
+          <div className="mb-3 flex items-center justify-between gap-3">
+            <h2 className="text-sm font-bold text-slate-800 sm:text-base">Order Overview</h2>
+            <label className="flex h-8 items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2 text-[11px] font-semibold text-slate-700">
+              <CalendarDays size={13} className="text-slate-500" />
+              <span className="sr-only">Order overview date range</span>
+              <select value={period} onChange={(event) => setPeriod(event.target.value)} aria-label="Order overview date range" className="max-w-[115px] bg-transparent outline-none">
+                {PERIODS.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+              </select>
+            </label>
           </div>
-          <div className="h-[300px] sm:h-[340px]">
+          <div className="h-[210px] sm:h-[230px]">
             {reportLoading ? <div className="h-full animate-pulse bg-[#eceeed]" /> : chartData.length ? <ResponsiveContainer width="100%" height="100%">
-              <ComposedChart data={chartData} margin={{ top: 12, right: 12, left: 8, bottom: 14 }}>
-                <CartesianGrid stroke="#dfe3e1" vertical={false} />
-                <XAxis dataKey="label" tickLine={false} axisLine={false} tick={{ fontSize: 11, fontWeight: 600, fill: '#202824' }} label={{ value: period === 'year' ? 'Month' : 'Date', position: 'insideBottom', offset: -8, fontSize: 11, fontWeight: 600, fill: '#202824' }} />
-                <YAxis yAxisId="revenue" tickLine={false} axisLine={false} tick={{ fontSize: 10, fontWeight: 600, fill: '#202824' }} tickFormatter={(value) => money(value)} label={{ value: 'Delivered Revenue (₹)', angle: -90, position: 'insideLeft', fontSize: 11, fontWeight: 600, fill: '#202824' }} />
-                {includeOrders && <YAxis yAxisId="orders" orientation="right" hide domain={[0, 'dataMax + 4']} />}
-                <Tooltip formatter={(value, name) => [name === 'Revenue' ? money(value) : Number(value), name]} labelFormatter={(label) => label} />
-                <Bar yAxisId="revenue" dataKey="revenue" name="Revenue" fill="#159bd5" maxBarSize={68} radius={[4, 4, 0, 0]} />
-                {includeOrders && <Line yAxisId="orders" type="monotone" dataKey="orders" name="Orders" stroke="#83dfa0" strokeWidth={2} dot={{ r: 3, fill: '#83dfa0' }} activeDot={{ r: 5 }} />}
-              </ComposedChart>
-            </ResponsiveContainer> : <div className="grid h-full place-items-center text-xs text-[#819087]">No delivered revenue recorded in this range.</div>}
+              <BarChart data={chartData} margin={{ top: 8, right: 8, left: -18, bottom: 0 }}>
+                <CartesianGrid stroke="#edf0f2" vertical={false} />
+                <XAxis dataKey="label" tickLine={false} axisLine={false} tick={{ fontSize: 10, fill: '#64748b' }} />
+                <YAxis allowDecimals={false} tickLine={false} axisLine={false} tick={{ fontSize: 10, fill: '#64748b' }} />
+                <Tooltip formatter={(value) => [Number(value), 'Orders']} />
+                <Bar dataKey="orders" name="Orders" fill="#ff7a1a" maxBarSize={24} radius={[3, 3, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer> : <div className="grid h-full place-items-center text-xs text-[#819087]">No order data available for this range.</div>}
+          </div>
+        </article>
+
+        <article className="min-w-0 border border-slate-200/80 bg-white shadow-[0_2px_12px_-3px_rgba(0,0,0,0.04)] rounded-xl border-slate-200/90 p-4 sm:p-5">
+          <div className="mb-3 flex items-center justify-between gap-3">
+            <h2 className="text-sm font-bold text-slate-800 sm:text-base">Revenue Overview</h2>
+            <label className="flex h-8 items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2 text-[11px] font-semibold text-slate-700">
+              <CalendarDays size={13} className="text-slate-500" />
+              <span className="sr-only">Revenue overview date range</span>
+              <select value={period} onChange={(event) => setPeriod(event.target.value)} aria-label="Revenue overview date range" className="max-w-[115px] bg-transparent outline-none">
+                {PERIODS.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+              </select>
+            </label>
+          </div>
+          <div className="h-[210px] sm:h-[230px]">
+            {reportLoading ? <div className="h-full animate-pulse bg-[#eceeed]" /> : chartData.length ? <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={chartData} margin={{ top: 8, right: 8, left: 4, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="revenueOverviewGradient" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#ff6b1a" stopOpacity={0.3} />
+                    <stop offset="100%" stopColor="#ff6b1a" stopOpacity={0.03} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid stroke="#edf0f2" vertical={false} />
+                <XAxis dataKey="label" tickLine={false} axisLine={false} tick={{ fontSize: 10, fill: '#64748b' }} />
+                <YAxis tickLine={false} axisLine={false} tick={{ fontSize: 10, fill: '#64748b' }} tickFormatter={(value) => value >= 1000 ? `${Math.round(value / 1000)}K` : value} />
+                <Tooltip formatter={(value) => [money(value), 'Revenue']} />
+                <Area type="monotone" dataKey="revenue" name="Revenue" stroke="#ff5a00" strokeWidth={2.5} fill="url(#revenueOverviewGradient)" dot={{ r: 3, fill: '#ff5a00', strokeWidth: 0 }} activeDot={{ r: 5 }} />
+              </AreaChart>
+            </ResponsiveContainer> : <div className="grid h-full place-items-center text-xs text-[#819087]">No revenue data available for this range.</div>}
           </div>
         </article>
 
