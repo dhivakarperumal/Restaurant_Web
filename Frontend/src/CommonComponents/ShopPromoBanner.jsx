@@ -96,14 +96,14 @@ function ShopPromoBanner({ variant }) {
             </div>
           </div>
 
-          <div className="relative z-10 hidden w-[38%] shrink-0 items-center px-2 py-6 lg:flex">
-            <div className="grid w-full grid-cols-4 gap-2">
+          <div className="relative z-10 hidden w-[40%] shrink-0 items-center px-1 py-6 lg:flex">
+            <div className="grid w-full grid-cols-4 gap-3">
               {deliveryFeatures.map(({ Icon: FeatIcon, label }) => (
                 <div key={label} className="flex min-w-0 flex-col items-center gap-2 text-center">
-                  <span className="flex h-11 w-11 items-center justify-center rounded-full border border-[#e8d6a0] bg-[#f8f0dc] text-[#c9941f] shadow-[0_0_0_4px_rgba(236,204,126,0.15)]">
-                    <FeatIcon className="h-5 w-5" strokeWidth={1.8} />
+                  <span className="flex h-12 w-12 items-center justify-center rounded-full border border-[#e8d6a0] bg-[#f8f0dc] text-[#c9941f] shadow-[0_0_0_4px_rgba(236,204,126,0.15)]">
+                    <FeatIcon className="h-[22px] w-[22px]" strokeWidth={1.8} />
                   </span>
-                  <span className="whitespace-pre-line text-[9px] font-semibold leading-tight text-[#3d3128]">
+                  <span className="whitespace-pre-line text-[10px] font-semibold leading-tight text-[#3d3128]">
                     {label}
                   </span>
                 </div>
