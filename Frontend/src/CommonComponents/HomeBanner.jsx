@@ -159,9 +159,9 @@ export default function HomeBanner() {
             )}
 
             {title && (
-              <h1 className="max-w-[650px] whitespace-pre-line font-serif text-[clamp(2.7rem,6.5vw,5.5rem)] font-black leading-[1.02] tracking-[-0.045em] text-white">
-                {title}
-              </h1>
+             <h1 className="max-w-[650px] whitespace-pre-line font-serif text-[clamp(2rem,4vw,3.75rem)] font-bold leading-[1.08] tracking-[-0.03em] text-white">
+  {title}
+</h1>
             )}
 
             {description && (
