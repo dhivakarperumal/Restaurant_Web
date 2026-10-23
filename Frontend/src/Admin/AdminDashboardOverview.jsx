@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  AlertTriangle, ArrowRight, CalendarDays, Layers, Receipt,
+  AlertTriangle, ArrowRight, CalendarDays, Flame, Layers, Receipt,
   ChefHat, CircleDollarSign, Clock3, CreditCard, CookingPot, Package,
   PackageCheck, ShoppingBag, Table2,
   TrendingUp, Users, UtensilsCrossed,
@@ -281,24 +281,37 @@ const AdminDashboardOverview = () => {
 
   const foodById = new Map(snapshot.foods.map((food) => [String(food.food_id), food]));
   const topItems = new Map();
-  const addTopItem = (item, quantity, lineRevenue) => {
+  const addTopItem = (item, quantity, lineRevenue, saleId) => {
     const id = String(item.food_id || item.product_name || item.food_name || 'item');
     const food = foodById.get(id);
     const name = item.food_name || item.product_name || food?.food_name || 'Menu item';
-    const entry = topItems.get(id) || { id, name, quantity: 0, revenue: 0, image: item.product_image || parseImages(food?.food_images)[0] || '' };
+    const entry = topItems.get(id) || {
+      id,
+      name,
+      quantity: 0,
+      revenue: 0,
+      orderIds: new Set(),
+      image: item.product_image || parseImages(food?.food_images)[0] || '',
+    };
     entry.quantity += Number(quantity || 0);
     entry.revenue += Number(lineRevenue || 0);
+    entry.orderIds.add(String(saleId));
     topItems.set(id, entry);
   };
-  dateRangeOrders.filter((order) => String(order.order_status).toLowerCase() === 'delivered').forEach((order) => {
-    (order.items || []).forEach((item) => addTopItem(item, item.quantity, item.total_price));
+  dateRangeOrders.filter((order) => String(order.order_status).toLowerCase() === 'delivered').forEach((order, index) => {
+    const saleId = order.order_id || order.order_number || `order-${index}`;
+    (order.items || []).forEach((item) => addTopItem(item, item.quantity, item.total_price, saleId));
   });
   dateRangeBills.filter((bill) => completedBillIds.has(bill.bill_id)).forEach((bill) => {
     (ticketGroups.get(bill.bill_id) || []).forEach((ticket) => (ticket.items || []).forEach((item) => {
-      addTopItem(item, item.quantity, Number(item.quantity) * Number(item.unit_price));
+      addTopItem(item, item.quantity, Number(item.quantity) * Number(item.unit_price), `bill-${bill.bill_id}`);
     }));
   });
-  const topSellingItems = [...topItems.values()].sort((a, b) => b.revenue - a.revenue).slice(0, 5);
+  const topSellingItems = [...topItems.values()]
+    .map(({ orderIds, ...item }) => ({ ...item, orders: orderIds.size }))
+    .sort((a, b) => b.orders - a.orders || b.quantity - a.quantity)
+    .slice(0, 5);
+  const maxTopItemOrders = topSellingItems[0]?.orders || 1;
   const visibleFoods = snapshot.foods.filter((food) => (
     food.is_menu_visible && String(food.status || '').toLowerCase() === 'active'
   ));
@@ -390,14 +403,14 @@ const AdminDashboardOverview = () => {
     return { ...entry, orders: orderCountsByBucket.get(bucket) || 0 };
   });
   const quickActions = [
-    { label: 'Add Food Item', icon: CookingPot, path: '/admin/products/add', tone: 'bg-[#eaf7ed] text-[#23944a]', surface: 'border-[#1f7a4d] bg-[#1f7a4d] hover:border-[#19643f] hover:bg-[#19643f]' },
-    { label: 'New Order', icon: ShoppingBag, path: '/admin/billing/new', tone: 'bg-[#eaf2ff] text-[#2475dc]', surface: 'border-[#2864b3] bg-[#2864b3] hover:border-[#20518f] hover:bg-[#20518f]' },
-    { label: 'Manage Menu', icon: UtensilsCrossed, path: '/admin/products', tone: 'bg-[#fff3df] text-[#e99a00]', surface: 'border-[#a66a08] bg-[#a66a08] hover:border-[#875506] hover:bg-[#875506]' },
-    { label: 'View Reports', icon: TrendingUp, path: '/admin/inventory/reports', tone: 'bg-[#f0eaff] text-[#8051d8]', surface: 'border-[#6841a5] bg-[#6841a5] hover:border-[#533383] hover:bg-[#533383]' },
-    { label: 'Manage Users', icon: Users, path: '/admin/customers', tone: 'bg-[#fff0ed] text-[#e55243]', surface: 'border-[#bd493d] bg-[#bd493d] hover:border-[#983b32] hover:bg-[#983b32]' },
-    { label: 'Inventory', icon: Package, path: '/admin/inventory/products', tone: 'bg-[#e6f6f4] text-[#14978a]', surface: 'border-[#087c70] bg-[#087c70] hover:border-[#06655c] hover:bg-[#06655c]' },
-    { label: 'Categories', icon: Layers, path: '/admin/products/categories', tone: 'bg-[#f3f6df] text-[#687a24]', surface: 'border-[#63752a] bg-[#63752a] hover:border-[#4f5e21] hover:bg-[#4f5e21]' },
-    { label: 'Expenses', icon: Receipt, path: '/admin/expenses', tone: 'bg-[#fff0ef] text-[#c4483a]', surface: 'border-[#a64039] bg-[#a64039] hover:border-[#87342e] hover:bg-[#87342e]' },
+    { label: 'Add Food Item', icon: CookingPot, path: '/admin/products/add', bg: 'hover:border-emerald-400 hover:shadow-emerald-500/10', iconBg: 'bg-emerald-500 text-white shadow-emerald-500/30' },
+    { label: 'New Order', icon: ShoppingBag, path: '/admin/billing/new', bg: 'hover:border-blue-400 hover:shadow-blue-500/10', iconBg: 'bg-blue-600 text-white shadow-blue-500/30' },
+    { label: 'Manage Menu', icon: UtensilsCrossed, path: '/admin/products', bg: 'hover:border-amber-400 hover:shadow-amber-500/10', iconBg: 'bg-amber-500 text-white shadow-amber-500/30' },
+    { label: 'View Reports', icon: TrendingUp, path: '/admin/inventory/reports', bg: 'hover:border-purple-400 hover:shadow-purple-500/10', iconBg: 'bg-purple-600 text-white shadow-purple-500/30' },
+    { label: 'Manage Users', icon: Users, path: '/admin/customers', bg: 'hover:border-rose-400 hover:shadow-rose-500/10', iconBg: 'bg-rose-500 text-white shadow-rose-500/30' },
+    { label: 'Inventory', icon: Package, path: '/admin/inventory/products', bg: 'hover:border-teal-400 hover:shadow-teal-500/10', iconBg: 'bg-teal-600 text-white shadow-teal-500/30' },
+    { label: 'Categories', icon: Layers, path: '/admin/products/categories', bg: 'hover:border-indigo-400 hover:shadow-indigo-500/10', iconBg: 'bg-indigo-600 text-white shadow-indigo-500/30' },
+    { label: 'Expenses', icon: Receipt, path: '/admin/expenses', bg: 'hover:border-orange-400 hover:shadow-orange-500/10', iconBg: 'bg-orange-500 text-white shadow-orange-500/30' },
   ];
   const listedPendingKitchenCount = snapshot.kitchenRequests.filter(
     (request) => ['pending', 'approved'].includes(String(request.status || '').trim().toLowerCase())
@@ -585,14 +598,45 @@ const AdminDashboardOverview = () => {
         </article>
 
         <article className="min-w-0 border border-slate-200/80 bg-white shadow-[0_2px_12px_-3px_rgba(0,0,0,0.04)] rounded-xl border-slate-200/90 p-4 sm:p-5">
-          <div className="mb-3 flex items-center justify-between"><h2 className="text-sm font-bold text-slate-800 sm:text-base">Top Selling Items</h2><button type="button" onClick={() => navigate('/admin/products')} className="border border-[#e4e9e5] px-2.5 py-1 text-[10px] font-medium text-[#5d6c62] hover:bg-[#f6f8f6]">View All</button></div>
-          <div className="divide-y divide-[#edf1ed]">
-            {loading ? [0, 1, 2, 3].map((row) => <div key={row} className="flex items-center gap-3 py-2.5"><div className="h-10 w-10 animate-pulse bg-[#f0f3f0]" /><div className="flex-1"><div className="h-3 w-28 animate-pulse bg-[#f0f3f0]" /><div className="mt-2 h-2 w-16 animate-pulse bg-[#f0f3f0]" /></div></div>) : topSellingItems.length ? topSellingItems.map((item, index) => <div key={item.id} className="flex items-center gap-2.5 py-2.5 first:pt-0 last:pb-0">
-              <span className={`grid h-5 w-5 shrink-0 place-items-center text-[10px] font-bold ${index === 0 ? 'rounded-full bg-[#f4a900] text-white' : 'rounded-full bg-[#f0f2f0] text-[#738077]'}`}>{index + 1}</span>
-              <div className="h-10 w-10 shrink-0 overflow-hidden bg-[#f1f4f0]"><img src={imageUrl(item.image)} alt="" className="h-full w-full object-cover" onError={(event) => { event.currentTarget.style.display = 'none'; }} /></div>
-              <div className="min-w-0 flex-1"><p className="truncate text-[11px] font-semibold text-[#344238]">{item.name}</p><p className="mt-0.5 text-[10px] text-[#818d84]">{item.quantity} sold</p></div>
-              <div className="text-right"><p className="whitespace-nowrap text-[11px] font-bold text-[#258742]">{money(item.revenue)}</p><p className="mt-0.5 text-[9px] text-[#55a467]">Completed</p></div>
-            </div>) : <div className="py-10 text-center text-xs text-[#819087]">No completed item sales in this period.</div>}
+          <div className="mb-2 flex items-center justify-between">
+            <h2 className="text-sm font-bold text-slate-900 sm:text-base">Trending Food Items</h2>
+            <button type="button" onClick={() => navigate('/admin/products')} className="rounded-md px-2 py-1 text-[11px] font-semibold text-blue-600 transition-colors hover:bg-blue-50 hover:text-blue-700">View All</button>
+          </div>
+          <div>
+            {loading ? [0, 1, 2, 3, 4].map((row) => (
+              <div key={row} className="flex items-center gap-3 py-2">
+                <div className="h-7 w-7 shrink-0 animate-pulse rounded-full bg-slate-100" />
+                <div className="h-14 w-14 shrink-0 animate-pulse rounded-xl bg-slate-100" />
+                <div className="min-w-0 flex-1">
+                  <div className="h-3 w-32 max-w-full animate-pulse rounded bg-slate-100" />
+                  <div className="mt-2 h-2 w-full animate-pulse rounded-full bg-slate-100" />
+                </div>
+              </div>
+            )) : topSellingItems.length ? topSellingItems.map((item, index) => (
+              <div key={item.id} className="flex items-center gap-3 py-2">
+                <span className={`grid h-7 w-7 shrink-0 place-items-center rounded-full text-sm font-bold ${
+                  index === 0 ? 'bg-amber-100 text-amber-800'
+                    : index === 2 ? 'bg-orange-100 text-orange-800'
+                      : 'bg-slate-100 text-slate-700'
+                }`}>{index + 1}</span>
+                <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-xl bg-orange-50 shadow-sm ring-1 ring-black/5">
+                  <UtensilsCrossed size={20} className="absolute inset-0 m-auto text-orange-300" />
+                  {item.image && <img src={imageUrl(item.image)} alt={item.name} className="relative z-10 h-full w-full object-cover" onError={(event) => { event.currentTarget.style.display = 'none'; }} />}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="truncate text-xs font-semibold text-slate-900">{item.name}</p>
+                    <span className="inline-flex shrink-0 items-center gap-1 text-[10px] font-semibold text-red-600">
+                      <Flame size={14} fill="currentColor" /> Trending
+                    </span>
+                  </div>
+                  <p className="mt-0.5 text-[11px] text-slate-500">{item.orders.toLocaleString('en-IN')} orders</p>
+                  <div className="mt-1.5 h-2 overflow-hidden rounded-full bg-slate-100">
+                    <div className="h-full rounded-full bg-gradient-to-r from-orange-500 to-orange-400" style={{ width: `${Math.max(8, (item.orders / maxTopItemOrders) * 100)}%` }} />
+                  </div>
+                </div>
+              </div>
+            )) : <div className="py-10 text-center text-xs text-[#819087]">No completed item sales in this period.</div>}
           </div>
         </article>
       </section>
