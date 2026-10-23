@@ -424,19 +424,6 @@ export default function ServerSupplies() {
   return (
     <div className="space-y-6">
       <Toaster position="top-right" />
-      {isAdmin && <header className="flex flex-col gap-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">{isAdmin ? 'Admin Workspace' : 'Server Workspace'}</p>
-          <h1 className="mt-1 text-2xl font-bold text-slate-900">Serving Supplies</h1>
-          <p className="mt-1 text-sm text-slate-500">{isAdmin ? 'Review server requests and manage dining supply inventory.' : 'Browse supplies and request stock. Inventory changes after Admin approval.'}</p>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          {isAdmin && <button type="button" onClick={openAddForm} className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-[#1a3c36] px-4 text-sm font-semibold text-white hover:bg-[#214a42]">
-            <Plus size={17} /> Add Supply Item
-          </button>}
-        </div>
-      </header>}
-
       <div className="flex items-center justify-between gap-3 border-b border-slate-200">
       <div className="flex gap-2" role="tablist" aria-label="Serving supplies sections">
         {[
@@ -458,6 +445,9 @@ export default function ServerSupplies() {
           </button>
         ))}
       </div>
+      {isAdmin && <button type="button" onClick={openAddForm} className="mb-1 inline-flex h-11 shrink-0 items-center justify-center gap-2 rounded-xl bg-[#1a3c36] px-4 text-sm font-semibold text-white hover:bg-[#214a42]">
+        <Plus size={17} /> Add Supply Item
+      </button>}
       {!isAdmin && <button type="button" onClick={() => openRequestForm()} className="mb-1 inline-flex h-11 shrink-0 items-center justify-center gap-2 rounded-xl bg-[#1a3c36] px-4 text-sm font-semibold text-white hover:bg-[#244e45]">
         <Plus size={18} /> Request Supplies
       </button>}
@@ -569,11 +559,12 @@ export default function ServerSupplies() {
           <div className="scrollbar-hide overflow-x-auto">
             <table className="min-w-[760px] w-full text-left text-sm">
               <thead className="bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
-                <tr>{['Requested Items', ...(isAdmin ? ['Requested By'] : []), 'Remarks', 'Status', 'Date', ...(isAdmin ? ['Actions'] : ['Decision'])].map((heading) => <th key={heading} className="px-4 py-3 font-semibold">{heading}</th>)}</tr>
+                <tr>{['S No', 'Requested Items', ...(isAdmin ? ['Requested By'] : []), 'Remarks', 'Status', 'Date', ...(isAdmin ? ['Actions'] : ['Decision'])].map((heading) => <th key={heading} className="px-4 py-3 font-semibold">{heading}</th>)}</tr>
               </thead>
               <tbody>
-                {filteredRequests.map((request) => (
+                {filteredRequests.map((request, index) => (
                   <tr key={request.id} className="border-t border-slate-100">
+                    <td className="px-4 py-3 font-medium text-slate-500">{index + 1}</td>
                     <td className="px-4 py-3">
                       <div className="space-y-1">{getRequestItems(request).map((item, index) => <p key={`${item.item_id || item.item_name}-${index}`} className="font-semibold text-slate-900">{item.item_name} {(item.is_custom || item.item_id == null) && <span className="rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-semibold text-slate-600">Other</span>} <span className="font-normal text-slate-600">· {item.unit} · Qty {item.quantity}</span></p>)}</div>
                     </td>
