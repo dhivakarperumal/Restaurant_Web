@@ -132,17 +132,15 @@ function FoodProductCard({
           </button>
         </div>
 
-        <div className="mt-3 flex flex-wrap items-center justify-between gap-x-2 gap-y-3 border-t border-slate-100 pt-3">
-          <div className="min-w-0 flex-1">
-            <div className="flex flex-wrap items-baseline gap-x-1.5">
-              <span className="text-lg font-black text-[#1a3c36]">₹{price.toFixed(2)}</span>
-              {discount > 0 && mrp > price && (
-                <span className="text-xs text-slate-400 line-through">₹{mrp.toFixed(2)}</span>
-              )}
-            </div>
-            {food.portion_size && <p className="text-[10px] font-medium text-slate-400">{food.portion_size}</p>}
+        <div className="mt-3 border-t border-slate-100 pt-3">
+          <div className="flex min-w-0 items-baseline gap-x-1.5">
+            <span className="text-lg font-black text-[#1a3c36]">₹{price.toFixed(2)}</span>
+            {discount > 0 && mrp > price && (
+              <span className="text-xs text-slate-400 line-through">₹{mrp.toFixed(2)}</span>
+            )}
           </div>
-          <div className="ml-auto flex shrink-0 items-center gap-1.5">
+          {food.portion_size && <p className="text-[10px] font-medium text-slate-400">{food.portion_size}</p>}
+          <div className="mt-2 flex items-center justify-end gap-1.5">
             <button
               type="button"
               onClick={(event) => {
