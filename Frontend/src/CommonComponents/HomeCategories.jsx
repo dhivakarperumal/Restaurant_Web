@@ -57,15 +57,15 @@ function HomeCategories() {
             Popular Categories
           </p>
           <h2 id="home-categories-heading" className="mt-2 text-2xl font-extrabold text-[#17251e] sm:text-3xl">
-            Choose Your <span className="font-serif italic text-[#1a6a3b]">Favorite</span>
+            Choose Your <span className="font-serif italic text-[#1a6a3b]">Category</span>
           </h2>
         </div>
 
         {loading ? (
           <div className="scrollbar-hide flex gap-4 overflow-hidden px-2">
             {[1, 2, 3, 4, 5].map((item) => (
-              <div key={item} className="basis-[calc((100%-1rem)/2)] shrink-0 animate-pulse rounded-2xl border-2 border-slate-200 bg-white p-2 sm:basis-[calc((100%-2rem)/3)] lg:basis-[calc((100%-3rem)/4)] xl:basis-[calc((100%-6rem)/7)]">
-                <div className="aspect-[4/3] rounded-xl bg-slate-200" />
+              <div key={item} className="basis-[calc((100%-1rem)/2)] shrink-0 animate-pulse rounded-[30px] border border-slate-200 bg-white p-2 sm:basis-[calc((100%-2rem)/3)] lg:basis-[calc((100%-3rem)/4)] xl:basis-[calc((100%-6rem)/7)]">
+                <div className="aspect-[4/3] rounded-[24px] bg-slate-200" />
                 <div className="mx-auto mt-3 h-4 w-2/3 rounded bg-slate-200" />
               </div>
             ))}
@@ -115,25 +115,28 @@ function HomeCategories() {
                     <Link
                       to={`/shop?category=${encodeURIComponent(categoryFilter)}`}
                       aria-label={`Browse ${categoryName}`}
-                      className="group block h-full overflow-hidden rounded-2xl border-2 border-[#e5e5e5] bg-white p-2 shadow-sm transition hover:-translate-y-1 hover:border-[#d8c7a7] hover:shadow-lg"
+                      className="group relative block aspect-square w-full overflow-hidden rounded-full shadow-[0_8px_22px_rgba(17,24,39,0.12)] transition duration-300 hover:-translate-y-1 hover:shadow-[0_12px_30px_rgba(17,24,39,0.18)]"
                     >
-                      <div className="aspect-[4/3] overflow-hidden rounded-xl bg-[#f5efe5]">
-                        {image ? (
+                      {image ? (
+                        <>
                           <img
                             src={image}
                             alt={categoryName}
                             loading="lazy"
-                            className="h-full w-full object-cover transition duration-300 group-hover:scale-105"
+                            className="absolute inset-0 h-full w-full scale-105 object-cover"
                           />
-                        ) : (
-                          <div className="flex h-full items-center justify-center text-[#a05c2a]">
-                            <ImageIcon className="h-10 w-10" />
-                          </div>
-                        )}
-                      </div>
-                      <h3 className="truncate px-1 pb-1 pt-3 text-center text-sm font-bold text-[#202020]" title={categoryName}>
-                        {categoryName}
-                      </h3>
+                          <div className="absolute inset-0 bg-gradient-to-t from-[#000000]/55 via-[#000000]/10 to-transparent" />
+                        </>
+                      ) : (
+                        <div className="absolute inset-0 flex items-center justify-center bg-[#f5efe5] text-[#a05c2a]">
+                          <ImageIcon className="h-10 w-10" />
+                        </div>
+                      )}
+                      <div
+                        aria-hidden="true"
+                        className="pointer-events-none absolute z-10 rounded-full"
+                        style={{ inset: 0, border: '5px solid #b8d6b6' }}
+                      />
                     </Link>
                   </SwiperSlide>
                 );

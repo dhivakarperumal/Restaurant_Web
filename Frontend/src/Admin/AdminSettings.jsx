@@ -41,10 +41,10 @@ const Toggle = ({ label, defaultChecked = false, checked, onChange }) => (
   </div>
 );
 
-const Input = ({ label, type = "text", placeholder, value, onChange, accept }) => (
+const Input = ({ label, type = "text", placeholder, value, onChange, accept, min, step }) => (
   <div className="form-group">
     <label className="form-label">{label}</label>
-    <input type={type} className="form-input" placeholder={placeholder} value={value} onChange={onChange} accept={accept} />
+    <input type={type} className="form-input" placeholder={placeholder} value={value} onChange={onChange} accept={accept} min={min} step={step} />
   </div>
 );
 
@@ -992,6 +992,7 @@ const Settings = ({ initialTab = null }) => {
                   <span style={{ fontWeight: '700', fontSize: '0.85rem', color: '#10b981', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Restaurant Location</span>
                 </div>
                 <button
+                  type="button"
                   onClick={handleFetchLiveLocation}
                   disabled={isFetchingLocation}
                   style={{
@@ -1015,6 +1016,9 @@ const Settings = ({ initialTab = null }) => {
                     : <><Navigation size={15} /> Fetch Live Location</>}
                 </button>
               </div>
+              <p style={{ margin: '0 0 0.75rem', color: '#475569', fontSize: '0.85rem', lineHeight: 1.5 }}>
+                Enter the restaurant’s exact coordinates or use Fetch Live Location while at the restaurant. Save this profile to enable delivery-fee calculations.
+              </p>
             </div>
 
             {/* Coordinates row */}
@@ -1022,6 +1026,10 @@ const Settings = ({ initialTab = null }) => {
               <div style={{ flex: 1 }}>
                 <Input
                   label="Latitude"
+                  type="number"
+                  min="-90"
+                  max="90"
+                  step="any"
                   placeholder="e.g. 12.479808"
                   value={storeSettings.latitude}
                   onChange={(e) => updateStoreSetting('latitude', e.target.value)}
@@ -1030,6 +1038,10 @@ const Settings = ({ initialTab = null }) => {
               <div style={{ flex: 1 }}>
                 <Input
                   label="Longitude"
+                  type="number"
+                  min="-180"
+                  max="180"
+                  step="any"
                   placeholder="e.g. 78.573702"
                   value={storeSettings.longitude}
                   onChange={(e) => updateStoreSetting('longitude', e.target.value)}
@@ -1169,11 +1181,33 @@ const Settings = ({ initialTab = null }) => {
           <>
             <div style={{ gridColumn: '1 / -1', background: '#f8fafc', padding: '1.25rem', borderRadius: '12px', border: '1px solid #e2e8f0', marginBottom: '1rem' }}>
               <h4 style={{ marginBottom: '1rem', color: '#1e293b', fontSize: '1rem', fontWeight: 'bold' }}>Restaurant Delivery Fees</h4>
+              <p style={{ margin: '0 0 1rem', color: '#475569', fontSize: '0.85rem', lineHeight: 1.5 }}>
+                Home-delivery charge is the base fee plus straight-line distance multiplied by the per-kilometre fee. Orders at or above the free-delivery minimum are free (set the minimum to ₹0 to disable free delivery); addresses outside the maximum radius cannot be delivered.
+              </p>
+              <p style={{ margin: '0 0 1rem', color: '#475569', fontSize: '0.85rem', lineHeight: 1.5 }}>
+                Set the restaurant latitude and longitude in Restaurant Profile to enable distance-based charges.
+              </p>
+              <button
+                type="button"
+                onClick={() => navigate('/admin/settings/restaurant-profile')}
+                style={{
+                  marginBottom: '1rem',
+                  border: '1px solid #cbd5e1',
+                  borderRadius: '8px',
+                  background: '#fff',
+                  color: '#1e293b',
+                  padding: '0.5rem 0.75rem',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                }}
+              >
+                Set Restaurant Location
+              </button>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '1rem' }}>
-                <Input label="Base Delivery Fee (₹)" type="number" placeholder="e.g. 50" value={deliverySettings.baseCharge} onChange={(event) => updateDeliverySetting('baseCharge', event.target.value)} />
-                <Input label="Free Delivery Minimum Order Value (₹)" type="number" placeholder="e.g. 500" value={deliverySettings.freeMinimum} onChange={(event) => updateDeliverySetting('freeMinimum', event.target.value)} />
-                <Input label="Delivery Fee per KM (₹)" type="number" placeholder="e.g. 10" value={deliverySettings.perKmCharge} onChange={(event) => updateDeliverySetting('perKmCharge', event.target.value)} />
-                <Input label="Maximum Delivery Radius (KM)" type="number" placeholder="e.g. 15" value={deliverySettings.maxDistance} onChange={(event) => updateDeliverySetting('maxDistance', event.target.value)} />
+                <Input label="Base Delivery Fee (₹)" type="number" min="0" step="0.01" placeholder="e.g. 50" value={deliverySettings.baseCharge} onChange={(event) => updateDeliverySetting('baseCharge', event.target.value)} />
+                <Input label="Free Delivery Minimum Order Value (₹)" type="number" min="0" step="0.01" placeholder="e.g. 500" value={deliverySettings.freeMinimum} onChange={(event) => updateDeliverySetting('freeMinimum', event.target.value)} />
+                <Input label="Delivery Fee per KM (₹)" type="number" min="0" step="0.01" placeholder="e.g. 10" value={deliverySettings.perKmCharge} onChange={(event) => updateDeliverySetting('perKmCharge', event.target.value)} />
+                <Input label="Maximum Delivery Radius (KM)" type="number" min="0.01" step="0.01" placeholder="e.g. 15" value={deliverySettings.maxDistance} onChange={(event) => updateDeliverySetting('maxDistance', event.target.value)} />
                 <Select label="Delivery Service Area" options={['Local', 'City', 'Custom Radius']} value={deliverySettings.areaScope} onChange={(event) => updateDeliverySetting('areaScope', event.target.value)} />
               </div>
             </div>

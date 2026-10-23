@@ -11,6 +11,7 @@ function FoodProductCard({
   food,
   onSelect,
   onImageClick,
+  onCustomize,
   onAdd,
   cartQuantity = 0,
   isInWishlist = false,
@@ -23,14 +24,11 @@ function FoodProductCard({
   const discount = Number(food.discount || 0);
   const isAvailable = food.is_available !== false
     && String(food.status || 'Active').toLowerCase() === 'active';
-  const hasOptions = (food.addons || []).some(
-    (addon) => String(addon.status || 'Active').toLowerCase() === 'active',
-  ) || (food.customizations || []).length > 0;
   const image = resolveImageUrl(food.food_images?.[0]);
 
   return (
     <article className={`group flex h-full flex-col overflow-hidden rounded-3xl border border-slate-200/80 bg-white shadow-sm transition duration-300 hover:-translate-y-1 hover:border-emerald-200 hover:shadow-xl ${className}`}>
-      <div className="relative aspect-[4/3] overflow-hidden bg-slate-100">
+      <div className="relative aspect-square overflow-hidden bg-slate-100">
         <button
           type="button"
           onClick={onImageClick || onSelect}
@@ -38,12 +36,21 @@ function FoodProductCard({
           className="absolute inset-0 z-0 h-full w-full"
         >
           {image ? (
-            <img
-              src={image}
-              alt={food.food_name}
-              loading="lazy"
-              className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-            />
+            <>
+              <img
+                src={image}
+                alt=""
+                aria-hidden="true"
+                loading="lazy"
+                className="absolute inset-0 h-full w-full scale-110 object-cover opacity-70 blur-sm"
+              />
+              <img
+                src={image}
+                alt={food.food_name}
+                loading="lazy"
+                className="relative h-full w-full object-contain"
+              />
+            </>
           ) : (
             <span className="flex h-full w-full items-center justify-center bg-emerald-50 text-[#1a3c36]/40">
               <UtensilsCrossed className="h-10 w-10" />
@@ -98,7 +105,7 @@ function FoodProductCard({
         )}
       </div>
 
-      <div className="flex flex-1 flex-col justify-between p-4">
+      <div className="flex flex-1 flex-col p-4">
         <div>
           <div className="mb-1 flex items-center justify-between gap-2 text-[11px] font-semibold text-slate-400">
             <div className="flex min-w-0 items-center gap-2">
@@ -118,38 +125,48 @@ function FoodProductCard({
           </div>
           <button
             type="button"
-            onClick={onSelect}
+            onClick={onImageClick || onSelect}
             className="block max-w-full truncate text-left font-serif text-base font-bold text-slate-900 transition hover:text-[#1a3c36]"
           >
             {food.food_name}
           </button>
-          <p className="mt-1 line-clamp-2 min-h-9 text-xs leading-relaxed text-slate-500">
-            {food.description || `${food.portion_size || 'Full'} portion prepared fresh.`}
-          </p>
         </div>
 
-        <div className="mt-4 flex items-center justify-between gap-2 border-t border-slate-100 pt-3">
+        <div className="mt-3 flex items-center justify-between gap-2 border-t border-slate-100 pt-3">
           <div>
             <div className="flex items-baseline gap-1.5">
-              <span className="font-serif text-lg font-black text-[#1a3c36]">₹{price.toFixed(2)}</span>
+              <span className="text-lg font-black text-[#1a3c36]">₹{price.toFixed(2)}</span>
               {discount > 0 && mrp > price && (
                 <span className="text-xs text-slate-400 line-through">₹{mrp.toFixed(2)}</span>
               )}
             </div>
             {food.portion_size && <p className="text-[10px] font-medium text-slate-400">{food.portion_size}</p>}
           </div>
-          <button
-            type="button"
-            onClick={(event) => {
-              event.stopPropagation();
-              onAdd(food);
-            }}
-            disabled={!isAvailable}
-            className="inline-flex shrink-0 items-center gap-1.5 rounded-xl bg-[#1a3c36] px-3.5 py-2 text-xs font-bold text-white shadow-sm transition hover:bg-[#245048] active:scale-95 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400"
-          >
-            {isAvailable && <Plus className="h-3.5 w-3.5 text-emerald-300" />}
-            {isAvailable ? (hasOptions ? 'Customize' : cartQuantity > 0 ? `Add (${cartQuantity})` : 'Add') : 'Unavailable'}
-          </button>
+          <div className="flex shrink-0 items-center gap-1.5">
+            <button
+              type="button"
+              onClick={(event) => {
+                event.stopPropagation();
+                onCustomize?.(food);
+              }}
+              disabled={!isAvailable}
+              className="inline-flex items-center rounded-xl border border-[#1a3c36] px-2.5 py-2 text-[11px] font-bold text-[#1a3c36] transition hover:bg-emerald-50 active:scale-95 disabled:cursor-not-allowed disabled:border-slate-200 disabled:text-slate-400"
+            >
+              Customize
+            </button>
+            <button
+              type="button"
+              onClick={(event) => {
+                event.stopPropagation();
+                onAdd?.(food);
+              }}
+              disabled={!isAvailable}
+              className="inline-flex items-center gap-1 rounded-xl bg-[#1a3c36] px-2.5 py-2 text-xs font-bold text-white shadow-sm transition hover:bg-[#245048] active:scale-95 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400"
+            >
+              {isAvailable && <Plus className="h-3.5 w-3.5 text-emerald-300" />}
+              {isAvailable ? (cartQuantity > 0 ? `Add (${cartQuantity})` : 'Add') : 'Unavailable'}
+            </button>
+          </div>
         </div>
       </div>
     </article>
