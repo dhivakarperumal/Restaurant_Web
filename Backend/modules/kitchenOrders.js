@@ -1,5 +1,6 @@
 const { randomUUID } = require('crypto');
 const db = require('../config/db');
+const { isFoodScheduledNow } = require('./foodAvailability');
 const {
   findOrCreateActiveBill,
   initializeTableBillsSchema,
@@ -68,7 +69,7 @@ async function initializeKitchenOrderSchema() {
   await initializeTableBillsSchema();
 }
 
-async function createKitchenOrder({ tableId, userId, items }) {
+async function createKitchenOrder({ tableId, userId, items, localMinutes }) {
   const connection = await db.getConnection();
   const orderId = randomUUID();
 
@@ -96,7 +97,7 @@ async function createKitchenOrder({ tableId, userId, items }) {
     const foodIds = items.map((item) => item.food_id);
     const placeholders = [...new Set(foodIds)].map(() => '?').join(', ');
     const [foodRows] = await connection.execute(
-      `SELECT food_id, food_name, final_price, is_available, dining_available, status,
+      `SELECT food_id, food_name, final_price, is_available, is_menu_visible, meal_type, dining_available, status,
               addons, customizations
        FROM foods WHERE food_id IN (${placeholders}) FOR UPDATE`,
       [...new Set(foodIds)]
@@ -110,7 +111,9 @@ async function createKitchenOrder({ tableId, userId, items }) {
 
     for (const item of items) {
       const food = foodsById.get(item.food_id);
-      if (!food.is_available || !food.dining_available || String(food.status).toLowerCase() !== 'active') {
+      if (!food.is_available || !food.is_menu_visible || !food.dining_available
+        || String(food.status).toLowerCase() !== 'active'
+        || !isFoodScheduledNow(food.meal_type, localMinutes)) {
         const error = new Error(`${food.food_name} is no longer available for dine-in orders.`);
         error.statusCode = 409;
         throw error;

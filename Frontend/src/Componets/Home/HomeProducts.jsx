@@ -6,6 +6,7 @@ import { Swiper, SwiperSlide } from 'swiper/react';
 import api from '../../api';
 import FoodProductCard from '../../CommonComponents/FoodProductCard';
 import FoodCustomizationModal from '../../CommonComponents/FoodCustomizationModal';
+import { getFoodAvailability, useFoodAvailabilityClock } from '../../CommonComponents/foodAvailability';
 import PageContainer from '../../CommonComponents/PageContainer';
 import { StoreContext } from '../../PrivateRouter/StoreContext';
 import 'swiper/css';
@@ -16,6 +17,7 @@ function HomeProducts() {
   const [selectedFood, setSelectedFood] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const currentTime = useFoodAvailabilityClock();
   const store = useContext(StoreContext) || {};
   const { wishlist = [], toggleWishlist, addToCart } = store;
 
@@ -23,13 +25,10 @@ function HomeProducts() {
     setLoading(true);
     setError('');
     try {
-      const response = await api.get('/foods');
+      const response = await api.get('/foods', { params: { include_unavailable: true } });
       const data = response.data?.data ?? response.data;
       if (!Array.isArray(data)) throw new Error('The menu response was invalid.');
-      setFoods(data.filter((food) => (
-        food.is_available !== false
-        && String(food.status || 'Active').toLowerCase() === 'active'
-      )));
+      setFoods(data);
     } catch (requestError) {
       console.error('Failed to load home menu:', requestError);
       setError(requestError.response?.data?.message || 'We could not load the menu right now.');
@@ -43,8 +42,9 @@ function HomeProducts() {
   }, [fetchFoods]);
 
   const featuredFoods = useMemo(() => [...foods]
+    .filter((food) => getFoodAvailability(food, currentTime).available)
     .sort((first, second) => Number(Boolean(second.featured)) - Number(Boolean(first.featured)))
-    .slice(0, 10), [foods]);
+    .slice(0, 10), [foods, currentTime]);
   const carouselFoods = useMemo(() => (
     featuredFoods.length
       ? Array.from(

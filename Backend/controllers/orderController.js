@@ -13,6 +13,7 @@ const {
   updateUserAddress,
 } = require('../modules/orders');
 const { notifyChefs } = require('../utils/notificationSocket');
+const { getLocalMinutes } = require('../modules/foodAvailability');
 
 // Paste the Razorpay Key ID (public key) here if it is not set in the environment or payment settings.
 const RAZORPAY_KEY_ID = 'rzp_test_SGj8n5SyKSE10b';
@@ -183,6 +184,7 @@ const create = async (req, res) => {
       address,
       paymentMethod,
       idempotencyKey,
+      localMinutes: getLocalMinutes(req),
     });
     const orderPaymentMethod = createdOrder.paymentMethod || paymentMethod;
 

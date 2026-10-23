@@ -1,6 +1,7 @@
 const { createKitchenOrder, listKitchenOrders, updateKitchenOrderStatus } = require('../modules/kitchenOrders');
 const db = require('../config/db');
 const { notifyChefs, notifyServer } = require('../utils/notificationSocket');
+const { getLocalMinutes } = require('../modules/foodAvailability');
 
 const ALLOWED_STATUSES = ['Pending', 'Preparing', 'Ready to Serve', 'Served', 'Cancelled'];
 
@@ -35,7 +36,12 @@ async function submitKitchenOrder(req, res) {
   }
 
   try {
-    const order = await createKitchenOrder({ tableId, userId: req.auth.user_id, items });
+    const order = await createKitchenOrder({
+      tableId,
+      userId: req.auth.user_id,
+      items,
+      localMinutes: getLocalMinutes(req),
+    });
     notifyChefs({
       type: 'kitchen',
       title: 'New dining order',

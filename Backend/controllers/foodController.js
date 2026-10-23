@@ -7,6 +7,7 @@ const {
   setFoodMenuVisibility,
   updateFood,
 } = require('../modules/foods');
+const { MEAL_TYPES, getLocalMinutes } = require('../modules/foodAvailability');
 
 const getField = (body, snakeCase, camelCase, fallback) => body[snakeCase] ?? body[camelCase] ?? fallback;
 const asBoolean = (value, fallback = false) => {
@@ -44,6 +45,7 @@ const normalizeFood = (body = {}, actor = '') => {
     cuisine_name: String(getField(body, 'cuisine_name', 'cuisineName', '')).trim(),
     category_id: String(getField(body, 'category_id', 'categoryId', '')).trim(),
     category_name: String(getField(body, 'category_name', 'categoryName', '')).trim(),
+    meal_type: String(getField(body, 'meal_type', 'mealType', 'All Day')).trim(),
     subcategory_name: String(getField(body, 'subcategory_name', 'subcategoryName', '')).trim(),
     description: String(body.description || '').trim(),
     food_images: Array.isArray(images) ? images.map((image) => String(image).trim()).filter(Boolean) : [],
@@ -75,6 +77,7 @@ const validateFood = (food) => {
   if (!food.food_name) return 'Food name is required.';
   if (!food.cuisine_id || !food.cuisine_name) return 'Choose a cuisine.';
   if (!food.category_id || !food.category_name) return 'Choose a category.';
+  if (!MEAL_TYPES.includes(food.meal_type)) return 'Choose Breakfast, Lunch, Dinner, or All Day for the meal type.';
   if (!food.subcategory_name) return 'Choose a subcategory.';
   if (food.mrp < 0) return 'MRP cannot be negative.';
   if (food.discount < 0 || food.discount > 100) return 'Discount must be between 0 and 100.';
@@ -88,9 +91,16 @@ const validateFood = (food) => {
   return '';
 };
 
-const list = async (_req, res) => {
+const list = async (req, res) => {
   try {
-    return res.json({ success: true, data: await listFoods() });
+    const foods = await listFoods(getLocalMinutes(req));
+    const role = String(req.auth?.role || '').trim().toLowerCase();
+    const canViewUnavailable = ['admin', 'super admin', 'superadmin', 'chef'].includes(role)
+      || String(req.query?.include_unavailable || '').toLowerCase() === 'true';
+    return res.json({
+      success: true,
+      data: canViewUnavailable ? foods : foods.filter((food) => food.is_effectively_available),
+    });
   } catch (error) {
     console.error('Failed to list foods:', error.message);
     return res.status(500).json({ success: false, message: 'Unable to load foods.' });
@@ -108,7 +118,7 @@ const getNextId = async (_req, res) => {
 
 const getById = async (req, res) => {
   try {
-    const food = await findFoodById(req.params.foodId);
+    const food = await findFoodById(req.params.foodId, getLocalMinutes(req));
     if (!food) return res.status(404).json({ success: false, message: 'Food not found.' });
     return res.json({ success: true, data: food });
   } catch (error) {

@@ -37,7 +37,19 @@ const requireFoodVisibilityAccess = async (req, res, next) => {
   }
 };
 
-router.get('/', controller.list);
+const optionalFoodListAuth = async (req, res, next) => {
+  const token = req.get('authorization')?.replace(/^Bearer\s+/i, '');
+  if (!token) return next();
+  try {
+    req.auth = await findUserByToken(token);
+    return next();
+  } catch (error) {
+    console.error('Failed to verify food-list access:', error.message);
+    return res.status(500).json({ success: false, message: 'Unable to verify food-list access.' });
+  }
+};
+
+router.get('/', optionalFoodListAuth, controller.list);
 router.get('/next-id', controller.getNextId);
 router.get('/:foodId', controller.getById);
 router.post('/', requireAdmin, controller.create);

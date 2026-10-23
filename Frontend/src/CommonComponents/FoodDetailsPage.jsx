@@ -9,6 +9,7 @@ import PageContainer from './PageContainer';
 import PageHeader from './PageHeader';
 import FoodCustomizationModal from './FoodCustomizationModal';
 import FoodProductCard from './FoodProductCard';
+import { getFoodAvailability, useFoodAvailabilityClock } from './foodAvailability';
 import 'swiper/css';
 
 const imageUrl = (image) => {
@@ -23,6 +24,7 @@ function FoodDetailsPage() {
   const navigate = useNavigate();
   const store = useContext(StoreContext) || {};
   const { addToCart, wishlist = [], toggleWishlist } = store;
+  const currentTime = useFoodAvailabilityClock();
   const initialFood = location.state?.food;
   const [food, setFood] = useState(
     initialFood && String(initialFood.food_id || initialFood.id) === String(foodId)
@@ -76,7 +78,7 @@ function FoodDetailsPage() {
       setRelatedFoodsLoading(true);
       setRelatedFoodsError('');
       try {
-        const response = await api.get('/foods');
+        const response = await api.get('/foods', { params: { include_unavailable: true } });
         const result = response.data?.success
           ? response.data.data
           : Array.isArray(response.data)
@@ -176,8 +178,7 @@ function FoodDetailsPage() {
         ? currentId === itemId
         : currentName && itemName === currentName;
       const sameFood = String(item.food_id || item.id) === String(food?.food_id || food?.id);
-      return matches && !sameFood && item.is_menu_visible !== false
-        && String(item.status || 'Active').toLowerCase() === 'active';
+      return matches && !sameFood && getFoodAvailability(item, currentTime).available;
     }).slice(0, 8);
   };
   const cuisineRelatedFoods = getRelatedFoods('cuisine');
@@ -192,8 +193,7 @@ function FoodDetailsPage() {
   const price = Number(food?.final_price || food?.mrp || 0);
   const mrp = Number(food?.mrp || 0);
   const hasDiscount = Number(food?.discount || 0) > 0 && mrp > price;
-  const isAvailable = food?.is_available !== false
-    && String(food?.status || 'Active').toLowerCase() === 'active';
+  const isAvailable = getFoodAvailability(food || {}, currentTime).available;
   const isInWishlist = wishlist.some((item) => (
     String(item.food_id || item.id || item.product_id || item._id)
       === String(food?.food_id || food?.id)

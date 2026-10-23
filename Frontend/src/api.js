@@ -29,6 +29,8 @@ api.interceptors.request.use(
   (config) => {
     // Always read token fresh from localStorage before each request
     const token = localStorage.getItem("token") || sessionStorage.getItem("token");
+    const localNow = new Date();
+    config.headers["X-Local-Time-Minutes"] = String(localNow.getHours() * 60 + localNow.getMinutes());
     
     if (token && token.trim()) {
       config.headers.Authorization = `Bearer ${token}`;

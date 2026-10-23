@@ -17,10 +17,9 @@ const formatRequestPeriod = (request) => {
     ? `${startDate || '—'} – ${endDate || '—'}`
     : formatRequestDate(request.request_date) || '—';
 };
-const generateInventorySku = () => `INV-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).slice(2, 6).toUpperCase()}`;
 const emptyGroceryForm = () => ({
   product_name: '',
-  sku: generateInventorySku(),
+  sku: '',
   category_id: '',
   subcategory_id: '',
   unit_id: '',
@@ -119,7 +118,7 @@ function InventoryTable({ columns, rows, emptyText = 'No records found.' }) {
             <tr key={row.id || `${row.name || 'row'}-${index}`} className="border-t border-slate-200 align-top">
               {columns.map((column) => (
                 <td key={`${row.id || index}-${column.key}`} className="px-3 py-3 text-slate-700">
-                  {typeof column.render === 'function' ? column.render(row) : (row[column.key] ?? '-')}
+                  {typeof column.render === 'function' ? column.render(row, index) : (row[column.key] ?? '-')}
                 </td>
               ))}
             </tr>
@@ -324,10 +323,9 @@ function InventoryDashboard() {
 }
 
 function ProductsPage({ readOnly = false }) {
-  const { products, categories, subcategories, units, suppliers, locations, loadData } = useInventoryContext();
+  const { products, subcategories, units, suppliers, locations, loadData } = useInventoryContext();
   const navigate = useNavigate();
   const [search, setSearch] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('All Categories');
   const [selectedStatus, setSelectedStatus] = useState('All Status');
   const [selectedStockLevel, setSelectedStockLevel] = useState('All Stock');
   const [sortBy, setSortBy] = useState('latest');
@@ -336,28 +334,13 @@ function ProductsPage({ readOnly = false }) {
   const [viewProduct, setViewProduct] = useState(null);
   const [editingProductId, setEditingProductId] = useState(null);
   const [form, setForm] = useState(emptyGroceryForm);
-  const [productImage, setProductImage] = useState(null);
-  const [imagePreview, setImagePreview] = useState('');
   const [isSavingProduct, setIsSavingProduct] = useState(false);
-
-  useEffect(() => {
-    if (!productImage) {
-      setImagePreview('');
-      return undefined;
-    }
-
-    const previewUrl = URL.createObjectURL(productImage);
-    setImagePreview(previewUrl);
-    return () => URL.revokeObjectURL(previewUrl);
-  }, [productImage]);
 
   const filtered = [...products]
     .filter((product) => {
       const value = search.trim().toLowerCase();
       const matchesSearch = [product.product_name, product.sku, product.barcode, product.category_name]
         .some((field) => String(field || '').toLowerCase().includes(value));
-      const matchesCategory = selectedCategory === 'All Categories' ||
-        String(product.category_id || '') === selectedCategory;
       const matchesStatus = selectedStatus === 'All Status' ||
         (selectedStatus === 'Active'
           ? String(product.status || 'Active').toLowerCase() === 'active'
@@ -368,7 +351,7 @@ function ProductsPage({ readOnly = false }) {
         (selectedStockLevel === 'In Stock' && currentStock > 0) ||
         (selectedStockLevel === 'Low Stock' && currentStock > 0 && currentStock <= reorderLevel) ||
         (selectedStockLevel === 'Out of Stock' && currentStock === 0);
-      return matchesSearch && matchesCategory && matchesStatus && matchesStockLevel;
+      return matchesSearch && matchesStatus && matchesStockLevel;
     })
     .sort((first, second) => {
       if (sortBy === 'name') return String(first.product_name || '').localeCompare(String(second.product_name || ''));
@@ -382,18 +365,9 @@ function ProductsPage({ readOnly = false }) {
     if (isSavingProduct) return;
     setIsSavingProduct(true);
     try {
-      let imageUrl = '';
-      if (productImage) {
-        const uploadData = new FormData();
-        uploadData.append('folder', 'inventory');
-        uploadData.append('file', productImage);
-        const uploadResponse = await api.post('/upload', uploadData);
-        imageUrl = uploadResponse.data?.url;
-        if (!imageUrl) throw new Error('Image upload did not return a file URL.');
-      }
       const payload = {
         ...form,
-        image_url: imageUrl || form.image_url || null,
+        image_url: form.image_url || null,
         current_stock: Number(form.current_stock || 0),
         purchase_price: Number(form.purchase_price || 0),
         selling_price: Number(form.selling_price || 0),
@@ -408,7 +382,6 @@ function ProductsPage({ readOnly = false }) {
         toast.success('Product added successfully.');
       }
       setForm(emptyGroceryForm());
-      setProductImage(null);
       setEditingProductId(null);
       setIsAddModalOpen(false);
       await loadData();
@@ -421,7 +394,6 @@ function ProductsPage({ readOnly = false }) {
 
   const openAddGrocery = () => {
     setForm(emptyGroceryForm());
-    setProductImage(null);
     setEditingProductId(null);
     setIsAddModalOpen(true);
   };
@@ -442,7 +414,6 @@ function ProductsPage({ readOnly = false }) {
       selling_price: String(product.selling_price ?? 0),
     });
     setEditingProductId(product.id);
-    setProductImage(null);
     setIsAddModalOpen(true);
   };
 
@@ -458,15 +429,12 @@ function ProductsPage({ readOnly = false }) {
   };
 
   const columns = [
-    { key: 'image_url', label: 'Product Image', render: (row) => <div className="flex h-12 w-12 items-center justify-center overflow-hidden rounded-xl bg-slate-100 text-slate-500">{row.image_url ? <img src={inventoryImageUrl(row.image_url)} alt={row.product_name || 'Inventory product'} className="h-full w-full object-cover" /> : <Package size={18} />}</div> },
+    ...(!readOnly ? [{ key: 'serial', label: 'S No', render: (_, index) => index + 1 }] : []),
     { key: 'product_name', label: 'Grocery Name' },
     { key: 'sku', label: 'SKU' },
-    { key: 'category_name', label: 'Category' },
     { key: 'current_stock', label: 'Current Stock' },
     ...(!readOnly ? [
-      { key: 'reorder_level', label: 'Reorder Level' },
       { key: 'purchase_price', label: 'Purchase Price', render: (row) => formatCurrency(row.purchase_price) },
-      { key: 'stock_value', label: 'Stock Value', render: (row) => formatCurrency(row.stock_value || row.current_stock * row.purchase_price) },
     ] : []),
     { key: 'status', label: 'Status', render: (row) => <StatusBadge value={row.status || 'Active'} /> },
     ...(readOnly ? [{
@@ -571,19 +539,6 @@ function ProductsPage({ readOnly = false }) {
               />
             </label>
             <div className="flex flex-wrap items-center gap-3 xl:ml-auto">
-              <select
-                aria-label="Filter by category"
-                value={selectedCategory}
-                onChange={(event) => setSelectedCategory(event.target.value)}
-                className="h-[46px] min-w-36 rounded-xl border border-slate-200 bg-slate-50 px-3 text-sm font-medium text-slate-700 outline-none focus:border-[#1a3c36]"
-              >
-                <option value="All Categories">All Categories</option>
-                {categories.map((category) => (
-                  <option key={category.category_id} value={String(category.category_id)}>
-                    {category.category_name}
-                  </option>
-                ))}
-              </select>
               <select
                 aria-label="Filter by status"
                 value={selectedStatus}
@@ -739,77 +694,24 @@ function ProductsPage({ readOnly = false }) {
           <div className="w-full max-w-2xl rounded-2xl border border-slate-200 bg-white p-5 shadow-2xl">
             <div className="mb-4 flex items-center justify-between">
               <h2 className="text-xl font-bold text-slate-900">{editingProductId ? 'Edit Grocery' : 'Add Grocery'}</h2>
-              <button type="button" onClick={() => { setIsAddModalOpen(false); setEditingProductId(null); setProductImage(null); }} className="rounded-full bg-slate-100 px-2.5 py-1 text-sm font-semibold text-slate-600">×</button>
+              <button type="button" onClick={() => { setIsAddModalOpen(false); setEditingProductId(null); }} className="rounded-full bg-slate-100 px-2.5 py-1 text-sm font-semibold text-slate-600">×</button>
             </div>
             <form className="space-y-3" onSubmit={handleSubmit}>
               <FormField label="Grocery name" required>
                 <input value={form.product_name} onChange={(e) => setForm({ ...form, product_name: e.target.value })} placeholder="Enter grocery name" className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" required />
               </FormField>
-              <FormField label="Product image">
-                <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-                  {(imagePreview || form.image_url) && <img src={imagePreview || inventoryImageUrl(form.image_url)} alt="Grocery preview" className="h-20 w-20 rounded-lg border border-slate-200 object-cover" />}
-                  <input
-                    type="file"
-                    accept="image/jpeg,image/png,image/webp"
-                    onChange={(event) => {
-                      const file = event.target.files?.[0] || null;
-                      if (!file) {
-                        setProductImage(null);
-                        return;
-                      }
-                      if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
-                        toast.error('Choose a JPG, PNG, or WEBP image.');
-                        event.target.value = '';
-                        return;
-                      }
-                      if (file.size > 5 * 1024 * 1024) {
-                        toast.error('Image size must be 5 MB or less.');
-                        event.target.value = '';
-                        return;
-                      }
-                      setProductImage(file);
-                    }}
-                    className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm"
-                  />
-                </div>
-                <p className="mt-1 text-xs text-slate-500">JPG, PNG, or WEBP. Maximum size 5 MB.</p>
+              <FormField label="Unit">
+                <select value={form.unit_id} onChange={(e) => setForm({ ...form, unit_id: e.target.value })} className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm">
+                  <option value="">Select unit</option>
+                  {units.map((unit) => <option key={unit.id} value={unit.id}>{unit.unit_name}</option>)}
+                </select>
               </FormField>
-              <FormField label="SKU">
-                <input value={form.sku} readOnly className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-600" aria-label="Automatically generated SKU" />
+              <FormField label="Purchase price">
+                <input value={form.purchase_price} onChange={(e) => setForm({ ...form, purchase_price: e.target.value })} placeholder="0.00" type="number" className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" />
               </FormField>
-              <div className="grid grid-cols-2 gap-3">
-                <FormField label="Category">
-                  <select value={form.category_id} onChange={(e) => setForm({ ...form, category_id: e.target.value })} className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm">
-                    <option value="">Select category</option>
-                    {categories.map((cat) => <option key={cat.id} value={cat.id}>{cat.category_name}</option>)}
-                  </select>
-                </FormField>
-                <FormField label="Unit">
-                  <select value={form.unit_id} onChange={(e) => setForm({ ...form, unit_id: e.target.value })} className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm">
-                    <option value="">Select unit</option>
-                    {units.map((unit) => <option key={unit.id} value={unit.id}>{unit.unit_name}</option>)}
-                  </select>
-                </FormField>
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <FormField label="Purchase price">
-                  <input value={form.purchase_price} onChange={(e) => setForm({ ...form, purchase_price: e.target.value })} placeholder="0.00" type="number" className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" />
-                </FormField>
-                <FormField label="Selling price">
-                  <input value={form.selling_price} onChange={(e) => setForm({ ...form, selling_price: e.target.value })} placeholder="0.00" type="number" className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" />
-                </FormField>
-              </div>
-              <div className="grid grid-cols-3 gap-3">
-                <FormField label="Opening stock">
-                  <input value={form.current_stock} onChange={(e) => setForm({ ...form, current_stock: e.target.value })} placeholder="0" type="number" className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" min="0" />
-                </FormField>
-                <FormField label="Min stock">
-                  <input value={form.minimum_stock} onChange={(e) => setForm({ ...form, minimum_stock: e.target.value })} placeholder="0" type="number" className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" min="0" />
-                </FormField>
-                <FormField label="Reorder level">
-                  <input value={form.reorder_level} onChange={(e) => setForm({ ...form, reorder_level: e.target.value })} placeholder="0" type="number" className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" min="0" />
-                </FormField>
-              </div>
+              <FormField label="Stock">
+                <input value={form.current_stock} onChange={(e) => setForm({ ...form, current_stock: e.target.value })} placeholder="0" type="number" className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" min="0" />
+              </FormField>
               <FormField label="Status">
                 <select value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value })} className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm">
                   <option value="Active">Active</option>
@@ -817,7 +719,7 @@ function ProductsPage({ readOnly = false }) {
                 </select>
               </FormField>
               <div className="flex justify-end gap-3 pt-2">
-                <button type="button" onClick={() => { setIsAddModalOpen(false); setEditingProductId(null); setProductImage(null); }} className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700" disabled={isSavingProduct}>Cancel</button>
+                <button type="button" onClick={() => { setIsAddModalOpen(false); setEditingProductId(null); }} className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700" disabled={isSavingProduct}>Cancel</button>
                 <button type="submit" disabled={isSavingProduct} className="rounded-xl bg-[#1a3c36] px-4 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60">{isSavingProduct ? "Saving..." : editingProductId ? "Save Changes" : "Save Product"}</button>
               </div>
             </form>
@@ -1116,7 +1018,11 @@ function SuppliersPage() {
               </div>
               <button
                 type="button"
-                onClick={() => setIsAddModalOpen(true)}
+                onClick={() => {
+                  resetForm();
+                  setEditingRequestId(null);
+                  setIsAddModalOpen(true);
+                }}
                 className="inline-flex h-[46px] items-center gap-2 rounded-xl bg-[#1a3c36] px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-[#214a42]"
               >
                 <Plus className="h-4 w-4" />
@@ -1528,6 +1434,9 @@ function KitchenRequestsPage() {
   const [requestSort, setRequestSort] = useState('latest');
   const [requestView, setRequestView] = useState('table');
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [editingRequestId, setEditingRequestId] = useState(null);
+  const [viewRequest, setViewRequest] = useState(null);
+  const [approvalRequest, setApprovalRequest] = useState(null);
   const [form, setForm] = useState({
     request_number: `KR-${Date.now()}`,
     requested_by: 'Admin',
@@ -1588,6 +1497,26 @@ function KitchenRequestsPage() {
     });
   };
 
+  const openEditRequest = (request) => {
+    setForm({
+      request_number: request.request_number || '',
+      requested_by: request.requested_by || '',
+      department: request.department || 'Kitchen',
+      request_date: formatRequestDate(request.request_date) || new Date().toISOString().slice(0, 10),
+      start_date: formatRequestDate(request.start_date),
+      end_date: formatRequestDate(request.end_date),
+      priority: request.priority || 'Normal',
+      notes: request.notes || '',
+      items: (request.items || []).map((item) => ({
+        product_id: item.product_id ? String(item.product_id) : '',
+        quantity: String(item.quantity ?? 1),
+        unit: item.unit || 'pcs',
+      })),
+    });
+    setEditingRequestId(request.id);
+    setIsAddModalOpen(true);
+  };
+
   const handleSubmit = async (event) => {
     event.preventDefault();
 
@@ -1603,7 +1532,7 @@ function KitchenRequestsPage() {
     }
 
     try {
-      await api.post('/inventory/kitchen-requests', {
+      const payload = {
         ...form,
         request_date: form.request_date || new Date().toISOString().slice(0, 10),
         start_date: form.start_date || null,
@@ -1614,15 +1543,33 @@ function KitchenRequestsPage() {
           product_id: Number(item.product_id),
           quantity: Number(item.quantity || 0),
         })),
-      });
+      };
+      if (editingRequestId) {
+        await api.put(`/inventory/kitchen-requests/${editingRequestId}`, payload);
+      } else {
+        await api.post('/inventory/kitchen-requests', payload);
+      }
 
-      toast.success('Kitchen request sent successfully.');
+      toast.success(editingRequestId ? 'Kitchen request updated successfully.' : 'Kitchen request sent successfully.');
       setIsAddModalOpen(false);
+      setEditingRequestId(null);
       resetForm();
-      fetchRequests();
-      loadData();
+      await fetchRequests();
+      await loadData();
     } catch (error) {
-      toast.error(error?.response?.data?.message || 'Unable to create kitchen request.');
+      toast.error(error?.response?.data?.message || `Unable to ${editingRequestId ? 'update' : 'create'} kitchen request.`);
+    }
+  };
+
+  const deleteRequest = async (request) => {
+    if (!window.confirm(`Delete kitchen request "${request.request_number}"?`)) return;
+    try {
+      await api.delete(`/inventory/kitchen-requests/${request.id}`);
+      toast.success('Kitchen request deleted successfully.');
+      await fetchRequests();
+      await loadData();
+    } catch (error) {
+      toast.error(error?.response?.data?.message || 'Unable to delete kitchen request.');
     }
   };
 
@@ -1657,25 +1604,38 @@ function KitchenRequestsPage() {
 
   const getRequestActions = (request) => {
     const status = request.status || 'Pending';
+    const canEditDelete = ['Pending', 'Rejected'].includes(status);
+    let workflowAction = <span className="text-xs text-slate-500">No action</span>;
 
     if (status === 'Pending') {
-      return (
-        <div className="flex flex-wrap gap-2">
-          <button type="button" onClick={() => handleRequestAction(request.id, 'approve')} className="rounded-lg bg-sky-600 px-2.5 py-1.5 text-xs font-semibold text-white">Approve</button>
+      workflowAction = (
+        <>
+          <button type="button" onClick={() => setApprovalRequest(request)} className="rounded-lg bg-sky-600 px-2.5 py-1.5 text-xs font-semibold text-white">Approve</button>
           <button type="button" onClick={() => handleRequestAction(request.id, 'reject')} className="rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-slate-700">Reject</button>
-        </div>
+        </>
       );
     }
 
     if (status === 'Approved') {
-      return <button type="button" onClick={() => handleRequestAction(request.id, 'issue')} className="rounded-lg bg-emerald-600 px-2.5 py-1.5 text-xs font-semibold text-white">Issue Stock</button>;
+      workflowAction = <button type="button" onClick={() => handleRequestAction(request.id, 'issue')} className="rounded-lg bg-emerald-600 px-2.5 py-1.5 text-xs font-semibold text-white">Issue Stock</button>;
     }
 
     if (status === 'Issued') {
-      return <button type="button" onClick={() => handleRequestAction(request.id, 'complete')} className="rounded-lg bg-[#1a3c36] px-2.5 py-1.5 text-xs font-semibold text-white">Complete</button>;
+      workflowAction = <button type="button" onClick={() => handleRequestAction(request.id, 'complete')} className="rounded-lg bg-[#1a3c36] px-2.5 py-1.5 text-xs font-semibold text-white">Complete</button>;
     }
 
-    return <span className="text-xs text-slate-500">No action</span>;
+    return (
+      <div className="flex flex-wrap items-center gap-2">
+        {workflowAction}
+        <button type="button" onClick={() => setViewRequest(request)} className="rounded-lg border border-slate-200 p-1.5 text-sky-600 hover:bg-sky-50" title="View" aria-label={`View ${request.request_number}`}><Eye size={15} /></button>
+        {canEditDelete && (
+          <>
+            <button type="button" onClick={() => openEditRequest(request)} className="rounded-lg border border-slate-200 p-1.5 text-amber-600 hover:bg-amber-50" title="Edit" aria-label={`Edit ${request.request_number}`}><Pencil size={15} /></button>
+            <button type="button" onClick={() => deleteRequest(request)} className="rounded-lg border border-slate-200 p-1.5 text-rose-600 hover:bg-rose-50" title="Delete" aria-label={`Delete ${request.request_number}`}><Trash2 size={15} /></button>
+          </>
+        )}
+      </div>
+    );
   };
 
   const pendingCount = requests.filter(r => (r.status || 'Pending') === 'Pending').length;
@@ -1856,8 +1816,8 @@ function KitchenRequestsPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/45 p-4">
           <div className="max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-2xl border border-slate-200 bg-white p-5 shadow-2xl">
             <div className="mb-4 flex items-center justify-between">
-              <h2 className="text-xl font-bold text-slate-900">Add Kitchen Request</h2>
-              <button type="button" onClick={() => setIsAddModalOpen(false)} className="rounded-full bg-slate-100 px-2.5 py-1 text-sm font-semibold text-slate-600">×</button>
+              <h2 className="text-xl font-bold text-slate-900">{editingRequestId ? 'Edit Kitchen Request' : 'Add Kitchen Request'}</h2>
+              <button type="button" onClick={() => { setIsAddModalOpen(false); setEditingRequestId(null); resetForm(); }} className="rounded-full bg-slate-100 px-2.5 py-1 text-sm font-semibold text-slate-600">×</button>
             </div>
 
             <form className="space-y-4" onSubmit={handleSubmit}>
@@ -1924,11 +1884,88 @@ function KitchenRequestsPage() {
               </FormField>
 
               <div className="flex justify-end gap-3 pt-2">
-                <button type="button" onClick={() => setIsAddModalOpen(false)} className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700">Cancel</button>
-                <button type="submit" className="rounded-xl bg-[#1a3c36] px-4 py-2 text-sm font-semibold text-white">Send Request</button>
+                <button type="button" onClick={() => { setIsAddModalOpen(false); setEditingRequestId(null); resetForm(); }} className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700">Cancel</button>
+                <button type="submit" className="rounded-xl bg-[#1a3c36] px-4 py-2 text-sm font-semibold text-white">{editingRequestId ? 'Save Changes' : 'Send Request'}</button>
               </div>
             </form>
           </div>
+        </div>
+      )}
+
+      {viewRequest && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/45 p-4" role="presentation" onMouseDown={(event) => {
+          if (event.target === event.currentTarget) setViewRequest(null);
+        }}>
+          <section className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-2xl border border-slate-200 bg-white p-5 shadow-2xl" role="dialog" aria-modal="true" aria-labelledby="kitchen-request-details-title">
+            <div className="mb-4 flex items-center justify-between">
+              <h2 id="kitchen-request-details-title" className="text-xl font-bold text-slate-900">Kitchen Request Details</h2>
+              <button type="button" onClick={() => setViewRequest(null)} aria-label="Close request details" className="rounded-full bg-slate-100 px-2.5 py-1 text-sm font-semibold text-slate-600">×</button>
+            </div>
+            <dl className="grid gap-4 text-sm sm:grid-cols-2">
+              <div><dt className="text-slate-500">Request number</dt><dd className="font-semibold text-slate-900">{viewRequest.request_number || '—'}</dd></div>
+              <div><dt className="text-slate-500">Status</dt><dd><StatusBadge value={viewRequest.status || 'Pending'} /></dd></div>
+              <div><dt className="text-slate-500">Requested by</dt><dd className="font-semibold text-slate-900">{viewRequest.requested_by || '—'}</dd></div>
+              <div><dt className="text-slate-500">Department</dt><dd className="font-semibold text-slate-900">{viewRequest.department || '—'}</dd></div>
+              <div><dt className="text-slate-500">Request period</dt><dd className="font-semibold text-slate-900">{formatRequestPeriod(viewRequest)}</dd></div>
+              <div><dt className="text-slate-500">Priority</dt><dd className="font-semibold text-slate-900">{viewRequest.priority || 'Normal'}</dd></div>
+              <div className="sm:col-span-2"><dt className="text-slate-500">Notes</dt><dd className="font-semibold text-slate-900">{viewRequest.notes || '—'}</dd></div>
+            </dl>
+            <div className="mt-5">
+              <h3 className="mb-2 text-sm font-semibold text-slate-800">Requested items</h3>
+              {viewRequest.items?.length ? (
+                <InventoryTable columns={[
+                  { key: 'item_name', label: 'Product', render: (item) => item.item_name || item.product_name || products.find((product) => product.id === item.product_id)?.product_name || 'Unknown product' },
+                  { key: 'quantity', label: 'Quantity' },
+                  { key: 'unit', label: 'Unit' },
+                ]} rows={viewRequest.items} emptyText="No request items." />
+              ) : (
+                <p className="rounded-xl bg-slate-50 p-3 text-sm text-slate-500">No request items.</p>
+              )}
+            </div>
+          </section>
+        </div>
+      )}
+
+      {approvalRequest && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-900/45 p-4" role="presentation" onMouseDown={(event) => {
+          if (event.target === event.currentTarget) setApprovalRequest(null);
+        }}>
+          <section className="w-full max-w-lg rounded-2xl border border-slate-200 bg-white p-5 shadow-2xl" role="dialog" aria-modal="true" aria-labelledby="approve-kitchen-request-title">
+            <div className="mb-4 flex items-start justify-between gap-4">
+              <div>
+                <h2 id="approve-kitchen-request-title" className="text-xl font-bold text-slate-900">Approve Kitchen Request</h2>
+                <p className="mt-1 text-sm text-slate-500">{approvalRequest.request_number}</p>
+              </div>
+              <button type="button" onClick={() => setApprovalRequest(null)} aria-label="Close approval confirmation" className="rounded-full bg-slate-100 px-2.5 py-1 text-sm font-semibold text-slate-600">×</button>
+            </div>
+            <p className="mb-3 text-sm text-slate-700">Confirm the requested stock details before approving:</p>
+            {approvalRequest.items?.length ? (
+              <ul className="divide-y divide-slate-100 rounded-xl border border-slate-200">
+                {approvalRequest.items.map((item) => (
+                  <li key={item.id || `${item.product_id}-${item.quantity}`} className="flex items-center justify-between gap-4 px-3 py-2.5 text-sm">
+                    <span className="font-medium text-slate-800">{item.item_name || item.product_name || products.find((product) => product.id === item.product_id)?.product_name || 'Unknown product'}</span>
+                    <span className="shrink-0 text-slate-600">{formatNumber(item.quantity)} {item.unit || 'pcs'}</span>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">No stock items are listed for this request.</p>
+            )}
+            <div className="mt-5 flex justify-end gap-3">
+              <button type="button" onClick={() => setApprovalRequest(null)} className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700">Cancel</button>
+              <button
+                type="button"
+                onClick={async () => {
+                  const requestId = approvalRequest.id;
+                  setApprovalRequest(null);
+                  await handleRequestAction(requestId, 'approve');
+                }}
+                className="rounded-xl bg-sky-600 px-4 py-2 text-sm font-semibold text-white hover:bg-sky-700"
+              >
+                Confirm Approval
+              </button>
+            </div>
+          </section>
         </div>
       )}
     </>

@@ -453,6 +453,7 @@ const listProducts = async () => {
   `);
   return rows.map((product) => ({
     ...product,
+    sku: product.sku || `ST${String(product.id).padStart(3, '0')}`,
     current_stock: toNumber(product.current_stock),
     minimum_stock: toNumber(product.minimum_stock),
     reorder_level: toNumber(product.reorder_level),
@@ -533,6 +534,11 @@ const createProduct = async (payload = {}) => {
   );
 
   const productId = result.insertId;
+  if (!payload.sku) {
+    const sku = `ST${String(productId).padStart(3, '0')}`;
+    await db.query('UPDATE inventory_products SET sku = ? WHERE id = ?', [sku, productId]);
+  }
+
   if (payload.batch_number || payload.batch) {
     await db.query(
       'INSERT INTO product_batches (product_id, batch_number, quantity, purchase_price, manufacturing_date, expiry_date, supplier_id) VALUES (?, ?, ?, ?, ?, ?, ?)',
@@ -787,6 +793,92 @@ const createKitchenRequest = async (payload = {}) => {
   return { id: requestId, request_number: requestNumber };
 };
 
+const updateKitchenRequest = async (requestId, payload = {}) => {
+  const startDate = payload.start_date || null;
+  const endDate = payload.end_date || null;
+  const items = Array.isArray(payload.items) ? payload.items : [];
+  if (startDate && !isValidInventoryDate(startDate)) {
+    throw new Error('Start date must be a valid date.');
+  }
+  if (endDate && !isValidInventoryDate(endDate)) {
+    throw new Error('End date must be a valid date.');
+  }
+  if (startDate && endDate && endDate < startDate) {
+    throw new Error('End date cannot be before the start date.');
+  }
+  if (!items.length || items.some((item) => !item.product_id || toNumber(item.quantity) <= 0)) {
+    throw new Error('Select at least one product and a valid quantity for the kitchen request.');
+  }
+
+  const connection = await db.getConnection();
+  try {
+    await connection.beginTransaction();
+    const [requests] = await connection.query('SELECT status FROM kitchen_requests WHERE id = ? FOR UPDATE', [requestId]);
+    if (!requests.length) throw new Error('Kitchen request not found.');
+    if (!['Pending', 'Rejected'].includes(requests[0].status)) {
+      throw new Error('Only pending or rejected kitchen requests can be edited.');
+    }
+
+    await connection.query(
+      'UPDATE kitchen_requests SET request_number = ?, requested_by = ?, department = ?, request_date = ?, start_date = ?, end_date = ?, priority = ?, status = ?, notes = ? WHERE id = ?',
+      [
+        payload.request_number,
+        payload.requested_by || '',
+        payload.department || 'Kitchen',
+        payload.request_date || new Date(),
+        startDate,
+        endDate,
+        payload.priority || 'Normal',
+        'Pending',
+        payload.notes || '',
+        requestId,
+      ]
+    );
+    await connection.query('DELETE FROM kitchen_request_items WHERE request_id = ?', [requestId]);
+    for (const item of items) {
+      await connection.query(
+        'INSERT INTO kitchen_request_items (request_id, product_id, product_name, quantity, unit) VALUES (?, ?, ?, ?, ?)',
+        [requestId, item.product_id, item.product_name || '', toNumber(item.quantity), item.unit || 'pcs']
+      );
+    }
+    await connection.commit();
+    return { id: requestId, request_number: payload.request_number };
+  } catch (error) {
+    try {
+      await connection.rollback();
+    } catch (rollbackError) {
+      console.error('Unable to roll back kitchen request update.', rollbackError);
+    }
+    throw error;
+  } finally {
+    connection.release();
+  }
+};
+
+const deleteKitchenRequest = async (requestId) => {
+  const connection = await db.getConnection();
+  try {
+    await connection.beginTransaction();
+    const [requests] = await connection.query('SELECT status FROM kitchen_requests WHERE id = ? FOR UPDATE', [requestId]);
+    if (!requests.length) throw new Error('Kitchen request not found.');
+    if (!['Pending', 'Rejected'].includes(requests[0].status)) {
+      throw new Error('Only pending or rejected kitchen requests can be deleted.');
+    }
+    await connection.query('DELETE FROM kitchen_request_items WHERE request_id = ?', [requestId]);
+    await connection.query('DELETE FROM kitchen_requests WHERE id = ?', [requestId]);
+    await connection.commit();
+  } catch (error) {
+    try {
+      await connection.rollback();
+    } catch (rollbackError) {
+      console.error('Unable to roll back kitchen request deletion.', rollbackError);
+    }
+    throw error;
+  } finally {
+    connection.release();
+  }
+};
+
 const issueKitchenRequest = async (requestId, payload = {}) => {
   const [items] = await db.query('SELECT * FROM kitchen_request_items WHERE request_id = ?', [requestId]);
   for (const item of items) {
@@ -870,6 +962,8 @@ module.exports = {
   createTransfer,
   createAdjustment,
   createKitchenRequest,
+  updateKitchenRequest,
+  deleteKitchenRequest,
   issueKitchenRequest,
   createWastage,
   createRecipe,

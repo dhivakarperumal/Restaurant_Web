@@ -1,5 +1,6 @@
 const { createHash, randomUUID } = require('crypto');
 const db = require('../config/db');
+const { isFoodScheduledNow } = require('./foodAvailability');
 
 const initializeOrderSchema = async () => {
   await db.query(`
@@ -260,6 +261,7 @@ const createOrderFromCart = async ({
   address,
   paymentMethod,
   idempotencyKey,
+  localMinutes,
 }) => {
   const connection = await db.getConnection();
   try {
@@ -299,7 +301,7 @@ const createOrderFromCart = async ({
     const foodIds = [...new Set(cartRows.map((row) => String(row.food_id)))];
     const [foodRows] = await connection.execute(
       `SELECT food_id, food_name, food_images, final_price, mrp, portion_size, addons, customizations,
-              is_available, status, delivery_available, takeaway_available
+              is_available, is_menu_visible, meal_type, status, delivery_available, takeaway_available
        FROM foods WHERE food_id IN (${foodIds.map(() => '?').join(', ')}) FOR UPDATE`,
       foodIds
     );
@@ -308,7 +310,9 @@ const createOrderFromCart = async ({
     const items = cartRows.map((row) => {
       const quantity = Number(row.quantity);
       const food = foodsById.get(String(row.food_id));
-      if (!food || !food.is_available || String(food.status).toLowerCase() !== 'active') {
+      if (!food || !food.is_available || !food.is_menu_visible
+        || String(food.status).toLowerCase() !== 'active'
+        || !isFoodScheduledNow(food.meal_type, localMinutes)) {
         throw invalidCartError(`${row.product_name || 'An item'} is no longer available.`);
       }
       if (fulfillmentType === 'delivery' && !food.delivery_available) {

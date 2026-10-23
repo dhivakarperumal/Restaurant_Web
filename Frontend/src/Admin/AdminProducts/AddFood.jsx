@@ -4,6 +4,7 @@ import { ArrowDown, ArrowLeft, ArrowUp, ImagePlus, Plus, Save, Trash2, Utensils,
 import toast from 'react-hot-toast';
 import api from '../../api';
 import { useAuth } from '../../PrivateRouter/AuthContext';
+import { MEAL_TYPES } from '../../CommonComponents/foodAvailability';
 
 const makeId = () => globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(36).slice(2)}`;
 
@@ -13,6 +14,7 @@ const blankFood = (foodId = '', actor = '') => ({
   cuisineId: '',
   categoryId: '',
   subcategoryName: '',
+  mealType: 'All Day',
   description: '',
   mrp: '',
   discount: '0',
@@ -180,6 +182,7 @@ const AddFood = ({ drawer = false, onClose, onSaved }) => {
             cuisineId: String(food.cuisine_id || ''),
             categoryId: String(food.category_id || ''),
             subcategoryName: food.subcategory_name || '',
+            mealType: food.meal_type || 'All Day',
             description: food.description || '',
             mrp: String(food.mrp ?? ''),
             discount: String(food.discount ?? 0),
@@ -307,6 +310,7 @@ const AddFood = ({ drawer = false, onClose, onSaved }) => {
     if (!form.cuisineId) nextErrors.cuisineId = 'Choose a cuisine.';
     if (!form.categoryId) nextErrors.categoryId = 'Choose a category.';
     if (!form.subcategoryName) nextErrors.subcategoryName = 'Choose a subcategory.';
+    if (!MEAL_TYPES.includes(form.mealType)) nextErrors.mealType = 'Choose a valid meal time.';
     if (form.mrp === '' || !Number.isFinite(Number(form.mrp)) || Number(form.mrp) < 0) nextErrors.mrp = 'Enter a valid non-negative MRP.';
     if (!Number.isFinite(Number(form.discount)) || Number(form.discount) < 0 || Number(form.discount) > 100) nextErrors.discount = 'Discount must be between 0 and 100.';
     if (Number(form.preparationTime) < 0) nextErrors.preparationTime = 'Preparation time cannot be negative.';
@@ -358,6 +362,7 @@ const AddFood = ({ drawer = false, onClose, onSaved }) => {
       category_id: form.categoryId,
       category_name: category?.category_name || category?.name || '',
       subcategory_name: form.subcategoryName,
+      meal_type: form.mealType,
       description: form.description.trim(),
       food_images: images.map((image) => image.url),
       mrp: Number(form.mrp),
@@ -499,6 +504,17 @@ const AddFood = ({ drawer = false, onClose, onSaved }) => {
           </Section>
 
           <Section number="04" title="Availability" description="Control service channels and menu visibility." columns={3}>
+            <label className="block text-sm font-medium text-gray-700">Meal time
+              <select value={MEAL_TYPES.includes(form.mealType) ? form.mealType : ''} onChange={(event) => setValue('mealType', event.target.value)} className={`mt-1.5 h-10 w-full rounded-md border bg-white px-3 ${errors.mealType ? 'border-red-500' : 'border-gray-300'}`}>
+                {!MEAL_TYPES.includes(form.mealType) && <option value="">Choose a meal time</option>}
+                <option value="Breakfast">Breakfast (6:00 AM – 12:00 PM)</option>
+                <option value="Lunch">Lunch (12:00 PM – 4:00 PM)</option>
+                <option value="Dinner">Dinner (6:00 PM – 12:00 AM)</option>
+                <option value="All Day">All Day (24 hours)</option>
+              </select>
+              <span className="mt-1 block text-xs font-normal text-gray-500">Choose when this food is scheduled to be offered.</span>
+              {errors.mealType && <span className="mt-1 block text-xs text-red-700">{errors.mealType}</span>}
+            </label>
             <label className="block text-sm font-medium text-gray-700">Available time
               <input type="text" value={form.availableTime} onChange={(event) => setValue('availableTime', event.target.value)} maxLength={100} placeholder="e.g. 10:00 AM - 1:00 PM" className="mt-1.5 h-10 w-full rounded-md border border-gray-300 px-3 outline-none focus:border-emerald-700" />
               <span className="mt-1 block text-xs font-normal text-gray-500">Default: 10:00 AM - 1:00 PM</span>

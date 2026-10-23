@@ -3,6 +3,7 @@ import { Check, ChefHat, Clock3, Coffee, Minus, Plus, Printer, RotateCcw, Search
 import toast from "react-hot-toast";
 import api, { BACKEND_BASE_URL } from "../../api";
 import { useAuth } from "../../PrivateRouter/AuthContext";
+import { getFoodAvailability, useFoodAvailabilityClock } from "../../CommonComponents/foodAvailability";
 
 const money = (value) => `₹${Number(value || 0).toFixed(2)}`;
 const getFoodPrice = (food) => Number(food.final_price ?? food.mrp ?? 0);
@@ -15,6 +16,7 @@ const getFoodImage = (food) => {
 
 const PointOfSale = () => {
   const { user } = useAuth();
+  const currentTime = useFoodAvailabilityClock();
   const [foods, setFoods] = useState([]);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -32,13 +34,13 @@ const PointOfSale = () => {
     let mounted = true;
     const loadMenu = async () => {
       const [foodResult, categoryResult] = await Promise.allSettled([
-        api.get("/foods"),
+        api.get("/foods", { params: { include_unavailable: true } }),
         api.get("/categories"),
       ]);
       if (!mounted) return;
       if (foodResult.status === "fulfilled") {
         const rows = foodResult.value?.data?.data;
-        setFoods(Array.isArray(rows) ? rows.filter((food) => food.is_menu_visible !== false && food.status !== "Inactive" && food.is_available !== false) : []);
+        setFoods(Array.isArray(rows) ? rows : []);
       } else {
         toast.error("Could not load menu items.");
       }
@@ -61,12 +63,13 @@ const PointOfSale = () => {
   }, [categories, foods]);
 
   const visibleFoods = useMemo(() => foods.filter((food) => {
+    if (!getFoodAvailability(food, currentTime).available) return false;
     const query = search.trim().toLowerCase();
     const matchesSearch = !query || `${food.food_name || ""} ${food.description || ""} ${food.category_name || ""}`.toLowerCase().includes(query);
     const matchesCategory = selectedCategory === "all"
       || String(food.category_id || food.category_name) === String(selectedCategory);
     return matchesSearch && matchesCategory;
-  }), [foods, search, selectedCategory]);
+  }), [foods, search, selectedCategory, currentTime]);
 
   const subtotal = useMemo(() => cart.reduce((sum, item) => sum + item.price * item.quantity, 0), [cart]);
   const discountAmount = Math.min(subtotal, Math.max(0, Number(discount) || 0));

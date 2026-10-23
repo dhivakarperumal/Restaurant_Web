@@ -1,4 +1,5 @@
 const db = require('../config/db');
+const { getFoodAvailability } = require('./foodAvailability');
 
 const initializeFoodSchema = async () => {
   await db.query(`
@@ -11,6 +12,7 @@ const initializeFoodSchema = async () => {
       category_id VARCHAR(32) NOT NULL,
       category_name VARCHAR(150) NOT NULL,
       subcategory_name VARCHAR(150) NOT NULL,
+      meal_type VARCHAR(20) NOT NULL DEFAULT 'All Day',
       description TEXT NULL,
       food_images LONGTEXT NOT NULL,
       mrp DECIMAL(10,2) NOT NULL DEFAULT 0,
@@ -62,6 +64,11 @@ const initializeFoodSchema = async () => {
   if (!availableTimeColumns.length) {
     await db.query("ALTER TABLE foods ADD COLUMN available_time VARCHAR(100) NOT NULL DEFAULT '10:00 AM - 1:00 PM' AFTER preparation_time");
   }
+
+  const [mealTypeColumns] = await db.query("SHOW COLUMNS FROM foods LIKE 'meal_type'");
+  if (!mealTypeColumns.length) {
+    await db.query("ALTER TABLE foods ADD COLUMN meal_type VARCHAR(20) NOT NULL DEFAULT 'All Day' AFTER category_name");
+  }
 };
 
 const parseJson = (value, fallback) => {
@@ -74,9 +81,11 @@ const parseJson = (value, fallback) => {
   }
 };
 
-const parseFood = (food) => {
+const parseFood = (food, localMinutes) => {
   if (!food) return null;
-  return {
+  const now = new Date();
+  const currentLocalMinutes = localMinutes ?? now.getHours() * 60 + now.getMinutes();
+  const parsedFood = {
     ...food,
     food_images: parseJson(food.food_images, []),
     addons: parseJson(food.addons, []),
@@ -89,16 +98,17 @@ const parseFood = (food) => {
     delivery_available: Boolean(food.delivery_available),
     featured: Boolean(food.featured),
   };
+  return { ...parsedFood, ...getFoodAvailability(parsedFood, currentLocalMinutes) };
 };
 
-const listFoods = async () => {
+const listFoods = async (localMinutes) => {
   const [rows] = await db.query('SELECT * FROM foods ORDER BY created_at DESC, id DESC');
-  return rows.map(parseFood);
+  return rows.map((food) => parseFood(food, localMinutes));
 };
 
-const findFoodById = async (foodId) => {
+const findFoodById = async (foodId, localMinutes) => {
   const [rows] = await db.execute('SELECT * FROM foods WHERE food_id = ? LIMIT 1', [foodId]);
-  return parseFood(rows[0]);
+  return parseFood(rows[0], localMinutes);
 };
 
 const getNextFoodId = async () => {
@@ -115,6 +125,7 @@ const foodValues = (food) => [
   food.cuisine_name,
   food.category_id,
   food.category_name,
+  food.meal_type,
   food.subcategory_name,
   food.description || null,
   JSON.stringify(food.food_images),
@@ -144,11 +155,11 @@ const foodValues = (food) => [
 const createFood = async (food) => {
   await db.execute(
     `INSERT INTO foods (
-      food_id, food_name, cuisine_id, cuisine_name, category_id, category_name, subcategory_name,
+      food_id, food_name, cuisine_id, cuisine_name, category_id, category_name, meal_type, subcategory_name,
       description, food_images, mrp, discount, final_price, rating, stock_quantity, serving_size, portion_size,
       preparation_time, available_time, food_type, is_spicy, is_available, dining_available, takeaway_available,
       delivery_available, featured, status, addons, customizations, created_by, updated_by
-    ) VALUES (${Array(30).fill('?').join(', ')})`,
+    ) VALUES (${Array(31).fill('?').join(', ')})`,
     foodValues(food)
   );
   return findFoodById(food.food_id);
@@ -160,7 +171,7 @@ const updateFood = async (foodId, food) => {
   values.shift();
   await db.execute(
     `UPDATE foods SET
-      food_name = ?, cuisine_id = ?, cuisine_name = ?, category_id = ?, category_name = ?, subcategory_name = ?,
+      food_name = ?, cuisine_id = ?, cuisine_name = ?, category_id = ?, category_name = ?, meal_type = ?, subcategory_name = ?,
       description = ?, food_images = ?, mrp = ?, discount = ?, final_price = ?, rating = ?, stock_quantity = ?, serving_size = ?, portion_size = ?,
       preparation_time = ?, available_time = ?, food_type = ?, is_spicy = ?, is_available = ?, dining_available = ?, takeaway_available = ?,
       delivery_available = ?, featured = ?, status = ?, addons = ?, customizations = ?, updated_by = ?

@@ -30,6 +30,7 @@ import {
 import toast from "react-hot-toast";
 import api from "../../api";
 import { useAuth } from "../../PrivateRouter/AuthContext";
+import { getFoodAvailability, useFoodAvailabilityClock } from "../../CommonComponents/foodAvailability";
 
 const resolveImageUrl = (img) => {
   if (!img || typeof img !== "string") return "";
@@ -55,9 +56,8 @@ const isEnabled = (value, fallback = false) => {
   return fallback;
 };
 
-const isFoodAvailable = (food, hasSelectedTable = false) =>
-  isEnabled(food.is_available) &&
-  String(food.status || "Active").trim().toLowerCase() === "active" &&
+const isFoodAvailable = (food, hasSelectedTable = false, currentTime) =>
+  getFoodAvailability(food, currentTime).available &&
   (!hasSelectedTable || isEnabled(food.dining_available, true));
 
 export default function ServerFood() {
@@ -65,6 +65,7 @@ export default function ServerFood() {
   const location = useLocation();
   const navigate = useNavigate();
   const selectedTable = location.state?.selectedTable;
+  const currentTime = useFoodAvailabilityClock();
   const [foods, setFoods] = useState([]);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -111,7 +112,7 @@ export default function ServerFood() {
     try {
       setLoading(true);
       const [foodsRes, categoriesRes] = await Promise.allSettled([
-        api.get("/foods"),
+        api.get("/foods", { params: { include_unavailable: true } }),
         api.get("/categories"),
       ]);
 
@@ -179,7 +180,7 @@ export default function ServerFood() {
           (selectedType === "non-veg" &&
             String(food.food_type || "").trim().toLowerCase().includes("non"));
 
-        const isAvailable = isFoodAvailable(food, hasSelectedTable);
+        const isAvailable = isFoodAvailable(food, hasSelectedTable, currentTime);
 
         const statusMatch =
           selectedStatus === "all" ||
@@ -221,6 +222,7 @@ export default function ServerFood() {
     selectedStatus,
     sortBy,
     hasSelectedTable,
+    currentTime,
   ]);
 
   // Statistics Summary

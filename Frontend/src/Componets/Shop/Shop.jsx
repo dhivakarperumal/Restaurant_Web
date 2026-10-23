@@ -25,6 +25,7 @@ import PageContainer from "../../CommonComponents/PageContainer";
 import PageHeader from "../../CommonComponents/PageHeader";
 import FoodProductCard from "../../CommonComponents/FoodProductCard";
 import FoodCustomizationModal from "../../CommonComponents/FoodCustomizationModal";
+import { getFoodAvailability, useFoodAvailabilityClock } from "../../CommonComponents/foodAvailability";
 
 const resolveImageUrl = (img) => {
   if (!img || typeof img !== "string") return "";
@@ -50,6 +51,7 @@ export default function Shop({ offersOnly = false }) {
 
   // Data states
   const [foods, setFoods] = useState([]);
+  const currentTime = useFoodAvailabilityClock();
   const [categories, setCategories] = useState([]);
   const [cuisines, setCuisines] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -83,7 +85,7 @@ export default function Shop({ offersOnly = false }) {
       setLoading(true);
       setError("");
       const [foodsRes, catRes, cuisRes] = await Promise.allSettled([
-        api.get("/foods"),
+        api.get("/foods", { params: { include_unavailable: true } }),
         api.get("/categories"),
         api.get("/cuisines"),
       ]);
@@ -194,9 +196,7 @@ export default function Shop({ offersOnly = false }) {
   const filteredFoods = useMemo(() => {
     return foods
       .filter((food) => {
-        if (food.is_menu_visible === false) return false;
-        // Status check
-        if (food.status === "Inactive") return false;
+        if (!getFoodAvailability(food, currentTime).available) return false;
         if (offersOnly && getDiscountPercentage(food) <= 0) return false;
 
         // Search query
@@ -271,7 +271,7 @@ export default function Shop({ offersOnly = false }) {
         if (!a.featured && b.featured) return 1;
         return (b.id || 0) - (a.id || 0);
       });
-  }, [foods, offersOnly, searchQuery, selectedCategory, selectedCuisines, selectedFoodType, minimumPrice, maximumPrice, minimumRating, selectedOfferRange, sortBy]);
+  }, [foods, currentTime, offersOnly, searchQuery, selectedCategory, selectedCuisines, selectedFoodType, minimumPrice, maximumPrice, minimumRating, selectedOfferRange, sortBy]);
 
   const totalPages = Math.max(1, Math.ceil(filteredFoods.length / productsPerPage));
   const paginatedFoods = filteredFoods.slice(

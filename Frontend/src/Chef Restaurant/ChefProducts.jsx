@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Search, UtensilsCrossed, CheckCircle2, Eye, EyeOff, X, List, LayoutGrid, ChevronLeft, ChevronRight } from "lucide-react";
 import toast from "react-hot-toast";
 import api, { BACKEND_BASE_URL } from "../api";
+import { getFoodAvailability, useFoodAvailabilityClock } from "../CommonComponents/foodAvailability";
 
 const formatPrice = (value) => new Intl.NumberFormat("en-IN", {
   style: "currency",
@@ -37,6 +38,7 @@ const ChefProducts = () => {
   const [showVisibilityPopup, setShowVisibilityPopup] = useState(false);
   const [popupSearch, setPopupSearch] = useState("");
   const [bulkUpdating, setBulkUpdating] = useState(false);
+  const currentTime = useFoodAvailabilityClock();
 
   const loadFoods = async () => {
     setLoading(true);
@@ -245,7 +247,7 @@ const ChefProducts = () => {
           <table className="min-w-full text-left text-sm">
             <thead className="bg-[#d4a843] text-xs uppercase tracking-wide text-white">
               <tr>
-                <th className="w-12 px-4 py-3">
+                <th className="w-12 px-4 py-3" aria-label="Menu visibility">
                   <input
                     type="checkbox"
                     checked={allFoodsVisible}
@@ -257,6 +259,7 @@ const ChefProducts = () => {
                 </th>
                 <th className="px-4 py-3 font-semibold">S No</th>
                 <th className="px-4 py-3 font-semibold">Food</th>
+                <th className="px-4 py-3 font-semibold">Availability</th>
                 <th className="px-4 py-3 font-semibold">Category</th>
                 <th className="px-4 py-3 font-semibold">Preparation</th>
                 <th className="px-4 py-3 font-semibold">Price</th>
@@ -266,9 +269,9 @@ const ChefProducts = () => {
             </thead>
             <tbody className="divide-y divide-slate-100">
               {loading ? (
-                <tr><td colSpan="8" className="px-4 py-10 text-center text-slate-500">Loading foods...</td></tr>
+                <tr><td colSpan="9" className="px-4 py-10 text-center text-slate-500">Loading foods...</td></tr>
               ) : error ? (
-                <tr><td colSpan="8" className="px-4 py-10 text-center text-rose-700">
+                <tr><td colSpan="9" className="px-4 py-10 text-center text-rose-700">
                   <p role="alert">{error}</p>
                   <button type="button" onClick={loadFoods} className="mt-2 font-semibold underline">Try again</button>
                 </td></tr>
@@ -294,6 +297,19 @@ const ChefProducts = () => {
                       <span className="font-semibold text-slate-800">{food.food_name || "Unnamed food"}</span>
                     </div>
                   </td>
+                  <td className="px-4 py-3">
+                    {(() => {
+                      const availability = getFoodAvailability(food, currentTime);
+                      return (
+                        <div className="flex items-center gap-2">
+                          <input type="checkbox" checked={availability.available} readOnly aria-label={`${food.food_name}: ${availability.label}`} className="h-4 w-4 accent-emerald-700" />
+                          <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${availability.available ? "bg-emerald-100 text-emerald-800" : "bg-slate-100 text-slate-700"}`}>
+                            {availability.label}
+                          </span>
+                        </div>
+                      );
+                    })()}
+                  </td>
                   <td className="px-4 py-3 text-slate-600">{food.category_name || "Uncategorized"}</td>
                   <td className="px-4 py-3 text-slate-600">{food.preparation_time ? `${food.preparation_time} min` : "-"}</td>
                   <td className="whitespace-nowrap px-4 py-3 font-medium text-slate-800">{formatPrice(food.final_price)}</td>
@@ -309,7 +325,7 @@ const ChefProducts = () => {
                   </td>
                 </tr>
               )) : (
-                <tr><td colSpan="8" className="px-4 py-10 text-center text-slate-500">{foods.length ? "No foods match this search." : "No foods have been added yet."}</td></tr>
+                <tr><td colSpan="9" className="px-4 py-10 text-center text-slate-500">{foods.length ? "No foods match this search." : "No foods have been added yet."}</td></tr>
               )}
             </tbody>
           </table>
@@ -344,6 +360,17 @@ const ChefProducts = () => {
                     <h2 className="truncate font-semibold text-slate-900">{food.food_name || "Unnamed food"}</h2>
                     <span className="shrink-0 text-xs text-slate-500">#{pageOffset + index + 1}</span>
                   </div>
+                  {(() => {
+                    const availability = getFoodAvailability(food, currentTime);
+                    return (
+                      <div className="mt-2 flex items-center gap-2">
+                        <input type="checkbox" checked={availability.available} readOnly aria-label={`${food.food_name}: ${availability.label}`} className="h-4 w-4 accent-emerald-700" />
+                        <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${availability.available ? "bg-emerald-100 text-emerald-800" : "bg-slate-100 text-slate-700"}`}>
+                          {availability.label}
+                        </span>
+                      </div>
+                    );
+                  })()}
                   <p className="mt-1 truncate text-sm text-slate-600">{food.category_name || "Uncategorized"}</p>
                 </div>
               </div>

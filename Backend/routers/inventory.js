@@ -24,6 +24,8 @@ const {
   createTransfer,
   createAdjustment,
   createKitchenRequest,
+  updateKitchenRequest,
+  deleteKitchenRequest,
   issueKitchenRequest,
   createWastage,
   createRecipe,
@@ -196,6 +198,16 @@ router.post('/kitchen-requests', withErrorHandler(async (req, res) => {
     data: { request_id: result.id, request_number: result.request_number },
   });
   res.status(201).json({ success: true, message: 'Kitchen request created successfully.', data: result });
+}));
+
+router.put('/kitchen-requests/:id', withErrorHandler(async (req, res) => {
+  const result = await updateKitchenRequest(Number(req.params.id), req.body);
+  res.json({ success: true, message: 'Kitchen request updated successfully.', data: result });
+}));
+
+router.delete('/kitchen-requests/:id', withErrorHandler(async (req, res) => {
+  await deleteKitchenRequest(Number(req.params.id));
+  res.json({ success: true, message: 'Kitchen request deleted successfully.' });
 }));
 
 router.put('/kitchen-requests/:id/approve', withErrorHandler(async (req, res) => {

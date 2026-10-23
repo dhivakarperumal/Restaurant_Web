@@ -1,4 +1,5 @@
 const db = require('../config/db');
+const { isFoodScheduledNow } = require('./foodAvailability');
 
 const initializeCartSchema = async () => {
   await db.query(`
@@ -115,6 +116,17 @@ const addItemToCart = async (itemData) => {
   if (!userId) throw new Error('user_id is required to add an item to the cart');
   if (!foodId) throw new Error('food_id or product_id is required');
   if (!productName) throw new Error('product_name is required');
+
+  const [foodRows] = await db.execute(
+    'SELECT food_name, meal_type, is_available, is_menu_visible, status FROM foods WHERE food_id = ? LIMIT 1',
+    [foodId]
+  );
+  const food = foodRows[0];
+  if (!food || !food.is_available || !food.is_menu_visible
+    || String(food.status || '').toLowerCase() !== 'active'
+    || !isFoodScheduledNow(food.meal_type, itemData.local_minutes)) {
+    throw new Error(`${food?.food_name || productName} is not available at this time.`);
+  }
 
   // Lookup user details from DB if not passed
   let customerName = itemData.customer_name || null;

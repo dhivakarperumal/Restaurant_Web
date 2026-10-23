@@ -5,6 +5,7 @@ const {
   deleteCartItem,
   clearCartByUserId,
 } = require('../modules/cart');
+const { getLocalMinutes } = require('../modules/foodAvailability');
 
 const addToCart = async (req, res) => {
   try {
@@ -21,6 +22,7 @@ const addToCart = async (req, res) => {
     const cartItem = await addItemToCart({
       ...itemData,
       user_id: userId,
+      local_minutes: getLocalMinutes(req),
       customer_name: itemData.customer_name || req.auth?.username,
       customer_email: itemData.customer_email || req.auth?.email,
       customer_phone: itemData.customer_phone || req.auth?.mobile_number,
