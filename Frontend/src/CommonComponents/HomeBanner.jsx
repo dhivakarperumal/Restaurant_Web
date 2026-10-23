@@ -405,7 +405,7 @@ export default function HomeBanner() {
         )}
 
         {/* Dark overlay keeps the text readable */}
-        <div className="absolute inset-y-0 left-0 w-[58%] bg-gradient-to-r from-[#160e08]/45 via-[#21150b]/20 to-transparent backdrop-blur-[2px]" />
+        <div className="absolute inset-0 bg-gradient-to-r from-[#160e08]/45 via-[#21150b]/20 to-transparent" />
 
         {/* Decorative details */}
         <div className="pointer-events-none absolute left-0 top-0 h-40 w-40 rounded-full border border-[#f5a047]/10" />
