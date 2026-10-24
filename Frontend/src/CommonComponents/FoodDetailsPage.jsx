@@ -37,6 +37,7 @@ function FoodDetailsPage() {
   const [customizing, setCustomizing] = useState(false);
   const [quantity, setQuantity] = useState(1);
   const [zoomPosition, setZoomPosition] = useState(null);
+  const [imageAspect, setImageAspect] = useState(1);
   const [activeDetailsTab, setActiveDetailsTab] = useState('overview');
   const [relatedFoods, setRelatedFoods] = useState([]);
   const [relatedFoodsLoading, setRelatedFoodsLoading] = useState(false);
@@ -245,6 +246,9 @@ function FoodDetailsPage() {
   const mrp = Number(food?.mrp || 0);
   const hasDiscount = Number(food?.discount || 0) > 0 && mrp > price;
   const isAvailable = getFoodAvailability(food || {}, currentTime).available;
+  const zoomAspect = 4 / 3;
+  const zoomScale = Math.max(2.5, (zoomAspect / imageAspect) * 2.5);
+  const zoomScaleY = zoomScale * imageAspect / zoomAspect;
   const isInWishlist = wishlist.some((item) => (
     String(item.food_id || item.id || item.product_id || item._id)
       === String(food?.food_id || food?.id)
@@ -485,14 +489,28 @@ function FoodDetailsPage() {
                     onMouseEnter={() => setZoomPosition({ x: 50, y: 50 })}
                     onMouseMove={(event) => {
                       const bounds = event.currentTarget.getBoundingClientRect();
+                      const stageAspect = bounds.width / bounds.height;
+                      const contentWidth = imageAspect > stageAspect
+                        ? bounds.width
+                        : bounds.height * imageAspect;
+                      const contentHeight = imageAspect > stageAspect
+                        ? bounds.width / imageAspect
+                        : bounds.height;
+                      const offsetX = (bounds.width - contentWidth) / 2;
+                      const offsetY = (bounds.height - contentHeight) / 2;
                       setZoomPosition({
-                        x: ((event.clientX - bounds.left) / bounds.width) * 100,
-                        y: ((event.clientY - bounds.top) / bounds.height) * 100,
+                        x: Math.max(0, Math.min(100, ((event.clientX - bounds.left - offsetX) / contentWidth) * 100)),
+                        y: Math.max(0, Math.min(100, ((event.clientY - bounds.top - offsetY) / contentHeight) * 100)),
                       });
                     }}
                   >
                     {images.length ? (
-                      <img src={imageUrl(images[activeImage] || images[0])} alt={food.food_name} className="h-full w-full object-cover" />
+                      <img
+                        src={imageUrl(images[activeImage] || images[0])}
+                        alt={food.food_name}
+                        onLoad={(event) => setImageAspect(event.currentTarget.naturalWidth / event.currentTarget.naturalHeight)}
+                        className="h-full w-full object-contain"
+                      />
                     ) : (
                       <div className="flex h-full items-center justify-center text-[#1a3c36]/40"><UtensilsCrossed className="h-16 w-16" /></div>
                     )}
@@ -533,8 +551,8 @@ function FoodDetailsPage() {
                       className="pointer-events-auto absolute left-[calc(100%+1rem)] top-0 z-30 hidden aspect-[4/3] w-[min(40vw,560px)] rounded-2xl border border-white/80 bg-white shadow-2xl lg:block"
                       style={{
                         backgroundImage: `url("${imageUrl(images[activeImage] || images[0])}")`,
-                        backgroundSize: '250% 250%',
-                        backgroundPosition: `${Math.max(0, Math.min(100, (zoomPosition.x * 2.5 - 50) / 1.5))}% ${Math.max(0, Math.min(100, (zoomPosition.y * 2.5 - 50) / 1.5))}%`,
+                        backgroundSize: `${zoomScale * 100}% auto`,
+                        backgroundPosition: `${Math.max(0, Math.min(100, (zoomPosition.x * zoomScale - 50) / (zoomScale - 1)))}% ${Math.max(0, Math.min(100, (zoomPosition.y * zoomScaleY - 50) / (zoomScaleY - 1)))}%`,
                         backgroundRepeat: 'no-repeat',
                       }}
                     />
