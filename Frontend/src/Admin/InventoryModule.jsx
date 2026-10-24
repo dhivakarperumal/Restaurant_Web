@@ -509,10 +509,10 @@ function ProductsPage({ readOnly = false }) {
   const outOfStockCount = products.filter(p => (Number(p.current_stock) || 0) === 0).length;
 
   const statCardsData = [
-    { title: readOnly ? "Total Stock Items" : "Total Groceries", value: products.length, icon: Package, bg: "bg-[#22c55e]", accent: "#f97316", iconBg: "bg-orange-500", hint: "Registered inventory items" },
-    { title: "Categories", value: totalCategories, icon: Tags, bg: "bg-[#3b82f6]", accent: "#10b981", iconBg: "bg-emerald-500", hint: "Active categories" },
-    { title: "Low Stock", value: lowStockCount, icon: AlertTriangle, bg: "bg-[#f59e0b]", accent: "#3b82f6", iconBg: "bg-blue-500", hint: "Below reorder level" },
-    { title: "Out of Stock", value: outOfStockCount, icon: TrendingDown, bg: outOfStockCount > 0 ? "bg-[#ef4444]" : "bg-[#8b5cf6]", accent: "#ec4899", iconBg: "bg-pink-500", hint: "No units left" },
+    { title: readOnly ? "Total Stock Items" : "Total Groceries", value: products.length, icon: Package, accent: "#f97316", iconBg: "bg-orange-500", hint: "Registered inventory items" },
+    { title: "Categories", value: totalCategories, icon: Tags, accent: "#10b981", iconBg: "bg-emerald-500", hint: "Active categories" },
+    { title: "Low Stock", value: lowStockCount, icon: AlertTriangle, accent: "#3b82f6", iconBg: "bg-blue-500", hint: "Below reorder level" },
+    { title: "Out of Stock", value: outOfStockCount, icon: TrendingDown, accent: "#ec4899", iconBg: "bg-pink-500", hint: "No units left" },
   ];
 
   return (
@@ -559,15 +559,6 @@ function ProductsPage({ readOnly = false }) {
                 <span className="truncate font-medium text-slate-500">{hint}</span>
                 <span className="ml-auto h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: accent }} />
               </div>
-              {!readOnly && (
-                <button
-                  type="button"
-                  onClick={() => setShowFundForm(true)}
-                  className="absolute right-5 top-[5.1rem] z-20 rounded-lg bg-orange-50 px-2 py-1 text-[10px] font-bold text-orange-700 transition hover:bg-orange-100"
-                >
-                  Edit
-                </button>
-              )}
               <span aria-hidden="true" className="pointer-events-none absolute -right-6 -top-6 h-28 w-28 rounded-full opacity-20 blur-2xl" style={{ backgroundColor: accent }} />
             </article>
           ))}
