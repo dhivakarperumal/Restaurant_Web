@@ -113,7 +113,7 @@ const navItems = [
 
 /* ================= SIDEBAR ================= */
 const ChefSidebar = ({ isOpen, onClose, collapsed, onToggleCollapse }) => {
-  const { userProfile } = useAuth();
+  const { userProfile, email } = useAuth();
   const location = useLocation();
   const [openMenu, setOpenMenu] = useState(null);
   const [pendingCount, setPendingCount] = useState(0);
@@ -352,17 +352,17 @@ const ChefSidebar = ({ isOpen, onClose, collapsed, onToggleCollapse }) => {
 
         {/* ========== BOTTOM USER STRIP ========== */}
         {!collapsed && (
-          <div className="px-3 py-4 border-t border-white/25 shrink-0">
-            <div className="flex items-center gap-3 px-3 py-3 rounded-xl bg-[#1f3228] border border-white/5 shadow-inner">
-              <div className="w-9 h-9 rounded-lg bg-[#d4a843] flex items-center justify-center text-[#162420] text-sm font-bold shrink-0">
+          <div className="shrink-0 border-t border-white/25 px-3 py-4">
+            <div className="flex min-w-0 select-none items-center gap-3 rounded-xl border border-white/20 bg-white/15 px-3 py-3 shadow-inner">
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white text-sm font-bold text-[#FF5A00] shadow-sm">
                 {(userProfile?.displayName?.[0] || "A").toUpperCase()}
               </div>
-              <div className="overflow-hidden">
-                <p className="text-xs font-semibold text-white truncate">
-                  {userProfile?.displayName || "Administrator"}
+              <div className="min-w-0 overflow-hidden">
+                <p className="truncate text-xs font-semibold text-white">
+                  {userProfile?.displayName || "Chef"}
                 </p>
-                <p className="text-[10px] text-white truncate">
-                  {userProfile?.role || "Super Admin"}
+                <p className="truncate text-[9px] font-medium text-white/70" title={userProfile?.email || email || "Email not provided"}>
+                  {userProfile?.email || email || "Email not provided"}
                 </p>
               </div>
             </div>
