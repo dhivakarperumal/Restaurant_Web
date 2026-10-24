@@ -26,6 +26,13 @@ const normalizeImageUrl = (value) => {
   return `${baseUrl}${relativePath}`;
 };
 
+const categoryCardTones = [
+  { accent: "#f97316", glow: "#fff0e5", iconBg: "bg-orange-500 text-white" },
+  { accent: "#10b981", glow: "#e5faf3", iconBg: "bg-emerald-500 text-white" },
+  { accent: "#3b82f6", glow: "#eaf4ff", iconBg: "bg-blue-500 text-white" },
+  { accent: "#ec4899", glow: "#fff0f6", iconBg: "bg-pink-500 text-white" },
+];
+
 const AdminCategories = () => {
   const [categories, setCategories] = useState([]);
   const [products, setProducts] = useState([]);
@@ -440,17 +447,25 @@ const AdminCategories = () => {
               {viewMode === 'card' ? (
                 <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
                   {paginatedCategories.map((category, index) => (
-                    <div key={category.id} className="rounded-[18px] border border-[#e7e0d8] bg-gray-100 p-4 shadow-[0_1px_0_rgba(16,24,40,0.02)] transition hover:-translate-y-0.5 hover:shadow-md">
-                      <div className="mb-4 flex items-start justify-between gap-3">
-                        <div className={`flex h-[42px] w-[42px] items-center justify-center rounded-xl ${index % 2 === 0 ? 'bg-[#f4e4d1] text-[#a05c2a]' : 'bg-[#dfeaf8] text-[#3f7db8]'}`}>
+                    <div
+                      key={category.id}
+                      className="group relative flex min-h-[194px] flex-col justify-between overflow-hidden rounded-3xl border border-slate-200/90 p-5 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] transition-all duration-300 hover:-translate-y-1 hover:border-slate-300 hover:shadow-[0_12px_24px_-6px_rgba(0,0,0,0.1)] sm:p-6"
+                      style={{ background: `linear-gradient(135deg, #ffffff 48%, ${categoryCardTones[index % categoryCardTones.length].glow} 100%)` }}
+                    >
+                      <div
+                        className="pointer-events-none absolute -right-6 -top-6 h-28 w-28 rounded-full opacity-70 blur-2xl transition-all duration-500 group-hover:scale-150"
+                        style={{ backgroundColor: categoryCardTones[index % categoryCardTones.length].glow }}
+                      />
+                      <div className="relative z-10 flex items-start justify-between gap-3">
+                        <div className={`flex h-14 w-14 items-center justify-center overflow-hidden rounded-2xl shadow-sm transition-transform duration-300 group-hover:scale-110 ${categoryCardTones[index % categoryCardTones.length].iconBg}`}>
                           {category.image ? (
-                            <img src={category.image} alt={category.name} className="h-full w-full rounded-xl object-cover" />
+                            <img src={category.image} alt={category.name} className="h-full w-full object-cover" />
                           ) : (
-                            <ImageIcon className="h-5 w-5" />
+                            <ImageIcon className="h-6 w-6" />
                           )}
                         </div>
 
-                        <div className="flex items-center gap-2">
+                        <div className="relative z-10 flex items-center gap-2">
                           <button
                             type="button"
                             onClick={() => openEditCategory(category.id)}
@@ -472,21 +487,20 @@ const AdminCategories = () => {
                         </div>
                       </div>
 
-                      <div className="text-[16px] font-semibold text-[#1e1e1e]">{category.name}</div>
-                      <div className="mt-1 text-[13px] text-[#646464]">{category.products} Products</div>
-
-                      <div className="mt-3 flex items-center gap-2 text-[12px] text-[#2f7a4a]">
-                        <span className={`h-2 w-2 rounded-full ${category.status === 'Active' ? 'bg-[#2f7a4a]' : 'bg-[#b85c5c]'}`} />
-                        {category.status}
+                      <div className="relative z-10 mt-4 min-w-0">
+                        <div className="truncate text-[11px] font-bold uppercase tracking-wider text-slate-500">{category.name}</div>
+                        <div className="mt-1 truncate text-[28px] font-black tracking-tight text-slate-800">{category.products}</div>
+                        <div className="text-xs font-medium text-slate-500">Products</div>
                       </div>
 
-                      <div className="mt-3 flex flex-wrap gap-1.5">
-                        {category.subCategories.length ? category.subCategories.map((subCategory) => (
-                          <span key={subCategory} className="rounded-full bg-[#fff7e9] px-2 py-1 text-[11px] text-[#8b5f22]">
-                            {subCategory}
-                          </span>
-                        )) : <span className="text-[12px] text-[#888]">No subcategories</span>}
+                      <div className="relative z-10 mt-4 flex min-w-0 items-center justify-between gap-2 border-t border-slate-100 pt-3 text-xs">
+                        <span className="flex min-w-0 items-center gap-1.5">
+                          <span className={`h-2 w-2 shrink-0 rounded-full ${category.status === 'Active' ? 'bg-emerald-500' : 'bg-rose-500'}`} />
+                          <span className="truncate font-medium text-slate-600">{category.status}</span>
+                        </span>
+                        <span className="shrink-0 font-medium text-slate-500">{category.subCategories.length} subcategories</span>
                       </div>
+                      <div className="absolute bottom-0 left-0 h-[3px] w-0 transition-all duration-300 group-hover:w-full" style={{ backgroundColor: categoryCardTones[index % categoryCardTones.length].accent }} />
                     </div>
                   ))}
                 </div>
