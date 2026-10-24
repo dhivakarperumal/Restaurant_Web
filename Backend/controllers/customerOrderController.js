@@ -572,17 +572,15 @@ const getDeliveryPartnerHistory = async (req, res) => {
     let query = `
       SELECT
         o.id,
-        o.order_number        AS order_id,
+        o.order_number  AS order_id,
         o.customer_name,
         o.customer_phone,
-        o.total_amount        AS earnings,
-        o.order_status        AS status,
-        o.created_at          AS date,
-        r.restaurant_name,
+        o.total_amount  AS earnings,
+        o.order_status  AS status,
+        o.created_at    AS date,
         a.address_line, a.area_locality, a.landmark, a.city, a.state, a.pincode
       FROM orders o
       LEFT JOIN \`address\` a ON a.id = o.address_id AND a.user_id = o.user_id
-      LEFT JOIN restaurants r ON r.id = o.restaurant_id
       WHERE o.assigned_delivery_partner_id = ?
         AND o.order_type = 'home_delivery'
         AND o.order_status IN ('delivered', 'completed', 'cancelled', 'failed')
@@ -596,18 +594,33 @@ const getDeliveryPartnerHistory = async (req, res) => {
 
     const [rows] = await db.execute(query, params);
 
+    /* fetch order items to derive a pickup label */
+    let itemsByOrder = new Map();
+    if (rows.length) {
+      const orderIds = rows.map((r) => r.id);
+      const [items] = await db.execute(
+        `SELECT order_id, product_name FROM order_items
+         WHERE order_id IN (${orderIds.map(() => '?').join(', ')})
+         ORDER BY id`,
+        orderIds
+      );
+      for (const item of items) {
+        if (!itemsByOrder.has(item.order_id)) itemsByOrder.set(item.order_id, item.product_name);
+      }
+    }
+
     const deliveries = rows.map((row) => ({
       order_id:        row.order_id,
       customer_name:   row.customer_name,
       customer_phone:  row.customer_phone,
-      restaurant_name: row.restaurant_name || null,
-      pickup_address:  row.restaurant_name || null,
+      restaurant_name: itemsByOrder.get(row.id) ? `Order: ${itemsByOrder.get(row.id)}` : null,
+      pickup_address:  null,
       delivery_address: [
         row.address_line, row.area_locality, row.landmark,
         row.city, row.state, row.pincode,
       ].filter(Boolean).join(', ') || null,
       date:     row.date,
-      status:   row.status === 'delivered' || row.status === 'completed' ? 'Delivered'
+      status:   (row.status === 'delivered' || row.status === 'completed') ? 'Delivered'
                : row.status === 'cancelled' ? 'Cancelled'
                : row.status === 'failed'    ? 'Failed'
                : row.status,
@@ -615,9 +628,9 @@ const getDeliveryPartnerHistory = async (req, res) => {
     }));
 
     const summary = {
-      completed:  deliveries.filter((d) => d.status === 'Delivered').length,
-      cancelled:  deliveries.filter((d) => d.status === 'Cancelled').length,
-      failed:     deliveries.filter((d) => d.status === 'Failed').length,
+      completed: deliveries.filter((d) => d.status === 'Delivered').length,
+      cancelled: deliveries.filter((d) => d.status === 'Cancelled').length,
+      failed:    deliveries.filter((d) => d.status === 'Failed').length,
     };
 
     return res.json({ success: true, deliveries, summary });
