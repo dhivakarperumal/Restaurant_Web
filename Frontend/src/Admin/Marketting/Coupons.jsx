@@ -298,7 +298,7 @@ const Coupons = () => {
         <div className="overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
           <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="bg-[#FF5A00] text-left text-sm font-semibold text-white">
+              <tr className="bg-orange-50 text-left text-sm font-semibold text-orange-700 border-b border-orange-100">
                 <th className="px-4 py-4 text-xs font-bold">S No</th>
                 <th className="px-4 py-4 text-xs font-bold ">Code</th>
                 <th className="px-4 py-4 text-xs font-bold ">Name</th>

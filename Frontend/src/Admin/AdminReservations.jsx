@@ -267,7 +267,7 @@ const AdminReservations = () => {
         ) : viewMode === "table" ? (
           <div className="overflow-x-auto rounded-2xl border border-[#e7e0d8] bg-white shadow-sm">
             <table className="w-full min-w-[1050px] border-collapse text-left text-sm">
-              <thead className="sticky top-0 bg-[#FF5A00] text-[11px] uppercase tracking-wide text-white">
+              <thead className="sticky top-0 bg-orange-50 text-[11px] uppercase tracking-wide text-orange-700 border-b border-orange-100">
                 <tr>
                   {["#", "Guest", "Date & Time", "Table / Guests", "Requests / Reference", "Status", "Actions"].map((heading) => (
                     <th key={heading} className="whitespace-nowrap px-4 py-4 font-bold">{heading}</th>

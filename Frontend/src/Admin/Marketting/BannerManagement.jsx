@@ -255,7 +255,7 @@ const BannerManagement = () => {
                     {viewMode === "table" ? <div className="overflow-x-auto hide-scrollbar">
                         <table className="w-full text-left border-collapse block md:table">
                             <thead className="hidden md:table-header-group">
-                                 <tr className="bg-[#FF5A00] text-left text-sm font-semibold text-white">
+                                 <tr className="bg-orange-50 text-left text-sm font-semibold text-orange-700 border-b border-orange-100">
                                     <th className="px-4 py-4 text-xs font-black   text-center">S No</th>
                                     <th className="px-6 py-4 text-xs font-black  ">Visual Assets</th>
                                     <th className="px-6 py-4 text-xs font-black  ">Promotion Details</th>

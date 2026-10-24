@@ -659,7 +659,7 @@ const AdminReviews = () => {
           ) : (
             <div className="overflow-x-auto rounded-xl border border-[#e8e4df]">
               <table className="min-w-full border-separate border-spacing-0">
-                <thead className="bg-[#FF5A00] text-white">
+                <thead className="bg-orange-50 text-orange-700 border-b border-orange-100">
                   <tr className="text-left text-xs font-bold capitalize tracking-wider">
                     <th className="rounded-tl-md px-4 py-4">S.No</th>
                     <th className="px-4 py-4">ID & Product</th>

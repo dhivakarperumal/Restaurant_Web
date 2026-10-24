@@ -225,7 +225,7 @@ const VideoManagement = () => {
                     {viewMode === "table" ? <div className="overflow-x-auto">
                         <table className="w-full text-left border-collapse block md:table">
                             <thead className="hidden md:table-header-group">
-                                <tr className="bg-[#FF5A00] text-left text-sm font-semibold text-white">
+                                <tr className="bg-orange-50 text-left text-sm font-semibold text-orange-700 border-b border-orange-100">
                                     <th className="rounded-tl-md px-4 py-4 text-xs font-black  capitalize tracking-wider text-center">S No</th>
                                     <th className="px-6 py-4 text-xs font-black  capitalize tracking-wider">Preview</th>
                                     <th className="px-6 py-4 text-xs font-black  capitalize tracking-wider">Title</th>

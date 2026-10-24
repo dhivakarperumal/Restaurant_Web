@@ -493,7 +493,7 @@ const AdminCategories = () => {
               ) : (
                 <div className="mt-0 overflow-x-auto rounded-[16px] border border-[#e8e4df]">
                   <table className="w-full min-w-[760px] border-collapse bg-gray-100 text-left">
-                    <thead className="bg-[#FF5A00] text-left text-sm font-semibold text-white">
+                    <thead className="bg-orange-50 text-left text-sm font-semibold text-orange-700 border-b border-orange-100">
                       <tr>
                         <th className="px-4 py-4">S.No</th>
                         <th className="px-4 py-4">Category</th>

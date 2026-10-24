@@ -326,7 +326,7 @@ const RevenuePage = () => {
         {ordersError ? <div role="alert" className="p-6 text-sm text-[#8c4437]">{ordersError}</div> : ordersLoading ? <div className="space-y-3 p-5"><div className="h-8 animate-pulse bg-[#f0f4f0]" /><div className="h-12 animate-pulse bg-[#f6f8f6]" /><div className="h-12 animate-pulse bg-[#f6f8f6]" /></div> : pageData.rows.length === 0 ? <div className="px-5 py-14 text-center"><span className="mx-auto grid h-12 w-12 place-items-center bg-[#edf5ee] text-[#4b805b]"><PackageCheck size={22} /></span><h3 className="mt-4 text-sm font-bold text-[#304638]">No delivered orders found</h3><p className="mx-auto mt-1 max-w-md text-sm text-[#829087]">Orders will appear here after their status is set to Delivered. Pending, cancelled, paid-but-unserved, and incomplete records are excluded.</p></div> : <>
           <div className="max-h-[560px] overflow-auto rounded-xl">
             <table className="w-full min-w-[1840px] border-collapse text-left text-xs">
-              <thead className="sticky top-0 z-10 bg-[#d4a843] text-[10px] uppercase tracking-[0.07em] text-white shadow-[0_1px_0_#c39732]">
+              <thead className="sticky top-0 z-10 bg-orange-50 text-[10px] uppercase tracking-[0.07em] text-orange-700 border-b border-orange-100 shadow-[0_1px_0_#fed7aa]">
                 <tr>{["S No", "Order ID", "Order Date", "Customer", "Phone", "Type", "Items", "Qty", "Subtotal", "Discount", "Delivery", "Tax", "Total", "Payment", "Payment Status", "Delivery Partner", "Delivered At", "Status", ""].map((label) => <th key={label} className="whitespace-nowrap px-4 py-4 font-bold">{label}</th>)}</tr>
               </thead>
               <tbody className="divide-y divide-[#edf1ed]">

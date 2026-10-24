@@ -884,7 +884,7 @@ export default function EmployeeSalary() {
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm text-[#44534a]">
-              <thead className="bg-[#d4a843] text-white">
+              <thead className="bg-orange-50 text-orange-700 border-b border-orange-100">
                 <tr>
                   <th className="px-4 py-4 rounded-l-lg font-medium">Employee</th>
                   <th className="px-4 py-4 font-medium">Period</th>

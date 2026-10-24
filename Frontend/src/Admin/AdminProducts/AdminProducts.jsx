@@ -405,7 +405,7 @@ const AdminProducts = () => {
                   <div className="overflow-x-auto">
                     <table className="min-w-full border-separate border-spacing-0">
                       <thead>
-                        <tr className="bg-[#d4a843] text-left text-sm font-semibold text-white">
+                        <tr className="bg-orange-50 text-left text-sm font-semibold text-orange-700 border-b border-orange-100">
                           <th className="px-4 py-4">S.No</th>
                           <th className="px-4 py-4">Product</th>
                           <th className="px-4 py-4">Category</th>

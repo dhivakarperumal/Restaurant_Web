@@ -295,7 +295,7 @@ const Cuisines = () => {
           ) : (
             <div className="overflow-x-auto rounded-xl border border-gray-200">
               <table className="w-full min-w-[980px] text-left text-sm">
-                <thead className="border-b border-[#E94B00] bg-[#FF5A00] text-xs uppercase text-white">
+                <thead className="border-b border-orange-100 bg-orange-50 text-xs uppercase text-orange-700">
                   <tr>
                     <th className="px-4 py-4">S No</th>
                     <th className="px-4 py-4">Cuisine</th>
