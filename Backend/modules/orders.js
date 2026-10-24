@@ -433,7 +433,7 @@ const createOrderFromCart = async ({
         totalPrice: Number((unitPrice * quantity).toFixed(2)),
         selectedAddons: JSON.stringify(selectedAddons),
         selectedCustomizations: JSON.stringify(selectedCustomizations),
-        cookingNotes: row.cooking_notes,
+        cookingNotes: row.cooking_notes ?? null,
       };
     });
     const subtotal = Number(items.reduce((sum, item) => sum + item.totalPrice, 0).toFixed(2));
