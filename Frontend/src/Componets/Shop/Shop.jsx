@@ -911,6 +911,22 @@ export default function Shop({ offersOnly = false }) {
           food={selectedFood}
           onClose={closeModal}
           onAdd={handleAddFromModal}
+          onBuyNow={({ quantity, selectedAddons, selectedCustomizations, unitPrice }) => navigate('/checkout', {
+            state: {
+              buyNowItem: {
+                food_id: String(selectedFood.food_id || selectedFood.id),
+                food_name: selectedFood.food_name,
+                product_name: selectedFood.food_name,
+                food_images: selectedFood.food_images || [],
+                product_image: selectedFood.food_images?.[0] || '',
+                portion_size: selectedFood.portion_size || 'Standard',
+                price: unitPrice,
+                quantity,
+                selected_addons: selectedAddons,
+                selected_customizations: selectedCustomizations,
+              },
+            },
+          })}
         />
       )}
     </div>

@@ -131,7 +131,7 @@ function FoodDetailsPage() {
     });
   };
 
-  const addCurrentFoodDirectly = () => {
+  const addCurrentFoodDirectly = async () => {
     if (!food || !addToCart) {
       toast.error('Unable to add this item to your cart.');
       return false;
@@ -246,6 +246,25 @@ function FoodDetailsPage() {
   const mrp = Number(food?.mrp || 0);
   const hasDiscount = Number(food?.discount || 0) > 0 && mrp > price;
   const isAvailable = getFoodAvailability(food || {}, currentTime).available;
+  const goToCheckoutWithFood = (selectedFood, options = {}) => {
+    const selectedQuantity = options.quantity || 1;
+    navigate('/checkout', {
+      state: {
+        buyNowItem: {
+          food_id: String(selectedFood.food_id || selectedFood.id),
+          food_name: selectedFood.food_name,
+          product_name: selectedFood.food_name,
+          food_images: selectedFood.food_images || [],
+          product_image: selectedFood.food_images?.[0] || '',
+          price: options.unitPrice ?? Number(selectedFood.final_price || selectedFood.mrp || 0),
+          portion_size: selectedFood.portion_size || 'Standard',
+          quantity: selectedQuantity,
+          selected_addons: options.selectedAddons || [],
+          selected_customizations: options.selectedCustomizations || {},
+        },
+      },
+    });
+  };
   const zoomAspect = 4 / 3;
   const zoomScale = Math.max(1.5, (zoomAspect / imageAspect) * 1.5);
   const zoomScaleY = zoomScale * imageAspect / zoomAspect;
@@ -440,12 +459,12 @@ function FoodDetailsPage() {
                     </button>
                     </div>
                   </div>
-                  <div className="flex min-w-[220px] flex-1 gap-2">
+                  <div className="flex min-w-[220px] flex-1 gap-1.5">
                     <button
                       type="button"
                       onClick={() => setCustomizing(true)}
                       disabled={!isAvailable}
-                      className="inline-flex min-h-11 min-w-0 flex-1 items-center justify-center whitespace-nowrap rounded-xl border border-[#1a3c36] px-3 py-2 text-xs font-bold text-[#1a3c36] transition hover:bg-emerald-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 focus-visible:ring-offset-2 active:scale-95 disabled:cursor-not-allowed disabled:border-slate-200 disabled:text-slate-400"
+                      className="inline-flex min-h-11 min-w-0 flex-1 items-center justify-center whitespace-nowrap rounded-xl border border-[#1a3c36] px-1 py-2 text-[10px] font-bold text-[#1a3c36] transition hover:bg-emerald-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 focus-visible:ring-offset-2 active:scale-95 disabled:cursor-not-allowed disabled:border-slate-200 disabled:text-slate-400"
                     >
                       Customize
                     </button>
@@ -453,10 +472,18 @@ function FoodDetailsPage() {
                       type="button"
                       onClick={addCurrentFoodDirectly}
                       disabled={!isAvailable}
-                      className="inline-flex min-h-11 min-w-0 flex-1 items-center justify-center gap-1 whitespace-nowrap rounded-xl bg-[#1a3c36] px-3 py-2 text-xs font-bold text-white shadow-sm transition hover:bg-[#245048] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 focus-visible:ring-offset-2 active:scale-95 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400"
+                      className="inline-flex min-h-11 min-w-0 flex-1 items-center justify-center gap-1 whitespace-nowrap rounded-xl bg-[#1a3c36] px-1 py-2 text-[10px] font-bold text-white shadow-sm transition hover:bg-[#245048] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 focus-visible:ring-offset-2 active:scale-95 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400"
                     >
                       {isAvailable && <Plus className="h-3.5 w-3.5 text-emerald-300" />}
                       {isAvailable ? 'Add' : 'Unavailable'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => goToCheckoutWithFood(food, { quantity })}
+                      disabled={!isAvailable}
+                      className="inline-flex min-h-11 min-w-0 flex-1 items-center justify-center gap-1 whitespace-nowrap rounded-xl bg-[#d4a843] px-1 py-2 text-[10px] font-bold text-slate-950 shadow-sm transition hover:bg-[#c69a35] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2 active:scale-95 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400"
+                    >
+                      Buy Now
                     </button>
                   </div>
                 </div>
@@ -782,6 +809,7 @@ function FoodDetailsPage() {
           initialQuantity={quantity}
           onClose={() => setCustomizing(false)}
           onAdd={addSelectedFoodToCart}
+          onBuyNow={(options) => goToCheckoutWithFood(food, options)}
         />
       )}
       {relatedFoodToCustomize && (
@@ -790,6 +818,7 @@ function FoodDetailsPage() {
           food={relatedFoodToCustomize}
           onClose={() => setRelatedFoodToCustomize(null)}
           onAdd={addRelatedFoodToCart}
+          onBuyNow={(options) => goToCheckoutWithFood(relatedFoodToCustomize, options)}
         />
       )}
     </>

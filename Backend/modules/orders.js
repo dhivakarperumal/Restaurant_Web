@@ -283,6 +283,7 @@ const createOrderFromCart = async ({
   paymentMethod,
   idempotencyKey,
   localMinutes,
+  buyNowItem,
 }) => {
   const connection = await db.getConnection();
   try {
@@ -313,10 +314,17 @@ const createOrderFromCart = async ({
       };
     }
 
-    const [cartRows] = await connection.execute(
-      'SELECT * FROM cart WHERE user_id = ? ORDER BY id FOR UPDATE',
-      [userId]
-    );
+    const [cartRows] = buyNowItem
+      ? [[{
+        food_id: String(buyNowItem.food_id),
+        quantity: buyNowItem.quantity,
+        selected_addons: JSON.stringify(buyNowItem.selected_addons || []),
+        selected_customizations: JSON.stringify(buyNowItem.selected_customizations || {}),
+      }]]
+      : await connection.execute(
+        'SELECT * FROM cart WHERE user_id = ? ORDER BY id FOR UPDATE',
+        [userId]
+      );
     if (!cartRows.length) {
       const error = new Error('Your cart is empty.');
       error.statusCode = 400;
@@ -511,7 +519,7 @@ const createOrderFromCart = async ({
       );
     }
 
-    if (paymentMethod === 'cod') {
+    if (paymentMethod === 'cod' && !buyNowItem) {
       await connection.execute('DELETE FROM cart WHERE user_id = ?', [userId]);
     }
     await connection.commit();

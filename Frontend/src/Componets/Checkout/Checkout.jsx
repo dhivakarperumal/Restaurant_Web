@@ -1,6 +1,6 @@
 import { useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { CheckCircle2, LocateFixed, MapPin, PackageCheck, ShoppingBag, Store, Truck, UtensilsCrossed } from 'lucide-react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 import api, { BACKEND_BASE_URL } from '../../api';
 import { useAuth } from '../../PrivateRouter/AuthContext';
@@ -164,9 +164,10 @@ const getCoordinatesFromAddress = async (address, signal) => {
   throw new Error('We could not find that address. Check the street, area, city, state, and pincode, or use current location.');
 };
 
-const getCheckoutIdempotencyKey = async (userId, cart, checkoutDetails) => {
+const getCheckoutIdempotencyKey = async (userId, cart, checkoutDetails, isBuyNow = false) => {
   const requestFingerprint = JSON.stringify({
     userId,
+    isBuyNow,
     fulfillmentType: checkoutDetails.fulfillmentType,
     paymentMethod: checkoutDetails.paymentMethod,
     address: checkoutDetails.fulfillmentType === 'home_delivery' ? checkoutDetails.address : null,
@@ -202,6 +203,12 @@ function Checkout() {
   const { user } = useAuth();
   const store = useContext(StoreContext) || {};
   const { cart = [], loadingCart, fetchCart } = store;
+  const location = useLocation();
+  const buyNowItem = location.state?.buyNowItem || null;
+  const checkoutItems = useMemo(
+    () => (buyNowItem ? [buyNowItem] : cart),
+    [buyNowItem, cart],
+  );
   const navigate = useNavigate();
   const [fulfillmentType, setFulfillmentType] = useState('home_delivery');
   const [paymentMethod, setPaymentMethod] = useState('cod');
@@ -308,11 +315,11 @@ function Checkout() {
     };
   }, [address, addressFingerprint, deliveryLocation, fetchingLocation, fulfillmentType]);
 
-  const subtotal = useMemo(() => cart.reduce(
+  const subtotal = useMemo(() => checkoutItems.reduce(
     (sum, item) => sum + Number(item.price || 0) * Number(item.quantity || 1),
     0
-  ), [cart]);
-  const itemCount = cart.reduce((sum, item) => sum + Number(item.quantity || 1), 0);
+  ), [checkoutItems]);
+  const itemCount = checkoutItems.reduce((sum, item) => sum + Number(item.quantity || 1), 0);
   const quoteFingerprint = `${fulfillmentType}:${subtotal.toFixed(2)}:${deliveryLocation?.latitude ?? ''}:${deliveryLocation?.longitude ?? ''}`;
   const deliveryLatitude = deliveryLocation?.latitude;
   const deliveryLongitude = deliveryLocation?.longitude;
@@ -454,11 +461,16 @@ function Checkout() {
     event.preventDefault();
     if (!user?.user_id) {
       toast.error('Please log in before placing an order.');
-      navigate('/login', { state: { from: '/checkout' } });
+      navigate('/login', {
+        state: {
+          from: '/checkout',
+          returnState: buyNowItem ? { buyNowItem } : undefined,
+        },
+      });
       return;
     }
-    if (!cart.length) {
-      toast.error('Your cart is empty.');
+    if (!checkoutItems.length) {
+      toast.error(buyNowItem ? 'The selected item is unavailable for checkout.' : 'Your cart is empty.');
       return;
     }
     if (fulfillmentType === 'home_delivery' && !deliveryLocation) {
@@ -476,13 +488,14 @@ function Checkout() {
     try {
       const requestKey = await getCheckoutIdempotencyKey(
         user.user_id,
-        cart,
+        checkoutItems,
         {
           fulfillmentType,
           paymentMethod,
           address,
           deliveryLocation,
         },
+        Boolean(buyNowItem),
       );
       idempotencyContext.current = requestKey;
       const { data } = await api.post(
@@ -493,6 +506,14 @@ function Checkout() {
           address: fulfillmentType === 'home_delivery' ? address : null,
           delivery_location: fulfillmentType === 'home_delivery' ? deliveryLocation : null,
           payment_method: paymentMethod,
+          ...(buyNowItem ? {
+            buy_now: {
+              food_id: String(buyNowItem.food_id),
+              quantity: Number(buyNowItem.quantity),
+              selected_addons: buyNowItem.selected_addons || [],
+              selected_customizations: buyNowItem.selected_customizations || {},
+            },
+          } : {}),
         },
         { headers: { 'Idempotency-Key': requestKey.idempotencyKey } },
       );
@@ -539,6 +560,7 @@ function Checkout() {
               razorpay_order_id: paymentResponse.razorpay_order_id,
               razorpay_payment_id: paymentResponse.razorpay_payment_id,
               razorpay_signature: paymentResponse.razorpay_signature,
+              preserve_cart: Boolean(buyNowItem),
             });
             if (!verification.data?.success) {
               throw new Error(verification.data?.message || 'Payment could not be verified.');
@@ -582,7 +604,7 @@ function Checkout() {
           <div className="mx-auto max-w-lg rounded-3xl border border-[#eadfd2] bg-white p-8 text-center shadow-sm">
             <ShoppingBag className="mx-auto mb-4 h-10 w-10 text-[#a34f32]" />
             <p className="text-sm text-[#68766e]">Sign in to save your address and place your order.</p>
-            <Link to="/login" state={{ from: '/checkout' }} className="mt-6 inline-flex rounded-xl bg-[#263830] px-6 py-3 font-semibold text-white hover:bg-[#1a2822]">
+            <Link to="/login" state={{ from: '/checkout', returnState: buyNowItem ? { buyNowItem } : undefined }} className="mt-6 inline-flex rounded-xl bg-[#263830] px-6 py-3 font-semibold text-white hover:bg-[#1a2822]">
               Log in
             </Link>
           </div>
@@ -611,7 +633,7 @@ function Checkout() {
     );
   }
 
-  if (loadingCart) {
+  if (loadingCart && !buyNowItem) {
     return (
       <main className="min-h-[60vh] bg-[#faf8f5] pb-16">
         <PageHeader title="Checkout" />
@@ -620,7 +642,7 @@ function Checkout() {
     );
   }
 
-  if (!cart.length) {
+  if (!checkoutItems.length) {
     return (
       <main className="min-h-[60vh] bg-[#faf8f5] pb-16">
         <PageHeader title="Checkout" />
@@ -856,7 +878,7 @@ function Checkout() {
               <p className="mt-1 text-sm text-[#8c7a6b]">{itemCount} item{itemCount === 1 ? '' : 's'} in your order</p>
             </div>
             <div className="max-h-[420px] space-y-4 overflow-y-auto p-5">
-              {cart.map((item) => (
+              {checkoutItems.map((item) => (
                 <div key={item.id || item.food_id} className="flex gap-3 rounded-2xl border border-[#f0e9df] bg-white p-3">
                   {getItemImage(item) ? (
                     <img src={resolveImageUrl(getItemImage(item))} alt={getItemName(item)} className="h-[68px] w-[68px] shrink-0 rounded-xl object-cover" onError={(event) => { event.currentTarget.style.display = 'none'; }} />
@@ -924,7 +946,7 @@ function Checkout() {
               </div>
               <button
                 type="submit"
-                disabled={submitting || cart.length === 0 || (fulfillmentType === 'home_delivery' && (!deliveryLocation || geocodingAddress || deliveryQuotePending || !currentDeliveryQuote))}
+                disabled={submitting || checkoutItems.length === 0 || (fulfillmentType === 'home_delivery' && (!deliveryLocation || geocodingAddress || deliveryQuotePending || !currentDeliveryQuote))}
                 className="w-full rounded-xl bg-[#263830] px-5 py-4 text-sm font-bold text-white shadow-md shadow-[#263830]/15 transition hover:-translate-y-0.5 hover:bg-[#1a2822] disabled:translate-y-0 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {submitting ? 'Preparing your order…' : paymentMethod === 'online' ? 'Continue to Razorpay' : 'Place order'}

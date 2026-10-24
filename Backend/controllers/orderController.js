@@ -190,6 +190,19 @@ const create = async (req, res) => {
   if (validationError) {
     return res.status(400).json({ success: false, message: validationError });
   }
+  const buyNowItem = req.body?.buy_now;
+  if (buyNowItem !== undefined && buyNowItem !== null) {
+    if (!buyNowItem || typeof buyNowItem !== 'object' || Array.isArray(buyNowItem)
+      || typeof buyNowItem.food_id !== 'string' || !buyNowItem.food_id.trim()
+      || buyNowItem.food_id.length > 100
+      || !Number.isInteger(buyNowItem.quantity) || buyNowItem.quantity < 1 || buyNowItem.quantity > 99
+      || (buyNowItem.selected_addons !== undefined && !Array.isArray(buyNowItem.selected_addons))
+      || (buyNowItem.selected_customizations !== undefined
+        && (!buyNowItem.selected_customizations || typeof buyNowItem.selected_customizations !== 'object'
+          || Array.isArray(buyNowItem.selected_customizations)))) {
+      return res.status(400).json({ success: false, message: 'The Buy Now item details are invalid.' });
+    }
+  }
   const idempotencyKey = req.get('Idempotency-Key') || '';
   if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(idempotencyKey)) {
     return res.status(400).json({ success: false, message: 'A valid order request key is required. Please refresh checkout and try again.' });
@@ -218,6 +231,7 @@ const create = async (req, res) => {
       paymentMethod,
       idempotencyKey,
       localMinutes: getLocalMinutes(req),
+      buyNowItem: buyNowItem || null,
     });
     const orderPaymentMethod = createdOrder.paymentMethod || paymentMethod;
 
@@ -365,6 +379,7 @@ const verifyPayment = async (req, res) => {
     razorpay_order_id: razorpayOrderId,
     razorpay_payment_id: paymentId,
     razorpay_signature: signature,
+    preserve_cart: preserveCart = false,
   } = req.body || {};
   if (![orderNumber, razorpayOrderId, paymentId, signature].every((value) => typeof value === 'string' && value)) {
     return res.status(400).json({ success: false, message: 'Payment verification details are incomplete.' });
@@ -376,7 +391,7 @@ const verifyPayment = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Payment order was not found.' });
     }
     if (order.payment_status === 'paid' && order.razorpay_payment_id === paymentId) {
-      await clearUserCart(getUserId(req));
+      if (!preserveCart) await clearUserCart(getUserId(req));
       return res.json({ success: true, data: { order_number: orderNumber } });
     }
 
@@ -400,7 +415,7 @@ const verifyPayment = async (req, res) => {
     if (!updated) {
       return res.status(409).json({ success: false, message: 'This payment order is no longer awaiting payment.' });
     }
-    await clearUserCart(getUserId(req));
+    if (!preserveCart) await clearUserCart(getUserId(req));
     notifyChefOfCustomerOrder({
       orderNumber,
       orderType: order.order_type,
