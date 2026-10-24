@@ -27,7 +27,7 @@ const DeliveryLayout = () => {
   }, []);
 
   return (
-    <div className="flex min-h-screen bg-[#f4f7f4] text-[#17231c]">
+    <div className="admin-theme flex min-h-screen bg-[#f4f7f4] text-[#17231c]">
       <Sidebar
         isOpen={sidebarOpen}
         onClose={() => setSidebarOpen(false)}

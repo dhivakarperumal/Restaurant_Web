@@ -15,6 +15,7 @@ import {
   XCircle,
   ChevronDown,
   ChevronLeft,
+  Home,
   UserRound,
 } from "lucide-react";
 
@@ -95,11 +96,11 @@ const DeliverySidebar = ({ isOpen, onClose, collapsed, onToggleCollapse }) => {
 
       {/* ========== SIDEBAR ========== */}
       <aside
-        data-sidebar="delivery-sidebar"
+        data-sidebar="admin-sidebar"
         className={`
           fixed top-0 left-0 z-50 h-full flex flex-col
           bg-brand-bg
-          border-r border-[#1f3228]
+          border-r border-white/25
           
           transition-all duration-300
           ${isOpen ? "translate-x-0" : "-translate-x-full"}
@@ -108,7 +109,7 @@ const DeliverySidebar = ({ isOpen, onClose, collapsed, onToggleCollapse }) => {
         `}
       >
         {/* ========== LOGO ========== */}
-        <div className={`flex items-center gap-3 border-b border-[#1f3228] shrink-0 ${collapsed ? "px-3 py-5 justify-center" : "px-5 py-5"}`}>
+        <div className={`flex items-center gap-3 border-b border-white/25 shrink-0 ${collapsed ? "px-3 py-5 justify-center" : "px-5 py-5"}`}>
           <div className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0 p-1 border border-[#d4a843]/30 bg-white">
             <img src={Logo} alt="Buy Foods restaurant logo" className="w-full h-full object-contain drop-shadow-lg" />
           </div>
@@ -155,17 +156,17 @@ const DeliverySidebar = ({ isOpen, onClose, collapsed, onToggleCollapse }) => {
                       w-full flex items-center gap-3 px-3 py-3 rounded-xl text-sm
                       transition-all duration-200 group
                       ${isAnyChildActive
-                        ? "bg-gray-50 text-[#162420] border-l-2 border-gray-400"
+                        ? "bg-white text-[#FF5A00] border-l-2 border-white"
                         : "text-white hover:text-white hover:bg-[#1f3228]/70"
                       }
                     `}
                   >
-                    <Icon className={`w-[17px] h-[17px] shrink-0 ${isAnyChildActive ? "text-gray-700" : "text-white"}`} />
+                    <Icon className={`w-[17px] h-[17px] shrink-0 ${isAnyChildActive ? "text-[#FF5A00]" : "text-white"}`} />
                     {!collapsed && (
                       <>
-                        <span className={`flex-1 text-left font-medium truncate ${isAnyChildActive ? "text-gray-700" : "text-white"}`}>{item.label}</span>
+                        <span className={`flex-1 text-left font-semibold truncate ${isAnyChildActive ? "text-[#FF5A00]" : "text-white"}`}>{item.label}</span>
                         <ChevronDown
-                          className={`w-3.5 h-3.5 transition-transform duration-200 ${isMenuOpen ? "rotate-180" : ""}`}
+                          className={`w-3.5 h-3.5 transition-transform duration-200 ${isMenuOpen ? "rotate-180" : ""} ${isAnyChildActive ? "text-[#FF5A00]" : ""}`}
                         />
                       </>
                     )}
@@ -199,14 +200,14 @@ const DeliverySidebar = ({ isOpen, onClose, collapsed, onToggleCollapse }) => {
                               flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-xs
                               transition-all duration-200
                               ${isActive
-                                ? "bg-gray-50 text-[#162420] font-semibold"
+                                ? "bg-white text-[#FF5A00] font-semibold"
                                 : "text-white hover:text-white hover:bg-[#1f3228]"
                               }
                             `}
                             title={collapsed && sub.badge ? `${sub.label} (${pendingCount})` : ''}
                           >
-                            <SubIcon className={`w-3.5 h-3.5 shrink-0 ${isActive ? "text-[#162420]" : "text-white"}`} />
-                            <span className={`truncate flex-1 ${isActive ? "text-[#162420]" : "text-white"}`}>{sub.label}</span>
+                            <SubIcon className={`w-3.5 h-3.5 shrink-0 ${isActive ? "text-[#FF5A00]" : "text-white"}`} />
+                            <span className={`truncate flex-1 ${isActive ? "text-[#FF5A00]" : "text-white"}`}>{sub.label}</span>
                             {sub.badge === 'pending' && pendingCount > 0 && !collapsed && (
                               <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/20 text-amber-400 border border-amber-500/30 ml-2 shrink-0">
                                 {pendingCount}
@@ -234,22 +235,32 @@ const DeliverySidebar = ({ isOpen, onClose, collapsed, onToggleCollapse }) => {
                   flex items-center gap-3 px-3 py-3 rounded-xl text-sm
                   transition-all duration-200
                   ${isActive
-                    ? "bg-gray-50 text-[#162420] font-semibold shadow-md"
-                    : "text-white hover:text-white hover:bg-[#1f3228]/70"
+                    ? "bg-white text-[#FF5A00] font-bold shadow-md"
+                    : "text-white hover:text-white hover:bg-[#1f3228]/70 font-semibold"
                   }
                   ${collapsed ? "justify-center" : ""}
                 `}
               >
-                <Icon className={`w-[17px] h-[17px] shrink-0 ${isActive ? "text-[#162420]" : "text-white"}`} />
-                {!collapsed && <span className={`font-medium truncate ${isActive ? "text-[#162420]" : "text-white"}`}>{item.label}</span>}
+                <Icon className={`w-[17px] h-[17px] shrink-0 ${isActive ? "text-[#FF5A00]" : "text-white"}`} />
+                {!collapsed && <span className={`font-semibold truncate ${isActive ? "text-[#FF5A00]" : "text-white"}`}>{item.label}</span>}
               </NavLink>
             );
           })}
         </nav>
 
-        <button type="button" onClick={() => setShowLogoutConfirm(true)} title={collapsed ? "Sign out" : ""} className={`mx-3 mb-3 flex items-center gap-3 rounded-xl px-3 py-3 text-sm text-white transition hover:bg-rose-500/15 hover:text-rose-200 ${collapsed ? "justify-center" : ""}`}>
+        <NavLink
+          to="/"
+          title={collapsed ? "Back Home" : ""}
+          onClick={() => isOpen && onClose()}
+          className={`mx-3 mb-2 flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-semibold transition-all duration-200 ${isRouteActive("/") ? "bg-white text-[#FF5A00] shadow-md" : "text-white hover:bg-[#1f3228]/70"} ${collapsed ? "justify-center" : ""}`}
+        >
+          <Home className={`h-[17px] w-[17px] shrink-0 ${isRouteActive("/") ? "text-[#FF5A00]" : "text-white"}`} />
+          {!collapsed && <span className="truncate">Back Home</span>}
+        </NavLink>
+
+        <button type="button" onClick={() => setShowLogoutConfirm(true)} title={collapsed ? "Sign out" : ""} className={`mx-3 mb-3 flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-semibold text-white transition hover:bg-white/15 ${collapsed ? "justify-center" : ""}`}>
           <LogOut className="h-[17px] w-[17px] shrink-0" />
-          {!collapsed && <span className="font-medium">Sign out</span>}
+          {!collapsed && <span>Sign out</span>}
         </button>
 
         {/* ========== COLLAPSE BUTTON ========== */}
@@ -259,7 +270,7 @@ const DeliverySidebar = ({ isOpen, onClose, collapsed, onToggleCollapse }) => {
             hidden lg:flex absolute -right-3 top-1/2 -translate-y-1/2
             w-7 h-7 rounded-full
             bg-[#d4a843] shadow-lg
-            border border-[#162420]
+            border border-white/70
             items-center justify-center
             text-[#162420] hover:scale-105 transition-all duration-200
           "
@@ -272,17 +283,17 @@ const DeliverySidebar = ({ isOpen, onClose, collapsed, onToggleCollapse }) => {
 
         {/* ========== BOTTOM USER STRIP ========== */}
         {!collapsed && (
-          <div className="px-3 py-4 border-t border-[#1f3228] shrink-0">
-            <div className="flex items-center gap-3 px-3 py-3 rounded-xl bg-[#1f3228] border border-white/5 shadow-inner">
-              <div className="w-9 h-9 rounded-lg bg-[#d4a843] flex items-center justify-center text-[#162420] text-sm font-bold shrink-0">
+          <div className="shrink-0 border-t border-white/25 px-3 py-4">
+            <div className="flex min-w-0 select-none items-center gap-3 rounded-xl border border-white/20 bg-white/15 px-3 py-3 shadow-inner">
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white text-sm font-bold text-[#FF5A00] shadow-sm">
                 {(userProfile?.displayName?.[0] || "A").toUpperCase()}
               </div>
-              <div className="overflow-hidden">
-                <p className="text-xs font-semibold text-white truncate">
-                  {userProfile?.displayName || "Administrator"}
+              <div className="min-w-0 overflow-hidden">
+                <p className="truncate text-xs font-semibold text-white">
+                  {userProfile?.displayName || "Delivery Partner"}
                 </p>
-                <p className="text-[10px] text-white truncate">
-                  {userProfile?.role || "Super Admin"}
+                <p className="truncate text-[9px] font-medium text-white/70" title={userProfile?.email || "Email not provided"}>
+                  {userProfile?.email || userProfile?.role || "Delivery Partner"}
                 </p>
               </div>
             </div>
