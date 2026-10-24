@@ -13,7 +13,6 @@ import {
   MapPin,
   PackageCheck,
   Power,
-  RefreshCw,
   RotateCcw,
   Route,
   UserCheck,
@@ -257,51 +256,12 @@ const DeliveryPartnerDashboard = () => {
   };
 
   return (
-    <section className="space-y-5 text-[#17231c]">
+    <section className="space-y-4 text-[#17231c]">
       {/* Top Header */}
       <header className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <div className="flex items-center gap-2">
-            <p className="text-xs font-bold uppercase tracking-[0.16em] text-[#39804f]">Delivery Partner</p>
-            <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[11px] font-extrabold ${isOnline ? "bg-emerald-100 text-emerald-800" : "bg-gray-200 text-gray-700"}`}>
-              <span className={`h-2 w-2 rounded-full ${isOnline ? "bg-emerald-500 animate-pulse" : "bg-gray-400"}`} />
-              {isOnline ? "Online" : "Offline"}
-            </span>
-          </div>
-          <h1 className="mt-1 text-2xl font-bold sm:text-3xl">Your day, at a glance</h1>
+          <h1 className="text-2xl font-bold sm:text-3xl">Your day, at a glance</h1>
           <p className="mt-1 text-sm text-gray-500">Live delivery duty status, active assignments and earnings.</p>
-        </div>
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={() => setRefreshKey((key) => key + 1)}
-            disabled={loading}
-            aria-label="Refresh dashboard"
-            className="grid h-10 w-10 place-items-center rounded-lg border border-[#dce6de] bg-white text-gray-600 hover:bg-gray-50 disabled:opacity-50"
-          >
-            <RefreshCw size={16} className={loading ? "animate-spin" : ""} />
-          </button>
-          {isOnline ? (
-            <button
-              type="button"
-              onClick={() => toggleOnline(false)}
-              disabled={availabilityBusy || loading}
-              className="inline-flex min-w-36 items-center justify-center gap-2 rounded-lg bg-gray-700 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-gray-800 disabled:opacity-55"
-            >
-              <Power size={16} />
-              {availabilityBusy ? "Updating..." : "Go offline"}
-            </button>
-          ) : (
-            <button
-              type="button"
-              onClick={() => toggleOnline(true)}
-              disabled={availabilityBusy || loading}
-              className="inline-flex min-w-36 items-center justify-center gap-2 rounded-lg bg-[#248148] px-4 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-[#1e713d] disabled:opacity-55"
-            >
-              <Zap size={16} />
-              {availabilityBusy ? "Updating..." : "Go online"}
-            </button>
-          )}
         </div>
       </header>
 
