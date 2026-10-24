@@ -6,7 +6,7 @@ const customSelectStyles = {
     ...provided,
     backgroundColor: '#ffffff',
     border: `1px solid ${state.isFocused
-      ? '#d4a843'
+      ? '#FF5A00'
       : '#e7e0d8'
       }`,
     boxShadow: 'none',
@@ -16,7 +16,7 @@ const customSelectStyles = {
     borderRadius: '12px',
 
     '&:hover': {
-      border: '1px solid #d4a843',
+      border: '1px solid #FF5A00',
     },
   }),
 
@@ -71,14 +71,14 @@ const customSelectStyles = {
     fontSize: '13px',      // dropdown font size
     padding: '8px 14px',   // reduce option height
     backgroundColor: state.isSelected
-      ? '#1f3228'
+      ? '#FF5A00'
       : state.isFocused
-        ? 'rgba(212,168,67,.16)'
+        ? 'rgba(255,90,0,.10)'
         : '#ffffff',
     color: state.isSelected ? '#ffffff' : '#1f3228',
     cursor: 'pointer',
     ':active': {
-      backgroundColor: '#1f3228',
+      backgroundColor: '#E94B00',
     },
   }),
 
@@ -636,11 +636,11 @@ const ExpensesPage = () => {
     <div className="-m-4 min-h-screen space-y-5 bg-[#f2f3f0] p-4 pb-10 text-[#1f3228] sm:-m-5 sm:px-5 sm:py-5 sm:pb-10 lg:-m-6 lg:px-6 lg:py-6 lg:pb-10">
       <Toaster position="top-right" />
 
-      {/* ── Page Header ── */}
+      {/* â”€â”€ Page Header â”€â”€ */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-3">
-          <div className="w-11 h-11 rounded-2xl bg-[#1f3228]/15 flex items-center justify-center">
-            <Receipt size={22} className="text-[#1f3228]" />
+          <div className="w-11 h-11 rounded-2xl bg-orange-100 flex items-center justify-center">
+            <Receipt size={22} className="text-[#FF5A00]" />
           </div>
           <div>
             <h1 className="text-2xl font-bold text-[#1f3228] tracking-tight">All Expenses</h1>
@@ -652,8 +652,8 @@ const ExpensesPage = () => {
         <div className="flex items-center gap-2">
           <button
             onClick={() => setShowExpenseForm(!showExpenseForm)}
-            className="inline-flex items-center gap-2 text-white text-sm font-semibold px-5 py-2.5 rounded-xl transition shadow-lg shadow-[#1f3228]/20 hover:opacity-90"
-            style={{ background: 'linear-gradient(135deg,#1f3228,#162420)' }}
+            className="inline-flex items-center gap-2 text-white text-sm font-semibold px-5 py-2.5 rounded-xl transition shadow-lg shadow-orange-900/20 hover:opacity-90"
+            style={{ background: 'linear-gradient(135deg,#FF5A00,#E94B00)' }}
           >
             {showExpenseForm ? <X size={15} /> : <PlusCircle size={15} />}
             {showExpenseForm ? "Cancel" : "Add Expense"}
@@ -661,12 +661,12 @@ const ExpensesPage = () => {
         </div>
       </div>
 
-      {/* ── Stats Overview ── */}
+      {/* â”€â”€ Stats Overview â”€â”€ */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {[
           {
             title: "Available Fund",
-            value: parseFloat(fund) < 0 ? `- ₹${Math.abs(parseFloat(fund)).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : `₹${parseFloat(fund).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+            value: parseFloat(fund) < 0 ? `- â‚¹${Math.abs(parseFloat(fund)).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : `â‚¹${parseFloat(fund).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
             hint: "Current restaurant balance",
             icon: DollarSign,
             bg: parseFloat(fund) < 0 ? "bg-[#ef4444]" : "bg-[#22c55e]",
@@ -674,7 +674,7 @@ const ExpensesPage = () => {
           },
           {
             title: "Total Spent",
-            value: `₹${totalSpent.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+            value: `â‚¹${totalSpent.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
             hint: "Total outflow recorded",
             icon: Receipt,
             bg: "bg-[#3b82f6]",
@@ -746,7 +746,7 @@ const ExpensesPage = () => {
                       onClick={() => setShowFundForm(false)}
                       className="rounded-lg bg-white/20 px-2 py-1 text-xs text-white hover:bg-white/30 transition"
                     >
-                      ✕
+                      âœ•
                     </button>
                   </form>
                 </div>
@@ -807,7 +807,7 @@ const ExpensesPage = () => {
                 <input
                   type="text"
                   required
-                  className="w-full bg-[#f8f7f4] border border-[#e7e0d8] rounded-xl px-4 py-2.5 text-sm text-[#1f3228] placeholder:text-[#929b94] focus:outline-none focus:border-[#d4a843]/50 transition"
+                  className="w-full bg-[#f8f7f4] border border-[#e7e0d8] rounded-xl px-4 py-2.5 text-sm text-[#1f3228] placeholder:text-[#929b94] focus:outline-none focus:border-[#FF5A00] focus:ring-1 focus:ring-[#FF5A00] transition"
                   placeholder="e.g. Refrigerator servicing"
                   value={customExpenseType}
                   onChange={(e) => setCustomExpenseType(e.target.value)}
@@ -818,32 +818,32 @@ const ExpensesPage = () => {
           <div>
             <label className="block text-[11px] text-[#748078] uppercase tracking-wider font-semibold mb-1">Supplier / Paid To</label>
             <input type="text" required
-              className="w-full bg-[#f8f7f4] border border-[#e7e0d8] rounded-xl px-4 py-2.5 text-sm text-[#1f3228] placeholder:text-[#929b94] focus:outline-none focus:border-[#d4a843]/50 transition"
+              className="w-full bg-[#f8f7f4] border border-[#e7e0d8] rounded-xl px-4 py-2.5 text-sm text-[#1f3228] placeholder:text-[#929b94] focus:outline-none focus:border-[#FF5A00] focus:ring-1 focus:ring-[#FF5A00] transition"
               placeholder="e.g. Fresh produce supplier or gas distributor"
               value={expenseData.paid_to} onChange={(e) => setExpenseData({ ...expenseData, paid_to: e.target.value })} />
           </div>
           <div>
             <label className="block text-[11px] text-[#748078] uppercase tracking-wider font-semibold mb-1">Business</label>
             <input type="text" disabled
-              className="w-full bg-[#f8f7f4] border border-[#e7e0d8] rounded-xl px-4 py-2.5 text-sm text-[#647067] placeholder:text-[#929b94] focus:outline-none focus:border-[#d4a843]/50 transition"
+              className="w-full bg-[#f8f7f4] border border-[#e7e0d8] rounded-xl px-4 py-2.5 text-sm text-[#647067] placeholder:text-[#929b94] focus:outline-none focus:border-[#FF5A00] focus:ring-1 focus:ring-[#FF5A00] transition"
               value="Restaurant Operations" />
           </div>
           <div>
             <label className="block text-[11px] text-[#748078] uppercase tracking-wider font-semibold mb-1">Payment Date</label>
             <input type="date" required
-              className="w-full bg-[#f8f7f4] border border-[#e7e0d8] rounded-xl px-4 py-2.5 text-sm text-[#1f3228] focus:outline-none focus:border-[#d4a843]/50 transition scheme-light"
+              className="w-full bg-[#f8f7f4] border border-[#e7e0d8] rounded-xl px-4 py-2.5 text-sm text-[#1f3228] focus:outline-none focus:border-[#FF5A00] focus:ring-1 focus:ring-[#FF5A00] transition scheme-light"
               value={expenseData.date_of_payment} onChange={(e) => setExpenseData({ ...expenseData, date_of_payment: e.target.value })} />
           </div>
           <div>
-            <label className="block text-[11px] text-[#748078] uppercase tracking-wider font-semibold mb-1">Expense Amount (₹)</label>
+            <label className="block text-[11px] text-[#748078] uppercase tracking-wider font-semibold mb-1">Expense Amount (â‚¹)</label>
             <input type="number" step="0.01" required
-              className="w-full bg-[#f8f7f4] border border-[#e7e0d8] rounded-xl px-4 py-2.5 text-sm text-[#1f3228] placeholder:text-[#929b94] focus:outline-none focus:border-[#d4a843]/50 transition"
-              placeholder="Enter amount in ₹"
+              className="w-full bg-[#f8f7f4] border border-[#e7e0d8] rounded-xl px-4 py-2.5 text-sm text-[#1f3228] placeholder:text-[#929b94] focus:outline-none focus:border-[#FF5A00] focus:ring-1 focus:ring-[#FF5A00] transition"
+              placeholder="Enter amount in â‚¹"
               value={expenseData.amount} onChange={(e) => setExpenseData({ ...expenseData, amount: e.target.value })} />
           </div>
           <div>
             <label className="block text-[11px] text-[#748078] uppercase tracking-wider font-semibold mb-1">
-              Payment Method <span className="text-[#d4a843] font-bold">*</span>
+              Payment Method <span className="text-[#FF5A00] font-bold">*</span>
             </label>
             <Select
               options={[
@@ -865,21 +865,21 @@ const ExpensesPage = () => {
           <div>
             <label className="block text-[11px] text-[#748078] uppercase tracking-wider font-semibold mb-1">Receipt / Invoice Number</label>
             <input type="text"
-              className="w-full bg-[#f8f7f4] border border-[#e7e0d8] rounded-xl px-4 py-2.5 text-sm text-[#1f3228] placeholder:text-[#929b94] focus:outline-none focus:border-[#d4a843]/50 transition"
+              className="w-full bg-[#f8f7f4] border border-[#e7e0d8] rounded-xl px-4 py-2.5 text-sm text-[#1f3228] placeholder:text-[#929b94] focus:outline-none focus:border-[#FF5A00] focus:ring-1 focus:ring-[#FF5A00] transition"
               placeholder="Enter receipt or invoice number (optional)"
               value={expenseData.invoice_number} onChange={(e) => setExpenseData({ ...expenseData, invoice_number: e.target.value })} />
           </div>
           <div className="sm:col-span-2">
             <label className="block text-[11px] text-[#748078] uppercase tracking-wider font-semibold mb-1">Expense Notes</label>
             <textarea rows="2"
-              className="w-full bg-[#f8f7f4] border border-[#e7e0d8] rounded-xl px-4 py-2.5 text-sm text-[#1f3228] placeholder:text-[#929b94] focus:outline-none focus:border-[#d4a843]/50 transition"
+              className="w-full bg-[#f8f7f4] border border-[#e7e0d8] rounded-xl px-4 py-2.5 text-sm text-[#1f3228] placeholder:text-[#929b94] focus:outline-none focus:border-[#FF5A00] focus:ring-1 focus:ring-[#FF5A00] transition"
               placeholder="Add details such as items purchased, quantity, or the reason for this expense"
               value={expenseData.description} onChange={(e) => setExpenseData({ ...expenseData, description: e.target.value })}></textarea>
           </div>
           <div className="sm:col-span-2">
             <label className="block text-[11px] text-[#748078] uppercase tracking-wider font-semibold mb-1">Upload Supplier Bill / Receipt (Optional)</label>
             <input type="file" accept=".jpg,.jpeg,.png,.pdf,.doc,.docx"
-              className="w-full bg-[#f8f7f4] border border-[#e7e0d8] rounded-xl px-4 py-2 text-sm text-[#56645b] file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-[#1f3228]/20 file:text-[#1f3228] hover:file:bg-[#1f3228]/30 transition cursor-pointer"
+              className="w-full bg-[#f8f7f4] border border-[#e7e0d8] rounded-xl px-4 py-2 text-sm text-[#56645b] file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-orange-100 file:text-[#FF5A00] hover:file:bg-orange-200 transition cursor-pointer"
               onChange={(e) => setBillFile(e.target.files[0])} />
           </div>
           <div className="sm:col-span-2 flex justify-end gap-3 mt-2 border-t border-[#eee9e1] pt-5">
@@ -888,15 +888,15 @@ const ExpensesPage = () => {
               Cancel
             </button>
             <button type="submit"
-              className="px-5 py-2.5 rounded-xl text-sm font-semibold text-white shadow-lg shadow-[#1f3228]/20 hover:opacity-90 transition"
-              style={{ background: 'linear-gradient(135deg,#1f3228,#162420)' }}>
+              className="px-5 py-2.5 rounded-xl text-sm font-semibold text-white shadow-lg shadow-orange-900/20 hover:opacity-90 transition"
+              style={{ background: 'linear-gradient(135deg,#FF5A00,#E94B00)' }}>
               Submit Expense
             </button>
           </div>
         </form>
       </Modal>
 
-      {/* ── Edit Expense Modal ── */}
+      {/* â”€â”€ Edit Expense Modal â”€â”€ */}
       <Modal open={showEditModal} onClose={() => setShowEditModal(false)} title="Edit Restaurant Expense">
         <form onSubmit={handleUpdateExpense} className="grid grid-cols-1 sm:grid-cols-2 gap-5">
           <div>
@@ -924,7 +924,7 @@ const ExpensesPage = () => {
                 <input
                   type="text"
                   required
-                  className="w-full bg-[#f8f7f4] border border-[#e7e0d8] rounded-xl px-4 py-2.5 text-sm text-[#1f3228] placeholder:text-[#929b94] focus:outline-none focus:border-[#d4a843]/50 transition"
+                  className="w-full bg-[#f8f7f4] border border-[#e7e0d8] rounded-xl px-4 py-2.5 text-sm text-[#1f3228] placeholder:text-[#929b94] focus:outline-none focus:border-[#FF5A00] focus:ring-1 focus:ring-[#FF5A00] transition"
                   placeholder="e.g. Refrigerator servicing"
                   value={editCustomExpenseType}
                   onChange={(e) => setEditCustomExpenseType(e.target.value)}
@@ -937,7 +937,7 @@ const ExpensesPage = () => {
             <input
               type="text"
               required
-              className="w-full bg-[#f8f7f4] border border-[#e7e0d8] rounded-xl px-4 py-2.5 text-sm text-[#1f3228] placeholder:text-[#929b94] focus:outline-none focus:border-[#d4a843]/50 transition"
+              className="w-full bg-[#f8f7f4] border border-[#e7e0d8] rounded-xl px-4 py-2.5 text-sm text-[#1f3228] placeholder:text-[#929b94] focus:outline-none focus:border-[#FF5A00] focus:ring-1 focus:ring-[#FF5A00] transition"
               placeholder="e.g. Fresh produce supplier or gas distributor"
               value={editExpenseData.paid_to}
               onChange={(e) => setEditExpenseData({ ...editExpenseData, paid_to: e.target.value })}
@@ -948,7 +948,7 @@ const ExpensesPage = () => {
             <input
               type="text"
               disabled
-              className="w-full bg-[#f8f7f4] border border-[#e7e0d8] rounded-xl px-4 py-2.5 text-sm text-[#647067] placeholder:text-[#929b94] focus:outline-none focus:border-[#d4a843]/50 transition"
+              className="w-full bg-[#f8f7f4] border border-[#e7e0d8] rounded-xl px-4 py-2.5 text-sm text-[#647067] placeholder:text-[#929b94] focus:outline-none focus:border-[#FF5A00] focus:ring-1 focus:ring-[#FF5A00] transition"
               value={editingExpense?.from_name || "Restaurant Operations"}
             />
           </div>
@@ -957,26 +957,26 @@ const ExpensesPage = () => {
             <input
               type="date"
               required
-              className="w-full bg-[#f8f7f4] border border-[#e7e0d8] rounded-xl px-4 py-2.5 text-sm text-[#1f3228] focus:outline-none focus:border-[#d4a843]/50 transition scheme-light"
+              className="w-full bg-[#f8f7f4] border border-[#e7e0d8] rounded-xl px-4 py-2.5 text-sm text-[#1f3228] focus:outline-none focus:border-[#FF5A00] focus:ring-1 focus:ring-[#FF5A00] transition scheme-light"
               value={editExpenseData.date_of_payment}
               onChange={(e) => setEditExpenseData({ ...editExpenseData, date_of_payment: e.target.value })}
             />
           </div>
           <div>
-            <label className="block text-[11px] text-[#748078] uppercase tracking-wider font-semibold mb-1">Expense Amount (₹)</label>
+            <label className="block text-[11px] text-[#748078] uppercase tracking-wider font-semibold mb-1">Expense Amount (â‚¹)</label>
             <input
               type="number"
               step="0.01"
               required
-              className="w-full bg-[#f8f7f4] border border-[#e7e0d8] rounded-xl px-4 py-2.5 text-sm text-[#1f3228] placeholder:text-[#929b94] focus:outline-none focus:border-[#d4a843]/50 transition"
-              placeholder="Enter amount in ₹"
+              className="w-full bg-[#f8f7f4] border border-[#e7e0d8] rounded-xl px-4 py-2.5 text-sm text-[#1f3228] placeholder:text-[#929b94] focus:outline-none focus:border-[#FF5A00] focus:ring-1 focus:ring-[#FF5A00] transition"
+              placeholder="Enter amount in â‚¹"
               value={editExpenseData.amount}
               onChange={(e) => setEditExpenseData({ ...editExpenseData, amount: e.target.value })}
             />
           </div>
           <div>
             <label className="block text-[11px] text-[#748078] uppercase tracking-wider font-semibold mb-1">
-              Payment Method <span className="text-[#d4a843] font-bold">*</span>
+              Payment Method <span className="text-[#FF5A00] font-bold">*</span>
             </label>
             <Select
               options={[
@@ -999,7 +999,7 @@ const ExpensesPage = () => {
             <label className="block text-[11px] text-[#748078] uppercase tracking-wider font-semibold mb-1">Receipt / Invoice Number</label>
             <input
               type="text"
-              className="w-full bg-[#f8f7f4] border border-[#e7e0d8] rounded-xl px-4 py-2.5 text-sm text-[#1f3228] placeholder:text-[#929b94] focus:outline-none focus:border-[#d4a843]/50 transition"
+              className="w-full bg-[#f8f7f4] border border-[#e7e0d8] rounded-xl px-4 py-2.5 text-sm text-[#1f3228] placeholder:text-[#929b94] focus:outline-none focus:border-[#FF5A00] focus:ring-1 focus:ring-[#FF5A00] transition"
               placeholder="Enter receipt or invoice number (optional)"
               value={editExpenseData.invoice_number}
               onChange={(e) => setEditExpenseData({ ...editExpenseData, invoice_number: e.target.value })}
@@ -1009,7 +1009,7 @@ const ExpensesPage = () => {
             <label className="block text-[11px] text-[#748078] uppercase tracking-wider font-semibold mb-1">Expense Notes</label>
             <textarea
               rows="2"
-              className="w-full bg-[#f8f7f4] border border-[#e7e0d8] rounded-xl px-4 py-2.5 text-sm text-[#1f3228] placeholder:text-[#929b94] focus:outline-none focus:border-[#d4a843]/50 transition"
+              className="w-full bg-[#f8f7f4] border border-[#e7e0d8] rounded-xl px-4 py-2.5 text-sm text-[#1f3228] placeholder:text-[#929b94] focus:outline-none focus:border-[#FF5A00] focus:ring-1 focus:ring-[#FF5A00] transition"
               placeholder="Add items purchased, quantity, or reason for this expense"
               value={editExpenseData.description}
               onChange={(e) => setEditExpenseData({ ...editExpenseData, description: e.target.value })}
@@ -1035,7 +1035,7 @@ const ExpensesPage = () => {
             <input
               type="file"
               accept=".jpg,.jpeg,.png,.pdf,.doc,.docx"
-              className="w-full bg-[#f8f7f4] border border-[#e7e0d8] rounded-xl px-4 py-2 text-sm text-[#56645b] file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-[#1f3228]/20 file:text-[#1f3228] hover:file:bg-[#1f3228]/30 transition cursor-pointer"
+              className="w-full bg-[#f8f7f4] border border-[#e7e0d8] rounded-xl px-4 py-2 text-sm text-[#56645b] file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-orange-100 file:text-[#FF5A00] hover:file:bg-orange-200 transition cursor-pointer"
               onChange={(e) => setEditBillFile(e.target.files[0])}
             />
           </div>
@@ -1051,8 +1051,8 @@ const ExpensesPage = () => {
             <button
               type="submit"
               disabled={savingEdit}
-              className="px-5 py-2.5 rounded-xl text-sm font-semibold text-white shadow-lg shadow-[#1f3228]/20 hover:opacity-90 transition flex items-center gap-2"
-              style={{ background: 'linear-gradient(135deg,#1f3228,#162420)' }}
+              className="px-5 py-2.5 rounded-xl text-sm font-semibold text-white shadow-lg shadow-orange-900/20 hover:opacity-90 transition flex items-center gap-2"
+              style={{ background: 'linear-gradient(135deg,#FF5A00,#E94B00)' }}
             >
               {savingEdit ? <Loader2 size={15} className="animate-spin" /> : null}
               {savingEdit ? "Updating..." : "Update Expense"}
@@ -1061,12 +1061,12 @@ const ExpensesPage = () => {
         </form>
       </Modal>
 
-      {/* ── Delete Confirmation Modal ── */}
+      {/* â”€â”€ Delete Confirmation Modal â”€â”€ */}
       {deleteTarget && (
         <Modal open={Boolean(deleteTarget)} onClose={() => setDeleteTarget(null)} title="Delete Expense">
           <div className="space-y-4">
             <p className="text-[#44534a] text-sm">
-              Are you sure you want to delete this expense of <span className="text-rose-700 font-bold">₹ {parseFloat(deleteTarget.amount || 0).toFixed(2)}</span> ({deleteTarget.expense_type})?
+              Are you sure you want to delete this expense of <span className="text-rose-700 font-bold">â‚¹ {parseFloat(deleteTarget.amount || 0).toFixed(2)}</span> ({deleteTarget.expense_type})?
             </p>
             <p className="text-[#748078] text-xs">
               Deleting this expense will automatically restore the spent amount back to your Available Fund.
@@ -1103,7 +1103,7 @@ const ExpensesPage = () => {
               value={filters.search}
               onChange={(e) => setFilters((prev) => ({ ...prev, search: e.target.value }))}
               placeholder="Search category, supplier, receipt..."
-              className="w-full xl:w-64 bg-[#f8f7f4] border border-[#e7e0d8] rounded-xl px-3 py-3.5 text-xs text-[#1f3228] placeholder:text-[#929b94] focus:outline-none focus:border-[#d4a843]/50"
+              className="w-full xl:w-64 bg-[#f8f7f4] border border-[#e7e0d8] rounded-xl px-3 py-3.5 text-xs text-[#1f3228] placeholder:text-[#929b94] focus:outline-none focus:border-[#FF5A00] focus:ring-1 focus:ring-[#FF5A00]"
             />
           </div>
           <div className="flex flex-wrap items-end justify-start gap-3 xl:justify-end">
@@ -1140,7 +1140,7 @@ const ExpensesPage = () => {
               <select
                 value={filters.datePreset}
                 onChange={(e) => setFilters((prev) => ({ ...prev, datePreset: e.target.value }))}
-                className="w-48 rounded-xl border border-[#e7e0d8] bg-[#f8f7f4] px-3 py-3.5 text-xs text-[#1f3228] outline-none focus:border-[#d4a843]/50"
+                className="w-48 rounded-xl border border-[#e7e0d8] bg-[#f8f7f4] px-3 py-3.5 text-xs text-[#1f3228] outline-none focus:border-[#FF5A00] focus:ring-1 focus:ring-[#FF5A00]"
               >
                 {datePresetOptions.map((preset) => (
                   <option key={preset.value} value={preset.value}>{preset.label}</option>
@@ -1151,13 +1151,13 @@ const ExpensesPage = () => {
               <div className="flex flex-wrap gap-2">
                 <input
                   type="date"
-                  className="bg-[#f8f7f4] border border-[#e7e0d8] rounded-xl px-3 py-2 text-sm text-[#1f3228] focus:outline-none focus:border-[#d4a843]/50"
+                  className="bg-[#f8f7f4] border border-[#e7e0d8] rounded-xl px-3 py-2 text-sm text-[#1f3228] focus:outline-none focus:border-[#FF5A00] focus:ring-1 focus:ring-[#FF5A00]"
                   value={filters.dateFrom}
                   onChange={(e) => setFilters((prev) => ({ ...prev, dateFrom: e.target.value }))}
                 />
                 <input
                   type="date"
-                  className="bg-[#f8f7f4] border border-[#e7e0d8] rounded-xl px-3 py-2 text-sm text-[#1f3228] focus:outline-none focus:border-[#d4a843]/50"
+                  className="bg-[#f8f7f4] border border-[#e7e0d8] rounded-xl px-3 py-2 text-sm text-[#1f3228] focus:outline-none focus:border-[#FF5A00] focus:ring-1 focus:ring-[#FF5A00]"
                   value={filters.dateTo}
                   onChange={(e) => setFilters((prev) => ({ ...prev, dateTo: e.target.value }))}
                 />
@@ -1169,7 +1169,7 @@ const ExpensesPage = () => {
                 onClick={() => setViewMode("table")}
                 aria-pressed={viewMode === "table"}
                 className={`flex h-full items-center gap-1.5 rounded-lg px-3 text-xs font-semibold transition ${
-                  viewMode === "table" ? "bg-[#1f3228] text-white shadow-sm" : "text-[#56645b] hover:text-[#1f3228]"
+                  viewMode === "table" ? "bg-[#FF5A00] text-white shadow-sm" : "text-[#56645b] hover:text-[#FF5A00]"
                 }`}
               >
                 <List size={14} />
@@ -1180,7 +1180,7 @@ const ExpensesPage = () => {
                 onClick={() => setViewMode("card")}
                 aria-pressed={viewMode === "card"}
                 className={`flex h-full items-center gap-1.5 rounded-lg px-3 text-xs font-semibold transition ${
-                  viewMode === "card" ? "bg-[#1f3228] text-white shadow-sm" : "text-[#56645b] hover:text-[#1f3228]"
+                  viewMode === "card" ? "bg-[#FF5A00] text-white shadow-sm" : "text-[#56645b] hover:text-[#FF5A00]"
                 }`}
               >
                 <LayoutGrid size={14} />
@@ -1191,12 +1191,12 @@ const ExpensesPage = () => {
         </div>
       </div>
 
-      {/* ── Table Mode ── */}
+      {/* â”€â”€ Table Mode â”€â”€ */}
       <div className="bg-white border border-[#e7e0d8] rounded-2xl overflow-hidden">
         {loading ? (
           <div className="flex flex-col items-center justify-center py-20 gap-3">
             <Loader2 size={30} className="animate-spin text-[#1f3228]/70" />
-            <p className="text-sm text-[#748078]">Loading expenses…</p>
+            <p className="text-sm text-[#748078]">Loading expensesâ€¦</p>
           </div>
         ) : expenses.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 text-[#8a938c]">
@@ -1210,7 +1210,7 @@ const ExpensesPage = () => {
           <div className="overflow-x-auto">
             <table className="w-full min-w-175 text-sm">
               <thead>
-                <tr className="border-b border-[#d4a843] bg-[#d4a843]">
+                <tr className="border-b border-[#FF5A00] bg-[#FF5A00]">
                   <th className="px-5 py-3.5 text-left text-[10px] font-bold uppercase tracking-widest text-white">S.No</th>
                   <th className="px-5 py-3.5 text-left text-[10px] font-bold uppercase tracking-widest text-white">Date</th>
                   <th className="px-5 py-3.5 text-left text-[10px] font-bold uppercase tracking-widest text-white">Expense Details</th>
@@ -1243,7 +1243,7 @@ const ExpensesPage = () => {
                       <p className="text-[#748078] text-xs mt-0.5">
                         <span className="text-[#8a938c]">Paid to:</span>{" "}
                         <span className="text-[#33443a] font-medium">
-                          {isCreditEntry(exp) ? "Restaurant Operations" : (exp.paid_to || "—")}
+                          {isCreditEntry(exp) ? "Restaurant Operations" : (exp.paid_to || "â€”")}
                         </span>
                       </p>
                       <p className="text-[#748078] text-xs mt-0.5">
@@ -1263,7 +1263,7 @@ const ExpensesPage = () => {
                     </td>
                     <td className="px-5 py-4">
                       <p className={`${isCreditEntry(exp) ? "text-emerald-700" : "text-rose-700"} font-bold text-sm`}>
-                        {isCreditEntry(exp) ? "+" : "-"} ₹ {parseFloat(exp.amount).toFixed(2)}
+                        {isCreditEntry(exp) ? "+" : "-"} â‚¹ {parseFloat(exp.amount).toFixed(2)}
                       </p>
                       <p className="text-[10px] text-[#8a938c] mt-1">{isCreditEntry(exp) ? "Added" : "Spent"}</p>
                     </td>
@@ -1287,7 +1287,7 @@ const ExpensesPage = () => {
                         <div className="flex items-center justify-end gap-1.5">
                           <button
                             onClick={() => openEditModal(exp)}
-                            className="w-8 h-8 rounded-lg bg-[#1f3228]/10 hover:bg-[#1f3228]/25 text-[#1f3228] border border-transparent hover:border-[#d4a843]/30 flex items-center justify-center transition"
+                            className="w-8 h-8 rounded-lg bg-orange-50 hover:bg-orange-100 text-[#FF5A00] border border-transparent hover:border-orange-200 flex items-center justify-center transition"
                             title="Edit Expense"
                           >
                             <Edit2 size={13} />
@@ -1301,7 +1301,7 @@ const ExpensesPage = () => {
                           </button>
                         </div>
                       ) : (
-                        <span className="text-[#a8afa9] text-xs">—</span>
+                        <span className="text-[#a8afa9] text-xs">â€”</span>
                       )}
                     </td>
                   </tr>
@@ -1359,7 +1359,7 @@ const ExpensesPage = () => {
                               onClick={() => setCurrentPage(page)}
                               className={`w-7 h-7 rounded-lg text-xs font-bold transition flex items-center justify-center ${
                                 currentPage === page
-                                  ? "bg-[#1f3228] text-white shadow-md shadow-[#1f3228]/30"
+                                  ? "bg-[#FF5A00] text-white shadow-md shadow-orange-500/30"
                                   : "bg-[#f8f7f4] text-[#56645b] hover:bg-[#f2f3f0] hover:text-[#1f3228] border border-[#e7e0d8]"
                               }`}
                             >
@@ -1415,13 +1415,13 @@ const ExpensesPage = () => {
                       </p>
                     </div>
                     <p className={`shrink-0 text-sm font-bold ${isCreditEntry(exp) ? "text-emerald-700" : "text-rose-700"}`}>
-                      {isCreditEntry(exp) ? "+" : "-"} ₹ {parseFloat(exp.amount || 0).toFixed(2)}
+                      {isCreditEntry(exp) ? "+" : "-"} â‚¹ {parseFloat(exp.amount || 0).toFixed(2)}
                     </p>
                   </div>
                   <div className="mt-4 space-y-2 border-t border-[#f0ede7] pt-3 text-xs">
                     <p className="text-[#56645b]">
                       <span className="text-[#8a938c]">Paid to: </span>
-                      {isCreditEntry(exp) ? "Restaurant Operations" : (exp.paid_to || "—")}
+                      {isCreditEntry(exp) ? "Restaurant Operations" : (exp.paid_to || "â€”")}
                     </p>
                     <p className="text-[#56645b]">
                       <span className="text-[#8a938c]">Payment: </span>{exp.payment_type}
@@ -1450,7 +1450,7 @@ const ExpensesPage = () => {
                         <button
                           type="button"
                           onClick={() => openEditModal(exp)}
-                          className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#1f3228]/10 text-[#1f3228] transition hover:bg-[#1f3228]/25"
+                          className="flex h-8 w-8 items-center justify-center rounded-lg bg-orange-50 text-[#FF5A00] transition hover:bg-orange-100"
                           title="Edit Expense"
                           aria-label="Edit expense"
                         >
@@ -1511,7 +1511,7 @@ const ExpensesPage = () => {
             </div>
             <div className="text-right">
               <p className="text-[10px] uppercase tracking-wider text-[#818a83]">Total</p>
-              <p className="text-xl font-bold text-rose-700">₹ {totalSpent.toFixed(2)}</p>
+              <p className="text-xl font-bold text-rose-700">â‚¹ {totalSpent.toFixed(2)}</p>
             </div>
           </div>
           <div className="grid grid-cols-2 gap-3">
@@ -1528,7 +1528,7 @@ const ExpensesPage = () => {
             {categoryBreakdown.slice(0, 6).map((item) => (
               <div key={item.name} className="flex items-center justify-between text-sm text-[#44534a]">
                 <span>{item.name}</span>
-                <span className="font-semibold text-[#1f3228]">₹ {item.value.toFixed(2)}</span>
+                <span className="font-semibold text-[#1f3228]">â‚¹ {item.value.toFixed(2)}</span>
               </div>
             ))}
           </div>
@@ -1578,13 +1578,13 @@ const ExpensesPage = () => {
             <div key={item.monthName} className="min-w-11 flex-1 flex flex-col items-center gap-2">
               <div className="w-full flex items-end justify-center h-44 rounded-2xl bg-[#f8f7f4] p-2">
                 <div
-                  className="w-full rounded-xl bg-linear-to-t from-[#1f3228] to-[#d4a843]"
+                  className="w-full rounded-xl bg-linear-to-t from-[#FF5A00] to-[#E94B00]"
                   style={{ height: `${Math.max((item.monthValue / maxMonthlyValue) * 100, 6)}%` }}
                 />
               </div>
               <div className="text-center">
                 <p className="text-[11px] text-[#748078]">{item.monthName}</p>
-                <p className="text-sm font-semibold text-[#1f3228]">₹ {item.monthValue.toFixed(0)}</p>
+                <p className="text-sm font-semibold text-[#1f3228]">â‚¹ {item.monthValue.toFixed(0)}</p>
               </div>
             </div>
           ))}

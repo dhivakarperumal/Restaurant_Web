@@ -30,7 +30,7 @@ const Cuisines = () => {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('All statuses');
   const [sortBy, setSortBy] = useState('latest');
-  const [viewMode, setViewMode] = useState('table');
+  const [viewMode, setViewMode] = useState('card');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [modalOpen, setModalOpen] = useState(false);
@@ -184,7 +184,7 @@ const Cuisines = () => {
   };
 
   return (
-    <div className="min-h-screen  p-4 md:p-2">
+    <div className="min-h-screen bg-gray-50 p-4 md:p-2">
       <div className="mx-auto max-w-[1500px]">
         
 
@@ -237,7 +237,7 @@ const Cuisines = () => {
           );
         })()}
 
-        <section className="overflow-hidden rounded-lg border border-gray-200 bg-white">
+        <section className="overflow-hidden rounded-lg border border-[#e7e0d8] bg-gray-50">
           <div className="flex flex-col gap-3 border-b border-gray-200 p-3 lg:flex-row lg:items-center lg:justify-between">
             <div className="relative w-full lg:max-w-md lg:flex-1">
               <Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
@@ -274,7 +274,7 @@ const Cuisines = () => {
           ) : viewMode === 'card' ? (
             <div className="grid gap-4 p-4 sm:grid-cols-2 xl:grid-cols-4">
               {visibleCuisines.map((cuisine) => (
-                <article key={cuisine.cuisine_id} className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm transition hover:shadow-md">
+                <article key={cuisine.cuisine_id} className="rounded-xl border border-[#e7e0d8] bg-gray-50 p-4 shadow-sm transition hover:shadow-md">
                   <div className="mb-3 flex items-start justify-between gap-3">
                     {cuisine.image
                       ? <img src={imageUrl(cuisine.image)} alt="" className="h-12 w-12 rounded-lg object-cover" />

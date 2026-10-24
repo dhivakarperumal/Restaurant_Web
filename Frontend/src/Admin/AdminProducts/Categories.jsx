@@ -32,7 +32,7 @@ const AdminCategories = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [productLoadError, setProductLoadError] = useState('');
-  const [viewMode, setViewMode] = useState('table');
+  const [viewMode, setViewMode] = useState('card');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedStatus, setSelectedStatus] = useState('All Status');
   const [sortBy, setSortBy] = useState('latest');
@@ -343,7 +343,7 @@ const AdminCategories = () => {
           );
         })()}
 
-        <div className="rounded-lg border border-[#e7e0d8] bg-white p-3 shadow-sm">
+        <div className="rounded-lg border border-[#e7e0d8] bg-[#f8f7f4] p-3 shadow-sm">
           <div className="mb-4 flex flex-col gap-3 lg:flex-row lg:items-center">
             <div className="flex flex-1 flex-wrap items-center gap-3">
               <div className="relative w-full max-w-[340px]">
@@ -492,7 +492,7 @@ const AdminCategories = () => {
                 </div>
               ) : (
                 <div className="mt-0 overflow-x-auto rounded-[16px] border border-[#e8e4df]">
-                  <table className="w-full min-w-[760px] border-collapse bg-white text-left">
+                  <table className="w-full min-w-[760px] border-collapse bg-[#f8f7f4] text-left">
                     <thead className="bg-[#FF5A00] text-left text-sm font-semibold text-white">
                       <tr>
                         <th className="px-4 py-4">S.No</th>

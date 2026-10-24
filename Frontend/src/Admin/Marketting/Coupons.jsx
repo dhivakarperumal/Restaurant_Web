@@ -206,7 +206,7 @@ const Coupons = () => {
 
         <button
           onClick={() => handleOpenModal()}
-          className="inline-flex items-center justify-center gap-2 bg-[#1a3c36] hover:bg-[#214a42] text-white px-5 py-2.5 rounded-md font-bold text-sm shadow-sm transition active:scale-95 self-start sm:self-auto"
+          className="inline-flex items-center justify-center gap-2 bg-[#FF5A00] hover:bg-[#E94B00] text-white px-5 py-2.5 rounded-md font-bold text-sm shadow-sm transition active:scale-95 self-start sm:self-auto"
         >
           <FiPlus className="w-6 h-6" /> Add New Coupon
         </button>
@@ -257,7 +257,7 @@ const Coupons = () => {
             placeholder="Search coupons by code or name..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-1/2 pl-11 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl outline-none font-medium text-gray-900 text-sm focus:bg-white focus:border-[#3a8b28] focus:ring-2 focus:ring-[#3a8b28]/20 transition-all placeholder:text-gray-400"
+            className="w-1/2 pl-11 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl outline-none font-medium text-gray-900 text-sm focus:bg-white focus:border-[#FF5A00] focus:ring-2 focus:ring-[#FF5A00]/20 transition-all placeholder:text-gray-400"
           />
         </div>
 
@@ -266,7 +266,7 @@ const Coupons = () => {
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
             aria-label="Filter coupons by status"
-            className="bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-sm font-semibold text-gray-700 outline-none focus:bg-white focus:border-[#3a8b28] focus:ring-2 focus:ring-[#3a8b28]/20 transition-all"
+            className="bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-sm font-semibold text-gray-700 outline-none focus:bg-white focus:border-[#FF5A00] focus:ring-2 focus:ring-[#FF5A00]/20 transition-all"
           >
             <option value="all">All Statuses</option>
             <option value="active">Active</option>
@@ -275,14 +275,14 @@ const Coupons = () => {
           <div className="flex bg-gray-100 border border-gray-200 p-1 rounded-xl">
             <button
               onClick={() => setViewMode("table")}
-              className={`p-2.5 rounded-lg transition ${viewMode === "table" ? "bg-white text-[#1a3c36] shadow-sm font-bold" : "text-gray-500 hover:text-[#1a3c36]"}`}
+              className={`p-2.5 rounded-lg transition ${viewMode === "table" ? "bg-white text-[#FF5A00] shadow-sm font-bold" : "text-gray-500 hover:text-[#FF5A00]"}`}
               title="Table View"
             >
               <FiList className="w-4 h-4" />
             </button>
             <button
               onClick={() => setViewMode("card")}
-              className={`p-2.5 rounded-lg transition ${viewMode === "card" ? "bg-white text-[#1a3c36] shadow-sm font-bold" : "text-gray-500 hover:text-[#1a3c36]"}`}
+              className={`p-2.5 rounded-lg transition ${viewMode === "card" ? "bg-white text-[#FF5A00] shadow-sm font-bold" : "text-gray-500 hover:text-[#FF5A00]"}`}
               title="Card View"
             >
               <FiGrid className="w-4 h-4" />
@@ -298,7 +298,7 @@ const Coupons = () => {
         <div className="overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
           <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="bg-[#f0e6d2] text-left text-sm font-semibold text-[#3d3d3d]">
+              <tr className="bg-[#FF5A00] text-left text-sm font-semibold text-white">
                 <th className="px-4 py-4 text-xs font-bold">S No</th>
                 <th className="px-4 py-4 text-xs font-bold ">Code</th>
                 <th className="px-4 py-4 text-xs font-bold ">Name</th>
@@ -332,7 +332,7 @@ const Coupons = () => {
                       <div className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 mt-1 max-w-[200px] truncate">{coupon.description}</div>
                     </td>
                     <td className="px-6 py-4">
-                      <div className="font-black text-blue-600 text-sm">
+                      <div className="font-black text-[#FF5A00] text-sm">
                         {coupon.discount_type === 'percentage' ? `${coupon.discount_value}%` : `₹${coupon.discount_value}`}
                       </div>
                     </td>
@@ -355,7 +355,7 @@ const Coupons = () => {
                       </span>
                     </td>
                     <td className="px-6 py-4 text-right">
-                      <button onClick={() => handleOpenModal(coupon)} className="p-2 text-[#1a3c36] hover:bg-[#eef6f3] rounded-xl transition mr-2">
+                      <button onClick={() => handleOpenModal(coupon)} className="p-2 text-[#FF5A00] hover:bg-orange-50 rounded-xl transition mr-2">
                         <FiEdit className="w-4 h-4" />
                       </button>
                       <button onClick={() => handleDelete(coupon.id)} className="p-2 text-rose-600 hover:bg-rose-50 rounded-xl transition">
@@ -394,7 +394,7 @@ const Coupons = () => {
                 <div className="grid grid-cols-2 gap-4 bg-slate-50 p-4 rounded-xl border border-slate-100 mt-2">
                   <div>
                     <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Discount</p>
-                    <div className="font-black text-blue-600">
+                    <div className="font-black text-[#FF5A00]">
                       {coupon.discount_type === 'percentage' ? `${coupon.discount_value}%` : `₹${coupon.discount_value}`}
                     </div>
                   </div>
@@ -417,7 +417,7 @@ const Coupons = () => {
                 </div>
 
                 <div className="flex justify-end gap-2 mt-auto pt-2">
-                  <button onClick={() => handleOpenModal(coupon)} className="p-2 text-[#1a3c36] hover:bg-[#eef6f3] rounded-xl transition">
+                  <button onClick={() => handleOpenModal(coupon)} className="p-2 text-[#FF5A00] hover:bg-orange-50 rounded-xl transition">
                     <FiEdit className="w-4 h-4" />
                   </button>
                   <button onClick={() => handleDelete(coupon.id)} className="p-2 text-rose-600 hover:bg-rose-50 rounded-xl transition">
@@ -433,7 +433,7 @@ const Coupons = () => {
       {isModalOpen && createPortal(
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[9999] p-4">
           <div className="bg-white rounded-[3rem] w-full max-w-[95vw] md:max-w-[90vw] lg:max-w-6xl max-h-[95vh] overflow-hidden flex flex-col shadow-2xl relative z-[10000] animate-in zoom-in-95 slide-in-from-bottom-8 duration-500">
-            <div className="bg-[#1a3c36] p-8 text-white relative flex-shrink-0">
+            <div className="bg-[#FF5A00] p-8 text-white relative flex-shrink-0">
               <div className="absolute right-0 top-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mt-16 blur-2xl" />
               <div className="relative flex items-center justify-between">
                 <div>
@@ -451,63 +451,63 @@ const Coupons = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-2">
                     <label className="text-[10px] font-black text-slate-900 uppercase tracking-widest ml-1">Coupon Code *</label>
-                    <input required type="text" name="code" value={formData.code} onChange={handleChange} className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-3.5 outline-none focus:bg-white focus:border-blue-600 focus:ring-4 focus:ring-blue-600/5 transition-all font-black text-black text-sm" placeholder="e.g. SUMMER50" />
+                    <input required type="text" name="code" value={formData.code} onChange={handleChange} className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-3.5 outline-none focus:bg-white focus:border-[#FF5A00] focus:ring-4 focus:ring-orange-500/10 transition-all font-black text-black text-sm" placeholder="e.g. SUMMER50" />
                   </div>
                   <div className="space-y-2">
                     <label className="text-[10px] font-black text-slate-900 uppercase tracking-widest ml-1">Coupon Name *</label>
-                    <input required type="text" name="name" value={formData.name} onChange={handleChange} className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-3.5 outline-none focus:bg-white focus:border-blue-600 focus:ring-4 focus:ring-blue-600/5 transition-all font-black text-black text-sm" placeholder="e.g. Summer Special Sale" />
+                    <input required type="text" name="name" value={formData.name} onChange={handleChange} className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-3.5 outline-none focus:bg-white focus:border-[#FF5A00] focus:ring-4 focus:ring-orange-500/10 transition-all font-black text-black text-sm" placeholder="e.g. Summer Special Sale" />
                   </div>
                   <div className="md:col-span-2 space-y-2">
                     <label className="text-[10px] font-black text-slate-900 uppercase tracking-widest ml-1">Description</label>
-                    <textarea name="description" value={formData.description} onChange={handleChange} className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-3.5 outline-none focus:bg-white focus:border-blue-600 transition-all font-black text-black text-sm resize-none" rows="2" placeholder="Brief description of the coupon..."></textarea>
+                    <textarea name="description" value={formData.description} onChange={handleChange} className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-3.5 outline-none focus:bg-white focus:border-[#FF5A00] focus:ring-4 focus:ring-orange-500/10 transition-all font-black text-black text-sm resize-none" rows="2" placeholder="Brief description of the coupon..."></textarea>
                   </div>
                   
                   <div className="space-y-2">
                     <label className="text-[10px] font-black text-slate-900 uppercase tracking-widest ml-1">Discount Type *</label>
-                    <select required name="discount_type" value={formData.discount_type} onChange={handleChange} className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-3.5 outline-none focus:bg-white focus:border-blue-600 focus:ring-4 focus:ring-blue-600/5 transition-all font-black text-black text-sm">
+                    <select required name="discount_type" value={formData.discount_type} onChange={handleChange} className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-3.5 outline-none focus:bg-white focus:border-[#FF5A00] focus:ring-4 focus:ring-orange-500/10 transition-all font-black text-black text-sm">
                       <option value="percentage">Percentage (%)</option>
                       <option value="fixed">Fixed Amount (₹)</option>
                     </select>
                   </div>
                   <div className="space-y-2">
                     <label className="text-[10px] font-black text-slate-900 uppercase tracking-widest ml-1">Discount Value *</label>
-                    <input required type="number" step="0.01" name="discount_value" value={formData.discount_value} onChange={handleChange} className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-3.5 outline-none focus:bg-white focus:border-blue-600 focus:ring-4 focus:ring-blue-600/5 transition-all font-black text-black text-sm" placeholder="e.g. 50" />
+                    <input required type="number" step="0.01" name="discount_value" value={formData.discount_value} onChange={handleChange} className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-3.5 outline-none focus:bg-white focus:border-[#FF5A00] focus:ring-4 focus:ring-orange-500/10 transition-all font-black text-black text-sm" placeholder="e.g. 50" />
                   </div>
 
                   <div className="space-y-2">
                     <label className="text-[10px] font-black text-slate-900 uppercase tracking-widest ml-1">Min Order Value (₹)</label>
-                    <input type="number" step="0.01" name="min_order_value" value={formData.min_order_value} onChange={handleChange} className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-3.5 outline-none focus:bg-white focus:border-blue-600 focus:ring-4 focus:ring-blue-600/5 transition-all font-black text-black text-sm" />
+                    <input type="number" step="0.01" name="min_order_value" value={formData.min_order_value} onChange={handleChange} className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-3.5 outline-none focus:bg-white focus:border-[#FF5A00] focus:ring-4 focus:ring-orange-500/10 transition-all font-black text-black text-sm" />
                   </div>
 
                   <div className="space-y-2">
                     <label className="text-[10px] font-black text-slate-900 uppercase tracking-widest ml-1">Start Date & Time *</label>
-                    <input required type="datetime-local" name="start_date" value={formData.start_date} onChange={handleChange} className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-3.5 outline-none focus:bg-white focus:border-blue-600 focus:ring-4 focus:ring-blue-600/5 transition-all font-black text-black text-sm" />
+                    <input required type="datetime-local" name="start_date" value={formData.start_date} onChange={handleChange} className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-3.5 outline-none focus:bg-white focus:border-[#FF5A00] focus:ring-4 focus:ring-orange-500/10 transition-all font-black text-black text-sm" />
                   </div>
                   <div className="space-y-2">
                     <label className="text-[10px] font-black text-slate-900 uppercase tracking-widest ml-1">Expiry Date & Time *</label>
-                    <input required type="datetime-local" name="expiry_date" value={formData.expiry_date} onChange={handleChange} className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-3.5 outline-none focus:bg-white focus:border-blue-600 focus:ring-4 focus:ring-blue-600/5 transition-all font-black text-black text-sm" />
+                    <input required type="datetime-local" name="expiry_date" value={formData.expiry_date} onChange={handleChange} className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-3.5 outline-none focus:bg-white focus:border-[#FF5A00] focus:ring-4 focus:ring-orange-500/10 transition-all font-black text-black text-sm" />
                   </div>
 
                   <div className="space-y-2">
                     <label className="text-[10px] font-black text-slate-900 uppercase tracking-widest ml-1">Total Usage Limit (Global)</label>
-                    <input type="number" name="usage_limit_global" value={formData.usage_limit_global} onChange={handleChange} className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-3.5 outline-none focus:bg-white focus:border-blue-600 focus:ring-4 focus:ring-blue-600/5 transition-all font-black text-black text-sm" placeholder="Leave blank for unlimited" />
+                    <input type="number" name="usage_limit_global" value={formData.usage_limit_global} onChange={handleChange} className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-3.5 outline-none focus:bg-white focus:border-[#FF5A00] focus:ring-4 focus:ring-orange-500/10 transition-all font-black text-black text-sm" placeholder="Leave blank for unlimited" />
                   </div>
                   <div className="space-y-2">
                     <label className="text-[10px] font-black text-slate-900 uppercase tracking-widest ml-1">Usage Limit Per Customer</label>
-                    <input type="number" name="usage_limit_per_customer" value={formData.usage_limit_per_customer} onChange={handleChange} className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-3.5 outline-none focus:bg-white focus:border-blue-600 focus:ring-4 focus:ring-blue-600/5 transition-all font-black text-black text-sm" min="1" />
+                    <input type="number" name="usage_limit_per_customer" value={formData.usage_limit_per_customer} onChange={handleChange} className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-3.5 outline-none focus:bg-white focus:border-[#FF5A00] focus:ring-4 focus:ring-orange-500/10 transition-all font-black text-black text-sm" min="1" />
                   </div>
                   
                   <div className="space-y-2">
                     <label className="text-[10px] font-black text-slate-900 uppercase tracking-widest ml-1">Status</label>
-                    <select name="status" value={formData.status} onChange={handleChange} className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-3.5 outline-none focus:bg-white focus:border-blue-600 focus:ring-4 focus:ring-blue-600/5 transition-all font-black text-black text-sm">
+                    <select name="status" value={formData.status} onChange={handleChange} className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-3.5 outline-none focus:bg-white focus:border-[#FF5A00] focus:ring-4 focus:ring-orange-500/10 transition-all font-black text-black text-sm">
                       <option value="active">Active</option>
                       <option value="inactive">Inactive</option>
                     </select>
                   </div>
 
-                  <div className="md:col-span-2 p-6 border-2 border-dashed border-blue-100 rounded-[2rem] bg-blue-50/30 shadow-sm">
+                  <div className="md:col-span-2 p-6 border-2 border-dashed border-orange-100 rounded-[2rem] bg-orange-50/30 shadow-sm">
                     <label className="text-[10px] font-black text-slate-900 uppercase tracking-widest ml-1 mb-2 block">Coupon Applies To *</label>
-                    <select name="coupon_scope" value={formData.coupon_scope} onChange={handleChange} className="w-full bg-white border border-slate-200 rounded-2xl px-5 py-3.5 outline-none focus:border-blue-600 focus:ring-4 focus:ring-blue-600/5 transition-all font-black text-black text-sm mb-4 shadow-sm">
+                    <select name="coupon_scope" value={formData.coupon_scope} onChange={handleChange} className="w-full bg-white border border-slate-200 rounded-2xl px-5 py-3.5 outline-none focus:border-[#FF5A00] focus:ring-4 focus:ring-orange-500/10 transition-all font-black text-black text-sm mb-4 shadow-sm">
                       <option value="all">All Products (Global)</option>
                       <option value="first_order_only">First Order Only</option>
                       <option value="new_customers_only">New Customers Only</option>
@@ -523,7 +523,7 @@ const Coupons = () => {
                           size={Math.min(foods.length || 4, 8)}
                           value={formData.applicable_product_ids}
                           onChange={(event) => handleSelectChange(event, 'applicable_product_ids')}
-                          className="w-full min-h-[120px] rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm text-black outline-none focus:border-blue-600"
+                          className="w-full min-h-[120px] rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm text-black outline-none focus:border-[#FF5A00] focus:ring-1 focus:ring-[#FF5A00]"
                         >
                           {foods.length ? (
                             foods.map((food) => (
@@ -546,7 +546,7 @@ const Coupons = () => {
                           size={Math.min(categories.length || 4, 8)}
                           value={formData.applicable_category_ids}
                           onChange={(event) => handleSelectChange(event, 'applicable_category_ids')}
-                          className="w-full min-h-[120px] rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm text-black outline-none focus:border-blue-600"
+                          className="w-full min-h-[120px] rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm text-black outline-none focus:border-[#FF5A00] focus:ring-1 focus:ring-[#FF5A00]"
                         >
                           {categories.length ? (
                             categories.map((category) => (
@@ -567,7 +567,7 @@ const Coupons = () => {
             
             <div className="p-8 flex justify-end gap-3 bg-white">
               <button type="button" onClick={handleCloseModal} className="px-8 py-3.5 rounded-2xl font-[900] text-slate-600 bg-slate-100 hover:bg-slate-200 transition-all uppercase tracking-widest text-xs">Cancel</button>
-              <button form="couponForm" type="submit" className="px-8 py-3.5 rounded-2xl font-[900] text-white bg-[#1a3c36] hover:bg-[#214a42] shadow-xl shadow-emerald-900/20 transition-all uppercase tracking-widest text-xs flex items-center gap-2">Save Coupon</button>
+              <button form="couponForm" type="submit" className="px-8 py-3.5 rounded-2xl font-[900] text-white bg-[#FF5A00] hover:bg-[#E94B00] shadow-xl shadow-orange-900/20 transition-all uppercase tracking-widest text-xs flex items-center gap-2">Save Coupon</button>
             </div>
           </div>
         </div>,

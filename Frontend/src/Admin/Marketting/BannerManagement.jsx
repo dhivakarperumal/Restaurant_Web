@@ -217,7 +217,7 @@ const BannerManagement = () => {
                     <input
                         type="text"
                         placeholder="Search banners by title..."
-                        className="w-full pl-12 pr-4 py-2.5 bg-gray-50 border border-gray-100 rounded-lg outline-none focus:bg-white focus:border-[#1a3c36] transition-all text-sm font-bold"
+                        className="w-full pl-12 pr-4 py-2.5 bg-gray-50 border border-gray-100 rounded-lg outline-none focus:bg-white focus:border-[#FF5A00] focus:ring-1 focus:ring-[#FF5A00] transition-all text-sm font-bold"
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                     />
@@ -225,23 +225,23 @@ const BannerManagement = () => {
                 <div className="flex flex-col sm:flex-row sm:items-center gap-3">
                     <div className="relative">
                         <FiFilter className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" size={15} />
-                        <select value={typeFilter} onChange={(e) => setTypeFilter(e.target.value)} className="appearance-none pl-9 pr-8 py-2.5 w-full sm:w-32 bg-white border border-gray-200 rounded-lg text-sm font-medium outline-none focus:border-[#1a3c36]">
+                        <select value={typeFilter} onChange={(e) => setTypeFilter(e.target.value)} className="appearance-none pl-9 pr-8 py-2.5 w-full sm:w-32 bg-white border border-gray-200 rounded-lg text-sm font-medium outline-none focus:border-[#FF5A00] focus:ring-1 focus:ring-[#FF5A00]">
                             <option value="all">All Types</option>
                             <option value="hero">Hero</option>
                             <option value="offer">Offers</option>
                         </select>
                         <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-[10px] pointer-events-none">▼</span>
                     </div>
-                    <select value={activeFilter} onChange={(e) => setActiveFilter(e.target.value)} className="appearance-none px-4 py-2.5 w-full sm:w-32 bg-white border border-gray-200 rounded-lg text-sm font-medium outline-none focus:border-[#1a3c36]">
+                    <select value={activeFilter} onChange={(e) => setActiveFilter(e.target.value)} className="appearance-none px-4 py-2.5 w-full sm:w-32 bg-white border border-gray-200 rounded-lg text-sm font-medium outline-none focus:border-[#FF5A00] focus:ring-1 focus:ring-[#FF5A00]">
                         <option value="all">All Status</option>
                         <option value="active">Published</option>
                         <option value="inactive">Draft</option>
                     </select>
                     <div className="flex items-center gap-1 rounded-lg border border-gray-200 bg-gray-50 p-1">
-                        <button type="button" onClick={() => setViewMode("table")} className={`p-2 rounded-md transition-colors ${viewMode === "table" ? "bg-white text-[#1a3c36] shadow-sm" : "text-gray-500 hover:text-[#1a3c36]"}`} aria-label="Table mode" title="Table mode"><FiList size={16} /></button>
-                        <button type="button" onClick={() => setViewMode("card")} className={`p-2 rounded-md transition-colors ${viewMode === "card" ? "bg-white text-[#1a3c36] shadow-sm" : "text-gray-500 hover:text-[#1a3c36]"}`} aria-label="Card mode" title="Card mode"><FiGrid size={16} /></button>
+                        <button type="button" onClick={() => setViewMode("table")} className={`p-2 rounded-md transition-colors ${viewMode === "table" ? "bg-white text-[#FF5A00] shadow-sm" : "text-gray-500 hover:text-[#FF5A00]"}`} aria-label="Table mode" title="Table mode"><FiList size={16} /></button>
+                        <button type="button" onClick={() => setViewMode("card")} className={`p-2 rounded-md transition-colors ${viewMode === "card" ? "bg-white text-[#FF5A00] shadow-sm" : "text-gray-500 hover:text-[#FF5A00]"}`} aria-label="Card mode" title="Card mode"><FiGrid size={16} /></button>
                     </div>
-                    <button onClick={() => handleOpenModal()} className="inline-flex h-[46px] items-center gap-2 rounded-xl bg-[#1a3c36] px-4 text-[15px] font-semibold text-white shadow-[0_6px_14px_rgba(26,60,54,0.18)] transition hover:bg-[#214a42]"><FiPlus /> New Promotion</button>
+                    <button onClick={() => handleOpenModal()} className="inline-flex h-[46px] items-center gap-2 rounded-xl bg-[#FF5A00] px-4 text-[15px] font-semibold text-white shadow-[0_6px_14px_rgba(255,90,0,0.18)] transition hover:bg-[#E94B00]"><FiPlus /> New Promotion</button>
                 </div>
             </div>
 
@@ -255,7 +255,7 @@ const BannerManagement = () => {
                     {viewMode === "table" ? <div className="overflow-x-auto hide-scrollbar">
                         <table className="w-full text-left border-collapse block md:table">
                             <thead className="hidden md:table-header-group">
-                                 <tr className="bg-[#f0e6d2] text-left text-sm font-semibold text-[#3d3d3d]">
+                                 <tr className="bg-[#FF5A00] text-left text-sm font-semibold text-white">
                                     <th className="px-4 py-4 text-xs font-black   text-center">S No</th>
                                     <th className="px-6 py-4 text-xs font-black  ">Visual Assets</th>
                                     <th className="px-6 py-4 text-xs font-black  ">Promotion Details</th>
@@ -313,14 +313,14 @@ const BannerManagement = () => {
                                                     <div className="flex items-center justify-end gap-2">
                                                         <button
                                                             onClick={() => handleOpenModal(banner)}
-                                                            className="p-2 border border-[#1a3c36] bg-[#1a3c36] text-white rounded-lg hover:bg-[#1a3c36] transition-all shadow-sm md:shadow-none"
+                                                            className="p-2 border border-orange-200 bg-white text-[#FF5A00] rounded-lg hover:bg-orange-50 transition-all shadow-sm md:shadow-none"
                                                             title="Edit"
                                                         >
                                                             <FiEdit2 size={16} />
                                                         </button>
                                                         <button
                                                             onClick={() => handleDelete(banner.id)}
-                                                            className="p-2 border border-[#1a3c36] bg-[#1a3c36] text-white rounded-lg hover:bg-[#1a3c36] transition-all shadow-sm md:shadow-none"
+                                                            className="p-2 border border-rose-200 bg-white text-rose-600 rounded-lg hover:bg-rose-50 transition-all shadow-sm md:shadow-none"
                                                             title="Delete"
                                                         >
                                                             <FiTrash2 size={16} />
@@ -342,7 +342,7 @@ const BannerManagement = () => {
                         {filteredBanners.length === 0 ? <div className="col-span-full text-center py-16 text-gray-400 font-bold">No creative banners discovered.</div> : filteredBanners.map((banner, index) => (
                             <article key={banner.id} className="border border-gray-100 rounded-xl overflow-hidden bg-white shadow-sm hover:shadow-md transition-shadow">
                                 <div className="h-36 bg-gray-100 relative"><img src={resolveAssetUrl(banner.image)} alt={banner.title || "Banner"} className="w-full h-full object-cover" /><span className="absolute top-3 left-3 bg-white/90 text-[10px] px-2 py-1 rounded font-black text-[#1a3c36]">S No. {index + 1}</span></div>
-                                <div className="p-4 space-y-3"><div><h3 className="font-black text-slate-800 truncate">{banner.title || "Untitled Banner"}</h3><p className="text-xs text-gray-400 truncate">{banner.subtitle || "No subtitle"}</p></div><div className="flex items-center justify-between"><span className="px-2 py-1 rounded-full text-[9px] font-black uppercase bg-amber-50 text-amber-600">{banner.type} section</span><span className="text-[10px] font-bold text-gray-500">{banner.active ? "Published" : "Draft"}</span></div><div className="flex gap-2"><button onClick={() => handleOpenModal(banner)} className="flex-1 py-2 rounded-lg bg-[#1a3c36] text-white text-xs font-bold hover:bg-[#1a3c36]"><FiEdit2 className="inline mr-1" />Edit</button><button onClick={() => handleDelete(banner.id)} className="flex-1 py-2 rounded-lg bg-[#1a3c36] text-white text-xs font-bold hover:bg-[#1a3c36]"><FiTrash2 className="inline mr-1" />Delete</button></div></div>
+                                <div className="p-4 space-y-3"><div><h3 className="font-black text-slate-800 truncate">{banner.title || "Untitled Banner"}</h3><p className="text-xs text-gray-400 truncate">{banner.subtitle || "No subtitle"}</p></div><div className="flex items-center justify-between"><span className="px-2 py-1 rounded-full text-[9px] font-black uppercase bg-amber-50 text-amber-600">{banner.type} section</span><span className="text-[10px] font-bold text-gray-500">{banner.active ? "Published" : "Draft"}</span></div><div className="flex gap-2"><button onClick={() => handleOpenModal(banner)} className="flex-1 py-2 rounded-lg bg-[#FF5A00] text-white text-xs font-bold transition hover:bg-[#E94B00]"><FiEdit2 className="inline mr-1" />Edit</button><button onClick={() => handleDelete(banner.id)} className="flex-1 py-2 rounded-lg bg-rose-600 text-white text-xs font-bold transition hover:bg-rose-700"><FiTrash2 className="inline mr-1" />Delete</button></div></div>
                             </article>
                         ))}
                     </div>}
@@ -359,7 +359,7 @@ const BannerManagement = () => {
                     >
                         <div className="p-8 border-b border-gray-50 flex items-center justify-between bg-white sticky top-0 z-10 backdrop-blur-sm">
                             <div className="flex items-center gap-4">
-                                <div className="w-12 h-12 bg-indigo-600 rounded-2xl flex items-center justify-center text-white shadow-xl shadow-indigo-500/20">
+                                <div className="w-12 h-12 bg-[#FF5A00] rounded-2xl flex items-center justify-center text-white shadow-xl shadow-orange-500/20">
                                     <FiImage size={24} />
                                 </div>
                                 <div>
@@ -383,7 +383,7 @@ const BannerManagement = () => {
                                 <label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] ml-2">Media Assets</label>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                     {/* Desktop Asset */}
-                                    <div className="relative border-2 border-dashed rounded-[2rem] p-4 transition-all group border-gray-200 hover:border-indigo-500/50 bg-gray-50/30 overflow-hidden min-h-[160px] flex flex-col items-center justify-center text-center">
+                                    <div                                     className="relative border-2 border-dashed rounded-[2rem] p-4 transition-all group border-gray-200 hover:border-orange-400 bg-gray-50/30 overflow-hidden min-h-[160px] flex flex-col items-center justify-center text-center">
                                         <input
                                             type="file"
                                             accept="image/*"
@@ -404,12 +404,12 @@ const BannerManagement = () => {
                                                 <p className="text-[10px] font-black text-slate-800 uppercase tracking-tighter">Desktop Visual</p>
                                             </div>
                                         )}
-                                        {uploading && <div className="absolute inset-0 bg-white/80 flex items-center justify-center"><div className="w-6 h-6 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin"></div></div>}
+                                        {uploading && <div className="absolute inset-0 bg-white/80 flex items-center justify-center"><div className="w-6 h-6 border-2 border-[#FF5A00] border-t-transparent rounded-full animate-spin"></div></div>}
                                         <div className="absolute top-3 left-3 bg-white/90 text-[8px] px-2 py-0.5 rounded-full font-black uppercase tracking-widest shadow-sm border border-gray-100">Desktop</div>
                                     </div>
 
                                     {/* Mobile Asset */}
-                                    <div className="relative border-2 border-dashed rounded-[2rem] p-4 transition-all group border-gray-200 hover:border-indigo-500/50 bg-gray-50/30 overflow-hidden min-h-[160px] flex flex-col items-center justify-center text-center">
+                                    <div                                     className="relative border-2 border-dashed rounded-[2rem] p-4 transition-all group border-gray-200 hover:border-orange-400 bg-gray-50/30 overflow-hidden min-h-[160px] flex flex-col items-center justify-center text-center">
                                         <input
                                             type="file"
                                             accept="image/*"
@@ -429,7 +429,7 @@ const BannerManagement = () => {
                                                 <p className="text-[10px] font-black text-slate-800 uppercase tracking-tighter">Mobile Visual</p>
                                             </div>
                                         )}
-                                        {mobileUploading && <div className="absolute inset-0 bg-white/80 flex items-center justify-center"><div className="w-6 h-6 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin"></div></div>}
+                                        {mobileUploading && <div className="absolute inset-0 bg-white/80 flex items-center justify-center"><div className="w-6 h-6 border-2 border-[#FF5A00] border-t-transparent rounded-full animate-spin"></div></div>}
                                         <div className="absolute top-3 left-3 bg-white/90 text-[8px] px-2 py-0.5 rounded-full font-black uppercase tracking-widest shadow-sm border border-gray-100">Mobile</div>
                                     </div>
                                 </div>
@@ -442,7 +442,7 @@ const BannerManagement = () => {
                                         <label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] ml-2">Headline</label>
                                         <input
                                             type="text"
-                                            className="w-full px-6 py-4 bg-gray-50/50 border-2 border-transparent rounded-2xl outline-none focus:bg-white focus:border-indigo-500/20 focus:ring-4 focus:ring-indigo-500/5 transition-all text-slate-800 font-bold shadow-inner text-sm"
+                                            className="w-full px-6 py-4 bg-gray-50/50 border-2 border-transparent rounded-2xl outline-none focus:bg-white focus:border-[#FF5A00]/30 focus:ring-4 focus:ring-orange-500/10 transition-all text-slate-800 font-bold shadow-inner text-sm"
                                             placeholder="Catchy main title"
                                             value={currentBanner.title}
                                             onChange={(e) => setCurrentBanner({ ...currentBanner, title: e.target.value })}
@@ -452,7 +452,7 @@ const BannerManagement = () => {
                                         <label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] ml-2">Captivating Subtitle</label>
                                         <input
                                             type="text"
-                                            className="w-full px-6 py-4 bg-gray-50/50 border-2 border-transparent rounded-2xl outline-none focus:bg-white focus:border-indigo-500/20 focus:ring-4 focus:ring-indigo-500/5 transition-all text-slate-800 font-bold shadow-inner text-sm"
+                                            className="w-full px-6 py-4 bg-gray-50/50 border-2 border-transparent rounded-2xl outline-none focus:bg-white focus:border-[#FF5A00]/30 focus:ring-4 focus:ring-orange-500/10 transition-all text-slate-800 font-bold shadow-inner text-sm"
                                             placeholder="Supporting tag line"
                                             value={currentBanner.subtitle}
                                             onChange={(e) => setCurrentBanner({ ...currentBanner, subtitle: e.target.value })}
@@ -466,7 +466,7 @@ const BannerManagement = () => {
                                         <FiFileText className="absolute left-6 top-5 text-gray-400" />
                                         <textarea
                                             rows="3"
-                                            className="w-full pl-14 pr-6 py-4 bg-gray-50/50 border-2 border-transparent rounded-2xl outline-none focus:bg-white focus:border-indigo-500/20 focus:ring-4 focus:ring-indigo-500/5 transition-all text-slate-800 font-bold shadow-inner text-sm resize-none hide-scrollbar"
+                                            className="w-full pl-14 pr-6 py-4 bg-gray-50/50 border-2 border-transparent rounded-2xl outline-none focus:bg-white focus:border-[#FF5A00]/30 focus:ring-4 focus:ring-orange-500/10 transition-all text-slate-800 font-bold shadow-inner text-sm resize-none hide-scrollbar"
                                             placeholder="Describe the offer or collection details..."
                                             value={currentBanner.description}
                                             onChange={(e) => setCurrentBanner({ ...currentBanner, description: e.target.value })}
@@ -480,7 +480,7 @@ const BannerManagement = () => {
                                         <FiLink className="absolute left-6 top-1/2 -translate-y-1/2 text-gray-400" />
                                         <input
                                             type="text"
-                                            className="w-full pl-14 pr-6 py-4 bg-gray-50/50 border-2 border-transparent rounded-2xl outline-none focus:bg-white focus:border-indigo-500/20 focus:ring-4 focus:ring-indigo-500/5 transition-all text-slate-800 font-bold shadow-inner text-sm"
+                                            className="w-full pl-14 pr-6 py-4 bg-gray-50/50 border-2 border-transparent rounded-2xl outline-none focus:bg-white focus:border-[#FF5A00]/30 focus:ring-4 focus:ring-orange-500/10 transition-all text-slate-800 font-bold shadow-inner text-sm"
                                             placeholder="e.g. /shop or https://..."
                                             value={currentBanner.link}
                                             onChange={(e) => setCurrentBanner({ ...currentBanner, link: e.target.value })}
@@ -496,14 +496,14 @@ const BannerManagement = () => {
                                             <button
                                                 type="button"
                                                 onClick={() => setCurrentBanner({ ...currentBanner, type: 'hero' })}
-                                                className={`py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${currentBanner.type === 'hero' ? 'bg-white text-indigo-600 shadow-sm' : 'text-gray-400 hover:bg-white/50'}`}
+                                                className={`py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${currentBanner.type === 'hero' ? 'bg-white text-[#FF5A00] shadow-sm' : 'text-gray-400 hover:bg-white/50'}`}
                                             >
                                                 Hero Sec
                                             </button>
                                             <button
                                                 type="button"
                                                 onClick={() => setCurrentBanner({ ...currentBanner, type: 'offer' })}
-                                                className={`py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${currentBanner.type === 'offer' ? 'bg-white text-rose-600 shadow-sm' : 'text-gray-400 hover:bg-white/50'}`}
+                                                className={`py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${currentBanner.type === 'offer' ? 'bg-white text-[#FF5A00] shadow-sm' : 'text-gray-400 hover:bg-white/50'}`}
                                             >
                                                 Offers
                                             </button>
@@ -515,9 +515,9 @@ const BannerManagement = () => {
                                         <button
                                             type="button"
                                             onClick={() => setCurrentBanner({ ...currentBanner, active: !currentBanner.active })}
-                                            className={`w-full py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all border-2 flex items-center justify-center gap-3 ${currentBanner.active ? 'bg-indigo-50 text-indigo-600 border-indigo-100' : 'bg-gray-50 text-gray-400 border-transparent'}`}
+                                            className={`w-full py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all border-2 flex items-center justify-center gap-3 ${currentBanner.active ? 'bg-orange-50 text-[#FF5A00] border-orange-100' : 'bg-gray-50 text-gray-400 border-transparent'}`}
                                         >
-                                            <div className={`w-2 h-2 rounded-full ${currentBanner.active ? 'bg-indigo-500 animate-pulse' : 'bg-gray-300'}`}></div>
+                                            <div className={`w-2 h-2 rounded-full ${currentBanner.active ? 'bg-[#FF5A00] animate-pulse' : 'bg-gray-300'}`}></div>
                                             {currentBanner.active ? 'Published on Website' : 'Held as Draft'}
                                         </button>
                                     </div>
@@ -530,7 +530,7 @@ const BannerManagement = () => {
                                         type="button"
                                         disabled={uploading || mobileUploading || !currentBanner.image}
                                         onClick={(e) => handleSubmit(e, true)}
-                                        className={`flex-1 py-5 bg-[#1a3c36] rounded-[1.5rem] font-black text-[10px] uppercase tracking-[0.2em] transition-all border-2 active:scale-[0.98] ${uploading || mobileUploading || !currentBanner.image ? 'bg-gray-50 text-gray-300 border-transparent cursor-not-allowed' : 'bg-white text-indigo-600 border-indigo-100 hover:bg-indigo-50 hover:border-indigo-200'}`}
+                                        className={`flex-1 py-5 rounded-[1.5rem] font-black text-[10px] uppercase tracking-[0.2em] transition-all border-2 active:scale-[0.98] ${uploading || mobileUploading || !currentBanner.image ? 'bg-gray-50 text-gray-300 border-transparent cursor-not-allowed' : 'bg-white text-[#FF5A00] border-orange-100 hover:bg-orange-50 hover:border-orange-200'}`}
                                     >
                                         Save & Add Another
                                     </button>
@@ -538,7 +538,7 @@ const BannerManagement = () => {
                                 <button
                                     type="submit"
                                     disabled={uploading || mobileUploading || !currentBanner.image}
-                                    className={`flex-[1.5] py-5 rounded-[1.5rem] font-black text-[10px] uppercase tracking-[0.2em] transition-all shadow-2xl active:scale-[0.98] ${uploading || mobileUploading || !currentBanner.image ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-slate-900 hover:bg-black text-white shadow-slate-300'}`}
+                                    className={`flex-[1.5] py-5 rounded-[1.5rem] font-black text-[10px] uppercase tracking-[0.2em] transition-all shadow-2xl active:scale-[0.98] ${uploading || mobileUploading || !currentBanner.image ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-[#FF5A00] hover:bg-[#E94B00] text-white shadow-orange-200'}`}
                                 >
                                     {uploading || mobileUploading ? "Processing..." : isEditing ? "Save Changes" : "Save & Close"}
                                 </button>
