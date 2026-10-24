@@ -46,11 +46,17 @@ const pageIcons = {
 const DeliveryHeader = ({ onMenuClick }) => {
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const [logoutConfirmOpen, setLogoutConfirmOpen] = useState(false);
+  const [currentTime, setCurrentTime] = useState(() => new Date());
   const profileMenuRef = useRef(null);
   const location = useLocation();
   const { userProfile, logout } = useAuth();
   const name = userProfile?.displayName || userProfile?.name || "Delivery Partner";
   const ActivePageIcon = pageIcons[location.pathname] || CheckCircle2;
+
+  useEffect(() => {
+    const interval = setInterval(() => setCurrentTime(new Date()), 60_000);
+    return () => clearInterval(interval);
+  }, []);
 
   useEffect(() => {
     const closeOnOutsideClick = (event) => {
@@ -73,9 +79,16 @@ const DeliveryHeader = ({ onMenuClick }) => {
         <button type="button" onClick={onMenuClick} aria-label="Open navigation" className="grid h-10 w-10 place-items-center rounded-lg border border-[#e1e9e2] text-[#284d35] lg:hidden">
           <Menu size={19} />
         </button>
-        <div className="flex min-w-0 items-center gap-2 rounded-lg bg-[#f4f8f4] px-2.5 py-2 text-[#327347] sm:px-3">
-          <ActivePageIcon aria-hidden="true" size={17} className="shrink-0" />
-          <span className="truncate text-xs font-semibold text-gray-600 sm:text-sm">{pageTitles[location.pathname] || "Order Details"}</span>
+        <div className="flex min-w-0 flex-col items-start gap-0.5">
+          <div className="flex min-w-0 items-center gap-2 rounded-lg bg-[#f4f8f4] px-2.5 py-1.5 text-[#327347] sm:px-3">
+            <ActivePageIcon aria-hidden="true" size={17} className="shrink-0" />
+            <span className="truncate text-xs font-semibold text-gray-600 sm:text-sm">{pageTitles[location.pathname] || "Order Details"}</span>
+          </div>
+          <p className="pl-1 text-[10px] font-medium text-gray-500 sm:text-xs">
+            {currentTime.toLocaleDateString("en-IN", { weekday: "long", day: "numeric", month: "short" })}
+            {" · "}
+            {currentTime.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })}
+          </p>
         </div>
       </div>
       <div className="flex items-center gap-3">

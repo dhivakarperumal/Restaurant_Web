@@ -200,7 +200,7 @@ const DeliverySidebar = ({ isOpen, onClose, collapsed, onToggleCollapse }) => {
                               transition-all duration-200
                               ${isActive
                                 ? "bg-white text-[#FF5A00] font-semibold"
-                                : "text-white hover:text-white hover:bg-[#1f3228]"
+                                : "text-white hover:text-white hover:bg-white/10"
                               }
                             `}
                             title={collapsed && sub.badge ? `${sub.label} (${pendingCount})` : ''}
