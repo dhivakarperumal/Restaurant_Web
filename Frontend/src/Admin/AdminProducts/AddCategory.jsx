@@ -13,7 +13,7 @@ import {
   UploadCloud,
   X,
 } from 'lucide-react';
-import api from '../../api';
+import api, { BACKEND_BASE_URL } from '../../api';
 import { useAuth } from '../../PrivateRouter/AuthContext';
 
 const subCategoryOptions = [
@@ -29,10 +29,26 @@ const subCategoryOptions = [
 
 const normalizeImageUrl = (value) => {
   if (!value) return '';
-  if (value.startsWith('http://') || value.startsWith('https://')) return value;
-  return value.startsWith('/') ? value : `/${value}`;
+  if (value.startsWith('http://') || value.startsWith('https://') || value.startsWith('blob:')) return value;
+  // Relative path from backend — prefix with BACKEND_BASE_URL so preview works in dev
+  const cleanPath = value.startsWith('/') ? value : `/${value}`;
+  return `${BACKEND_BASE_URL}${cleanPath}`;
 };
 
+
+// Strip BACKEND_BASE_URL prefix to get the relative path for DB storage
+const toStoragePath = (url) => {
+  if (!url) return '';
+  // If it's a blob (object URL), we can't get a path — caller should use uploadedImageUrl instead
+  if (url.startsWith('blob:')) return '';
+  // Strip known backend origins
+  const origins = [import.meta?.env?.VITE_BACKEND_URL, 'http://localhost:5000', 'http://127.0.0.1:5000'].filter(Boolean);
+  for (const origin of origins) {
+    if (url.startsWith(origin)) return url.slice(origin.length);
+  }
+  // Already relative
+  return url.startsWith('/') ? url : url;
+};
 const getInitialCategoryId = () => 'CAT001';
 
 const AddCategory = () => {
@@ -85,8 +101,8 @@ const AddCategory = () => {
             createdBy: item.created_by || profileName || 'Admin',
             updatedBy: item.updated_by || profileName || 'Admin',
           });
-          setUploadedImageUrl(normalizeImageUrl(item.category_image || ''));
-          setPreviewUrl(normalizeImageUrl(item.category_image || ''));
+          setUploadedImageUrl(item.category_image || ''); // store raw path for DB
+          setPreviewUrl(normalizeImageUrl(item.category_image || '')); // display URL
         } catch (error) {
           console.error('Failed to load category for edit:', error);
           alert(error?.response?.data?.message || 'Failed to load category.');
@@ -164,8 +180,8 @@ const AddCategory = () => {
     try {
       const response = await api.post('/upload', formData);
       const imageUrl = response?.data?.url || response?.data?.urls?.[0] || '';
-      const normalizedUrl = normalizeImageUrl(imageUrl);
-      setUploadedImageUrl(normalizedUrl);
+      setUploadedImageUrl(imageUrl); // store raw relative path for DB
+      setPreviewUrl(normalizeImageUrl(imageUrl)); // full URL for display
     } catch (error) {
       console.error('Upload failed:', error);
       alert(error?.response?.data?.message || 'Image upload failed. Please try again.');
@@ -203,7 +219,7 @@ const AddCategory = () => {
       category_name: formData.categoryName,
       description: formData.description,
       sub_categories: formData.subCategories,
-      category_image: normalizeImageUrl(uploadedImageUrl || previewUrl || ''),
+      category_image: toStoragePath(uploadedImageUrl) || toStoragePath(previewUrl) || '',
       status: formData.status ? 'Active' : 'Inactive',
       created_by: formData.createdBy,
       updated_by: formData.updatedBy || profileName || 'Admin',

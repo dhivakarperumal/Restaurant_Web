@@ -2,7 +2,7 @@ const express = require('express');
 const http = require('http');
 const cors = require('cors');
 const path = require('path');
-const { initializeAuthSchema, initializeBannerSchema, initializeCategorySchema, initializeCouponSchema, initializeCuisineSchema, initializeFoodSchema, initializeInventorySchema, initializeKitchenOrderSchema, initializeReviewSchema, initializeVideoSchema, initializeEmployeeSchema, initializeServerTableSchema, initializeSettingsSchema, initializeOrderSchema, initializeEventOrderSchema, initializeWishlistSchema, initializeReservationSchema, initializeAttendanceSchema, initializeExpenseSchema, initializeSalarySchema, testConnection } = require('./modules/modules');
+const { initializeAuthSchema, initializeBannerSchema, initializeCategorySchema, initializeCouponSchema, initializeCuisineSchema, initializeFoodSchema, initializeInventorySchema, initializeKitchenOrderSchema, initializeReviewSchema, initializeVideoSchema, initializeEmployeeSchema, initializeServerTableSchema, initializeSettingsSchema, initializeOrderSchema, initializeEventOrderSchema, initializeWishlistSchema, initializeReservationSchema, initializeAttendanceSchema, initializeExpenseSchema, initializeSalarySchema, initializeGallerySchema, testConnection } = require('./modules/modules');
 const apiRouter = require('./routers/routes');
 const { initializeRevenueIndexes } = require('./modules/revenue');
 const { initializeServerSuppliesSchema } = require('./modules/serverSupplies');
@@ -87,6 +87,8 @@ async function startServer() {
     console.log('Review tables ready');
     await initializeVideoSchema();
     console.log('Video tables ready');
+    await initializeGallerySchema();
+    console.log('Gallery tables ready');
     await initializeRevenueIndexes();
     console.log('Revenue indexes ready');
   } catch (error) {

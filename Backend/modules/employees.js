@@ -189,7 +189,14 @@ async function findEmployees(employeeType) {
            END AS today_shift_state
     FROM employees
     LEFT JOIN employee_attendance a 
-      ON a.employee_id = employees.employee_id AND a.date = CURDATE()
+      ON a.id = (
+        SELECT latest_attendance.id
+        FROM employee_attendance latest_attendance
+        WHERE latest_attendance.employee_id = employees.employee_id
+          AND latest_attendance.date = CURDATE()
+        ORDER BY (latest_attendance.check_out IS NULL) DESC, latest_attendance.check_in DESC
+        LIMIT 1
+      )
   `;
   if (employeeType) {
     const [rows] = await db.execute(
@@ -256,7 +263,14 @@ async function findEmployeeById(employeeId) {
             a.total_hours AS today_total_hours
      FROM employees
      LEFT JOIN employee_attendance a 
-       ON a.employee_id = employees.employee_id AND a.date = CURDATE()
+       ON a.id = (
+         SELECT latest_attendance.id
+         FROM employee_attendance latest_attendance
+         WHERE latest_attendance.employee_id = employees.employee_id
+           AND latest_attendance.date = CURDATE()
+         ORDER BY (latest_attendance.check_out IS NULL) DESC, latest_attendance.check_in DESC
+         LIMIT 1
+       )
      WHERE employees.employee_id = ? LIMIT 1`,
     [employeeId]
   );

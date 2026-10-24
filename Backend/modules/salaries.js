@@ -163,8 +163,8 @@ const getSalaryDetails = async (employeeId, month, year) => {
      FROM employees e
      LEFT JOIN (
        SELECT employee_id,
-              SUM(CASE WHEN status IN ('Present', 'Late', 'Half Day') THEN 1 ELSE 0 END) AS present_days,
-              SUM(CASE WHEN status IN ('Leave', 'Absent') THEN 1 ELSE 0 END) AS leave_days
+              COUNT(DISTINCT CASE WHEN status IN ('Present', 'Late', 'Half Day') THEN date END) AS present_days,
+              COUNT(DISTINCT CASE WHEN status IN ('Leave', 'Absent') THEN date END) AS leave_days
        FROM employee_attendance
        WHERE date >= ? AND date < DATE_ADD(?, INTERVAL 1 MONTH)
        GROUP BY employee_id

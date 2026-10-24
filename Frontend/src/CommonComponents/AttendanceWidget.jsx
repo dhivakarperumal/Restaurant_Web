@@ -50,7 +50,17 @@ export default function AttendanceWidget({ variant = "header", onAttendanceChang
 
   useEffect(() => {
     fetchTodayAttendance();
-    const handleUpdate = () => {
+    const handleUpdate = (event) => {
+      const updatedAttendance = event.detail;
+      if (updatedAttendance && Object.hasOwn(updatedAttendance, "check_in")) {
+        setAttendance(updatedAttendance);
+        if (updatedAttendance.duration_seconds != null) {
+          setLiveSeconds(Number(updatedAttendance.duration_seconds));
+        } else if (updatedAttendance.total_hours != null) {
+          setLiveSeconds(Number(updatedAttendance.total_hours) * 3600);
+        }
+        return;
+      }
       fetchTodayAttendance();
     };
     window.addEventListener("attendance-updated", handleUpdate);
@@ -118,6 +128,11 @@ export default function AttendanceWidget({ variant = "header", onAttendanceChang
       const res = await api.post("/attendance/clock-out");
       if (res.data?.success) {
         setAttendance(res.data.data);
+        if (res.data.data?.duration_seconds != null) {
+          setLiveSeconds(Number(res.data.data.duration_seconds));
+        } else if (res.data.data?.total_hours != null) {
+          setLiveSeconds(Number(res.data.data.total_hours) * 3600);
+        }
         window.dispatchEvent(new CustomEvent("attendance-updated", { detail: res.data.data }));
         onAttendanceChange?.(res.data.data);
         toast.success(
