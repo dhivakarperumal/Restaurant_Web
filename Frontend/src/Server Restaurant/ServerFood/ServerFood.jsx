@@ -512,61 +512,68 @@ export default function ServerFood() {
             value: stats.total,
             hint: "Configured by admin",
             icon: UtensilsCrossed,
-            bg: "bg-[#22c55e]",
+            tone: "bg-gradient-to-tr from-orange-500 to-amber-400 text-white shadow-orange-500/25",
+            accentColor: "#f97316",
+            glowColor: "#fb923c",
           },
           {
             title: "Available Today",
             value: stats.available,
             hint: "Ready to serve",
             icon: CheckCircle2,
-            bg: "bg-[#3b82f6]",
+            tone: "bg-gradient-to-tr from-emerald-600 to-teal-400 text-white shadow-emerald-500/25",
+            accentColor: "#10b981",
+            glowColor: "#34d399",
           },
           {
             title: "Pure Veg Items",
             value: stats.vegCount,
             hint: "Vegetarian selections",
             icon: Sparkles,
-            bg: "bg-[#10b981]",
+            tone: "bg-gradient-to-tr from-green-600 to-lime-400 text-white shadow-green-500/25",
+            accentColor: "#22c55e",
+            glowColor: "#4ade80",
           },
           {
             title: "Non-Veg Dishes",
             value: stats.nonVegCount,
             hint: "Meat & poultry specialties",
             icon: Flame,
-            bg: "bg-[#f43f5e]",
+            tone: "bg-gradient-to-tr from-rose-600 to-pink-400 text-white shadow-rose-500/25",
+            accentColor: "#f43f5e",
+            glowColor: "#fb7185",
           },
-        ].map(({ title, value, hint, icon: Icon, bg }, index) => (
+        ].map(({ title, value, hint, icon: Icon, tone, accentColor, glowColor }) => (
           <article
             key={title}
-            className={`relative min-w-0 overflow-hidden rounded-xl border border-transparent p-4 sm:p-5 shadow-[0_2px_10px_rgba(20,56,34,0.08)] flex flex-col justify-between min-h-[140px] ${bg} text-white`}
+            className="group relative flex min-h-[140px] min-w-0 flex-col justify-between overflow-hidden rounded-2xl border border-slate-200/90 bg-white p-4 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] transition-all duration-300 hover:-translate-y-1 hover:border-slate-300 hover:shadow-[0_12px_24px_-6px_rgba(0,0,0,0.1)] sm:p-5"
           >
-            <div className="flex items-start gap-3 relative z-10">
-              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg shadow-sm bg-white/20">
-                <Icon size={24} strokeWidth={2.2} className="text-white" />
+            <div
+              className="pointer-events-none absolute -right-6 -top-6 h-28 w-28 rounded-full opacity-20 blur-2xl transition-all duration-500 group-hover:scale-150 group-hover:opacity-35"
+              style={{ backgroundColor: glowColor }}
+            />
+            <div className="relative z-10 flex items-start justify-between gap-3">
+              <div className="min-w-0 flex-1">
+                <h3 className="truncate text-[11px] font-bold uppercase tracking-wider text-slate-500">{title}</h3>
+                <div className="mt-2.5 truncate text-[23px] font-black tracking-tight text-slate-800 sm:text-[27px]">{value}</div>
               </div>
-              <div className="flex-1 mt-0.5 min-w-0">
-                <h3 className="text-[12px] font-semibold opacity-90 mb-1 truncate">{title}</h3>
-                <div className="text-[26px] font-extrabold leading-none tracking-tight">{value}</div>
+              <div className={`relative flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl shadow-sm transition-transform duration-300 group-hover:scale-110 ${tone}`}>
+                <Icon size={24} strokeWidth={2.3} />
               </div>
             </div>
-            <div className="flex items-center gap-2 mt-5 relative z-10">
-              <span className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[11px] font-bold bg-white/25">
-                Live
-              </span>
-              <span className="text-[11px] font-medium opacity-75 truncate">{hint}</span>
+            <div className="relative z-10 mt-4 flex items-center justify-between border-t border-slate-100 pt-3 text-xs">
+              <div className="flex min-w-0 items-center gap-1.5">
+                <span className="inline-flex shrink-0 items-center rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-bold text-emerald-600 ring-1 ring-inset ring-emerald-500/20">
+                  Live
+                </span>
+                <span className="truncate font-medium text-slate-500">{hint}</span>
+              </div>
+              <span className="h-2 w-2 shrink-0 rounded-full shadow-sm" style={{ backgroundColor: accentColor }} />
             </div>
-            <div className="absolute right-0 bottom-0 w-24 h-16 pointer-events-none opacity-50">
-              <svg viewBox="0 0 100 50" preserveAspectRatio="none" className="w-full h-full">
-                <defs>
-                  <linearGradient id={`food-grad-${index}`} x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#ffffff" stopOpacity="0.4" />
-                    <stop offset="100%" stopColor="#ffffff" stopOpacity="0.0" />
-                  </linearGradient>
-                </defs>
-                <path d="M0,50 L0,40 Q25,30 50,40 T100,20 L100,50 Z" fill={`url(#food-grad-${index})`} />
-                <path d="M0,40 Q25,30 50,40 T100,20" fill="none" stroke="#ffffff" strokeWidth="2.5" />
-              </svg>
-            </div>
+            <div
+              className="absolute bottom-0 left-0 h-[3px] w-0 transition-all duration-300 group-hover:w-full"
+              style={{ backgroundColor: accentColor }}
+            />
           </article>
         ))}
       </div>
