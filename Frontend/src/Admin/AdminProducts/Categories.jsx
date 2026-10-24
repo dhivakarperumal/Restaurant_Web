@@ -289,7 +289,7 @@ const AdminCategories = () => {
   const productCount = listData.reduce((sum, item) => sum + Number(item.products || 0), 0);
 
   return (
-    <div className="min-h-screen  p-4 md:p-2">
+    <div className="min-h-screen bg-gray-100 p-4 md:p-2">
       <div className="mx-auto max-w-[1500px]">
         
 
@@ -343,7 +343,7 @@ const AdminCategories = () => {
           );
         })()}
 
-        <div className="rounded-lg border border-[#e7e0d8] bg-[#f8f7f4] p-3 shadow-sm">
+        <div className="rounded-lg border border-[#e7e0d8] bg-gray-100 p-3 shadow-sm">
           <div className="mb-4 flex flex-col gap-3 lg:flex-row lg:items-center">
             <div className="flex flex-1 flex-wrap items-center gap-3">
               <div className="relative w-full max-w-[340px]">
@@ -428,11 +428,11 @@ const AdminCategories = () => {
           {loading ? (
             <div role="status" className="py-12 text-center text-sm text-gray-500">Loading categories...</div>
           ) : !error && !listData.length ? (
-            <div className="rounded-2xl border border-dashed border-[#e7e0d8] bg-[#faf8f5] p-10 text-center text-[#666]">
+            <div className="rounded-2xl border border-dashed border-[#e7e0d8] bg-gray-100 p-10 text-center text-[#666]">
               No categories found yet.
             </div>
           ) : !error && !filteredCategories.length ? (
-            <div className="rounded-2xl border border-dashed border-[#e7e0d8] bg-[#faf8f5] p-10 text-center text-[#666]">
+            <div className="rounded-2xl border border-dashed border-[#e7e0d8] bg-gray-100 p-10 text-center text-[#666]">
               No categories match these filters. Try changing the search or status.
             </div>
           ) : !error ? (
@@ -440,7 +440,7 @@ const AdminCategories = () => {
               {viewMode === 'card' ? (
                 <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
                   {paginatedCategories.map((category, index) => (
-                    <div key={category.id} className="rounded-[18px] border border-[#e7e0d8] bg-[#fdfdfc] p-4 shadow-[0_1px_0_rgba(16,24,40,0.02)] transition hover:-translate-y-0.5 hover:shadow-md">
+                    <div key={category.id} className="rounded-[18px] border border-[#e7e0d8] bg-gray-100 p-4 shadow-[0_1px_0_rgba(16,24,40,0.02)] transition hover:-translate-y-0.5 hover:shadow-md">
                       <div className="mb-4 flex items-start justify-between gap-3">
                         <div className={`flex h-[42px] w-[42px] items-center justify-center rounded-xl ${index % 2 === 0 ? 'bg-[#f4e4d1] text-[#a05c2a]' : 'bg-[#dfeaf8] text-[#3f7db8]'}`}>
                           {category.image ? (
@@ -492,7 +492,7 @@ const AdminCategories = () => {
                 </div>
               ) : (
                 <div className="mt-0 overflow-x-auto rounded-[16px] border border-[#e8e4df]">
-                  <table className="w-full min-w-[760px] border-collapse bg-[#f8f7f4] text-left">
+                  <table className="w-full min-w-[760px] border-collapse bg-gray-100 text-left">
                     <thead className="bg-[#FF5A00] text-left text-sm font-semibold text-white">
                       <tr>
                         <th className="px-4 py-4">S.No</th>

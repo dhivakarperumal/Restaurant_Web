@@ -184,7 +184,7 @@ const Cuisines = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4 md:p-2">
+    <div className="min-h-screen bg-slate-50/60 p-4 md:p-5">
       <div className="mx-auto max-w-[1500px]">
         
 
@@ -192,52 +192,50 @@ const Cuisines = () => {
         {(() => {
           const inactiveCount = cuisines.length - activeCount;
           const statCards = [
-            { title: 'Total Cuisines', value: String(cuisines.length), inc: '18.6%', icon: <ChefHat />, bg: 'bg-[#22c55e]' },
-            { title: 'Active Cuisines', value: String(activeCount), inc: '12.4%', icon: <Utensils />, bg: 'bg-[#3b82f6]' },
-            { title: 'Featured Cuisines', value: String(featuredCount), inc: '10.7%', icon: <Star />, bg: 'bg-[#f59e0b]' },
-            { title: 'Inactive Cuisines', value: String(inactiveCount), inc: '—', icon: <TrendingUp />, bg: 'bg-[#8b5cf6]' },
+            { title: 'Total Cuisines', value: String(cuisines.length), inc: '18.6%', icon: ChefHat, tone: 'bg-emerald-500 text-white shadow-emerald-500/30', accent: '#10b981' },
+            { title: 'Active Cuisines', value: String(activeCount), inc: '12.4%', icon: Utensils, tone: 'bg-blue-600 text-white shadow-blue-500/30', accent: '#3b82f6' },
+            { title: 'Featured Cuisines', value: String(featuredCount), inc: '10.7%', icon: Star, tone: 'bg-amber-500 text-white shadow-amber-500/30', accent: '#f59e0b' },
+            { title: 'Inactive Cuisines', value: String(inactiveCount), inc: '—', icon: TrendingUp, tone: 'bg-purple-600 text-white shadow-purple-500/30', accent: '#8b5cf6' },
           ];
           return (
             <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-              {statCards.map((stat, index) => (
-                <article
-                  key={index}
-                  className={`relative min-w-0 overflow-hidden rounded-xl border border-transparent p-4 sm:p-5 shadow-[0_2px_10px_rgba(20,56,34,0.04)] flex flex-col justify-between min-h-[140px] ${stat.bg} text-white`}
-                >
-                  <div className="flex items-start gap-3 relative z-10">
-                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg shadow-sm bg-white/20">
-                      {React.cloneElement(stat.icon, { size: 24, strokeWidth: 2.2, className: 'text-white' })}
+              {statCards.map((stat, index) => {
+                const Icon = stat.icon;
+                return (
+                  <article
+                    key={index}
+                    className="group relative flex flex-col justify-between overflow-hidden rounded-2xl border border-slate-200/90 bg-white p-5 shadow-xs transition-all duration-300 hover:-translate-y-1 hover:border-slate-300 hover:shadow-lg"
+                  >
+                    <div className="flex items-start justify-between gap-3 relative z-10">
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-xs font-semibold text-slate-500 tracking-wider uppercase">{stat.title}</p>
+                        <div className="mt-2 text-2xl font-black tracking-tight text-slate-800 sm:text-3xl">{stat.value}</div>
+                      </div>
+                      <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl shadow-md transition-transform duration-300 group-hover:scale-110 ${stat.tone}`}>
+                        <Icon size={24} strokeWidth={2.3} />
+                      </div>
                     </div>
-                    <div className="flex-1 mt-0.5 min-w-0">
-                      <h3 className="text-[12px] font-semibold opacity-90 mb-1 truncate">{stat.title}</h3>
-                      <div className="text-[22px] sm:text-[25px] font-extrabold leading-none tracking-tight truncate">{stat.value}</div>
+                    <div className="mt-4 flex items-center justify-between border-t border-slate-100 pt-3 relative z-10">
+                      <div className="flex items-center gap-1.5 min-w-0">
+                        {stat.inc !== '—' && (
+                          <span className="inline-flex shrink-0 items-center rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-bold text-emerald-600 ring-1 ring-inset ring-emerald-500/20">
+                            ↑ {stat.inc}
+                          </span>
+                        )}
+                        <span className="truncate text-xs font-medium text-slate-400">from last month</span>
+                      </div>
+                      <span className="h-2 w-2 rounded-full shrink-0" style={{ backgroundColor: stat.accent }} />
                     </div>
-                  </div>
-                  <div className="flex items-center gap-2 mt-5 relative z-10">
-                    <span className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[11px] font-bold bg-white/25">
-                      {stat.inc !== '—' ? `↑ ${stat.inc}` : stat.inc}
-                    </span>
-                    <span className="text-[11px] font-medium opacity-75 truncate">from last month</span>
-                  </div>
-                  <div className="absolute right-0 bottom-0 w-24 h-16 pointer-events-none opacity-50">
-                    <svg viewBox="0 0 100 50" preserveAspectRatio="none" className="w-full h-full">
-                      <defs>
-                        <linearGradient id={`cuisgrad-${index}`} x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="0%" stopColor="#ffffff" stopOpacity="0.4" />
-                          <stop offset="100%" stopColor="#ffffff" stopOpacity="0.0" />
-                        </linearGradient>
-                      </defs>
-                      <path d="M0,50 L0,40 Q25,30 50,40 T100,20 L100,50 Z" fill={`url(#cuisgrad-${index})`} />
-                      <path d="M0,40 Q25,30 50,40 T100,20" fill="none" stroke="#ffffff" strokeWidth="2.5" />
-                    </svg>
-                  </div>
-                </article>
-              ))}
+                    {/* Hover accent bar */}
+                    <div className="absolute bottom-0 left-0 h-[3px] w-0 transition-all duration-300 group-hover:w-full" style={{ backgroundColor: stat.accent }} />
+                  </article>
+                );
+              })}
             </div>
           );
         })()}
 
-        <section className="overflow-hidden rounded-lg border border-[#e7e0d8] bg-gray-50">
+        <section className="overflow-hidden rounded-2xl border border-slate-200/90 bg-white shadow-xs">
           <div className="flex flex-col gap-3 border-b border-gray-200 p-3 lg:flex-row lg:items-center lg:justify-between">
             <div className="relative w-full lg:max-w-md lg:flex-1">
               <Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
@@ -274,7 +272,7 @@ const Cuisines = () => {
           ) : viewMode === 'card' ? (
             <div className="grid gap-4 p-4 sm:grid-cols-2 xl:grid-cols-4">
               {visibleCuisines.map((cuisine) => (
-                <article key={cuisine.cuisine_id} className="rounded-xl border border-[#e7e0d8] bg-gray-50 p-4 shadow-sm transition hover:shadow-md">
+                <article key={cuisine.cuisine_id} className="rounded-xl border border-[#e7e0d8] bg-gray-100 p-4 transition">
                   <div className="mb-3 flex items-start justify-between gap-3">
                     {cuisine.image
                       ? <img src={imageUrl(cuisine.image)} alt="" className="h-12 w-12 rounded-lg object-cover" />
@@ -341,7 +339,7 @@ const Cuisines = () => {
 
       {modalOpen && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-4" onMouseDown={(event) => { if (event.target === event.currentTarget && !saving && !uploading) { setModalOpen(false); setPreview(''); } }}>
-          <section role="dialog" aria-modal="true" aria-labelledby="cuisine-modal-title" className="max-h-[92vh] w-full max-w-2xl overflow-y-auto rounded-lg bg-white shadow-2xl">
+          <section role="dialog" aria-modal="true" aria-labelledby="cuisine-modal-title" className="max-h-[92vh] w-full max-w-2xl overflow-y-auto rounded-lg bg-white">
             <form onSubmit={handleSave}>
               <header className="flex items-center justify-between border-b border-gray-200 px-5 py-4">
                 <div><h2 id="cuisine-modal-title" className="text-xl font-semibold text-gray-900">{editingId ? 'Edit cuisine' : 'Add cuisine'}</h2></div>
