@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { ArrowUpRight, Bike, CalendarDays, Check, CheckCircle2, ChevronLeft, ChevronRight, Clock3, MapPin, Phone, RefreshCw, Search, ShoppingBag, X, XCircle } from "lucide-react";
+import { ArrowUpRight, Bike, CalendarDays, Check, CheckCircle2, ChevronLeft, ChevronRight, Clock3, LayoutGrid, List, MapPin, Phone, RefreshCw, Search, ShoppingBag, X, XCircle } from "lucide-react";
 import api from "../api";
 import toast from "react-hot-toast";
 
@@ -59,6 +59,9 @@ const DeliveryOrdersPage = ({ view = "all" }) => {
   const [search, setSearch] = useState("");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [sortBy, setSortBy] = useState("latest");
+  const [viewMode, setViewMode] = useState("list");
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -95,22 +98,44 @@ const DeliveryOrdersPage = ({ view = "all" }) => {
     };
   }, [refreshKey]);
 
-  const matchingOrders = useMemo(() => {
-    const query = search.trim().toLowerCase();
+  const scopedOrders = useMemo(() => {
     return orders.filter((order) => {
       const normalizedStatus = normalizeStatus(order.order_status);
       const matchesView = !config.statuses || config.statuses.includes(normalizedStatus);
       const date = new Date(order.order_date || order.created_at || "");
       const dateKey = Number.isNaN(date.getTime()) ? "" : `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
-      const matchesDate = (!dateFrom || dateKey >= dateFrom) && (!dateTo || dateKey <= dateTo);
-      const matchesSearch = !query || [orderId(order), order.customer_name, order.customer?.name]
-        .some((value) => String(value || "").toLowerCase().includes(query));
-      return matchesView && matchesDate && matchesSearch;
+      return matchesView && (!dateFrom || dateKey >= dateFrom) && (!dateTo || dateKey <= dateTo);
     });
-  }, [config.statuses, dateFrom, dateTo, orders, search]);
+  }, [config.statuses, dateFrom, dateTo, orders]);
 
-  const pageCount = Math.max(1, Math.ceil(matchingOrders.length / pageSize));
-  const visibleOrders = matchingOrders.slice((page - 1) * pageSize, page * pageSize);
+  const statusCounts = useMemo(() => scopedOrders.reduce((counts, order) => {
+    const status = normalizeStatus(order.order_status) || "NEW";
+    counts[status] = (counts[status] || 0) + 1;
+    return counts;
+  }, {}), [scopedOrders]);
+
+  const matchingOrders = useMemo(() => {
+    const query = search.trim().toLowerCase();
+    return scopedOrders.filter((order) => {
+      const normalizedStatus = normalizeStatus(order.order_status);
+      const hasToolbar = ["new", "all", "delivery", "cancelled"].includes(view);
+      const matchesStatus = !hasToolbar || statusFilter === "all" || statusFilter === normalizedStatus;
+      const itemNames = getItems(order).flatMap((item) => [item.name, item.food_name, item.product_name]);
+      const matchesSearch = !query || [orderId(order), order.customer_name, order.customer?.name, ...itemNames]
+        .some((value) => String(value || "").toLowerCase().includes(query));
+      return matchesStatus && matchesSearch;
+    });
+  }, [scopedOrders, search, statusFilter, view]);
+
+  const sortedOrders = useMemo(() => [...matchingOrders].sort((a, b) => {
+    if (!["new", "all", "delivery", "cancelled"].includes(view)) return 0;
+    const aDate = new Date(a.order_date || a.created_at || "").getTime() || 0;
+    const bDate = new Date(b.order_date || b.created_at || "").getTime() || 0;
+    return sortBy === "latest" ? bDate - aDate : aDate - bDate;
+  }), [matchingOrders, sortBy, view]);
+
+  const pageCount = Math.max(1, Math.ceil(sortedOrders.length / pageSize));
+  const visibleOrders = sortedOrders.slice((page - 1) * pageSize, page * pageSize);
   const countStatuses = (statuses) => orders.filter((order) => statuses.includes(normalizeStatus(order.order_status))).length;
   const summaryCards = [
     { label: "New Orders", value: countStatuses(["NEW", "NEW_ORDER", "PENDING", "ORDER_PLACED"]), icon: Clock3, accent: "#ec4899", iconStyle: "bg-pink-500 text-white", caption: "Awaiting action" },
@@ -199,7 +224,65 @@ const DeliveryOrdersPage = ({ view = "all" }) => {
         ))}
       </div>
 
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+      {["new", "all", "delivery", "cancelled"].includes(view) ? (
+        <div className="mb-4 flex flex-col gap-3 rounded-2xl border border-[#e5e1dc] bg-white p-3 sm:flex-row sm:items-center sm:gap-4 sm:p-4">
+          <label className="relative block min-w-0 flex-1">
+            <Search size={18} className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[#7f8983]" />
+            <input
+              type="search"
+              value={search}
+              onChange={(event) => { setSearch(event.target.value); setPage(1); }}
+              placeholder="Search table, ticket, food..."
+              aria-label="Search new orders"
+              className="h-[58px] w-full rounded-2xl border border-[#e2e2e2] bg-[#faf9f8] pl-14 pr-4 text-sm text-[#34443b] outline-none placeholder:text-[#89938c] focus:border-[#ff5a00]"
+            />
+          </label>
+          <div className="flex flex-wrap items-center justify-end gap-2 sm:gap-3">
+            <span className="whitespace-nowrap px-1 text-sm text-[#53616b]">{matchingOrders.length} of {scopedOrders.length}</span>
+            <select
+              value={statusFilter}
+              onChange={(event) => { setStatusFilter(event.target.value); setPage(1); }}
+              aria-label="Filter orders by status"
+              className="h-[58px] min-w-0 flex-1 rounded-2xl border border-[#e2e2e2] bg-white px-4 text-sm text-[#263238] outline-none focus:border-[#ff5a00] sm:min-w-[210px] sm:flex-none"
+            >
+              <option value="all">All Status ({scopedOrders.length})</option>
+              {Object.entries(statusCounts).map(([status, count]) => (
+                <option key={status} value={status}>{statusLabels[status] || status.replaceAll("_", " ")} ({count})</option>
+              ))}
+            </select>
+            <select
+              value={sortBy}
+              onChange={(event) => { setSortBy(event.target.value); setPage(1); }}
+              aria-label="Sort new orders"
+              className="h-[58px] min-w-0 flex-1 rounded-2xl border border-[#e2e2e2] bg-white px-4 text-sm text-[#263238] outline-none focus:border-[#ff5a00] sm:min-w-[170px] sm:flex-none"
+            >
+              <option value="latest">Sort by: Latest</option>
+              <option value="oldest">Sort by: Oldest</option>
+            </select>
+            <div className="flex h-[58px] overflow-hidden rounded-2xl border border-[#e2e2e2] bg-white" role="group" aria-label="Order display">
+              <button
+                type="button"
+                onClick={() => setViewMode("list")}
+                aria-label="List view"
+                aria-pressed={viewMode === "list"}
+                className={`grid w-[54px] place-items-center border-r border-[#e2e2e2] ${viewMode === "list" ? "bg-[#ff5a00] text-white" : "text-[#65746b] hover:bg-gray-50"}`}
+              >
+                <List size={19} />
+              </button>
+              <button
+                type="button"
+                onClick={() => setViewMode("grid")}
+                aria-label="Grid view"
+                aria-pressed={viewMode === "grid"}
+                className={`grid w-[54px] place-items-center ${viewMode === "grid" ? "bg-[#ff5a00] text-white" : "text-[#65746b] hover:bg-gray-50"}`}
+              >
+                <LayoutGrid size={19} />
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : (
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <label className="relative block w-full max-w-sm">
           <Search size={16} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
           <input
@@ -215,14 +298,17 @@ const DeliveryOrdersPage = ({ view = "all" }) => {
           <label className="flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs text-gray-500"><span>To</span><input aria-label="Date to" type="date" value={dateTo} onChange={(event) => { setDateTo(event.target.value); setPage(1); }} className="max-w-32 bg-transparent text-gray-700 outline-none" /></label>
           <span className="px-1 text-sm text-gray-500">{matchingOrders.length} orders</span>
         </div>
-      </div>
+        </div>
+      )}
 
       {loading && <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">{[0, 1, 2].map((item) => <div key={item} className="h-36 animate-pulse rounded-xl border border-gray-200 bg-white" />)}</div>}
       {error && !loading && <div className="rounded-xl border border-amber-200 bg-amber-50 p-5 text-sm text-amber-900"><p className="font-semibold">Assigned orders are unavailable</p><p className="mt-1">{error}</p><p className="mt-2 text-xs text-amber-800">This screen requires a partner-scoped delivery API. General store orders are intentionally not shown.</p></div>}
       {!loading && !error && matchingOrders.length === 0 && <div className="rounded-xl border border-dashed border-[#cddbd0] bg-white px-5 py-14 text-center"><ShoppingBag size={25} className="mx-auto mb-3 text-[#7a9b82]" /><p className="font-semibold text-gray-800">No orders in this view</p><p className="mt-1 text-sm text-gray-500">New assignments will appear here when you are online.</p></div>}
       {!loading && !error && matchingOrders.length > 0 && <>
-      <div className="grid gap-3 sm:grid-cols-2 lg:hidden">{visibleOrders.map(renderOrderCard)}</div>
-      <div className="hidden overflow-hidden rounded-xl border border-gray-200 bg-white lg:block">
+      {viewMode === "grid" ? (
+        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">{visibleOrders.map(renderOrderCard)}</div>
+      ) : (
+      <div className="overflow-hidden rounded-xl border border-gray-200 bg-white">
         <div className="overflow-x-auto">
           <table className="w-full min-w-[900px] text-left text-sm">
             <thead className="bg-orange-50 text-xs uppercase text-orange-700 border-b border-orange-100">
@@ -259,6 +345,7 @@ const DeliveryOrdersPage = ({ view = "all" }) => {
           </table>
         </div>
       </div>
+      )}
       <div className="mt-4 flex items-center justify-between gap-3 text-sm text-gray-500"><span>Page {page} of {pageCount}</span><div className="flex gap-2"><button type="button" disabled={page <= 1} onClick={() => setPage((current) => current - 1)} aria-label="Previous page" className="grid h-9 w-9 place-items-center rounded-lg border border-gray-200 bg-white disabled:opacity-40"><ChevronLeft size={17} /></button><button type="button" disabled={page >= pageCount} onClick={() => setPage((current) => current + 1)} aria-label="Next page" className="grid h-9 w-9 place-items-center rounded-lg border border-gray-200 bg-white disabled:opacity-40"><ChevronRight size={17} /></button></div></div>
       </>}
 

@@ -560,6 +560,87 @@ const getDeliveryPartnerEarnings = async (req, res) => {
   }
 };
 
+const getDeliveryPartnerHistory = async (req, res) => {
+  const employeeId = req.auth.employee_id;
+  const { from, to } = req.query || {};
+  const isValidDate = (value) => {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(value || '')) return false;
+    const date = new Date(`${value}T00:00:00Z`);
+    return !Number.isNaN(date.getTime()) && date.toISOString().slice(0, 10) === value;
+  };
+
+  if ((from && !isValidDate(from)) || (to && !isValidDate(to)) || (from && to && from > to)) {
+    return res.status(400).json({ success: false, message: 'Choose a valid delivery history date range.' });
+  }
+
+  const conditions = [
+    'o.assigned_delivery_partner_id = ?',
+    "o.order_type = 'home_delivery'",
+    "o.order_status IN ('delivered', 'completed', 'cancelled', 'failed')",
+  ];
+  const params = [employeeId];
+  if (from) {
+    conditions.push('o.updated_at >= ?');
+    params.push(from);
+  }
+  if (to) {
+    const endDate = new Date(`${to}T00:00:00Z`);
+    endDate.setUTCDate(endDate.getUTCDate() + 1);
+    conditions.push('o.updated_at < ?');
+    params.push(endDate.toISOString().slice(0, 10));
+  }
+  const where = conditions.join(' AND ');
+
+  try {
+    const [summaryRows] = await db.execute(
+      `SELECT
+         COUNT(CASE WHEN order_status IN ('delivered', 'completed') THEN 1 END) AS completed,
+         COUNT(CASE WHEN order_status = 'cancelled' THEN 1 END) AS cancelled,
+         COUNT(CASE WHEN order_status = 'failed' THEN 1 END) AS failed
+       FROM orders o WHERE ${where}`,
+      params
+    );
+    const [deliveries] = await db.execute(
+      `SELECT o.order_number AS order_id, o.customer_name, o.delivery_charge,
+              o.updated_at AS date,
+              CASE WHEN o.order_status IN ('delivered', 'completed') THEN 'Delivered'
+                   WHEN o.order_status = 'cancelled' THEN 'Cancelled'
+                   ELSE 'Failed' END AS status,
+              a.address_line, a.area_locality, a.landmark, a.city, a.state, a.pincode
+       FROM orders o
+       LEFT JOIN \`address\` a ON a.id = o.address_id AND a.user_id = o.user_id
+       WHERE ${where}
+       ORDER BY o.updated_at DESC, o.id DESC
+       LIMIT 500`,
+      params
+    );
+
+    for (const delivery of deliveries) {
+      delivery.earnings = delivery.delivery_charge;
+      delivery.delivery_address = [
+        delivery.address_line,
+        delivery.area_locality,
+        delivery.landmark,
+        delivery.city,
+        delivery.state,
+        delivery.pincode,
+      ].filter(Boolean).join(', ');
+      delete delivery.delivery_charge;
+      delete delivery.address_line;
+      delete delivery.area_locality;
+      delete delivery.landmark;
+      delete delivery.city;
+      delete delivery.state;
+      delete delivery.pincode;
+    }
+
+    return res.json({ success: true, data: { summary: summaryRows[0] || {}, deliveries } });
+  } catch (error) {
+    console.error('Failed to load delivery partner history:', error.message);
+    return res.status(500).json({ success: false, message: 'Delivery partner history could not be loaded.' });
+  }
+};
+
 const updateDeliveryPartnerAvailability = async (req, res) => {
   const employeeId = req.auth.employee_id;
   const isOnlineRequested = Boolean(req.body?.is_online);
@@ -607,6 +688,7 @@ const updateDeliveryPartnerAvailability = async (req, res) => {
 module.exports = {
   getDeliveryPartnerDashboard,
   getDeliveryPartnerEarnings,
+  getDeliveryPartnerHistory,
   listCustomerOrders: (req, res) => getOrders(req, res, false),
   listMyOrders: (req, res) => getOrders(req, res, true),
   getMyOrder: (req, res) => getOrders(req, res, true, req.params.orderNumber),

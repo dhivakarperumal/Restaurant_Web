@@ -33,6 +33,7 @@ const { changeKitchenOrderStatus, getKitchenOrders, submitKitchenOrder } = requi
 const {
   getDeliveryPartnerDashboard,
   getDeliveryPartnerEarnings,
+  getDeliveryPartnerHistory,
   listAssignedDeliveryOrders,
   listDeliveryPartners,
   updateAssignedDeliveryOrderStatus,
@@ -235,6 +236,7 @@ router.get('/delivery-partner/profile', requireDeliveryPartner, getDeliveryPartn
 router.get('/delivery-partners', requireKitchenRole(['chef', 'super admin', 'admin']), listDeliveryPartners);
 router.get('/delivery-partner/dashboard', requireDeliveryPartner, getDeliveryPartnerDashboard);
 router.get('/delivery-partner/earnings', requireDeliveryPartner, getDeliveryPartnerEarnings);
+router.get('/delivery-partner/history', requireDeliveryPartner, getDeliveryPartnerHistory);
 router.patch('/delivery-partner/availability', requireDeliveryPartner, updateDeliveryPartnerAvailability);
 router.put('/delivery-partner/availability', requireDeliveryPartner, updateDeliveryPartnerAvailability);
 router.get('/delivery-partner/orders', requireDeliveryPartner, listAssignedDeliveryOrders);
