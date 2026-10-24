@@ -113,10 +113,10 @@ const DeliveryOrdersPage = ({ view = "all" }) => {
   const visibleOrders = matchingOrders.slice((page - 1) * pageSize, page * pageSize);
   const countStatuses = (statuses) => orders.filter((order) => statuses.includes(normalizeStatus(order.order_status))).length;
   const summaryCards = [
-    { label: "New Orders", value: countStatuses(["NEW", "NEW_ORDER", "PENDING", "ORDER_PLACED"]), icon: Clock3, style: "bg-gradient-to-br from-[#ed40ac] via-[#d832a0] to-[#c72188] text-white", caption: "Awaiting action" },
-    { label: "Active Deliveries", value: countStatuses(["ASSIGNED", "ACCEPTED", "REACHED_PICKUP", "PICKED_UP", "OUT_FOR_DELIVERY", "REACHED_CUSTOMER", "SHIPPED"]), icon: Bike, style: "bg-gradient-to-br from-[#4a6ce9] via-[#665ce5] to-[#8250df] text-white", caption: "Assigned to you" },
-    { label: "Delivered", value: countStatuses(["DELIVERED", "COMPLETED"]), icon: CheckCircle2, style: "bg-gradient-to-br from-[#10ae89] via-[#1fc995] to-[#21d68f] text-white", caption: "Completed" },
-    { label: "Cancelled", value: countStatuses(["CANCELLED"]), icon: XCircle, style: "bg-gradient-to-br from-[#ff9a12] via-[#ffad0b] to-[#ffc20c] text-[#3c2d00]", caption: "Closed" },
+    { label: "New Orders", value: countStatuses(["NEW", "NEW_ORDER", "PENDING", "ORDER_PLACED"]), icon: Clock3, accent: "#ec4899", iconStyle: "bg-pink-500 text-white", caption: "Awaiting action" },
+    { label: "Active Deliveries", value: countStatuses(["ASSIGNED", "ACCEPTED", "REACHED_PICKUP", "PICKED_UP", "OUT_FOR_DELIVERY", "REACHED_CUSTOMER", "SHIPPED"]), icon: Bike, accent: "#3b82f6", iconStyle: "bg-blue-500 text-white", caption: "Assigned to you" },
+    { label: "Delivered", value: countStatuses(["DELIVERED", "COMPLETED"]), icon: CheckCircle2, accent: "#8b5cf6", iconStyle: "bg-violet-500 text-white", caption: "Completed" },
+    { label: "Cancelled", value: countStatuses(["CANCELLED"]), icon: XCircle, accent: "#f59e0b", iconStyle: "bg-amber-500 text-white", caption: "Closed" },
   ];
 
   const updateOrderStatus = async () => {
@@ -180,14 +180,22 @@ const DeliveryOrdersPage = ({ view = "all" }) => {
       </header>
 
       <div className="mb-5 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        {summaryCards.map(({ label, value, icon: Icon, style, caption }) => (
-          <div key={label} className={`relative isolate flex min-h-[155px] flex-col overflow-hidden rounded-[22px] p-4 shadow-[0_10px_22px_rgba(20,45,30,0.15)] sm:p-5 ${style}`}>
-            <div aria-hidden="true" className="pointer-events-none absolute -right-8 -top-10 h-32 w-32 rounded-full bg-white/10" />
-            <div className="relative flex items-start justify-between gap-3"><span className="pt-1 text-[11px] font-extrabold uppercase tracking-[0.08em] text-current/90">{label}</span><span className="grid h-12 w-12 shrink-0 place-items-center rounded-[18px] border border-white/35 bg-white/15 text-current shadow-inner"><Icon size={21} strokeWidth={2.2} /></span></div>
-            {loading ? <div className="relative mt-2 h-9 w-16 animate-pulse rounded-lg bg-white/25" /> : <p className="relative mt-2 text-[30px] font-extrabold leading-none tabular-nums">{error ? "—" : value}</p>}
-            <div aria-hidden="true" className="relative mt-auto flex h-7 items-end gap-1 pt-2 opacity-25">{[13, 19, 15, 25, 17, 22, 29].map((height, index) => <span key={index} style={{ height }} className="flex-1 rounded-t-[4px] bg-white" />)}</div>
-            <span className="relative mt-2 inline-flex w-fit items-center rounded-full border border-white/25 bg-white/15 px-3 py-1 text-[10px] font-bold text-current">{caption}</span>
-          </div>
+        {summaryCards.map(({ label, value, icon: Icon, accent, iconStyle, caption }) => (
+          <article key={label} className="group relative flex min-h-[140px] min-w-0 flex-col justify-between overflow-hidden rounded-2xl border border-slate-200/90 bg-white p-4 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] transition-all duration-300 hover:-translate-y-1 hover:border-slate-300 hover:shadow-[0_12px_24px_-6px_rgba(0,0,0,0.1)] sm:p-5">
+            <div aria-hidden="true" className="pointer-events-none absolute -right-6 -top-6 h-28 w-28 rounded-full opacity-20 blur-2xl transition-all duration-500 group-hover:scale-150 group-hover:opacity-35" style={{ backgroundColor: accent }} />
+            <div className="relative z-10 flex items-start justify-between gap-3">
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-[11px] font-bold uppercase tracking-wider text-slate-500">{label}</p>
+                {loading ? <div className="mt-2.5 h-8 w-16 animate-pulse rounded-lg bg-slate-100" /> : <p className="mt-2.5 truncate text-[23px] font-black tracking-tight text-slate-800 sm:text-[27px]">{error ? "—" : value}</p>}
+              </div>
+              <span className={`relative flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl shadow-sm transition-transform duration-300 group-hover:scale-110 ${iconStyle}`}><Icon size={24} strokeWidth={2.3} /></span>
+            </div>
+            <div className="relative z-10 mt-4 flex items-center justify-between border-t border-slate-100 pt-3 text-xs">
+              <span className="truncate font-medium text-slate-500">{caption}</span>
+              <span className="h-2 w-2 shrink-0 rounded-full shadow-sm" style={{ backgroundColor: accent }} />
+            </div>
+            <div className="absolute bottom-0 left-0 h-[3px] w-0 transition-all duration-300 group-hover:w-full" style={{ backgroundColor: accent }} />
+          </article>
         ))}
       </div>
 

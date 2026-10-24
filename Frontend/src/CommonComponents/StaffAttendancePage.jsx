@@ -680,7 +680,7 @@ export default function StaffAttendancePage({
           },
         ].map((stat, index) => {
           const Icon = stat.icon;
-          const useAdminCardStyle = role === "Server";
+          const useAdminCardStyle = role === "Server" || isDeliveryPartner;
           return (
             <article
               key={stat.title}
