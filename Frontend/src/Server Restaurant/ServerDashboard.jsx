@@ -180,44 +180,46 @@ export default function ServerDashboard() {
   return (
     <main className="min-h-screen bg-[#f8faf8] p-2 md:p-2 lg:p-2">
       <div className="mx-auto max-w-[1400px] space-y-6">
-        {/* Welcome Banner */}
-        <div className="group relative isolate overflow-hidden rounded-2xl border border-slate-200/90 bg-white p-5 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] transition-shadow duration-300 hover:shadow-[0_12px_24px_-6px_rgba(0,0,0,0.1)] md:p-7">
+        <section className="group relative isolate overflow-hidden rounded-2xl border border-slate-200/90 bg-white shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] transition-shadow duration-300 hover:shadow-[0_12px_24px_-6px_rgba(0,0,0,0.1)]">
           <div className="pointer-events-none absolute -right-10 -top-16 h-56 w-56 rounded-full bg-orange-400/15 blur-3xl transition-transform duration-500 group-hover:scale-110" />
-          <div className="pointer-events-none absolute bottom-0 left-0 h-1 w-full bg-gradient-to-r from-orange-500 via-amber-400 to-transparent" />
-          <div className="relative z-10 flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
-            <div>
-              <div className="inline-flex items-center gap-2 rounded-full border border-orange-100 bg-orange-50 px-3 py-1 text-xs font-bold text-orange-700">
-                <Sparkles className="h-3.5 w-3.5 text-orange-500" /> Server Station Dashboard
+          <div className="pointer-events-none absolute bottom-0 left-0 h-1 w-full bg-gradient-to-r from-orange-500 via-amber-400 to-emerald-400" />
+          <div className="relative z-10 p-5 md:p-7">
+            <div className="flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
+              <div>
+                <div className="inline-flex items-center gap-2 rounded-full border border-orange-100 bg-orange-50 px-3 py-1 text-xs font-bold text-orange-700">
+                  <Sparkles className="h-3.5 w-3.5 text-orange-500" /> Server Station Dashboard
+                </div>
+                <h1 className="mt-2 font-serif text-2xl font-bold tracking-tight text-slate-900 md:text-3xl">
+                  Welcome back, {userProfile?.username || "Server"}!
+                </h1>
+                <p className="mt-1 text-xs text-slate-500 md:text-sm">
+                  Manage your dining tables, monitor kitchen orders in real-time, and serve hot meals to guests.
+                </p>
               </div>
-              <h1 className="mt-2 font-serif text-2xl font-bold tracking-tight text-slate-900 md:text-3xl">
-                Welcome back, {userProfile?.username || "Server"}!
-              </h1>
-              <p className="mt-1 text-xs text-slate-500 md:text-sm">
-                Manage your dining tables, monitor kitchen orders in real-time, and serve hot meals to guests.
-              </p>
-            </div>
 
-            <div className="flex flex-wrap items-center gap-3">
-              <button
-                type="button"
-                onClick={fetchDashboardData}
-                title="Refresh dashboard"
-                className="flex h-11 w-11 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 shadow-sm transition hover:border-orange-200 hover:bg-orange-50 hover:text-orange-600"
-              >
-                <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
-              </button>
-              <Link
-                to="/server/foods"
-                className="inline-flex h-11 items-center gap-2 rounded-xl bg-gradient-to-r from-orange-500 to-amber-400 px-4 text-xs font-bold text-white shadow-sm shadow-orange-500/20 transition hover:from-orange-600 hover:to-amber-500"
-              >
-                <Utensils className="h-4 w-4" /> Food Menu & Orders
-              </Link>
+              <div className="flex flex-wrap items-center gap-3">
+                <button
+                  type="button"
+                  onClick={fetchDashboardData}
+                  title="Refresh dashboard"
+                  className="flex h-11 w-11 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 shadow-sm transition hover:border-orange-200 hover:bg-orange-50 hover:text-orange-600"
+                >
+                  <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
+                </button>
+                <Link
+                  to="/server/foods"
+                  className="inline-flex h-11 items-center gap-2 rounded-xl bg-gradient-to-r from-orange-500 to-amber-400 px-4 text-xs font-bold text-white shadow-sm shadow-orange-500/20 transition hover:from-orange-600 hover:to-amber-500"
+                >
+                  <Utensils className="h-4 w-4" /> Food Menu & Orders
+                </Link>
+              </div>
             </div>
           </div>
-        </div>
 
-        {/* Server Attendance Banner */}
-        <AttendanceWidget variant="dashboard" />
+          <div className="relative z-10 border-t border-slate-100 bg-gradient-to-r from-slate-50/70 to-emerald-50/40">
+            <AttendanceWidget variant="dashboard" embedded />
+          </div>
+        </section>
 
         {/* READY TO SERVE ALERT BANNER */}
         {readyOrders.length > 0 && (

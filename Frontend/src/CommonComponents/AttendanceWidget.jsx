@@ -19,7 +19,7 @@ import toast from "react-hot-toast";
 import api from "../api";
 import { useAuth } from "../PrivateRouter/AuthContext";
 
-export default function AttendanceWidget({ variant = "header", onAttendanceChange }) {
+export default function AttendanceWidget({ variant = "header", onAttendanceChange, embedded = false }) {
   const { user, userProfile } = useAuth();
   const [attendance, setAttendance] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -239,9 +239,13 @@ export default function AttendanceWidget({ variant = "header", onAttendanceChang
 
   // --- DASHBOARD HERO VARIANT ---
   return (
-    <div className="group relative isolate overflow-hidden rounded-2xl border border-slate-200/90 bg-white p-4 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] transition-shadow duration-300 hover:shadow-[0_12px_24px_-6px_rgba(0,0,0,0.1)] sm:p-5">
-      <div className="pointer-events-none absolute -right-8 -top-12 h-40 w-40 rounded-full bg-emerald-400/15 blur-3xl transition-transform duration-500 group-hover:scale-125" />
-      <div className="pointer-events-none absolute bottom-0 left-0 h-1 w-full bg-gradient-to-r from-emerald-500 via-teal-400 to-transparent" />
+    <div className={embedded ? "relative px-4 py-4 sm:px-5 sm:py-5" : "group relative isolate overflow-hidden rounded-2xl border border-slate-200/90 bg-white p-4 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] transition-shadow duration-300 hover:shadow-[0_12px_24px_-6px_rgba(0,0,0,0.1)] sm:p-5"}>
+      {!embedded && (
+        <>
+          <div className="pointer-events-none absolute -right-8 -top-12 h-40 w-40 rounded-full bg-emerald-400/15 blur-3xl transition-transform duration-500 group-hover:scale-125" />
+          <div className="pointer-events-none absolute bottom-0 left-0 h-1 w-full bg-gradient-to-r from-emerald-500 via-teal-400 to-transparent" />
+        </>
+      )}
       <div className="relative z-10 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div className="flex items-start gap-4">
           <div className="grid h-12 w-12 shrink-0 place-items-center rounded-xl border border-emerald-100 bg-emerald-50">
