@@ -225,7 +225,7 @@ const DeliveryOrdersPage = ({ view = "all" }) => {
       <div className="hidden overflow-hidden rounded-xl border border-gray-200 bg-white lg:block">
         <div className="overflow-x-auto">
           <table className="w-full min-w-[900px] text-left text-sm">
-            <thead className="bg-gray-50 text-xs uppercase text-gray-500">
+            <thead className="bg-orange-50 text-xs uppercase text-orange-700 border-b border-orange-100">
               <tr>
                 <th className="px-4 py-3 font-semibold">Order</th>
                 <th className="px-4 py-3 font-semibold">Customer</th>

@@ -489,7 +489,7 @@ const DeliveryPartnerDashboard = () => {
               ) : (
                 <div className="overflow-x-auto rounded-xl border border-gray-100 shadow-sm">
                   <table className="w-full text-left text-xs">
-                    <thead className="border-b border-gray-200 bg-gray-50 text-[11px] font-bold uppercase tracking-wider text-gray-600">
+                    <thead className="border-b border-orange-100 bg-orange-50 text-[11px] font-bold uppercase tracking-wider text-orange-700">
                       <tr>
                         <th className="px-4 py-3">Date</th>
                         <th className="px-4 py-3">Check In</th>
