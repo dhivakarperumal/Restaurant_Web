@@ -537,61 +537,38 @@ function ProductsPage({ readOnly = false }) {
         )}
         
         <div className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
-          {statCardsData.map(({ title, value, icon: Icon, bg, accent, iconBg, hint }, index) => (
+          {statCardsData.map(({ title, value, icon: Icon, accent, iconBg, hint }) => (
             <article
               key={title}
-              className={readOnly
-                ? `relative flex min-h-[140px] min-w-0 flex-col justify-between overflow-hidden rounded-xl border border-transparent p-4 text-white shadow-[0_2px_10px_rgba(20,56,34,0.08)] sm:p-5 ${bg}`
-                : "relative flex min-h-[194px] min-w-0 flex-col justify-between overflow-hidden rounded-[20px] border border-slate-200/90 bg-white p-5 shadow-[0_4px_16px_-5px_rgba(15,23,42,0.08)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_10px_22px_-7px_rgba(15,23,42,0.12)] sm:p-6"}
-              style={!readOnly ? { background: `linear-gradient(135deg, #ffffff 48%, ${accent}12 100%)` } : undefined}
+              className="relative flex min-h-[194px] min-w-0 flex-col justify-between overflow-hidden rounded-[20px] border border-slate-200/90 bg-white p-5 shadow-[0_4px_16px_-5px_rgba(15,23,42,0.08)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_10px_22px_-7px_rgba(15,23,42,0.12)] sm:p-6"
+              style={{ background: `linear-gradient(135deg, #ffffff 48%, ${accent}12 100%)` }}
             >
-              {readOnly ? (
-                <>
-                  <div className="relative z-10 flex items-start gap-3">
-                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-white/20 shadow-sm">
-                      <Icon size={24} strokeWidth={2.2} className="text-white" />
-                    </div>
-                    <div className="mt-0.5 min-w-0 flex-1">
-                      <h3 className="mb-1 truncate text-[12px] font-semibold opacity-90">{title}</h3>
-                      <div className="text-[26px] font-extrabold leading-none tracking-tight">{value}</div>
-                    </div>
-                  </div>
-                  <div className="relative z-10 mt-5 flex items-center gap-2">
-                    <span className="inline-flex items-center gap-1 rounded-md bg-white/25 px-1.5 py-0.5 text-[11px] font-bold">↑ 12%</span>
-                    <span className="truncate text-[11px] font-medium opacity-75">{hint}</span>
-                  </div>
-                  <div className="pointer-events-none absolute bottom-0 right-0 h-16 w-24 opacity-50">
-                    <svg viewBox="0 0 100 50" preserveAspectRatio="none" className="h-full w-full">
-                      <defs>
-                        <linearGradient id={`grograd-${index}`} x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="0%" stopColor="#ffffff" stopOpacity="0.4" />
-                          <stop offset="100%" stopColor="#ffffff" stopOpacity="0" />
-                        </linearGradient>
-                      </defs>
-                      <path d="M0,50 L0,40 Q25,30 50,40 T100,20 L100,50 Z" fill={`url(#grograd-${index})`} />
-                      <path d="M0,40 Q25,30 50,40 T100,20" fill="none" stroke="#ffffff" strokeWidth="2.5" />
-                    </svg>
-                  </div>
-                </>
-              ) : (
-                <>
-                  <div className="relative z-10 flex items-start justify-between gap-3">
-                    <div className="min-w-0 flex-1 pt-1">
-                      <h3 className="truncate text-[12px] font-bold uppercase tracking-[0.08em] text-slate-500">{title}</h3>
-                      <div className="mt-4 truncate text-[30px] font-black leading-none tracking-tight text-slate-900 sm:text-[34px]">{value}</div>
-                    </div>
-                    <div className={`flex h-[60px] w-[60px] shrink-0 items-center justify-center rounded-[18px] shadow-[0_5px_12px_-4px_rgba(15,23,42,0.25)] ${iconBg}`}>
-                      <Icon size={27} strokeWidth={2.2} className="text-white" />
-                    </div>
-                  </div>
-                  <div className="relative z-10 mt-5 flex items-center gap-2 border-t border-slate-100/90 pt-3.5 text-xs">
-                    <span className="inline-flex shrink-0 items-center rounded-full border border-emerald-200/80 bg-emerald-50/90 px-2 py-0.5 text-[11px] font-bold text-emerald-600">↑ 12%</span>
-                    <span className="truncate text-xs font-medium text-slate-500">{hint}</span>
-                    <span className="ml-auto h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: accent }} />
-                  </div>
-                  <div aria-hidden="true" className="pointer-events-none absolute -right-6 -top-6 h-28 w-28 rounded-full opacity-20 blur-2xl" style={{ backgroundColor: accent }} />
-                </>
+              <div className="relative z-10 flex items-start justify-between gap-3">
+                <div className="min-w-0 flex-1 pt-1">
+                  <h3 className="truncate text-[12px] font-bold uppercase tracking-[0.08em] text-slate-500">{title}</h3>
+                  <div className="mt-4 truncate text-[30px] font-black leading-none tracking-tight text-slate-900 sm:text-[34px]">{value}</div>
+                </div>
+                <span className={`flex h-[60px] w-[60px] shrink-0 items-center justify-center rounded-[18px] text-white shadow-[0_5px_12px_-4px_rgba(15,23,42,0.25)] ${iconBg}`}>
+                  <Icon size={27} strokeWidth={2.2} />
+                </span>
+              </div>
+              <div className="relative z-10 mt-5 flex items-center gap-2 border-t border-slate-100/90 pt-3.5 text-xs">
+                <span className="inline-flex shrink-0 items-center rounded-full border border-emerald-200/80 bg-emerald-50/90 px-2 py-0.5 text-[11px] font-bold text-emerald-600">
+                  {readOnly ? "Live" : "↑ 12%"}
+                </span>
+                <span className="truncate font-medium text-slate-500">{hint}</span>
+                <span className="ml-auto h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: accent }} />
+              </div>
+              {!readOnly && (
+                <button
+                  type="button"
+                  onClick={() => setShowFundForm(true)}
+                  className="absolute right-5 top-[5.1rem] z-20 rounded-lg bg-orange-50 px-2 py-1 text-[10px] font-bold text-orange-700 transition hover:bg-orange-100"
+                >
+                  Edit
+                </button>
               )}
+              <span aria-hidden="true" className="pointer-events-none absolute -right-6 -top-6 h-28 w-28 rounded-full opacity-20 blur-2xl" style={{ backgroundColor: accent }} />
             </article>
           ))}
         </div>

@@ -144,10 +144,10 @@ const ChefInventoryRequests = () => {
   const paginatedRequests = requests.slice(pageOffset, pageOffset + pageSize);
 
   const statCards = [
-    { title: "Total Requests", value: requests.length, hint: "All kitchen stock tickets", icon: ClipboardList, bg: "bg-[#22c55e]" },
-    { title: "Pending", value: pendingCount, hint: "Awaiting store review", icon: Clock3, bg: "bg-[#f59e0b]" },
-    { title: "Approved", value: approvedCount, hint: "Stock being allocated", icon: AlertCircle, bg: "bg-[#3b82f6]" },
-    { title: "Completed", value: completedCount, hint: "Issued to kitchen", icon: CheckCircle2, bg: "bg-[#8b5cf6]" },
+    { title: "Total Requests", value: requests.length, hint: "All kitchen stock tickets", icon: ClipboardList, accent: "#f97316", iconBg: "bg-orange-500" },
+    { title: "Pending", value: pendingCount, hint: "Awaiting store review", icon: Clock3, accent: "#10b981", iconBg: "bg-emerald-500" },
+    { title: "Approved", value: approvedCount, hint: "Stock being allocated", icon: AlertCircle, accent: "#3b82f6", iconBg: "bg-blue-500" },
+    { title: "Completed", value: completedCount, hint: "Issued to kitchen", icon: CheckCircle2, accent: "#ec4899", iconBg: "bg-pink-500" },
   ];
 
   return (
@@ -173,44 +173,33 @@ const ChefInventoryRequests = () => {
 
       {/* ── Stats Overview ── */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        {statCards.map((stat, index) => {
+        {statCards.map((stat) => {
           const Icon = stat.icon;
           return (
             <article
               key={stat.title}
-              className={`relative min-w-0 overflow-hidden rounded-xl border border-transparent p-4 sm:p-5 shadow-[0_2px_10px_rgba(20,56,34,0.08)] flex flex-col justify-between min-h-[140px] ${stat.bg} text-white`}
+              className="relative flex min-h-[194px] min-w-0 flex-col justify-between overflow-hidden rounded-[20px] border border-slate-200/90 bg-white p-5 shadow-[0_4px_16px_-5px_rgba(15,23,42,0.08)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_10px_22px_-7px_rgba(15,23,42,0.12)] sm:p-6"
+              style={{ background: `linear-gradient(135deg, #ffffff 48%, ${stat.accent}12 100%)` }}
             >
-              <div className="flex items-start gap-3 relative z-10">
-                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg shadow-sm bg-white/20">
-                  <Icon size={24} strokeWidth={2.2} className="text-white" />
-                </div>
-                <div className="flex-1 mt-0.5 min-w-0">
-                  <h3 className="text-[12px] font-semibold opacity-90 mb-1 truncate">{stat.title}</h3>
-                  <div className="text-[26px] font-extrabold leading-none tracking-tight">
+              <div className="relative z-10 flex items-start justify-between gap-3">
+                <div className="min-w-0 flex-1 pt-1">
+                  <h3 className="truncate text-[12px] font-bold uppercase tracking-[0.08em] text-slate-500">{stat.title}</h3>
+                  <div className="mt-4 truncate text-[30px] font-black leading-none tracking-tight text-slate-900">
                     {isLoading ? "..." : stat.value}
                   </div>
                 </div>
+                <span className={`flex h-[60px] w-[60px] shrink-0 items-center justify-center rounded-[18px] text-white shadow-[0_5px_12px_-4px_rgba(15,23,42,0.25)] ${stat.iconBg}`}>
+                  <Icon size={27} strokeWidth={2.3} />
+                </span>
               </div>
-
-              <div className="flex items-center gap-2 mt-5 relative z-10">
-                <span className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[11px] font-bold bg-white/25">
+              <div className="relative z-10 mt-5 flex items-center gap-2 border-t border-slate-100/90 pt-3.5 text-xs">
+                <span className="inline-flex shrink-0 items-center rounded-full border border-emerald-200/80 bg-emerald-50/90 px-2 py-0.5 text-[11px] font-bold text-emerald-600">
                   Live
                 </span>
-                <span className="text-[11px] font-medium opacity-75 truncate">{stat.hint}</span>
+                <span className="truncate font-medium text-slate-500">{stat.hint}</span>
+                <span className="ml-auto h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: stat.accent }} />
               </div>
-
-              <div className="absolute right-0 bottom-0 w-24 h-16 pointer-events-none opacity-50">
-                <svg viewBox="0 0 100 50" preserveAspectRatio="none" className="w-full h-full">
-                  <defs>
-                    <linearGradient id={`req-grad-${index}`} x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="#ffffff" stopOpacity="0.4" />
-                      <stop offset="100%" stopColor="#ffffff" stopOpacity="0.0" />
-                    </linearGradient>
-                  </defs>
-                  <path d="M0,50 L0,40 Q25,30 50,40 T100,20 L100,50 Z" fill={`url(#req-grad-${index})`} />
-                  <path d="M0,40 Q25,30 50,40 T100,20" fill="none" stroke="#ffffff" strokeWidth="2.5" />
-                </svg>
-              </div>
+              <span aria-hidden="true" className="pointer-events-none absolute -right-6 -top-6 h-28 w-28 rounded-full opacity-20 blur-2xl" style={{ backgroundColor: stat.accent }} />
             </article>
           );
         })}

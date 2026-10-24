@@ -156,6 +156,7 @@ function CustomerOrdersPage({
   audience = 'admin',
   view = 'all',
   showOrderFilters = false,
+  showOrderSummaryCards = false,
   todayOnly = false,
   includeKitchenOrders = false,
 }) {
@@ -192,10 +193,11 @@ function CustomerOrdersPage({
 
   const isCustomer = audience === 'customer';
   const isAdminOrdersOrangePage = audience === 'admin' && ['all', 'pickup', 'delivery', 'delivered', 'cancelled'].includes(view);
-  const useLightOrderSummary = audience === 'admin' && ['all', 'pickup', 'delivery', 'delivered', 'cancelled'].includes(view);
+  const useLightOrderSummary = (audience === 'admin' && ['all', 'pickup', 'delivery', 'delivered', 'cancelled'].includes(view))
+    || (audience === 'chef' && ['all', 'new', 'pickup', 'delivery', 'cancelled'].includes(view) && (showOrderFilters || showOrderSummaryCards));
   const showChefDeliveryTable = audience === 'chef' && view === 'delivery';
   const canAssignDelivery = showChefDeliveryTable || (showOrderFilters && view === 'delivery');
-  const showOrderSummary = audience === 'admin' || (audience === 'chef' && showOrderFilters);
+  const showOrderSummary = audience === 'admin' || (audience === 'chef' && (showOrderFilters || showOrderSummaryCards));
   const title = isCustomer
     ? 'My Orders'
     : audience === 'chef' && view === 'delivery' ? 'Home Delivery Orders'

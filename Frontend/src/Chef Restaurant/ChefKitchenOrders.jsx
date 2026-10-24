@@ -90,7 +90,7 @@ const formatKotNumber = (order) => {
   return `KOT-${ticketId.slice(0, 8)}`;
 };
 
-const ChefKitchenOrders = ({ defaultViewMode = "table", orderTypeFilter = "", todayOnly = false, adminTheme = false }) => {
+const ChefKitchenOrders = ({ defaultViewMode = "table", orderTypeFilter = "", todayOnly = false, adminTheme = false, lightSummaryCards = false }) => {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -199,15 +199,15 @@ const ChefKitchenOrders = ({ defaultViewMode = "table", orderTypeFilter = "", to
               type="button"
               aria-pressed={activeTab === status}
               onClick={() => { setActiveTab(activeTab === status ? 'all' : status); setSearchQuery(''); setPage(1); }}
-              className={adminTheme
+              className={adminTheme || lightSummaryCards
                 ? `group relative flex min-h-[194px] min-w-0 flex-col justify-between overflow-hidden rounded-[20px] border bg-white p-5 text-left shadow-[0_4px_16px_-5px_rgba(15,23,42,0.08)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_10px_22px_-7px_rgba(15,23,42,0.12)] sm:p-6 ${activeTab === status ? 'border-slate-300 ring-2 ring-offset-2' : 'border-slate-200/90'}`
                 : `relative min-w-0 overflow-hidden rounded-xl border border-transparent p-4 sm:p-5 shadow-[0_2px_10px_rgba(20,56,34,0.08)] flex flex-col justify-between min-h-[140px] text-white text-left transition hover:-translate-y-0.5 hover:shadow-lg ${bg} ${activeTab === status ? 'ring-4 ring-white/40' : ''}`}
-              style={adminTheme ? {
+              style={adminTheme || lightSummaryCards ? {
                 background: `linear-gradient(135deg, #ffffff 48%, ${accent}12 100%)`,
                 ...(activeTab === status ? { '--tw-ring-color': accent } : {}),
               } : undefined}
             >
-              {adminTheme ? (
+              {adminTheme || lightSummaryCards ? (
                 <>
                   <div className="relative z-10 flex items-start justify-between gap-3">
                     <div className="min-w-0 flex-1 pt-1">
