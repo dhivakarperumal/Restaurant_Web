@@ -505,12 +505,20 @@ function FoodDetailsPage() {
                     }}
                   >
                     {images.length ? (
-                      <img
-                        src={imageUrl(images[activeImage] || images[0])}
-                        alt={food.food_name}
-                        onLoad={(event) => setImageAspect(event.currentTarget.naturalWidth / event.currentTarget.naturalHeight)}
-                        className="h-full w-full object-contain"
-                      />
+                      <>
+                        <img
+                          src={imageUrl(images[activeImage] || images[0])}
+                          alt=""
+                          aria-hidden="true"
+                          className="pointer-events-none absolute inset-0 h-full w-full scale-110 object-cover opacity-50 blur-xl"
+                        />
+                        <img
+                          src={imageUrl(images[activeImage] || images[0])}
+                          alt={food.food_name}
+                          onLoad={(event) => setImageAspect(event.currentTarget.naturalWidth / event.currentTarget.naturalHeight)}
+                          className="relative z-[1] h-full w-full object-contain"
+                        />
+                      </>
                     ) : (
                       <div className="flex h-full items-center justify-center text-[#1a3c36]/40"><UtensilsCrossed className="h-16 w-16" /></div>
                     )}
