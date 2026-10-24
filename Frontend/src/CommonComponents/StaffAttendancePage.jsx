@@ -10,6 +10,8 @@ import {
   Download,
   Filter,
   History,
+  LayoutGrid,
+  List,
   LogOut,
   Play,
   Power,
@@ -43,6 +45,8 @@ export default function StaffAttendancePage({
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
   const [monthFilter, setMonthFilter] = useState("All");
+  const [historySort, setHistorySort] = useState("latest");
+  const [historyView, setHistoryView] = useState("list");
 
   // Delivery partner availability state
   const isDeliveryPartner =
@@ -374,7 +378,7 @@ export default function StaffAttendancePage({
 
   // Filtered history records
   const filteredRecords = useMemo(() => {
-    return historyRecords.filter((r) => {
+    const records = historyRecords.filter((r) => {
       // Search
       if (searchTerm) {
         const term = searchTerm.toLowerCase();
@@ -407,7 +411,13 @@ export default function StaffAttendancePage({
 
       return true;
     });
-  }, [historyRecords, searchTerm, statusFilter, monthFilter]);
+    if (!isDeliveryPartner) return records;
+    return records.sort((a, b) => {
+      const aDate = new Date(a.date || "").getTime() || 0;
+      const bDate = new Date(b.date || "").getTime() || 0;
+      return historySort === "latest" ? bDate - aDate : aDate - bDate;
+    });
+  }, [historyRecords, searchTerm, statusFilter, monthFilter, historySort, isDeliveryPartner]);
 
   const RoleIcon = isDeliveryPartner
     ? Bike
@@ -790,59 +800,127 @@ export default function StaffAttendancePage({
         </div>
 
         {/* Filters and search bar */}
-        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-          <div className="flex flex-wrap items-center gap-2.5">
-            {/* Status Filter */}
-            <div className="flex items-center gap-1.5 rounded-xl border border-gray-200 bg-gray-50 px-3 py-1.5 text-xs text-gray-700">
-              <Filter size={13} className="text-gray-400" />
-              <select
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
-                className="bg-transparent font-semibold text-gray-900 outline-none cursor-pointer"
-              >
-                <option value="All">All Statuses</option>
-                <option value="Present">Present</option>
-                <option value="Late">Late Arrivals</option>
-                <option value="Working">Active Duty</option>
-                <option value="Completed">Completed Shifts</option>
-              </select>
+        {isDeliveryPartner ? (
+          <div className="space-y-3">
+            <div className="flex flex-col gap-3 rounded-2xl border border-[#e5e1dc] bg-white p-3 sm:flex-row sm:items-center sm:gap-4 sm:p-4">
+              <label className="relative block min-w-0 flex-1">
+                <Search size={18} className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[#7f8983]" />
+                <input
+                  type="search"
+                  placeholder="Search by date (YYYY-MM-DD) or note..."
+                  value={searchTerm}
+                  onChange={(event) => setSearchTerm(event.target.value)}
+                  aria-label="Search attendance history"
+                  className="h-[50px] w-full rounded-xl border border-[#e2e2e2] bg-[#faf9f8] pl-12 pr-4 text-sm text-[#34443b] outline-none placeholder:text-[#89938c] focus:border-[#ff5a00]"
+                />
+              </label>
+              <div className="flex flex-wrap items-center justify-end gap-2 sm:gap-3">
+                <span className="whitespace-nowrap px-1 text-sm text-[#53616b]">{filteredRecords.length} of {historyRecords.length}</span>
+                <select
+                  value={statusFilter}
+                  onChange={(event) => setStatusFilter(event.target.value)}
+                  aria-label="Filter attendance status"
+                  className="h-[50px] min-w-0 flex-1 rounded-xl border border-[#e2e2e2] bg-white px-3 text-sm text-[#263238] outline-none focus:border-[#ff5a00] sm:min-w-[175px] sm:flex-none"
+                >
+                  <option value="All">All Status ({historyRecords.length})</option>
+                  <option value="Present">Present ({historyRecords.filter((record) => record.status !== "Late" && record.check_in).length})</option>
+                  <option value="Late">Late ({historyRecords.filter((record) => record.status === "Late").length})</option>
+                  <option value="Working">Active Duty ({historyRecords.filter((record) => record.check_in && !record.check_out).length})</option>
+                  <option value="Completed">Completed ({historyRecords.filter((record) => record.check_in && record.check_out).length})</option>
+                </select>
+                <select
+                  value={historySort}
+                  onChange={(event) => setHistorySort(event.target.value)}
+                  aria-label="Sort attendance history"
+                  className="h-[50px] min-w-0 flex-1 rounded-xl border border-[#e2e2e2] bg-white px-3 text-sm text-[#263238] outline-none focus:border-[#ff5a00] sm:min-w-[150px] sm:flex-none"
+                >
+                  <option value="latest">Sort by: Latest</option>
+                  <option value="oldest">Sort by: Oldest</option>
+                </select>
+                <div className="flex h-[50px] overflow-hidden rounded-xl border border-[#e2e2e2] bg-white" role="group" aria-label="Attendance history view">
+                  <button type="button" onClick={() => setHistoryView("list")} aria-label="List view" aria-pressed={historyView === "list"} className={`grid w-11 place-items-center border-r border-[#e2e2e2] ${historyView === "list" ? "bg-[#ff5a00] text-white" : "text-[#65746b] hover:bg-gray-50"}`}><List size={18} /></button>
+                  <button type="button" onClick={() => setHistoryView("grid")} aria-label="Grid view" aria-pressed={historyView === "grid"} className={`grid w-11 place-items-center ${historyView === "grid" ? "bg-[#ff5a00] text-white" : "text-[#65746b] hover:bg-gray-50"}`}><LayoutGrid size={18} /></button>
+                </div>
+              </div>
             </div>
-
-            {/* Month Filter */}
             <select
               value={monthFilter}
-              onChange={(e) => setMonthFilter(e.target.value)}
-              className="rounded-xl border border-gray-200 bg-gray-50 px-3 py-1.5 text-xs font-semibold text-gray-800 outline-none cursor-pointer"
+              onChange={(event) => setMonthFilter(event.target.value)}
+              aria-label="Filter attendance by month"
+              className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-800 outline-none"
             >
               <option value="All">All Months</option>
               <option value="current">Current Month</option>
               <option value="previous">Previous Month</option>
             </select>
           </div>
-
-          {/* Search box */}
-          <div className="relative min-w-[220px]">
-            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-            <input
-              type="text"
-              placeholder="Search by date (YYYY-MM-DD) or note..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full rounded-xl border border-gray-200 bg-gray-50 py-1.5 pl-8 pr-3 text-xs text-gray-900 outline-none placeholder:text-gray-400 focus:border-[#1f4e42] focus:bg-white"
-            />
-            {searchTerm && (
-              <button
-                type="button"
-                onClick={() => setSearchTerm("")}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-              >
-                <X size={13} />
-              </button>
-            )}
+        ) : (
+          <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+            <div className="flex flex-wrap items-center gap-2.5">
+              <div className="flex items-center gap-1.5 rounded-xl border border-gray-200 bg-gray-50 px-3 py-1.5 text-xs text-gray-700">
+                <Filter size={13} className="text-gray-400" />
+                <select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)} className="cursor-pointer bg-transparent font-semibold text-gray-900 outline-none">
+                  <option value="All">All Statuses</option>
+                  <option value="Present">Present</option>
+                  <option value="Late">Late Arrivals</option>
+                  <option value="Working">Active Duty</option>
+                  <option value="Completed">Completed Shifts</option>
+                </select>
+              </div>
+              <select value={monthFilter} onChange={(event) => setMonthFilter(event.target.value)} className="cursor-pointer rounded-xl border border-gray-200 bg-gray-50 px-3 py-1.5 text-xs font-semibold text-gray-800 outline-none">
+                <option value="All">All Months</option>
+                <option value="current">Current Month</option>
+                <option value="previous">Previous Month</option>
+              </select>
+            </div>
+            <div className="relative min-w-[220px]">
+              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+              <input type="text" placeholder="Search by date (YYYY-MM-DD) or note..." value={searchTerm} onChange={(event) => setSearchTerm(event.target.value)} className="w-full rounded-xl border border-gray-200 bg-gray-50 py-1.5 pl-8 pr-3 text-xs text-gray-900 outline-none placeholder:text-gray-400 focus:border-[#1f4e42] focus:bg-white" />
+              {searchTerm && <button type="button" onClick={() => setSearchTerm("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"><X size={13} /></button>}
+            </div>
           </div>
-        </div>
+        )}
 
-        {/* History Table */}
+        {/* History Results */}
+        {isDeliveryPartner && historyView === "grid" ? (
+          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+            {historyLoading ? (
+              [0, 1, 2].map((item) => <div key={item} className="h-36 animate-pulse rounded-xl border border-gray-100 bg-gray-50" />)
+            ) : filteredRecords.length === 0 ? (
+              <div className="rounded-xl border border-dashed border-gray-200 px-5 py-10 text-center text-sm text-gray-500 sm:col-span-2 xl:col-span-3">
+                {historyRecords.length === 0 ? "Clock in today to create your first attendance record." : "No attendance records match your filters."}
+              </div>
+            ) : filteredRecords.map((record) => {
+              const isWorking = Boolean(record.check_in && !record.check_out);
+              const date = new Date(record.date);
+              const formattedDate = Number.isNaN(date.getTime()) ? "—" : date.toLocaleDateString("en-IN", {
+                weekday: "short",
+                month: "short",
+                day: "2-digit",
+                year: "numeric",
+              });
+              return (
+                <article key={record.id || record.attendance_id || `${record.date}-${record.check_in}`} className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <p className="font-semibold text-gray-900">{formattedDate}</p>
+                      <p className="mt-1 text-xs text-gray-500">{record.start_time ? `${formatShiftTime(record.start_time)} - ${formatShiftTime(record.end_time)}` : "Regular shift"}</p>
+                    </div>
+                    <span className={`rounded-full px-2.5 py-1 text-[10px] font-bold uppercase ${record.status === "Late" ? "bg-amber-100 text-amber-800" : isWorking ? "bg-emerald-100 text-emerald-800" : "bg-slate-100 text-slate-700"}`}>
+                      {isWorking ? "Active Duty" : record.status || "Present"}
+                    </span>
+                  </div>
+                  <div className="mt-4 grid grid-cols-2 gap-3 border-t border-gray-100 pt-3 text-sm">
+                    <div><p className="text-xs text-gray-500">Clock in</p><p className="mt-1 font-semibold">{formatTimeStr(record.check_in)}</p></div>
+                    <div><p className="text-xs text-gray-500">Clock out</p><p className="mt-1 font-semibold">{isWorking ? "On duty" : formatTimeStr(record.check_out)}</p></div>
+                    <div><p className="text-xs text-gray-500">Duration</p><p className="mt-1 font-semibold">{record.total_hours ? `${record.total_hours} hrs` : record.duration_seconds ? formatShortDuration(record.duration_seconds) : isWorking ? formatShortDuration(liveSeconds) : "—"}</p></div>
+                    <div><p className="text-xs text-gray-500">Notes</p><p className="mt-1 truncate font-medium">{record.notes || "—"}</p></div>
+                  </div>
+                </article>
+              );
+            })}
+          </div>
+        ) : (
         <div className="overflow-x-auto rounded-2xl border border-gray-100 shadow-sm">
           <table className="w-full text-left text-xs">
             <thead className={`border-b text-[11px] font-bold uppercase tracking-wider ${role === "Chef" ? "border-[#c3972f] bg-[#d4a843] text-white" : role === "Delivery Partner" ? "border-orange-100 bg-orange-50 text-orange-700" : "border-gray-200 bg-gray-50/90 text-gray-600"}`}>
@@ -992,6 +1070,7 @@ export default function StaffAttendancePage({
             </tbody>
           </table>
         </div>
+        )}
       </section>
 
       {/* CLOCK OUT CONFIRMATION MODAL */}
