@@ -530,7 +530,7 @@ const AddFood = ({ drawer = false, onClose, onSaved }) => {
           </Section>
 
           <Section number="05" title="Add-ons" description="Optional extras customers can add to this food.">
-            <div className="flex items-center justify-between sm:col-span-2"><p className="text-sm text-gray-600">{form.addons.length} add-on{form.addons.length === 1 ? '' : 's'}</p><button type="button" onClick={addAddon} className="inline-flex h-9 items-center gap-1.5 rounded-md border border-gray-300 px-3 text-sm font-medium text-gray-700 hover:bg-gray-50"><Plus className="h-4 w-4" /> Add add-on</button></div>
+            <div className="flex items-center justify-between sm:col-span-2"><p className="text-sm text-gray-600">{form.addons.length} add-on{form.addons.length === 1 ? '' : 's'}</p><button type="button" onClick={addAddon} className="inline-flex h-9 items-center gap-1.5 rounded-md border border-orange-200 px-3 text-sm font-medium text-[#FF5A00] transition hover:bg-orange-50"><Plus className="h-4 w-4" /> Add add-on</button></div>
             {form.addons.map((addon, index) => (
               <div key={addon.key} className="grid gap-3 rounded-md border border-gray-200 bg-gray-50 p-3 sm:col-span-2 sm:grid-cols-[1fr_150px_150px_auto] sm:items-end">
                 <label className="text-sm font-medium text-gray-700">Add-on name<input value={addon.name} onChange={(event) => updateAddon(addon.key, 'name', event.target.value)} placeholder="e.g. Extra cheese" className="mt-1.5 h-10 w-full rounded-md border border-gray-300 bg-white px-3" />{errors[`addon-${index}`] && <span className="mt-1 block text-xs text-red-700">{errors[`addon-${index}`]}</span>}</label>
@@ -542,7 +542,7 @@ const AddFood = ({ drawer = false, onClose, onSaved }) => {
           </Section>
 
           <Section number="06" title="Customizations" description="Add customer choices, such as spice level or side dishes.">
-            <div className="flex items-center justify-between sm:col-span-2"><p className="text-sm text-gray-600">{form.customizations.length} group{form.customizations.length === 1 ? '' : 's'}</p><button type="button" onClick={addCustomization} className="inline-flex h-9 items-center gap-1.5 rounded-md border border-gray-300 px-3 text-sm font-medium text-gray-700 hover:bg-gray-50"><Plus className="h-4 w-4" /> Add group</button></div>
+            <div className="flex items-center justify-between sm:col-span-2"><p className="text-sm text-gray-600">{form.customizations.length} group{form.customizations.length === 1 ? '' : 's'}</p><button type="button" onClick={addCustomization} className="inline-flex h-9 items-center gap-1.5 rounded-md border border-orange-200 px-3 text-sm font-medium text-[#FF5A00] transition hover:bg-orange-50"><Plus className="h-4 w-4" /> Add group</button></div>
             {form.customizations.map((group, groupIndex) => (
               <fieldset key={group.key} className="space-y-3 rounded-md border border-gray-200 bg-gray-50 p-3 sm:col-span-2">
                 <div className="grid gap-3 sm:grid-cols-[1fr_170px_auto_auto] sm:items-end">
@@ -552,7 +552,7 @@ const AddFood = ({ drawer = false, onClose, onSaved }) => {
                   <button type="button" onClick={() => removeCustomization(group.key)} className="mb-0.5 flex h-10 w-10 items-center justify-center rounded-md border border-red-200 bg-white text-red-700 hover:bg-red-50" aria-label="Remove customization group"><Trash2 className="h-4 w-4" /></button>
                 </div>
                 <div className="space-y-2 border-t border-gray-200 pt-3">
-                  <div className="flex items-center justify-between"><h4 className="text-xs font-semibold uppercase tracking-wide text-gray-600">Options</h4><button type="button" onClick={() => addCustomizationOption(group.key)} className="inline-flex h-8 items-center gap-1 rounded-md px-2 text-xs font-medium text-emerald-800 hover:bg-emerald-50"><Plus className="h-3.5 w-3.5" /> Add option</button></div>
+                  <div className="flex items-center justify-between"><h4 className="text-xs font-semibold uppercase tracking-wide text-gray-600">Options</h4><button type="button" onClick={() => addCustomizationOption(group.key)} className="inline-flex h-8 items-center gap-1 rounded-md px-2 text-xs font-medium text-[#FF5A00] transition hover:bg-orange-50"><Plus className="h-3.5 w-3.5" /> Add option</button></div>
                   {group.options.map((option, optionIndex) => (
                     <div key={option.key} className="grid gap-2 sm:grid-cols-[1fr_150px_auto]">
                       <label className="text-xs font-medium text-gray-600">Option name<input value={option.name} onChange={(event) => updateCustomizationOption(group.key, option.key, 'name', event.target.value)} placeholder="e.g. Mild" className="mt-1 h-9 w-full rounded-md border border-gray-300 bg-white px-3 text-sm" />{errors[`option-${groupIndex}-${optionIndex}`] && <span className="mt-1 block text-xs text-red-700">{errors[`option-${groupIndex}-${optionIndex}`]}</span>}</label>
@@ -571,7 +571,7 @@ const AddFood = ({ drawer = false, onClose, onSaved }) => {
         <div className={`mx-auto flex flex-wrap justify-end gap-2 ${drawer ? '' : 'max-w-5xl'}`}>
           <button type="button" onClick={closeForm} className="inline-flex h-10 items-center gap-2 rounded-md border border-gray-300 px-4 text-sm font-medium text-gray-700 hover:bg-gray-50"><ArrowLeft className="h-4 w-4" /> Cancel</button>
           <button type="button" onClick={handleReset} disabled={saving || uploading} className="h-10 rounded-md border border-gray-300 px-4 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50">Reset</button>
-          <button type="submit" disabled={saving || uploading || loading} className="inline-flex h-10 items-center gap-2 rounded-md bg-emerald-800 px-4 text-sm font-semibold text-white hover:bg-emerald-900 disabled:opacity-50"><Save className="h-4 w-4" />{saving ? 'Saving…' : 'Save Food'}</button>
+          <button type="submit" disabled={saving || uploading || loading} className="inline-flex h-10 items-center gap-2 rounded-md bg-[#FF5A00] px-4 text-sm font-semibold text-white transition hover:bg-[#E94B00] disabled:opacity-50"><Save className="h-4 w-4" />{saving ? 'Saving…' : 'Save Food'}</button>
         </div>
       </div>
     </form>

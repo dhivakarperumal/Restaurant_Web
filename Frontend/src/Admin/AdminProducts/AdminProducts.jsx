@@ -256,7 +256,7 @@ const AdminProducts = () => {
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   placeholder="Search products by name or code..."
-                  className="h-[46px] w-full rounded-xl border border-[#dfe2e5] bg-[#faf9f8] pl-10 pr-3 text-[14px] text-[#2d2d2d] outline-none placeholder:text-[#8a8a8a] focus:border-[#d2bc8a]"
+                  className="h-[46px] w-full rounded-xl border border-[#dfe2e5] bg-[#faf9f8] pl-10 pr-3 text-[14px] text-[#2d2d2d] outline-none placeholder:text-[#8a8a8a] focus:border-[#FF5A00]"
                 />
               </div>
 
@@ -264,7 +264,7 @@ const AdminProducts = () => {
                 <select
                   value={selectedCategory}
                   onChange={(e) => setSelectedCategory(e.target.value)}
-                  className="h-[46px] rounded-xl border border-[#dfe2e5] bg-[#faf9f8] px-3 text-[14px] font-medium text-[#2d2d2d] outline-none focus:border-[#d2bc8a] xl:h-[42px] xl:w-[112px] xl:px-2 xl:text-xs"
+                  className="h-[46px] rounded-xl border border-[#dfe2e5] bg-[#faf9f8] px-3 text-[14px] font-medium text-[#2d2d2d] outline-none focus:border-[#FF5A00] xl:h-[42px] xl:w-[112px] xl:px-2 xl:text-xs"
                 >
                   <option value="All Categories">All Categories</option>
                   <option value="Gift">Gifts</option>
@@ -278,7 +278,7 @@ const AdminProducts = () => {
               <select
                 value={selectedCuisine}
                 onChange={(e) => setSelectedCuisine(e.target.value)}
-                className="h-[46px] rounded-xl border border-[#dfe2e5] bg-[#faf9f8] px-3 text-[14px] font-medium text-[#2d2d2d] outline-none focus:border-[#d2bc8a] xl:h-[42px] xl:w-[112px] xl:px-2 xl:text-xs"
+                className="h-[46px] rounded-xl border border-[#dfe2e5] bg-[#faf9f8] px-3 text-[14px] font-medium text-[#2d2d2d] outline-none focus:border-[#FF5A00] xl:h-[42px] xl:w-[112px] xl:px-2 xl:text-xs"
                 aria-label="Filter by cuisine"
               >
                 <option value="All Cuisines">All Cuisines</option>
@@ -295,7 +295,7 @@ const AdminProducts = () => {
                 <select
                   value={selectedStatus}
                   onChange={(e) => setSelectedStatus(e.target.value)}
-                  className="h-[46px] rounded-xl border border-[#dfe2e5] bg-[#faf9f8] px-3 text-[14px] font-medium text-[#2d2d2d] outline-none focus:border-[#d2bc8a] xl:h-[42px] xl:w-[96px] xl:px-2 xl:text-xs"
+                  className="h-[46px] rounded-xl border border-[#dfe2e5] bg-[#faf9f8] px-3 text-[14px] font-medium text-[#2d2d2d] outline-none focus:border-[#FF5A00] xl:h-[42px] xl:w-[96px] xl:px-2 xl:text-xs"
                 >
                   <option value="All Status">All Status</option>
                   <option value="Active">Active</option>
@@ -310,7 +310,7 @@ const AdminProducts = () => {
               <select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value)}
-                className="h-[46px] rounded-xl border border-[#dfe2e5] bg-[#faf9f8] px-3 text-[14px] font-medium text-[#2d2d2d] outline-none focus:border-[#d2bc8a] xl:h-[42px] xl:w-[160px] xl:px-2 xl:text-xs"
+                className="h-[46px] rounded-xl border border-[#dfe2e5] bg-[#faf9f8] px-3 text-[14px] font-medium text-[#2d2d2d] outline-none focus:border-[#FF5A00] xl:h-[42px] xl:w-[160px] xl:px-2 xl:text-xs"
               >
                 <option value="latest">Sort by: Latest</option>
                 <option value="prep-time">Preparation: Shortest first</option>
@@ -322,7 +322,7 @@ const AdminProducts = () => {
                 <button
                   type="button"
                   onClick={() => setViewMode('table')}
-                  className={`flex h-[46px] w-[46px] items-center justify-center border-r border-[#dfe2e5] xl:h-[42px] xl:w-[40px] ${viewMode === 'table' ? 'bg-[#1a3c36] text-white' : 'text-[#4d4d4d] hover:bg-white'}`}
+                  className={`flex h-[46px] w-[46px] items-center justify-center border-r border-[#dfe2e5] transition-colors xl:h-[42px] xl:w-[40px] ${viewMode === 'table' ? 'bg-[#FF5A00] text-white' : 'text-[#4d4d4d] hover:bg-orange-50 hover:text-[#FF5A00]'}`}
                   aria-label="Table view"
                   title="Table view"
                 >
@@ -331,7 +331,7 @@ const AdminProducts = () => {
                 <button
                   type="button"
                   onClick={() => setViewMode('card')}
-                  className={`flex h-[46px] w-[46px] items-center justify-center xl:h-[42px] xl:w-[40px] ${viewMode === 'card' ? 'bg-[#1a3c36] text-white' : 'text-[#4d4d4d] hover:bg-white'}`}
+                  className={`flex h-[46px] w-[46px] items-center justify-center transition-colors xl:h-[42px] xl:w-[40px] ${viewMode === 'card' ? 'bg-[#FF5A00] text-white' : 'text-[#4d4d4d] hover:bg-orange-50 hover:text-[#FF5A00]'}`}
                   aria-label="Card view"
                   title="Card view"
                 >
@@ -341,7 +341,7 @@ const AdminProducts = () => {
               <button
                   type="button"
                   onClick={() => setAddFoodOpen(true)}
-                  className="inline-flex h-[46px] shrink-0 items-center gap-2 rounded-xl bg-[#1a3c36] px-4 text-[15px] font-semibold text-white shadow-[0_6px_14px_rgba(26,60,54,0.18)] transition hover:bg-[#214a42] xl:h-[42px] xl:gap-1.5 xl:px-2.5 xl:text-xs"
+                  className="inline-flex h-[46px] shrink-0 items-center gap-2 rounded-xl bg-[#FF5A00] px-4 text-[15px] font-semibold text-white shadow-[0_6px_14px_rgba(255,90,0,0.18)] transition hover:bg-[#E94B00] xl:h-[42px] xl:gap-1.5 xl:px-2.5 xl:text-xs"
                 >
                   <Plus className="h-4 w-4" />
                   Add Food
@@ -365,7 +365,7 @@ const AdminProducts = () => {
               <button
                 type="button"
                 onClick={() => setAddFoodOpen(true)}
-                className="mt-5 inline-flex items-center gap-2 rounded-xl bg-[#1a3c36] px-5 py-2.5 text-xs font-bold text-white shadow-sm transition hover:bg-[#235048]"
+                className="mt-5 inline-flex items-center gap-2 rounded-xl bg-[#FF5A00] px-5 py-2.5 text-xs font-bold text-white shadow-sm transition hover:bg-[#E94B00]"
               >
                 <Plus className="h-4 w-4" />
                 Add Food
@@ -399,7 +399,7 @@ const AdminProducts = () => {
                           {product.status}
                         </span>
                         <div className="flex gap-2">
-                          <button type="button" onClick={() => navigate(`/admin/products/edit/${product.id}`)} className="flex h-8 w-8 items-center justify-center rounded-lg border border-[#e2d9cf] bg-white" aria-label="Edit product photos" title="Edit product photos"><Upload className="h-4 w-4" /></button>
+                          <button type="button" onClick={() => navigate(`/admin/products/edit/${product.id}`)}                           className="flex h-8 w-8 items-center justify-center rounded-lg border border-orange-200 bg-white text-[#FF5A00] transition hover:bg-orange-50" aria-label="Edit product photos" title="Edit product photos"><Upload className="h-4 w-4" /></button>
                           <button type="button" onClick={() => handleDeleteProduct(product.id)} className="flex h-8 w-8 items-center justify-center rounded-lg border border-[#f3d7d7] bg-[#fff8f8] text-[#d04d4d]" aria-label="Delete product" title="Delete product"><Trash2 className="h-4 w-4" /></button>
                         </div>
                       </div>
@@ -487,7 +487,7 @@ const AdminProducts = () => {
                                   <button
                                     type="button"
                                     onClick={() => navigate(`/admin/products/edit/${product.id}`)}
-                                    className="flex h-9 w-9 items-center justify-center rounded-lg border border-[#e2d9cf] bg-white text-[#4d4d4d] transition hover:border-[#d0b997] hover:text-[#1a1a1a]"
+                                    className="flex h-9 w-9 items-center justify-center rounded-lg border border-orange-200 bg-white text-[#FF5A00] transition hover:bg-orange-50"
                                     aria-label="Edit product"
                                     title="Edit product"
                                   >
@@ -496,7 +496,7 @@ const AdminProducts = () => {
                                   <button
                                     type="button"
                                     onClick={() => setSelectedProductView(product)}
-                                    className="flex h-9 w-9 items-center justify-center rounded-lg border border-[#e2d9cf] bg-white text-[#4d4d4d] transition hover:border-[#d0b997] hover:text-[#1a1a1a]"
+                                    className="flex h-9 w-9 items-center justify-center rounded-lg border border-orange-200 bg-white text-[#FF5A00] transition hover:bg-orange-50"
                                     aria-label="View product"
                                     title="View product details & frame layout"
                                   >
@@ -525,13 +525,13 @@ const AdminProducts = () => {
                 <span>Showing {filteredProducts.length} of {productsList.length} products</span>
 
                 <div className="flex items-center gap-2">
-                  <button className="flex h-9 w-9 items-center justify-center rounded-lg border border-[#e3dbd2] bg-white text-[#7d7d7d]">
+                  <button type="button" className="flex h-9 w-9 items-center justify-center rounded-lg border border-[#e3dbd2] bg-white text-[#7d7d7d]">
                     <ChevronLeft className="h-4 w-4" />
                   </button>
-                  <button className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#173b35] text-white">
+                  <button type="button" className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#FF5A00] text-white">
                     1
                   </button>
-                  <button className="flex h-9 w-9 items-center justify-center rounded-lg border border-[#e3dbd2] bg-white text-[#7d7d7d]">
+                  <button type="button" className="flex h-9 w-9 items-center justify-center rounded-lg border border-[#e3dbd2] bg-white text-[#7d7d7d]">
                     <ChevronRight className="h-4 w-4" />
                   </button>
                 </div>
@@ -602,7 +602,7 @@ const AdminProducts = () => {
                 <button
                   type="button"
                   onClick={() => setSelectedProductView(null)}
-                  className="rounded-xl bg-[#1a3c36] px-6 py-2 text-xs font-bold text-white hover:bg-[#235048]"
+                  className="rounded-xl bg-[#FF5A00] px-6 py-2 text-xs font-bold text-white transition hover:bg-[#E94B00]"
                 >
                   Close
                 </button>
