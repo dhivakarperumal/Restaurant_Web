@@ -501,28 +501,28 @@ export default function ServerSupplies() {
       {activeTab === 'items' && <div id="supplies-panel-items" role="tabpanel" aria-labelledby="supplies-tab-items" className="space-y-6">
       <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {[
-          { label: 'Total Supply Items', value: items.length.toLocaleString('en-IN'), detail: 'in the supply catalog', badge: 'Items', icon: Boxes, tone: 'bg-white/20 text-white', surface: 'bg-[#22c55e] border-transparent text-white' },
-          { label: 'Available Stock', value: availableStock.toLocaleString('en-IN'), detail: 'units currently available', badge: 'Units', icon: Package, tone: 'bg-white/20 text-white', surface: 'bg-[#3b82f6] border-transparent text-white' },
-          { label: 'Low Stock Items', value: lowStockCount.toLocaleString('en-IN'), detail: 'need attention', badge: 'Low', icon: AlertTriangle, tone: 'bg-white/20 text-white', surface: 'bg-[#f59e0b] border-transparent text-white' },
-          { label: 'Out of Stock Items', value: outOfStockCount.toLocaleString('en-IN'), detail: 'need restocking', badge: 'Empty', icon: TrendingDown, tone: 'bg-white/20 text-white', surface: 'bg-[#8b5cf6] border-transparent text-white' },
-        ].map(({ label, value, detail, badge, icon: Icon, tone, surface }) => (
-          <article key={label} className={`relative flex min-h-[140px] min-w-0 flex-col justify-between overflow-hidden rounded-xl border p-4 text-white shadow-[0_2px_10px_rgba(20,56,34,0.04)] sm:p-5 ${surface}`}>
-            <div className="relative z-10 flex items-start gap-3">
-              <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-lg shadow-sm ${tone}`}><Icon size={24} strokeWidth={2.2} /></div>
-              <div className="mt-0.5 min-w-0 flex-1">
-                <h2 className="mb-1 truncate text-[12px] font-semibold opacity-90">{label}</h2>
-                <p className="truncate text-[22px] font-extrabold leading-none tracking-tight sm:text-[25px]">{value}</p>
+          { label: 'Total Supply Items', value: items.length.toLocaleString('en-IN'), detail: 'in the supply catalog', badge: 'Items', icon: Boxes, tone: 'bg-gradient-to-tr from-orange-500 to-amber-400 text-white shadow-orange-500/25', accentColor: '#f97316', glowColor: '#fb923c' },
+          { label: 'Available Stock', value: availableStock.toLocaleString('en-IN'), detail: 'units currently available', badge: 'Units', icon: Package, tone: 'bg-gradient-to-tr from-emerald-600 to-teal-400 text-white shadow-emerald-500/25', accentColor: '#10b981', glowColor: '#34d399' },
+          { label: 'Low Stock Items', value: lowStockCount.toLocaleString('en-IN'), detail: 'need attention', badge: 'Low', icon: AlertTriangle, tone: 'bg-gradient-to-tr from-amber-500 to-yellow-400 text-white shadow-amber-500/25', accentColor: '#f59e0b', glowColor: '#fbbf24' },
+          { label: 'Out of Stock Items', value: outOfStockCount.toLocaleString('en-IN'), detail: 'need restocking', badge: 'Empty', icon: TrendingDown, tone: 'bg-gradient-to-tr from-violet-600 to-purple-400 text-white shadow-purple-500/25', accentColor: '#8b5cf6', glowColor: '#a78bfa' },
+        ].map(({ label, value, detail, badge, icon: Icon, tone, accentColor, glowColor }) => (
+          <article key={label} className="group relative flex min-h-[140px] min-w-0 flex-col justify-between overflow-hidden rounded-2xl border border-slate-200/90 bg-white p-4 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] transition-all duration-300 hover:-translate-y-1 hover:border-slate-300 hover:shadow-[0_12px_24px_-6px_rgba(0,0,0,0.1)] sm:p-5">
+            <div className="pointer-events-none absolute -right-6 -top-6 h-28 w-28 rounded-full opacity-20 blur-2xl transition-all duration-500 group-hover:scale-150 group-hover:opacity-35" style={{ backgroundColor: glowColor }} />
+            <div className="relative z-10 flex items-start justify-between gap-3">
+              <div className="min-w-0 flex-1">
+                <h2 className="truncate text-[11px] font-bold uppercase tracking-wider text-slate-500">{label}</h2>
+                <p className="mt-2.5 truncate text-[23px] font-black tracking-tight text-slate-800 sm:text-[27px]">{value}</p>
               </div>
+              <div className={`relative flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl shadow-sm transition-transform duration-300 group-hover:scale-110 ${tone}`}><Icon size={24} strokeWidth={2.3} /></div>
             </div>
-            <div className="relative z-10 mt-5 flex items-center gap-2">
-              <span className="inline-flex items-center rounded-md bg-white/25 px-1.5 py-0.5 text-[11px] font-bold">{badge}</span>
-              <span className="truncate text-[11px] font-medium opacity-75">{detail}</span>
+            <div className="relative z-10 mt-4 flex items-center justify-between border-t border-slate-100 pt-3 text-xs">
+              <div className="flex min-w-0 items-center gap-1.5">
+                <span className="inline-flex shrink-0 items-center rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-bold text-emerald-600 ring-1 ring-inset ring-emerald-500/20">{badge}</span>
+                <span className="truncate font-medium text-slate-500">{detail}</span>
+              </div>
+              <span className="h-2 w-2 shrink-0 rounded-full shadow-sm" style={{ backgroundColor: accentColor }} />
             </div>
-            <div className="pointer-events-none absolute bottom-0 right-0 h-16 w-24 opacity-50">
-              <svg viewBox="0 0 100 50" preserveAspectRatio="none" className="h-full w-full">
-                <path d="M0,40 Q25,30 50,40 T100,20" fill="none" stroke="white" strokeWidth="2.5" />
-              </svg>
-            </div>
+            <div className="absolute bottom-0 left-0 h-[3px] w-0 transition-all duration-300 group-hover:w-full" style={{ backgroundColor: accentColor }} />
           </article>
         ))}
       </section>
@@ -532,20 +532,25 @@ export default function ServerSupplies() {
       {activeTab === 'requests' && <div id="supplies-panel-requests" role="tabpanel" aria-labelledby="supplies-tab-requests">
       <section className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4" aria-label="Supply request summary">
         {[
-          { label: 'Total Requests', value: requests.length, detail: 'all submitted requests', icon: ClipboardList, surface: 'bg-[#3b82f6]' },
-          { label: 'Approved', value: requestStatusCounts.approved, detail: 'approved by Admin', icon: Check, surface: 'bg-[#22c55e]' },
-          { label: 'Pending Approval', value: requestStatusCounts.pending, detail: 'awaiting Admin decision', icon: AlertTriangle, surface: 'bg-[#f59e0b]' },
-          { label: 'Rejected', value: requestStatusCounts.rejected, detail: 'not approved', icon: XCircle, surface: 'bg-[#ef4444]' },
-        ].map(({ label, value, detail, icon: Icon, surface }) => (
-          <article key={label} className={`flex min-h-[120px] min-w-0 flex-col justify-between rounded-xl p-4 text-white shadow-sm sm:p-5 ${surface}`}>
-            <div className="flex items-start justify-between gap-3">
-              <div className="min-w-0">
-                <h2 className="truncate text-sm font-semibold opacity-90">{label}</h2>
-                <p className="mt-2 text-3xl font-extrabold leading-none">{value.toLocaleString('en-IN')}</p>
+          { label: 'Total Requests', value: requests.length, detail: 'all submitted requests', icon: ClipboardList, tone: 'bg-gradient-to-tr from-blue-600 to-cyan-400 text-white shadow-blue-500/25', accentColor: '#3b82f6', glowColor: '#60a5fa' },
+          { label: 'Approved', value: requestStatusCounts.approved, detail: 'approved by Admin', icon: Check, tone: 'bg-gradient-to-tr from-emerald-600 to-teal-400 text-white shadow-emerald-500/25', accentColor: '#10b981', glowColor: '#34d399' },
+          { label: 'Pending Approval', value: requestStatusCounts.pending, detail: 'awaiting Admin decision', icon: AlertTriangle, tone: 'bg-gradient-to-tr from-amber-500 to-yellow-400 text-white shadow-amber-500/25', accentColor: '#f59e0b', glowColor: '#fbbf24' },
+          { label: 'Rejected', value: requestStatusCounts.rejected, detail: 'not approved', icon: XCircle, tone: 'bg-gradient-to-tr from-rose-600 to-pink-400 text-white shadow-rose-500/25', accentColor: '#f43f5e', glowColor: '#fb7185' },
+        ].map(({ label, value, detail, icon: Icon, tone, accentColor, glowColor }) => (
+          <article key={label} className="group relative flex min-h-[140px] min-w-0 flex-col justify-between overflow-hidden rounded-2xl border border-slate-200/90 bg-white p-4 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] transition-all duration-300 hover:-translate-y-1 hover:border-slate-300 hover:shadow-[0_12px_24px_-6px_rgba(0,0,0,0.1)] sm:p-5">
+            <div className="pointer-events-none absolute -right-6 -top-6 h-28 w-28 rounded-full opacity-20 blur-2xl transition-all duration-500 group-hover:scale-150 group-hover:opacity-35" style={{ backgroundColor: glowColor }} />
+            <div className="relative z-10 flex items-start justify-between gap-3">
+              <div className="min-w-0 flex-1">
+                <h2 className="truncate text-[11px] font-bold uppercase tracking-wider text-slate-500">{label}</h2>
+                <p className="mt-2.5 truncate text-[23px] font-black tracking-tight text-slate-800 sm:text-[27px]">{value.toLocaleString('en-IN')}</p>
               </div>
-              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-white/20"><Icon size={22} /></div>
+              <div className={`relative flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl shadow-sm transition-transform duration-300 group-hover:scale-110 ${tone}`}><Icon size={24} strokeWidth={2.3} /></div>
             </div>
-            <p className="mt-4 text-xs font-medium opacity-80">{detail}</p>
+            <div className="relative z-10 mt-4 flex items-center justify-between border-t border-slate-100 pt-3 text-xs">
+              <span className="truncate font-medium text-slate-500">{detail}</span>
+              <span className="ml-2 h-2 w-2 shrink-0 rounded-full shadow-sm" style={{ backgroundColor: accentColor }} />
+            </div>
+            <div className="absolute bottom-0 left-0 h-[3px] w-0 transition-all duration-300 group-hover:w-full" style={{ backgroundColor: accentColor }} />
           </article>
         ))}
       </section>
