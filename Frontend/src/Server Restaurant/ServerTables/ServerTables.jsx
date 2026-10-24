@@ -562,8 +562,8 @@ export default function ServerTables() {
   return (
     <div className={isAdminTablesPage ? "min-h-screen bg-[#f2f3f0] p-4 md:p-6" : "space-y-6"}>
       <div className={isAdminTablesPage ? "mx-auto max-w-[1500px] space-y-6" : "space-y-6"}>
-      {/* Top Banner / Header */}
-      <div className={isAdminTablesPage ? "mb-5 flex flex-col gap-4 md:flex-row md:items-center md:justify-between" : "flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-white p-5 rounded-2xl border border-gray-100 shadow-sm"}>
+      {isAdminTablesPage && (
+      <div className="mb-5 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
           <div className="flex items-center gap-2">
             {!isAdminTablesPage && <div className="p-2 rounded-xl bg-[#1f3228] text-[#d4a843]">
@@ -573,13 +573,11 @@ export default function ServerTables() {
               <h1 className={isAdminTablesPage ? "text-[2.1rem] font-bold tracking-[-0.05em] text-[#1f1d1b]" : "text-xl sm:text-2xl font-bold text-gray-900 font-serif"}>
                 {isAdminTablesPage ? "Tables" : "My Assigned Tables"}
               </h1>
-              <p className={isAdminTablesPage ? "mt-2 text-[13px] text-[#646464]" : "text-xs sm:text-sm text-gray-500"}>
-                {isAdminTablesPage ? (
-                  <>Dashboard <span className="mx-2 text-[#9a9a9a]">&gt;</span> <span className="font-medium text-[#2a2a2a]">Tables</span></>
-                ) : (
-                  "Dining tables assigned to your station. View real-time seating and update dining status."
-                )}
-              </p>
+              {isAdminTablesPage && (
+                <p className="mt-2 text-[13px] text-[#646464]">
+                  Dashboard <span className="mx-2 text-[#9a9a9a]">&gt;</span> <span className="font-medium text-[#2a2a2a]">Tables</span>
+                </p>
+              )}
             </div>
           </div>
         </div>
@@ -603,6 +601,7 @@ export default function ServerTables() {
           )}
         </div>
       </div>
+      )}
 
       {/* Ready to Serve Alert Banner for Servers */}
       {!isAdminTablesPage && readyToServeOrders.length > 0 && (
