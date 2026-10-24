@@ -842,7 +842,7 @@ export default function AdminEventOrders() {
                 <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
                   <table className="min-w-full text-left text-xs">
                     <thead>
-                      <tr className="border-b border-slate-200 bg-slate-50 font-bold uppercase text-slate-500">
+                      <tr className="border-b border-orange-100 bg-orange-50 font-bold uppercase text-orange-700">
                         <th className="px-3.5 py-2.5">Item</th>
                         <th className="px-3.5 py-2.5 text-center">Portion</th>
                         <th className="px-3.5 py-2.5 text-center">Qty</th>

@@ -106,7 +106,7 @@ function InventoryTable({ columns, rows, emptyText = 'No records found.' }) {
   return (
     <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-sm">
       <table className="min-w-full text-left text-sm">
-        <thead className="bg-slate-100 text-slate-700">
+        <thead className="bg-orange-50 text-orange-700 border-b border-orange-100">
           <tr>
             {columns.map((column) => (
               <th key={column.key} className="whitespace-nowrap px-3 py-3 font-semibold">{column.label}</th>
@@ -261,7 +261,7 @@ function InventoryDashboard() {
           <h2 className="text-lg font-bold text-slate-900">Low Stock Products</h2>
           <div className="mt-4 overflow-x-auto">
             <table className="min-w-full text-left text-sm">
-              <thead className="bg-slate-100 text-slate-700">
+              <thead className="bg-orange-50 text-orange-700 border-b border-orange-100">
                 <tr><th className="px-3 py-2">Product</th><th className="px-3 py-2">Stock</th><th className="px-3 py-2">Status</th></tr>
               </thead>
               <tbody>
@@ -281,7 +281,7 @@ function InventoryDashboard() {
           <h2 className="text-lg font-bold text-slate-900">Expiring Products</h2>
           <div className="mt-4 overflow-x-auto">
             <table className="min-w-full text-left text-sm">
-              <thead className="bg-slate-100 text-slate-700">
+              <thead className="bg-orange-50 text-orange-700 border-b border-orange-100">
                 <tr><th className="px-3 py-2">Product</th><th className="px-3 py-2">Expiry</th><th className="px-3 py-2">Status</th></tr>
               </thead>
               <tbody>
@@ -2051,7 +2051,7 @@ function KitchenRequestsPage() {
             {approvalRequest.items?.length ? (
               <div className="overflow-x-auto rounded-xl border border-slate-200">
                 <table className="min-w-full text-left text-sm">
-                  <thead className="bg-slate-50 text-slate-600">
+                  <thead className="bg-orange-50 text-orange-700 border-b border-orange-100">
                     <tr>
                       <th className="px-3 py-2 font-semibold">Product</th>
                       <th className="px-3 py-2 font-semibold">Current stock</th>

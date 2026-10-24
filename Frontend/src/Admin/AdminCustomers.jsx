@@ -1,4 +1,4 @@
-﻿import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo } from "react";
 import {
   Users,
   UserCheck,
@@ -536,7 +536,7 @@ const AdminCustomers = () => {
             <div className="overflow-x-auto">
               <table className="min-w-full border-separate border-spacing-0">
                 <thead>
-                  <tr className="bg-[#f7f9f6] text-left text-sm font-semibold text-[#374151]">
+                  <tr className="bg-orange-50 text-left text-sm font-semibold text-orange-700 border-b border-orange-100">
                     <th className="rounded-tl-md px-4 py-4">S No</th>
                     <th className="px-4 py-4">Customer</th>
                     <th className="px-4 py-4">Email</th>

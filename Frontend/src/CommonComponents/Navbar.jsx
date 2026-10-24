@@ -255,7 +255,7 @@ const Navbar = () => {
                 aria-label="Buy Food home"
               >
                 <img
-                  src="/images/logo.png"
+                  src="/images/userlogo.png"
                   alt="Buy Food"
                   className="h-[58px] w-[87px] shrink-0 object-contain sm:h-[68px] sm:w-[102px]"
                 />

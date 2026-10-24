@@ -610,7 +610,7 @@ const AdminDashboard = () => {
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm">
-              <thead className="text-xs text-gray-500 bg-white">
+              <thead className="text-xs font-semibold uppercase text-orange-700 bg-orange-50 border-b border-orange-100">
                 <tr>
                   <th className="pb-3 font-medium">Order ID</th>
                   <th className="pb-3 font-medium">Customer</th>

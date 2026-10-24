@@ -224,7 +224,7 @@ const FramesList = () => {
           viewMode === "table" ? (
             <div className="overflow-x-auto rounded-[16px] border border-[#e8e4df] bg-white">
               <table className="w-full min-w-[700px] border-collapse text-left">
-                <thead className="bg-[#f0e6d2] text-left text-sm font-semibold text-[#3d3d3d]">
+                <thead className="bg-orange-50 text-left text-sm font-semibold text-orange-700 border-b border-orange-100">
                   <tr>
                     <th className="px-4 py-4">S.No</th>
                     <th className="px-4 py-4">Frame</th>
