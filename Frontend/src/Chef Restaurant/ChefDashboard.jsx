@@ -193,7 +193,6 @@ const ChefDashboard = () => {
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Kitchen workspace</p>
           <h1 className="mt-1 text-2xl font-bold text-slate-900">Welcome{profileName ? `, ${profileName}` : ""}</h1>
-          <p className="mt-1 text-sm text-slate-600">Your live kitchen workload.</p>
         </div>
         <div className="flex items-center gap-3">
           {lastUpdated && <span className="text-xs text-slate-500">Updated {lastUpdated.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</span>}

@@ -239,37 +239,39 @@ export default function AttendanceWidget({ variant = "header", onAttendanceChang
 
   // --- DASHBOARD HERO VARIANT ---
   return (
-    <div className="relative overflow-hidden rounded-2xl border border-emerald-200/80 bg-gradient-to-r from-emerald-900 via-teal-900 to-[#10382f] p-5 text-white shadow-lg">
-      <div className="relative z-10 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+    <div className="group relative isolate overflow-hidden rounded-2xl border border-slate-200/90 bg-white p-4 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] transition-shadow duration-300 hover:shadow-[0_12px_24px_-6px_rgba(0,0,0,0.1)] sm:p-5">
+      <div className="pointer-events-none absolute -right-8 -top-12 h-40 w-40 rounded-full bg-emerald-400/15 blur-3xl transition-transform duration-500 group-hover:scale-125" />
+      <div className="pointer-events-none absolute bottom-0 left-0 h-1 w-full bg-gradient-to-r from-emerald-500 via-teal-400 to-transparent" />
+      <div className="relative z-10 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div className="flex items-start gap-4">
-          <div className="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-white/10 backdrop-blur-md">
-            <UserCheck size={26} className="text-emerald-300" />
+          <div className="grid h-12 w-12 shrink-0 place-items-center rounded-xl border border-emerald-100 bg-emerald-50">
+            <UserCheck size={24} className="text-emerald-600" />
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <span className="text-xs font-bold uppercase tracking-widest text-emerald-300">
+              <span className="text-xs font-bold uppercase tracking-widest text-emerald-700">
                 Today's Attendance
               </span>
               {attendance?.status && (
                 <span
                   className={`rounded-full px-2 py-0.5 text-[10px] font-extrabold uppercase ${
                     attendance.status === "Late"
-                      ? "bg-amber-400 text-amber-950"
-                      : "bg-emerald-400 text-emerald-950"
+                      ? "bg-amber-100 text-amber-800"
+                      : "bg-emerald-100 text-emerald-800"
                   }`}
                 >
                   {attendance.status}
                 </span>
               )}
             </div>
-            <h3 className="mt-1 text-lg font-bold sm:text-xl">
+            <h3 className="mt-1 text-lg font-bold text-slate-900 sm:text-xl">
               {isWorking
                 ? "You are on duty"
                 : isCompleted
                 ? "Shift completed for today"
                 : "Shift not yet started"}
             </h3>
-            <p className="mt-0.5 text-xs text-emerald-200/80">
+            <p className="mt-0.5 text-xs text-slate-500">
               {isWorking
                 ? `Clocked in at ${formatTimeStr(attendance.check_in)}. Time logged automatically.`
                 : isCompleted
@@ -281,15 +283,15 @@ export default function AttendanceWidget({ variant = "header", onAttendanceChang
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-3">
+        <div className="flex flex-wrap items-center gap-2.5">
           {isWorking && (
-            <div className="flex items-center gap-2 rounded-xl border border-white/20 bg-white/10 px-4 py-2 backdrop-blur-md">
-              <Timer size={18} className="text-emerald-300 animate-spin" />
+            <div className="flex items-center gap-2 rounded-xl border border-emerald-100 bg-emerald-50 px-4 py-2">
+              <Timer size={18} className="animate-spin text-emerald-600" />
               <div>
-                <p className="text-[10px] uppercase font-bold tracking-wider text-emerald-200">
+                <p className="text-[10px] font-bold uppercase tracking-wider text-emerald-700">
                   Active Duration
                 </p>
-                <p className="font-mono text-base font-extrabold text-white">
+                <p className="font-mono text-base font-extrabold text-slate-900">
                   {formatDuration(liveSeconds)}
                 </p>
               </div>
@@ -300,7 +302,7 @@ export default function AttendanceWidget({ variant = "header", onAttendanceChang
             <button
               onClick={handleClockOut}
               disabled={actionLoading}
-              className="inline-flex items-center gap-2 rounded-xl bg-rose-600 px-4 py-2.5 text-sm font-bold text-white shadow-md transition hover:bg-rose-700 disabled:opacity-50"
+              className="inline-flex items-center gap-2 rounded-xl bg-rose-600 px-4 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-rose-700 disabled:opacity-50"
             >
               <LogOut size={16} />
               Clock Out
@@ -309,7 +311,7 @@ export default function AttendanceWidget({ variant = "header", onAttendanceChang
             <button
               onClick={handleClockIn}
               disabled={actionLoading}
-              className="inline-flex items-center gap-2 rounded-xl bg-emerald-500 px-4 py-2.5 text-sm font-bold text-white shadow-md transition hover:bg-emerald-600 disabled:opacity-50"
+              className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-emerald-700 disabled:opacity-50"
             >
               <RotateCcw size={16} />
               Resume Shift
@@ -318,7 +320,7 @@ export default function AttendanceWidget({ variant = "header", onAttendanceChang
             <button
               onClick={handleClockIn}
               disabled={actionLoading}
-              className="inline-flex items-center gap-2 rounded-xl bg-emerald-500 px-5 py-2.5 text-sm font-bold text-white shadow-md transition hover:bg-emerald-600 disabled:opacity-50"
+              className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-5 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-emerald-700 disabled:opacity-50"
             >
               <Play size={16} />
               Clock In Now
@@ -327,7 +329,7 @@ export default function AttendanceWidget({ variant = "header", onAttendanceChang
 
           <Link
             to={attendancePageRoute}
-            className="inline-flex items-center gap-1.5 rounded-xl border border-white/20 bg-white/10 px-3.5 py-2.5 text-xs font-semibold text-white transition hover:bg-white/20"
+            className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-xs font-semibold text-slate-700 transition hover:border-emerald-200 hover:bg-emerald-50 hover:text-emerald-800"
           >
             <CalendarCheck size={14} />
             Attendance Page
@@ -335,7 +337,7 @@ export default function AttendanceWidget({ variant = "header", onAttendanceChang
 
           <button
             onClick={loadHistory}
-            className="inline-flex items-center gap-1.5 rounded-xl border border-white/20 bg-white/10 px-3.5 py-2.5 text-xs font-semibold text-white transition hover:bg-white/20"
+            className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-xs font-semibold text-slate-700 transition hover:border-emerald-200 hover:bg-emerald-50 hover:text-emerald-800"
           >
             <History size={14} />
             History
