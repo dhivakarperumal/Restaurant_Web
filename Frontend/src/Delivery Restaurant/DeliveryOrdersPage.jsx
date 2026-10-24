@@ -7,9 +7,9 @@ const normalizeStatus = (status) =>
   String(status || "").trim().toUpperCase().replace(/[\s-]+/g, "_");
 
 const orderViews = {
-  new: { title: "New Orders", statuses: ["NEW", "NEW_ORDER", "PENDING", "ORDER_PLACED"] },
+  new: { title: "New Orders", statuses: ["ASSIGNED"] },
   all: { title: "All Orders", statuses: null },
-  delivery: { title: "Delivery Orders", statuses: ["ASSIGNED", "ACCEPTED", "REACHED_PICKUP", "PICKED_UP", "OUT_FOR_DELIVERY", "REACHED_CUSTOMER", "SHIPPED"] },
+  delivery: { title: "Delivery Orders", statuses: ["ASSIGNED", "ACCEPTED", "REACHED_PICKUP", "PICKED_UP", "OUT_FOR_DELIVERY", "REACHED_CUSTOMER", "SHIPPED", "DELIVERED", "COMPLETED"] },
   cancelled: { title: "Cancelled Orders", statuses: ["CANCELLED"] },
 };
 
