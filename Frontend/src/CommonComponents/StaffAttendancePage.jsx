@@ -152,8 +152,18 @@ export default function StaffAttendancePage({
   useEffect(() => {
     refreshAll();
 
-    const handleExternalUpdate = () => {
-      fetchTodayData();
+    const handleExternalUpdate = (event) => {
+      const updatedAttendance = event.detail;
+      if (updatedAttendance && Object.hasOwn(updatedAttendance, "check_in")) {
+        setAttendance(updatedAttendance);
+        if (updatedAttendance.duration_seconds != null) {
+          setLiveSeconds(Number(updatedAttendance.duration_seconds));
+        } else if (updatedAttendance.total_hours != null) {
+          setLiveSeconds(Number(updatedAttendance.total_hours) * 3600);
+        }
+      } else {
+        fetchTodayData();
+      }
       fetchHistory();
       fetchDeliveryStatus();
     };
@@ -225,6 +235,11 @@ export default function StaffAttendancePage({
       const res = await api.post("/attendance/clock-out");
       if (res.data?.success) {
         setAttendance(res.data.data);
+        if (res.data.data?.duration_seconds != null) {
+          setLiveSeconds(Number(res.data.data.duration_seconds));
+        } else if (res.data.data?.total_hours != null) {
+          setLiveSeconds(Number(res.data.data.total_hours) * 3600);
+        }
         window.dispatchEvent(new CustomEvent("attendance-updated", { detail: res.data.data }));
         toast.success(
           `Clocked out successfully! Total worked today: ${res.data.data?.total_hours || 0} hrs.`

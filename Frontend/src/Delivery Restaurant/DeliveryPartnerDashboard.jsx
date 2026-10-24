@@ -105,7 +105,21 @@ const DeliveryPartnerDashboard = () => {
 
   // Listen to external attendance events (e.g. from header pill)
   useEffect(() => {
-    const handleAttendanceUpdated = () => {
+    const handleAttendanceUpdated = (event) => {
+      const updatedAttendance = event.detail;
+      if (updatedAttendance && Object.hasOwn(updatedAttendance, "check_in")) {
+        setDashboard((current) => ({
+          ...current,
+          attendance: updatedAttendance,
+          ...(updatedAttendance.check_out ? { is_online: false, isCheckedIn: false } : {}),
+        }));
+        if (updatedAttendance.duration_seconds != null) {
+          setLiveSeconds(Number(updatedAttendance.duration_seconds));
+        } else if (updatedAttendance.total_hours != null) {
+          setLiveSeconds(Number(updatedAttendance.total_hours) * 3600);
+        }
+        return;
+      }
       loadDashboard(true);
     };
     window.addEventListener("attendance-updated", handleAttendanceUpdated);
@@ -180,6 +194,11 @@ const DeliveryPartnerDashboard = () => {
         isCheckedIn: false,
         attendance: data.attendance || current?.attendance,
       }));
+      if (data.attendance?.duration_seconds != null) {
+        setLiveSeconds(Number(data.attendance.duration_seconds));
+      } else if (data.attendance?.total_hours != null) {
+        setLiveSeconds(Number(data.attendance.total_hours) * 3600);
+      }
       window.dispatchEvent(new CustomEvent("attendance-updated", { detail: data.attendance }));
       toast.success(
         `Shift ended and clocked out! Total worked: ${data.attendance?.total_hours || 0} hrs.`
