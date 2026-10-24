@@ -104,9 +104,12 @@ const DeliveryOrdersPage = ({ view = "all" }) => {
       const matchesView = !config.statuses || config.statuses.includes(normalizedStatus);
       const date = new Date(order.order_date || order.created_at || "");
       const dateKey = Number.isNaN(date.getTime()) ? "" : `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
-      return matchesView && (!dateFrom || dateKey >= dateFrom) && (!dateTo || dateKey <= dateTo);
+      const today = new Date();
+      const todayKey = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
+      const matchesToday = view !== "new" || dateKey === todayKey;
+      return matchesView && matchesToday && (!dateFrom || dateKey >= dateFrom) && (!dateTo || dateKey <= dateTo);
     });
-  }, [config.statuses, dateFrom, dateTo, orders]);
+  }, [config.statuses, dateFrom, dateTo, orders, view]);
 
   const statusCounts = useMemo(() => scopedOrders.reduce((counts, order) => {
     const status = normalizeStatus(order.order_status) || "NEW";
