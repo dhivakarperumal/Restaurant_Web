@@ -1119,7 +1119,7 @@ export default function ServerTables() {
         <div className={isAdminTablesPage ? "overflow-hidden rounded-md border border-[#e8e4df] bg-white" : "bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden"}>
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm">
-              <thead className={isAdminTablesPage ? "border-b border-[#e8e4df] bg-[#f0e6d2] text-left text-sm font-semibold text-[#3d3d3d]" : "bg-gray-50/75 border-b border-gray-100 text-xs text-gray-500 uppercase tracking-wider font-semibold"}>
+              <thead className={isAdminTablesPage ? "border-b border-orange-100 bg-orange-50 text-left text-sm font-semibold text-orange-700" : "bg-orange-50 border-b border-orange-100 text-xs text-orange-700 uppercase tracking-wider font-semibold"}>
                 <tr>
                   {isAdminTablesPage && <th className="py-3.5 px-4"># ID</th>}
                   <th className="py-3.5 px-4">Table Number</th>

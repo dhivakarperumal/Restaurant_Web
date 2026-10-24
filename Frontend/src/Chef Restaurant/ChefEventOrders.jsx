@@ -570,7 +570,7 @@ export default function ChefEventOrders() {
         <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
-              <thead className="bg-[#d4a843] text-white uppercase tracking-wider font-extrabold">
+              <thead className="bg-orange-50 text-orange-700 uppercase tracking-wider font-extrabold border-b border-orange-100">
                 <tr>
                   <th className="px-4 py-3.5">Order #</th>
                   <th className="px-4 py-3.5">Event Info</th>

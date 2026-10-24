@@ -432,7 +432,7 @@ const ChefDashboard = () => {
           ) : orders.length ? (
             <div className="overflow-x-auto">
               <table className="min-w-full text-left text-sm">
-                <thead className="bg-[#d4a843] text-xs uppercase tracking-wide text-white">
+                <thead className="bg-orange-50 text-xs uppercase tracking-wide text-orange-700 border-b border-orange-100">
                   <tr><th className="rounded-tl-lg px-4 py-3 font-semibold">S No</th><th className="px-4 py-3 font-semibold">Table</th><th className="px-4 py-3 font-semibold">Items</th><th className="rounded-tr-lg px-4 py-3 font-semibold">Status</th></tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">

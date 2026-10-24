@@ -563,7 +563,7 @@ export default function ServerSupplies() {
         ) : requestView === 'table' ? (
           <div className="scrollbar-hide overflow-x-auto">
             <table className="min-w-[760px] w-full text-left text-sm">
-              <thead className="bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
+              <thead className="bg-orange-50 text-xs uppercase tracking-wide text-orange-700 border-b border-orange-100">
                 <tr>{['S No', 'Requested Items', ...(isAdmin ? ['Requested By'] : []), 'Remarks', 'Status', 'Date', ...(isAdmin ? ['Actions'] : ['Decision'])].map((heading) => <th key={heading} className="px-4 py-3 font-semibold">{heading}</th>)}</tr>
               </thead>
               <tbody>
@@ -626,7 +626,7 @@ export default function ServerSupplies() {
           <>
             {inventoryView === 'table' && <div className="scrollbar-hide overflow-x-auto">
               <table className="min-w-[1180px] w-full text-left text-sm">
-                <thead className="bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
+                <thead className="bg-orange-50 text-xs uppercase tracking-wide text-orange-700 border-b border-orange-100">
                   <tr>{['S No', 'Item Name', 'Item Code', 'Category', 'Material', 'Current Stock', 'Unit', 'Purchase Price', 'Stock Status', 'Actions'].map((heading) => <th key={heading} className="px-4 py-3 font-semibold">{heading}</th>)}</tr>
                 </thead>
                 <tbody>
@@ -775,7 +775,7 @@ export default function ServerSupplies() {
               </dl>
             </div>
             <h3 className="mb-2 mt-6 font-semibold text-slate-900">Stock Movement History</h3>
-            {movements.length ? <div className="overflow-x-auto rounded-xl border border-slate-200"><table className="min-w-full text-left text-sm"><thead className="bg-slate-50 text-slate-500"><tr>{['Type', 'Date', 'Quantity', 'Remarks'].map((heading) => <th key={heading} className="px-3 py-2 font-semibold">{heading}</th>)}</tr></thead><tbody>{movements.map((movement) => <tr key={movement.id} className="border-t border-slate-100"><td className="px-3 py-2">{movement.movement_type === 'IN' ? 'Stock In' : 'Stock Out'}</td><td className="px-3 py-2">{String(movement.movement_date || '').slice(0, 10)}</td><td className="px-3 py-2">{movement.quantity} {viewingItem.unit}</td><td className="px-3 py-2">{movement.remarks || '—'}</td></tr>)}</tbody></table></div> : <p className="rounded-xl bg-slate-50 p-4 text-sm text-slate-500">No stock movements recorded yet.</p>}
+            {movements.length ? <div className="overflow-x-auto rounded-xl border border-slate-200"><table className="min-w-full text-left text-sm"><thead className="bg-orange-50 text-orange-700 border-b border-orange-100"><tr>{['Type', 'Date', 'Quantity', 'Remarks'].map((heading) => <th key={heading} className="px-3 py-2 font-semibold">{heading}</th>)}</tr></thead><tbody>{movements.map((movement) => <tr key={movement.id} className="border-t border-slate-100"><td className="px-3 py-2">{movement.movement_type === 'IN' ? 'Stock In' : 'Stock Out'}</td><td className="px-3 py-2">{String(movement.movement_date || '').slice(0, 10)}</td><td className="px-3 py-2">{movement.quantity} {viewingItem.unit}</td><td className="px-3 py-2">{movement.remarks || '—'}</td></tr>)}</tbody></table></div> : <p className="rounded-xl bg-slate-50 p-4 text-sm text-slate-500">No stock movements recorded yet.</p>}
           </section>
         </div>
       )}

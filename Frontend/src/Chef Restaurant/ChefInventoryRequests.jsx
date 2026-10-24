@@ -219,7 +219,7 @@ const ChefInventoryRequests = () => {
       <div className="overflow-hidden rounded-xl border border-slate-200 bg-white">
         <div className="overflow-x-auto">
           <table className="min-w-full text-left text-sm">
-            <thead className="bg-[#d4a843] text-xs uppercase tracking-wide text-white">
+            <thead className="bg-orange-50 text-xs uppercase tracking-wide text-orange-700 border-b border-orange-100">
               <tr>
                 <th className="px-4 py-4 font-semibold">Request No.</th>
                 <th className="px-4 py-4 font-semibold">Items</th>

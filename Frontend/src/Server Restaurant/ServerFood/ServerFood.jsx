@@ -878,7 +878,7 @@ export default function ServerFood() {
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm">
-              <thead className="bg-gray-50/75 border-b border-gray-100 text-xs text-gray-500 uppercase tracking-wider font-semibold">
+              <thead className="bg-orange-50 border-b border-orange-100 text-xs text-orange-700 uppercase tracking-wider font-semibold">
                 <tr>
                   <th className="py-3.5 px-4">Dish Details</th>
                   <th className="py-3.5 px-4">Category & Cuisine</th>
