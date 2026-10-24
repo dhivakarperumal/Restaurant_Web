@@ -124,17 +124,17 @@ const AddGalleryAlbum = () => {
     if (!file) return;
     
     const data = new FormData();
-    data.append("file", file); // Use "file" as per typical multer setup, backend uses upload.any() so field name doesn't matter much
-    
+    data.append("file", file);
+    data.append("folder", "gallery");
+
     try {
       setUploadingCover(true);
       const res = await api.post("/upload", data);
-      if (res.data?.success && res.data?.urls?.length > 0) {
-        setCoverImage(res.data.urls[0]);
-        toast.success("Cover image uploaded");
-      } else if (res.data?.success && res.data?.url) {
+      if (res.data?.success && res.data?.url) {
         setCoverImage(res.data.url);
         toast.success("Cover image uploaded");
+      } else {
+        toast.error("Failed to upload cover image");
       }
     } catch (error) {
       toast.error("Failed to upload cover image");
@@ -155,13 +155,16 @@ const AddGalleryAlbum = () => {
 
     const data = new FormData();
     files.forEach((file) => data.append("files", file));
-    
+    data.append("folder", "gallery");
+
     try {
       setUploadingPhotos(true);
-      const res = await api.post("/upload", data);
+      const res = await api.post("/upload/multiple", data);
       if (res.data?.success && res.data?.urls) {
-        setPhotos([...photos, ...res.data.urls]);
-        toast.success(`${res.data.urls.length} photos uploaded`);
+        setPhotos((prev) => [...prev, ...res.data.urls]);
+        toast.success(`${res.data.urls.length} photo${res.data.urls.length !== 1 ? "s" : ""} uploaded`);
+      } else {
+        toast.error("Failed to upload photos");
       }
     } catch (error) {
       toast.error("Failed to upload photos");

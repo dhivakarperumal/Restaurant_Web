@@ -23,6 +23,7 @@ const bannersRouter = require('./banners');
 const couponsRouter = require('./coupons');
 const reviewsRouter = require('./reviews');
 const videosRouter = require('./videos');
+const galleryRouter = require('./gallery');
 const settingsRouter = require('./settings');
 const cartRouter = require('./cartRouter');
 const wishlistRouter = require('./wishlistRouter');
@@ -57,7 +58,7 @@ const legacyEmployeeUploadDirectories = [
 
 fs.mkdirSync(uploadDirectory, { recursive: true });
 
-const uploadFolders = new Set(['categories', 'cuisines', 'foods', 'inventory', 'banners', 'review', 'settings', 'tables', 'server_supplies']);
+const uploadFolders = new Set(['categories', 'cuisines', 'foods', 'inventory', 'banners', 'review', 'settings', 'tables', 'server_supplies', 'gallery']);
 fs.mkdirSync(employeeUploadDirectory, { recursive: true });
 
 const createUploadFilename = (req, file, callback) => {
@@ -371,13 +372,32 @@ router.post('/upload', upload.single('file'), (req, res) => {
     .split(path.sep)
     .map(encodeURIComponent)
     .join('/');
-  const backendUrl = (process.env.BACKEND_URL || `http://localhost:${process.env.PORT || 5000}`).replace(/\/+$/, '');
-
   return res.status(201).json({
     success: true,
     filename: req.file.filename,
-    url: `${backendUrl}/uploads/${relativePath}`,
+    url: `/uploads/${relativePath}`,
   });
 });
+
+router.post('/upload/multiple', upload.array('files', 50), (req, res) => {
+  if (!req.files || req.files.length === 0) {
+    return res.status(400).json({ success: false, message: 'At least one file is required' });
+  }
+
+  const urls = req.files.map((f) => {
+    const rel = path.relative(uploadDirectory, f.path)
+      .split(path.sep)
+      .map(encodeURIComponent)
+      .join('/');
+    return `/uploads/${rel}`;
+  });
+
+  return res.status(201).json({
+    success: true,
+    urls,
+  });
+});
+
+router.use('/gallery', galleryRouter);
 
 module.exports = router;
