@@ -8,7 +8,7 @@ const {
 } = require('../modules/gallery');
 
 const normalizeAlbum = (body = {}) => ({
-  title: String(body.title || '').trim(),
+  title: String(body.title || body.category || '').trim(),
   category: String(body.category || '').trim(),
   status: String(body.status || 'Active').trim(),
   sort_order: Number(body.sort_order) || 1,
@@ -51,8 +51,8 @@ const getById = async (req, res) => {
 
 const create = async (req, res) => {
   const album = normalizeAlbum(req.body);
-  if (!album.title) {
-    return res.status(400).json({ success: false, message: 'Album title is required.' });
+  if (!album.title && !album.category) {
+    return res.status(400).json({ success: false, message: 'Category is required.' });
   }
 
   try {
