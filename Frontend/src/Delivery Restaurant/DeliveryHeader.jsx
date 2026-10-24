@@ -73,7 +73,6 @@ const DeliveryHeader = ({ onMenuClick }) => {
         <button type="button" onClick={onMenuClick} aria-label="Open navigation" className="grid h-10 w-10 place-items-center rounded-lg border border-[#e1e9e2] text-[#284d35] lg:hidden">
           <Menu size={19} />
         </button>
-        <Link to="/delivery" className="shrink-0 border-r border-[#e1e9e2] pr-3 text-sm font-bold text-[#173b27] sm:pr-5 sm:text-base">Delivery Partner</Link>
         <div className="flex min-w-0 items-center gap-2 rounded-lg bg-[#f4f8f4] px-2.5 py-2 text-[#327347] sm:px-3">
           <ActivePageIcon aria-hidden="true" size={17} className="shrink-0" />
           <span className="truncate text-xs font-semibold text-gray-600 sm:text-sm">{pageTitles[location.pathname] || "Order Details"}</span>
