@@ -1,5 +1,5 @@
 import { useContext, useEffect, useState } from 'react';
-import { ArrowLeft, ArrowRight, BadgeCheck, CheckCircle2, ChevronLeft, ChevronRight, Clock3, Flame, Heart, Leaf, Minus, Plus, ShoppingCart, Sparkles, Star, Truck, UtensilsCrossed } from 'lucide-react';
+import { ArrowLeft, ArrowRight, BadgeCheck, CheckCircle2, ChevronLeft, ChevronRight, Clock3, Flame, Heart, Leaf, Minus, Plus, Sparkles, Star, Truck, UtensilsCrossed } from 'lucide-react';
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import toast from 'react-hot-toast';
@@ -127,6 +127,31 @@ function FoodDetailsPage() {
       quantity,
       selectedAddons,
       selectedCustomizations,
+    });
+  };
+
+  const addCurrentFoodDirectly = () => {
+    if (!food || !addToCart) {
+      toast.error('Unable to add this item to your cart.');
+      return false;
+    }
+    const size = food.portion_size || 'Standard';
+    return addToCart({
+      ...food,
+      id: food.food_id || food.id,
+      food_id: food.food_id || food.id,
+      product_id: food.food_id || food.id,
+      product_name: food.food_name,
+      name: food.food_name,
+      price,
+      portion_size: size,
+      product_image: food.food_images?.[0] || '',
+      image: food.food_images?.[0] || '',
+      quantity,
+    }, {
+      size,
+      price,
+      quantity,
     });
   };
 
@@ -378,8 +403,8 @@ function FoodDetailsPage() {
 
                 <div className="mt-4 rounded-2xl bg-gradient-to-r from-[#edf5e8] to-[#fff2dc] p-4 sm:px-5">
                   <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-                    <span className="font-serif text-3xl font-black text-[#16432d]">₹{price.toFixed(2)}</span>
-                    {hasDiscount && <span className="text-sm font-medium text-slate-500 line-through">₹{mrp.toFixed(2)}</span>}
+                    <span className="font-sans text-3xl font-extrabold tracking-tight tabular-nums text-[#16432d]">₹{price.toFixed(2)}</span>
+                    {hasDiscount && <span className="font-sans text-sm font-medium tabular-nums text-slate-500 line-through">₹{mrp.toFixed(2)}</span>}
                     {hasDiscount && <span className="rounded-lg bg-orange-600 px-3 py-1 text-[11px] font-extrabold text-white">{food.discount}% OFF</span>}
                   </div>
                   {hasDiscount && <p className="mt-1 text-xs font-semibold text-emerald-800">You save ₹{(mrp - price).toFixed(2)} on this dish!</p>}
@@ -411,9 +436,25 @@ function FoodDetailsPage() {
                     </button>
                     </div>
                   </div>
-                  <button type="button" onClick={() => setCustomizing(true)} disabled={!isAvailable} className="inline-flex min-h-11 flex-1 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#10482f] to-[#075b39] px-4 py-3 text-sm font-bold text-white shadow-md shadow-emerald-950/10 transition hover:from-[#0c3d28] hover:to-[#064a30] disabled:cursor-not-allowed disabled:bg-slate-300 sm:flex-none">
-                  {isAvailable ? <><ShoppingCart className="h-4 w-4" />Customize & add to cart <ArrowLeft className="h-4 w-4 rotate-180" /></> : 'Unavailable'}
-                  </button>
+                  <div className="flex min-w-[220px] flex-1 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setCustomizing(true)}
+                      disabled={!isAvailable}
+                      className="inline-flex min-h-11 min-w-0 flex-1 items-center justify-center whitespace-nowrap rounded-xl border border-[#1a3c36] px-3 py-2 text-xs font-bold text-[#1a3c36] transition hover:bg-emerald-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 focus-visible:ring-offset-2 active:scale-95 disabled:cursor-not-allowed disabled:border-slate-200 disabled:text-slate-400"
+                    >
+                      Customize
+                    </button>
+                    <button
+                      type="button"
+                      onClick={addCurrentFoodDirectly}
+                      disabled={!isAvailable}
+                      className="inline-flex min-h-11 min-w-0 flex-1 items-center justify-center gap-1 whitespace-nowrap rounded-xl bg-[#1a3c36] px-3 py-2 text-xs font-bold text-white shadow-sm transition hover:bg-[#245048] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 focus-visible:ring-offset-2 active:scale-95 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400"
+                    >
+                      {isAvailable && <Plus className="h-3.5 w-3.5 text-emerald-300" />}
+                      {isAvailable ? 'Add' : 'Unavailable'}
+                    </button>
+                  </div>
                 </div>
                 <p className={`mt-3 flex items-center gap-2 text-xs font-semibold ${isAvailable ? 'text-emerald-700' : 'text-rose-600'}`}>
                   <span className={`h-2 w-2 rounded-full ${isAvailable ? 'bg-emerald-600' : 'bg-rose-500'}`} />
