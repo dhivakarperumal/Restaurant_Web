@@ -34,18 +34,50 @@ const metrics = [
 ];
 
 const tones = {
-  mint: "bg-gradient-to-br from-[#10ae89] via-[#1fc995] to-[#21d68f] text-white",
-  violet: "bg-gradient-to-br from-[#4a6ce9] via-[#665ce5] to-[#8250df] text-white",
-  pink: "bg-gradient-to-br from-[#ed40ac] via-[#d832a0] to-[#c72188] text-white",
-  amber: "bg-gradient-to-br from-[#ff9a12] via-[#ffad0b] to-[#ffc20c] text-[#3c2d00]",
-  blue: "bg-gradient-to-br from-[#168bc0] via-[#157da9] to-[#206bb2] text-white",
-  green: "bg-gradient-to-br from-[#24975a] via-[#1b8b4d] to-[#14733e] text-white",
-  rose: "bg-gradient-to-br from-[#df5365] via-[#d7435c] to-[#c82c55] text-white",
-  lime: "bg-gradient-to-br from-[#8cbf31] via-[#69ad32] to-[#368d51] text-white",
-  forest: "bg-gradient-to-br from-[#256448] via-[#1c7048] to-[#16593e] text-white",
+  mint: { icon: "bg-orange-500 text-white", accent: "#f97316" },
+  violet: { icon: "bg-blue-500 text-white", accent: "#3b82f6" },
+  pink: { icon: "bg-pink-500 text-white", accent: "#ec4899" },
+  amber: { icon: "bg-amber-500 text-white", accent: "#f59e0b" },
+  green: { icon: "bg-violet-500 text-white", accent: "#8b5cf6" },
+  rose: { icon: "bg-rose-500 text-white", accent: "#f43f5e" },
+  lime: { icon: "bg-cyan-500 text-white", accent: "#06b6d4" },
+  forest: { icon: "bg-emerald-500 text-white", accent: "#10b981" },
 };
 
 const money = (value) => value == null ? "—" : `₹${Number(value).toLocaleString("en-IN")}`;
+
+function DashboardMetricCard({ label, value, loading, icon: Icon, caption, tone }) {
+  return (
+    <article className="group relative flex min-h-[176px] flex-col justify-between overflow-hidden rounded-2xl border border-slate-200/90 bg-white p-4 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] transition-all duration-300 hover:-translate-y-1 hover:border-slate-300 hover:shadow-[0_12px_24px_-6px_rgba(0,0,0,0.1)] sm:p-5">
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute -right-6 -top-6 h-28 w-28 rounded-full opacity-15 blur-2xl transition-all duration-500 group-hover:scale-150 group-hover:opacity-30"
+        style={{ backgroundColor: tone.accent }}
+      />
+      <div className="relative z-10 flex items-start justify-between gap-3">
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-[11px] font-bold uppercase tracking-wider text-slate-500">{label}</p>
+          {loading ? (
+            <div className="mt-3 h-8 w-24 animate-pulse rounded-lg bg-slate-100" />
+          ) : (
+            <p className="mt-2.5 truncate text-[23px] font-black tracking-tight text-slate-800 sm:text-[27px]">{value}</p>
+          )}
+        </div>
+        <span className={`relative flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl shadow-sm transition-transform duration-300 group-hover:scale-110 ${tone.icon}`}>
+          <Icon size={24} strokeWidth={2.3} />
+        </span>
+      </div>
+      <div className="relative z-10 mt-4 flex items-center justify-between border-t border-slate-100 pt-3 text-xs">
+        <span className="truncate font-medium text-slate-500">{caption}</span>
+        <span className="h-2 w-2 shrink-0 rounded-full shadow-sm" style={{ backgroundColor: tone.accent }} />
+      </div>
+      <div
+        className="absolute bottom-0 left-0 h-[3px] w-0 transition-all duration-300 group-hover:w-full"
+        style={{ backgroundColor: tone.accent }}
+      />
+    </article>
+  );
+}
 
 const formatDuration = (totalSecs) => {
   const secs = Math.max(0, Math.floor(Number(totalSecs) || 0));
@@ -367,33 +399,32 @@ const DeliveryPartnerDashboard = () => {
       {/* Metrics Cards */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {metrics.map(({ key, label, icon: Icon, tone, caption }) => (
-          <div key={key} className={`relative isolate flex min-h-[190px] flex-col overflow-hidden rounded-[22px] p-5 shadow-[0_12px_25px_rgba(20,45,30,0.16)] transition-transform duration-200 hover:-translate-y-0.5 ${tones[tone]}`}>
-            <div aria-hidden="true" className="pointer-events-none absolute -right-8 -top-10 h-36 w-36 rounded-full bg-white/10" />
-            <div className="relative flex items-start justify-between gap-3">
-              <span className="pt-1 text-[11px] font-extrabold uppercase tracking-[0.08em] text-current/90">{label}</span>
-              <span className="grid h-14 w-14 shrink-0 place-items-center rounded-[20px] border border-white/35 bg-white/15 text-current shadow-inner"><Icon size={23} strokeWidth={2.2} /></span>
-            </div>
-            {loading ? <div className="relative mt-2 h-10 w-20 animate-pulse rounded-lg bg-white/25" /> : <p className="relative mt-2 text-[32px] font-extrabold leading-none tabular-nums text-current">{summary[key] ?? 0}</p>}
-            <div aria-hidden="true" className="relative mt-auto flex h-9 items-end gap-1 pt-3 opacity-25">
-              {[16, 24, 18, 32, 21, 28, 36].map((height, index) => <span key={index} style={{ height }} className="flex-1 rounded-t-[4px] bg-white" />)}
-            </div>
-            <span className="relative mt-2 inline-flex w-fit items-center rounded-full border border-white/25 bg-white/15 px-3 py-1.5 text-[10px] font-bold text-current shadow-sm">{caption}</span>
-          </div>
+          <DashboardMetricCard
+            key={key}
+            label={label}
+            value={summary[key] ?? 0}
+            loading={loading}
+            icon={Icon}
+            caption={caption}
+            tone={tones[tone]}
+          />
         ))}
-        <div className={`relative isolate flex min-h-[190px] flex-col overflow-hidden rounded-[22px] p-5 shadow-[0_12px_25px_rgba(20,45,30,0.16)] ${tones.lime}`}>
-          <div aria-hidden="true" className="pointer-events-none absolute -right-8 -top-10 h-36 w-36 rounded-full bg-white/10" />
-          <div className="relative flex items-start justify-between gap-3"><span className="pt-1 text-[11px] font-extrabold uppercase tracking-[0.08em] text-current/90">Today's earnings</span><span className="grid h-14 w-14 shrink-0 place-items-center rounded-[20px] border border-white/35 bg-white/15 text-current shadow-inner"><IndianRupee size={23} strokeWidth={2.2} /></span></div>
-          {loading ? <div className="relative mt-2 h-10 w-24 animate-pulse rounded-lg bg-white/25" /> : <p className="relative mt-2 text-[32px] font-extrabold leading-none tabular-nums text-current">{money(summary.todayEarnings)}</p>}
-          <div aria-hidden="true" className="relative mt-auto flex h-9 items-end gap-1 pt-3 opacity-25">{[16, 24, 18, 32, 21, 28, 36].map((height, index) => <span key={index} style={{ height }} className="flex-1 rounded-t-[4px] bg-white" />)}</div>
-          <span className="relative mt-2 inline-flex w-fit items-center rounded-full border border-white/25 bg-white/15 px-3 py-1.5 text-[10px] font-bold text-current shadow-sm">Today</span>
-        </div>
-        <div className={`relative isolate flex min-h-[190px] flex-col overflow-hidden rounded-[22px] p-5 shadow-[0_12px_25px_rgba(20,45,30,0.16)] ${tones.forest}`}>
-          <div aria-hidden="true" className="pointer-events-none absolute -right-8 -top-10 h-36 w-36 rounded-full bg-white/10" />
-          <div className="relative flex items-start justify-between gap-3"><span className="pt-1 text-[11px] font-extrabold uppercase tracking-[0.08em] text-current/90">Total earnings</span><span className="grid h-14 w-14 shrink-0 place-items-center rounded-[20px] border border-white/35 bg-white/15 text-current shadow-inner"><IndianRupee size={23} strokeWidth={2.2} /></span></div>
-          {loading ? <div className="relative mt-2 h-10 w-24 animate-pulse rounded-lg bg-white/25" /> : <p className="relative mt-2 text-[32px] font-extrabold leading-none tabular-nums text-current">{money(summary.totalEarnings)}</p>}
-          <div aria-hidden="true" className="relative mt-auto flex h-9 items-end gap-1 pt-3 opacity-25">{[16, 24, 18, 32, 21, 28, 36].map((height, index) => <span key={index} style={{ height }} className="flex-1 rounded-t-[4px] bg-white" />)}</div>
-          <span className="relative mt-2 inline-flex w-fit items-center rounded-full border border-white/25 bg-white/15 px-3 py-1.5 text-[10px] font-bold text-current shadow-sm">Lifetime</span>
-        </div>
+        <DashboardMetricCard
+          label="Today's earnings"
+          value={money(summary.todayEarnings)}
+          loading={loading}
+          icon={IndianRupee}
+          caption="Today"
+          tone={tones.lime}
+        />
+        <DashboardMetricCard
+          label="Total earnings"
+          value={money(summary.totalEarnings)}
+          loading={loading}
+          icon={IndianRupee}
+          caption="Lifetime"
+          tone={tones.forest}
+        />
       </div>
 
       {/* Active Delivery Section */}
