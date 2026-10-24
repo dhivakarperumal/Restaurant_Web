@@ -167,33 +167,37 @@ const AdminProducts = () => {
       title: 'Foods',
       value: String(productsList.length || 0),
       inc: productsList.length > 0 ? '18.6%' : '0%',
-      icon: <PackageCheck className="h-7 w-7 text-white" />,
-      iconBg: 'bg-[#22c55e]',
-      waveColor: '#22c55e',
+      icon: <PackageCheck className="h-7 w-7" />,
+      iconBg: 'bg-[#ff9800]',
+      accent: '#ff9800',
+      tint: '#fff4e8',
     },
     {
       title: 'Active Foods',
       value: String(activeProducts),
       inc: productsList.length > 0 ? '12.4%' : '0%',
-      icon: <ShoppingBag className="h-7 w-7 text-white" />,
-      iconBg: 'bg-[#f59e0b]',
-      waveColor: '#f59e0b',
+      icon: <ShoppingBag className="h-7 w-7" />,
+      iconBg: 'bg-[#00b894]',
+      accent: '#00b894',
+      tint: '#e5fbf4',
     },
     {
       title: 'Featured Foods',
       value: String(featuredFoodCount),
       inc: productsList.length > 0 ? '15.3%' : '0%',
-      icon: <Star className="h-7 w-7 text-white" />,
-      iconBg: 'bg-[#06b6d4]',
-      waveColor: '#06b6d4',
+      icon: <Star className="h-7 w-7" />,
+      iconBg: 'bg-[#1685f8]',
+      accent: '#1685f8',
+      tint: '#eff6ff',
     },
     {
       title: 'Average Price',
       value: `₹${averageFoodPrice.toFixed(2)}`,
       inc: productsList.length > 0 ? '10.7%' : '0%',
-      icon: <IndianRupee className="h-7 w-7 text-white" />,
-      iconBg: 'bg-[#a855f7]',
-      waveColor: '#a855f7',
+      icon: <IndianRupee className="h-7 w-7" />,
+      iconBg: 'bg-[#ee3286]',
+      accent: '#ee3286',
+      tint: '#fff0f6',
     },
   ];
 
@@ -204,41 +208,31 @@ const AdminProducts = () => {
 
         {/* ================= STAT CARDS ================= */}
         <div className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
-          {statCards.map((stat, index) => {
+          {statCards.map((stat) => {
             const isNegative = String(stat.inc).includes('↓') || String(stat.inc).includes('-');
             return (
               <article
-                key={index}
-                className={`relative min-w-0 overflow-hidden rounded-xl border border-transparent p-4 sm:p-5 shadow-[0_2px_10px_rgba(20,56,34,0.04)] flex flex-col justify-between min-h-[140px] ${stat.iconBg} text-white`}
+                key={stat.title}
+                className="relative flex min-h-[194px] min-w-0 flex-col justify-between overflow-hidden rounded-[22px] border border-[#e2e8f0] bg-white p-6"
+                style={{ background: `linear-gradient(110deg, #ffffff 40%, ${stat.tint} 100%)` }}
               >
-                <div className="flex items-start gap-3 relative z-10">
-                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg shadow-sm bg-white/20">
-                    {React.cloneElement(stat.icon, { size: 24, strokeWidth: 2.2, className: 'text-white' })}
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <h3 className="truncate text-[12px] font-bold uppercase tracking-[0.08em] text-slate-500">{stat.title}</h3>
+                    <div className="mt-5 truncate text-[36px] font-extrabold leading-none tracking-tight text-slate-900">{stat.value}</div>
                   </div>
-                  <div className="flex-1 mt-0.5 min-w-0">
-                    <h3 className="text-[12px] font-semibold opacity-90 mb-1 truncate">{stat.title}</h3>
-                    <div className="text-[22px] sm:text-[25px] font-extrabold leading-none tracking-tight truncate">{stat.value}</div>
+                  <div className={`flex h-[60px] w-[60px] shrink-0 items-center justify-center rounded-[20px] ${stat.iconBg}`}>
+                    {React.cloneElement(stat.icon, { size: 27, strokeWidth: 2.4, color: '#ffffff' })}
                   </div>
                 </div>
-
-                <div className="flex items-center gap-2 mt-5 relative z-10">
-                  <span className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[11px] font-bold bg-white/25">
-                    ↑ {stat.inc}
-                  </span>
-                  <span className="text-[11px] font-medium opacity-75 truncate">from last month</span>
-                </div>
-
-                <div className="absolute right-0 bottom-0 w-24 h-16 pointer-events-none opacity-50">
-                  <svg viewBox="0 0 100 50" preserveAspectRatio="none" className="w-full h-full">
-                    <defs>
-                      <linearGradient id={`grad-${stat.title.replace(/\s+/g, '')}`} x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor="#ffffff" stopOpacity="0.4" />
-                        <stop offset="100%" stopColor="#ffffff" stopOpacity="0.0" />
-                      </linearGradient>
-                    </defs>
-                    <path d="M0,50 L0,40 Q25,30 50,40 T100,20 L100,50 Z" fill={`url(#grad-${stat.title.replace(/\s+/g, '')})`} />
-                    <path d="M0,40 Q25,30 50,40 T100,20" fill="none" stroke="#ffffff" strokeWidth="2.5" />
-                  </svg>
+                <div className="mt-5 flex items-center justify-between gap-2 border-t border-slate-100 pt-4">
+                  <div className="flex min-w-0 items-center gap-2">
+                    <span className="inline-flex shrink-0 items-center rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[12px] font-semibold text-emerald-600">
+                      {isNegative ? '↓' : '↑'} {stat.inc}
+                    </span>
+                    <span className="truncate text-[14px] text-slate-500">vs last week</span>
+                  </div>
+                  <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: stat.accent }} aria-hidden="true" />
                 </div>
               </article>
             );
