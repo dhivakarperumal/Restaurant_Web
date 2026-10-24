@@ -309,7 +309,7 @@ const Sidebar = ({ isOpen, onClose, collapsed, onToggleCollapse }) => {
                     title={collapsed ? item.label : ""}
                     className={`
                       w-full flex items-center gap-3 px-3 py-3 rounded-lg text-sm
-                      admin-sidebar-link transition-colors duration-150 group
+                      admin-sidebar-link group
                       ${isAnyChildActive
                         ? "admin-sidebar-link-active border-l-2 border-white"
                         : ""
@@ -319,7 +319,7 @@ const Sidebar = ({ isOpen, onClose, collapsed, onToggleCollapse }) => {
                     <Icon className={`w-[17px] h-[17px] shrink-0 ${isAnyChildActive ? "text-white" : "text-white"}`} />
                     {!collapsed && (
                       <>
-                        <span className="flex-1 text-left font-medium truncate text-white">{item.label}</span>
+                        <span className="flex-1 text-left font-semibold truncate text-white">{item.label}</span>
                         <ChevronDown
                           className={`w-3.5 h-3.5 transition-transform duration-200 ${isMenuOpen ? "rotate-180" : ""}`}
                         />
@@ -354,11 +354,11 @@ const Sidebar = ({ isOpen, onClose, collapsed, onToggleCollapse }) => {
                               isActive
                                 ? "admin-sidebar-link-active font-semibold"
                                 : "text-white"
-                            } flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-xs transition-colors duration-150`}
+                            } flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-xs`}
                             title={collapsed && sub.badge ? `${sub.label} (${pendingCount})` : ''}
                           >
                             <SubIcon className="w-3.5 h-3.5 shrink-0 text-white" />
-                            <span className="truncate flex-1 text-white">{sub.label}</span>
+                            <span className="truncate flex-1 font-semibold text-white">{sub.label}</span>
                             {sub.badge === 'pending' && pendingCount > 0 && !collapsed && (
                               <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/20 text-amber-400 border border-amber-500/30 ml-2 shrink-0">
                                 {pendingCount}
@@ -382,14 +382,14 @@ const Sidebar = ({ isOpen, onClose, collapsed, onToggleCollapse }) => {
                 end={item.exact}
                 title={collapsed ? item.label : ""}
                 onClick={() => isOpen && onClose()}
-                className={`admin-sidebar-link flex items-center gap-3 rounded-lg px-3 py-3 text-sm transition-colors duration-150 ${
+                className={`admin-sidebar-link flex items-center gap-3 rounded-lg px-3 py-3 text-sm ${
                   isActive
                     ? "admin-sidebar-link-active font-semibold shadow-md"
                     : "text-white"
                 } ${collapsed ? "justify-center" : ""}`}
               >
                 <Icon className="w-[17px] h-[17px] shrink-0 text-white" />
-                {!collapsed && <span className="font-medium truncate text-white">{item.label}</span>}
+                {!collapsed && <span className="font-semibold truncate text-white">{item.label}</span>}
               </NavLink>
             );
           })}
@@ -400,14 +400,14 @@ const Sidebar = ({ isOpen, onClose, collapsed, onToggleCollapse }) => {
           to="/"
           title={collapsed ? "Back Home" : ""}
           onClick={() => isOpen && onClose()}
-          className={`admin-sidebar-link mx-3 mb-3 flex items-center gap-3 rounded-lg px-3 py-3 text-sm transition-colors duration-150 ${
+          className={`admin-sidebar-link mx-3 mb-3 flex items-center gap-3 rounded-lg px-3 py-3 text-sm ${
             isRouteActive("/")
               ? "admin-sidebar-link-active font-semibold shadow-md"
               : "text-white"
           } ${collapsed ? "justify-center" : ""}`}
         >
           <Home className="w-[17px] h-[17px] shrink-0 text-white" />
-          {!collapsed && <span className="font-medium truncate text-white">Back Home</span>}
+          {!collapsed && <span className="font-semibold truncate text-white">Back Home</span>}
         </NavLink>
 
         {/* ========== COLLAPSE BUTTON ========== */}
