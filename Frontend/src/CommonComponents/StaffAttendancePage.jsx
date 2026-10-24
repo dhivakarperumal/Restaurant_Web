@@ -463,41 +463,58 @@ export default function StaffAttendancePage({
       </header>
 
       {/* TODAY'S ATTENDANCE HERO BANNER */}
-      <div className="relative overflow-hidden rounded-3xl border border-emerald-800/40 bg-gradient-to-br from-[#10382f] via-[#16483c] to-[#0a231d] p-6 sm:p-7 text-white shadow-xl">
-        <div className="pointer-events-none absolute -right-12 -top-12 h-64 w-64 rounded-full bg-emerald-400/10 blur-3xl" />
-        <div className="pointer-events-none absolute right-1/4 -bottom-12 h-48 w-48 rounded-full bg-teal-400/10 blur-2xl" />
+      <div className={`group relative overflow-hidden ${
+        isDeliveryPartner
+          ? "rounded-2xl border border-slate-200/90 bg-gradient-to-r from-white via-white to-emerald-50/70 p-4 text-slate-900 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] sm:p-5"
+          : "rounded-3xl border border-emerald-800/40 bg-gradient-to-br from-[#10382f] via-[#16483c] to-[#0a231d] p-6 text-white shadow-xl sm:p-7"
+      }`}>
+        {isDeliveryPartner ? (
+          <>
+            <div className="pointer-events-none absolute -right-8 -top-12 h-40 w-40 rounded-full bg-emerald-400/15 blur-3xl transition-transform duration-500 group-hover:scale-125" />
+            <div className="pointer-events-none absolute bottom-0 left-0 h-1 w-full bg-gradient-to-r from-emerald-500 via-teal-400 to-transparent" />
+          </>
+        ) : (
+          <>
+            <div className="pointer-events-none absolute -right-12 -top-12 h-64 w-64 rounded-full bg-emerald-400/10 blur-3xl" />
+            <div className="pointer-events-none absolute right-1/4 -bottom-12 h-48 w-48 rounded-full bg-teal-400/10 blur-2xl" />
+          </>
+        )}
 
         <div className="relative z-10 flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
           {/* Left details */}
           <div className="flex items-start gap-4 sm:gap-5">
-            <div className="relative grid h-16 w-16 shrink-0 place-items-center rounded-2xl border border-white/20 bg-white/10 backdrop-blur-md shadow-inner">
-              <UserCheck size={32} className="text-emerald-300" />
+            <div className={`relative grid shrink-0 place-items-center rounded-2xl ${
+              isDeliveryPartner
+                ? "h-14 w-14 border border-emerald-100 bg-emerald-50 text-emerald-600"
+                : "h-16 w-16 border border-white/20 bg-white/10 text-emerald-300 shadow-inner backdrop-blur-md"
+            }`}>
+              <UserCheck size={isDeliveryPartner ? 26 : 32} />
               {isWorking && (
                 <span className="absolute -top-1 -right-1 flex h-4 w-4">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-4 w-4 bg-emerald-500 border-2 border-[#10382f]"></span>
+                  <span className={`absolute inline-flex h-full w-full animate-ping rounded-full opacity-75 ${isDeliveryPartner ? "bg-emerald-500" : "bg-emerald-400"}`}></span>
+                  <span className={`relative inline-flex h-4 w-4 rounded-full border-2 bg-emerald-500 ${isDeliveryPartner ? "border-white" : "border-[#10382f]"}`}></span>
                 </span>
               )}
             </div>
 
             <div className="space-y-1.5">
               <div className="flex flex-wrap items-center gap-2">
-                <span className="text-xs font-mono font-semibold uppercase tracking-wider text-emerald-300">
+                <span className={`text-xs font-mono font-semibold uppercase tracking-wider ${isDeliveryPartner ? "text-emerald-700" : "text-emerald-300"}`}>
                   {todayFormatted}
                 </span>
-                <span className="text-white/40">•</span>
+                <span className={isDeliveryPartner ? "text-slate-300" : "text-white/40"}>•</span>
                 {isWorking ? (
-                  <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-400/25 border border-emerald-400/40 px-2.5 py-0.5 text-[11px] font-extrabold uppercase tracking-wide text-emerald-200">
+                  <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[11px] font-extrabold uppercase tracking-wide ${isDeliveryPartner ? "border border-emerald-200 bg-emerald-50 text-emerald-700" : "border border-emerald-400/40 bg-emerald-400/25 text-emerald-200"}`}>
                     <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
                     Active on Duty
                   </span>
                 ) : isCompleted ? (
-                  <span className="inline-flex items-center gap-1 rounded-full bg-blue-400/25 border border-blue-400/40 px-2.5 py-0.5 text-[11px] font-extrabold uppercase text-blue-200">
+                  <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[11px] font-extrabold uppercase ${isDeliveryPartner ? "border border-blue-200 bg-blue-50 text-blue-700" : "border border-blue-400/40 bg-blue-400/25 text-blue-200"}`}>
                     <CheckCircle2 size={12} />
                     Shift Completed
                   </span>
                 ) : (
-                  <span className="inline-flex items-center gap-1 rounded-full bg-amber-400/25 border border-amber-400/40 px-2.5 py-0.5 text-[11px] font-extrabold uppercase text-amber-200">
+                  <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[11px] font-extrabold uppercase ${isDeliveryPartner ? "border border-amber-200 bg-amber-50 text-amber-700" : "border border-amber-400/40 bg-amber-400/25 text-amber-200"}`}>
                     <Clock size={12} />
                     Shift Not Started
                   </span>
@@ -507,8 +524,8 @@ export default function StaffAttendancePage({
                   <span
                     className={`rounded-full px-2.5 py-0.5 text-[10px] font-black uppercase ${
                       attendance.status === "Late"
-                        ? "bg-amber-400 text-amber-950"
-                        : "bg-emerald-400/20 text-emerald-200 border border-emerald-400/40"
+                        ? isDeliveryPartner ? "bg-amber-100 text-amber-800" : "bg-amber-400 text-amber-950"
+                        : isDeliveryPartner ? "border border-emerald-200 bg-emerald-50 text-emerald-700" : "border border-emerald-400/40 bg-emerald-400/20 text-emerald-200"
                     }`}
                   >
                     {attendance.status}
@@ -516,7 +533,7 @@ export default function StaffAttendancePage({
                 )}
               </div>
 
-              <h2 className="text-xl sm:text-2xl font-extrabold text-white">
+              <h2 className={`text-xl font-extrabold sm:text-2xl ${isDeliveryPartner ? "text-slate-900" : "text-white"}`}>
                 {isWorking
                   ? "You are currently clocked in & on duty"
                   : isCompleted
@@ -524,7 +541,7 @@ export default function StaffAttendancePage({
                   : "Ready to start your shift?"}
               </h2>
 
-              <p className="text-xs sm:text-sm text-emerald-100/80 max-w-xl">
+              <p className={`max-w-xl text-xs sm:text-sm ${isDeliveryPartner ? "text-slate-500" : "text-emerald-100/80"}`}>
                 {isWorking
                   ? `Clocked in at ${formatTimeStr(attendance.check_in)}. Working time is being automatically recorded.`
                   : isCompleted
@@ -535,19 +552,19 @@ export default function StaffAttendancePage({
               </p>
 
               {/* Shift info pill */}
-              <div className="flex flex-wrap items-center gap-3 pt-1 text-xs text-emerald-200/90 font-medium">
+              <div className={`flex flex-wrap items-center gap-3 pt-1 text-xs font-medium ${isDeliveryPartner ? "text-slate-600" : "text-emerald-200/90"}`}>
                 {shiftInfo?.start_time && (
-                  <span className="rounded-lg bg-white/10 px-2.5 py-1 backdrop-blur-sm border border-white/10">
+                  <span className={`rounded-lg border px-2.5 py-1 ${isDeliveryPartner ? "border-slate-200 bg-white text-slate-600" : "border-white/10 bg-white/10 backdrop-blur-sm"}`}>
                     Shift: {formatShiftTime(shiftInfo.start_time)} – {formatShiftTime(shiftInfo.end_time)}
                   </span>
                 )}
                 {attendance?.check_in && (
-                  <span className="rounded-lg bg-white/10 px-2.5 py-1 backdrop-blur-sm border border-white/10">
+                  <span className={`rounded-lg border px-2.5 py-1 ${isDeliveryPartner ? "border-slate-200 bg-white text-slate-600" : "border-white/10 bg-white/10 backdrop-blur-sm"}`}>
                     Clock In: <strong>{formatTimeStr(attendance.check_in)}</strong>
                   </span>
                 )}
                 {attendance?.check_out && (
-                  <span className="rounded-lg bg-white/10 px-2.5 py-1 backdrop-blur-sm border border-white/10">
+                  <span className={`rounded-lg border px-2.5 py-1 ${isDeliveryPartner ? "border-slate-200 bg-white text-slate-600" : "border-white/10 bg-white/10 backdrop-blur-sm"}`}>
                     Clock Out: <strong>{formatTimeStr(attendance.check_out)}</strong>
                   </span>
                 )}
@@ -559,13 +576,17 @@ export default function StaffAttendancePage({
           <div className="flex flex-col sm:flex-row sm:items-center gap-3 shrink-0">
             {/* Live Timer if on duty */}
             {isWorking && (
-              <div className="flex items-center gap-3 rounded-2xl border border-emerald-400/30 bg-emerald-950/60 px-4 py-3 backdrop-blur-md shadow-inner">
-                <Timer size={22} className="text-emerald-400 animate-spin" />
+              <div className={`flex items-center gap-3 rounded-2xl border px-4 py-3 ${
+                isDeliveryPartner
+                  ? "border-emerald-100 bg-emerald-50"
+                  : "border-emerald-400/30 bg-emerald-950/60 shadow-inner backdrop-blur-md"
+              }`}>
+                <Timer size={22} className={`animate-spin ${isDeliveryPartner ? "text-emerald-600" : "text-emerald-400"}`} />
                 <div>
-                  <p className="text-[10px] font-bold uppercase tracking-wider text-emerald-300">
+                  <p className={`text-[10px] font-bold uppercase tracking-wider ${isDeliveryPartner ? "text-emerald-700" : "text-emerald-300"}`}>
                     Duty Duration
                   </p>
-                  <p className="font-mono text-xl font-extrabold text-white leading-tight">
+                  <p className={`font-mono text-xl font-extrabold leading-tight ${isDeliveryPartner ? "text-slate-900" : "text-white"}`}>
                     {formatDuration(liveSeconds)}
                   </p>
                 </div>
@@ -605,7 +626,7 @@ export default function StaffAttendancePage({
                 type="button"
                 onClick={handleClockIn}
                 disabled={actionLoading}
-                className="inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-500 hover:bg-emerald-600 px-5 py-3 text-sm font-extrabold text-white shadow-lg transition active:scale-95 disabled:opacity-50"
+                className={`inline-flex items-center justify-center gap-2 rounded-xl px-5 py-3 text-sm font-extrabold text-white shadow-lg transition active:scale-95 disabled:opacity-50 ${isDeliveryPartner ? "bg-emerald-600 hover:bg-emerald-700" : "bg-emerald-500 hover:bg-emerald-600"}`}
               >
                 <RotateCcw size={16} />
                 {actionLoading ? "Resuming..." : "Resume Shift"}
@@ -615,7 +636,7 @@ export default function StaffAttendancePage({
                 type="button"
                 onClick={handleClockIn}
                 disabled={actionLoading}
-                className="group relative inline-flex items-center justify-center gap-2.5 overflow-hidden rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 px-6 py-3.5 text-sm font-extrabold text-white shadow-[0_4px_20px_rgba(16,185,129,0.4)] transition-all duration-200 hover:scale-[1.02] hover:shadow-[0_6px_25px_rgba(16,185,129,0.5)] active:scale-95 disabled:opacity-50"
+                className={`group relative inline-flex items-center justify-center gap-2.5 overflow-hidden rounded-xl px-6 py-3.5 text-sm font-extrabold text-white transition-all duration-200 hover:scale-[1.02] active:scale-95 disabled:opacity-50 ${isDeliveryPartner ? "bg-emerald-600 shadow-sm hover:bg-emerald-700" : "bg-gradient-to-r from-emerald-500 to-teal-500 shadow-[0_4px_20px_rgba(16,185,129,0.4)] hover:shadow-[0_6px_25px_rgba(16,185,129,0.5)]"}`}
               >
                 <Play size={17} className="fill-current text-white" />
                 {actionLoading ? "Clocking In..." : "Clock In Now"}
@@ -680,7 +701,7 @@ export default function StaffAttendancePage({
           },
         ].map((stat, index) => {
           const Icon = stat.icon;
-          const useAdminCardStyle = role === "Server";
+          const useAdminCardStyle = role === "Server" || isDeliveryPartner;
           return (
             <article
               key={stat.title}
@@ -824,7 +845,7 @@ export default function StaffAttendancePage({
         {/* History Table */}
         <div className="overflow-x-auto rounded-2xl border border-gray-100 shadow-sm">
           <table className="w-full text-left text-xs">
-            <thead className={`border-b text-[11px] font-bold uppercase tracking-wider ${role === "Chef" ? "border-[#c3972f] bg-[#d4a843] text-white" : "border-gray-200 bg-gray-50/90 text-gray-600"}`}>
+            <thead className={`border-b text-[11px] font-bold uppercase tracking-wider ${role === "Chef" ? "border-[#c3972f] bg-[#d4a843] text-white" : role === "Delivery Partner" ? "border-orange-100 bg-orange-50 text-orange-700" : "border-gray-200 bg-gray-50/90 text-gray-600"}`}>
               <tr>
                 <th className="px-5 py-3.5">Date</th>
                 <th className="px-4 py-3.5">Scheduled Shift</th>
