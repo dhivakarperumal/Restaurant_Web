@@ -731,7 +731,7 @@ export default function ServerTables() {
             placeholder={isAdminTablesPage ? "Search by table number or server..." : "Search table, ticket, food..."}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className={isAdminTablesPage ? "h-[46px] w-full rounded-xl border border-[#dfe2e5] bg-[#faf9f8] pl-10 pr-3 text-[14px] text-[#2d2d2d] outline-none placeholder:text-[#8a8a8a] focus:border-[#d2bc8a]" : "h-[58px] w-full rounded-2xl border border-[#dfe2e5] bg-[#faf9f8] pl-12 pr-4 text-[15px] text-[#2d2d2d] outline-none placeholder:text-[#8a8a8a] focus:border-[#d2bc8a]"}
+            className={isAdminTablesPage ? "h-[46px] w-full rounded-xl border border-[#dfe2e5] bg-[#faf9f8] pl-10 pr-3 text-[14px] text-[#2d2d2d] outline-none placeholder:text-[#8a8a8a] focus:border-[#d2bc8a]" : "h-[58px] w-full rounded-2xl border border-[#dfe2e5] bg-[#faf9f8] pl-12 pr-4 text-[15px] text-[#2d2d2d] outline-none placeholder:text-[#8a8a8a] focus:border-[#FF5A00]"}
           />
         </div>
 
@@ -745,7 +745,7 @@ export default function ServerTables() {
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className={isAdminTablesPage ? "h-[46px] rounded-xl border border-[#dfe2e5] bg-[#faf9f8] px-3 text-[14px] font-medium text-[#2d2d2d] outline-none focus:border-[#d2bc8a]" : "h-[58px] min-w-[180px] rounded-2xl border border-[#dfe2e5] bg-white px-4 text-[15px] font-medium text-[#2d2d2d] outline-none focus:border-[#d2bc8a]"}
+            className={isAdminTablesPage ? "h-[46px] rounded-xl border border-[#dfe2e5] bg-[#faf9f8] px-3 text-[14px] font-medium text-[#2d2d2d] outline-none focus:border-[#d2bc8a]" : "h-[58px] min-w-[180px] rounded-2xl border border-[#dfe2e5] bg-white px-4 text-[15px] font-medium text-[#2d2d2d] outline-none focus:border-[#FF5A00]"}
           >
             <option value="all">{isAdminTablesPage ? "All Statuses" : "All Status"} ({baseTables.length})</option>
             <option value="Available">Available ({stats.available})</option>
@@ -786,7 +786,7 @@ export default function ServerTables() {
               onClick={() => setViewMode(isAdminTablesPage ? "grid" : "table")}
               className={isAdminTablesPage
                 ? `flex h-[46px] w-[46px] cursor-pointer items-center justify-center transition ${viewMode === "grid" ? "bg-[#1a3c36] text-white" : "text-[#4d4d4d] hover:bg-white"}`
-                : `h-full w-[54px] cursor-pointer transition ${viewMode === "table" ? "bg-[#1a3c36] text-white" : "text-[#4d4d4d] hover:bg-[#faf9f8]"}`}
+                : `h-full w-[54px] cursor-pointer transition ${viewMode === "table" ? "bg-[#FF5A00] text-white" : "text-[#4d4d4d] hover:bg-orange-50"}`}
               aria-label={isAdminTablesPage ? "Card view" : "List view"}
               aria-pressed={isAdminTablesPage ? viewMode === "grid" : viewMode === "table"}
               title={isAdminTablesPage ? "Card view" : "List view"}
@@ -798,7 +798,7 @@ export default function ServerTables() {
               onClick={() => setViewMode(isAdminTablesPage ? "table" : "grid")}
               className={isAdminTablesPage
                 ? `flex h-[46px] w-[46px] cursor-pointer items-center justify-center border-l border-[#dfe2e5] transition ${viewMode === "table" ? "bg-[#1a3c36] text-white" : "text-[#4d4d4d] hover:bg-white"}`
-                : `h-full w-[54px] border-l border-[#dfe2e5] cursor-pointer transition ${viewMode === "grid" ? "bg-[#1a3c36] text-white" : "text-[#4d4d4d] hover:bg-[#faf9f8]"}`}
+                : `h-full w-[54px] border-l border-[#dfe2e5] cursor-pointer transition ${viewMode === "grid" ? "bg-[#FF5A00] text-white" : "text-[#4d4d4d] hover:bg-orange-50"}`}
               aria-label={isAdminTablesPage ? "Table view" : "Grid view"}
               aria-pressed={isAdminTablesPage ? viewMode === "table" : viewMode === "grid"}
               title={isAdminTablesPage ? "Table view" : "Grid view"}
@@ -1029,7 +1029,7 @@ export default function ServerTables() {
                               table.table_number
                             )
                           }
-                          className="mt-1 w-full py-2 px-3 rounded-lg bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white text-xs font-bold flex items-center justify-center gap-1.5 shadow transition cursor-pointer disabled:opacity-50"
+                          className="mt-1 w-full py-2 px-3 rounded-lg bg-[#FF5A00] hover:bg-[#E94B00] text-white text-xs font-bold flex items-center justify-center gap-1.5 shadow transition cursor-pointer disabled:opacity-50"
                         >
                           <Check className="w-3.5 h-3.5" />
                           {updatingOrderId ===
@@ -1053,7 +1053,7 @@ export default function ServerTables() {
                           onClick={() => handleQuickStatusChange(table, st)}
                           className={`px-2.5 py-1 rounded text-[11px] font-medium transition cursor-pointer ${
                             table.status === st
-                              ? "bg-[#1f3228] text-white shadow-sm"
+                              ? `${isAdminTablesPage ? "bg-[#1f3228]" : "bg-[#FF5A00]"} text-white shadow-sm`
                               : "bg-gray-100 text-gray-600 hover:bg-gray-200"
                           }`}
                         >
@@ -1087,13 +1087,13 @@ export default function ServerTables() {
                         <button
                           type="button"
                           onClick={() => handleOpenBillModal(table)}
-                          className="inline-flex w-full cursor-pointer items-center justify-between rounded-xl border border-emerald-300 bg-emerald-50 px-3 py-2 text-xs font-bold text-emerald-900 transition hover:bg-emerald-100 shadow-sm"
+                          className="inline-flex w-full cursor-pointer items-center justify-between rounded-xl border border-orange-200 bg-orange-50 px-3 py-2 text-xs font-bold text-orange-800 transition hover:bg-orange-100 shadow-sm"
                         >
                           <span className="flex items-center gap-1.5">
-                            <FileText className="h-3.5 w-3.5 text-emerald-700" />
+                            <FileText className="h-3.5 w-3.5 text-[#FF5A00]" />
                             Bill #{activeBill.bill_number}
                           </span>
-                          <span className="font-mono text-emerald-800 text-[11px]">
+                          <span className="font-mono text-orange-800 text-[11px]">
                             ₹{Number(activeBill.grand_total || 0).toFixed(0)} ({activeBill.total_items_count || "Items"}) · View & Settle
                           </span>
                         </button>
@@ -1103,7 +1103,7 @@ export default function ServerTables() {
                         disabled={!canOrder}
                         onClick={() => selectTableForOrder(table)}
                         title={canOrder ? "Select table and create an order" : "Mark the table as Occupied before ordering"}
-                        className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#1a3c36] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#214a42] enabled:cursor-pointer disabled:cursor-not-allowed disabled:opacity-45 disabled:hover:bg-[#1a3c36]"
+                        className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#FF5A00] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#E94B00] enabled:cursor-pointer disabled:cursor-not-allowed disabled:opacity-45 disabled:hover:bg-[#FF5A00]"
                       >
                         {activeBill ? "+ Add Round / Items" : "Select Table & Order"} <ArrowRight className="h-4 w-4" />
                       </button>
@@ -1282,7 +1282,7 @@ export default function ServerTables() {
                                       type="button"
                                       disabled={updatingOrderId === (activeOrder.kitchen_order_id || activeOrder.order_id)}
                                       onClick={() => handleMarkServed(activeOrder.kitchen_order_id || activeOrder.order_id, table.table_number)}
-                                      className="px-2 py-1 rounded bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition flex items-center gap-1 cursor-pointer disabled:opacity-50"
+                                      className="px-2 py-1 rounded bg-[#FF5A00] hover:bg-[#E94B00] text-white text-xs font-bold transition flex items-center gap-1 cursor-pointer disabled:opacity-50"
                                     >
                                       <Check className="w-3 h-3" /> Mark Served
                                     </button>
@@ -1299,7 +1299,7 @@ export default function ServerTables() {
                                   onClick={() => handleQuickStatusChange(table, st)}
                                   className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition cursor-pointer ${
                                     table.status === st
-                                      ? "bg-[#1f3228] text-white shadow-sm"
+                                      ? `${isAdminTablesPage ? "bg-[#1f3228]" : "bg-[#FF5A00]"} text-white shadow-sm`
                                       : "bg-gray-100 text-gray-700 hover:bg-gray-200"
                                   }`}
                                 >
@@ -1319,7 +1319,7 @@ export default function ServerTables() {
                                       <button
                                         type="button"
                                         onClick={() => handleOpenBillModal(table)}
-                                        className="inline-flex cursor-pointer items-center gap-1 rounded-lg border border-emerald-300 bg-emerald-50 px-2.5 py-1.5 text-xs font-bold text-emerald-800 transition hover:bg-emerald-100"
+                                        className="inline-flex cursor-pointer items-center gap-1 rounded-lg border border-orange-200 bg-orange-50 px-2.5 py-1.5 text-xs font-bold text-orange-800 transition hover:bg-orange-100"
                                       >
                                         <FileText className="h-3.5 w-3.5" /> Bill #{activeBill.bill_number} (₹{Number(activeBill.grand_total || 0).toFixed(0)})
                                       </button>
@@ -1329,7 +1329,7 @@ export default function ServerTables() {
                                       disabled={!canOrder}
                                       onClick={() => selectTableForOrder(table)}
                                       title={canOrder ? "Select table and create an order" : "Mark the table as Occupied before ordering"}
-                                      className="inline-flex items-center gap-1.5 rounded-lg bg-[#1a3c36] px-3 py-2 text-xs font-semibold text-white transition hover:bg-[#214a42] enabled:cursor-pointer disabled:cursor-not-allowed disabled:opacity-45 disabled:hover:bg-[#1a3c36]"
+                                      className="inline-flex items-center gap-1.5 rounded-lg bg-[#FF5A00] px-3 py-2 text-xs font-semibold text-white transition hover:bg-[#E94B00] enabled:cursor-pointer disabled:cursor-not-allowed disabled:opacity-45 disabled:hover:bg-[#FF5A00]"
                                     >
                                       {activeBill ? "+ Add Round" : "Select Table"} <ArrowRight className="h-3.5 w-3.5" />
                                     </button>
@@ -1613,7 +1613,7 @@ export default function ServerTables() {
                     max={viewingBill.subtotal}
                     value={settleDiscount}
                     onChange={(e) => setSettleDiscount(e.target.value)}
-                    className="w-20 px-2 py-1 text-right text-xs border border-gray-200 rounded-lg outline-none focus:border-[#1a3c36]"
+                    className="w-20 px-2 py-1 text-right text-xs border border-gray-200 rounded-lg outline-none focus:border-[#FF5A00]"
                   />
                 </div>
               )}
@@ -1640,7 +1640,7 @@ export default function ServerTables() {
                         onClick={() => setPaymentMethod(method)}
                         className={`py-2 px-3 text-xs font-bold rounded-xl border transition cursor-pointer ${
                           paymentMethod === method
-                            ? "bg-[#1a3c36] text-white border-[#1a3c36] shadow-sm"
+                            ? "bg-[#FF5A00] text-white border-[#FF5A00] shadow-sm"
                             : "bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100"
                         }`}
                       >
@@ -1662,7 +1662,7 @@ export default function ServerTables() {
                     type="button"
                     disabled={settlingBill}
                     onClick={handleSettleBill}
-                    className="flex-1 py-2.5 px-3 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold flex items-center justify-center gap-1.5 shadow transition cursor-pointer disabled:opacity-50"
+                    className="flex-1 py-2.5 px-3 rounded-xl bg-[#FF5A00] hover:bg-[#E94B00] text-white text-xs font-bold flex items-center justify-center gap-1.5 shadow transition cursor-pointer disabled:opacity-50"
                   >
                     {settlingBill ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
                     Settle & Free Table ✓
