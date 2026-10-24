@@ -31,7 +31,7 @@ const AdminLayout = () => {
 
 
   return (
-    <div className={`admin-root flex min-h-screen ${isPosPage ? 'md:h-screen md:overflow-hidden' : ''} ${isPrintPage ? 'bg-slate-100 text-slate-900' : 'bg-slate-100/75 text-slate-800'} print:bg-white print:text-black print:min-h-0 print:block`}>
+    <div className={`admin-root admin-theme flex min-h-screen ${isPosPage ? 'md:h-screen md:overflow-hidden' : ''} ${isPrintPage ? 'bg-slate-100 text-slate-900' : 'bg-slate-100/75 text-slate-800'} print:bg-white print:text-black print:min-h-0 print:block`}>
       
       {/* Sidebar */}
       {!isPrintPage && !isPosPage && (

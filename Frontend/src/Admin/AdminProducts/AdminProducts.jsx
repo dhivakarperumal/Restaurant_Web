@@ -247,9 +247,9 @@ const AdminProducts = () => {
 
         {/* ================= TABLE CARD ================= */}
         <div className="rounded-[18px] border border-[#e7e0d8] bg-white p-4 shadow-[0_1px_0_rgba(16,24,40,0.02)]">
-          <div className="mb-4 flex flex-col gap-3 lg:flex-row lg:items-center">
-            <div className="flex flex-1 flex-wrap items-center gap-3">
-              <div className="relative w-full max-w-[340px]">
+          <div className="mb-4 flex flex-col gap-3 lg:flex-row lg:items-center xl:flex-nowrap xl:gap-2">
+            <div className="flex flex-1 flex-wrap items-center gap-3 xl:min-w-0 xl:flex-nowrap xl:gap-2">
+              <div className="relative w-full max-w-[340px] xl:w-[180px] xl:shrink-0">
                 <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#7a7a7a]" />
                 <input
                   type="text"
@@ -260,11 +260,11 @@ const AdminProducts = () => {
                 />
               </div>
 
-              <div className="flex flex-wrap items-center gap-3 lg:ml-auto">
+              <div className="flex flex-wrap items-center gap-3 lg:ml-auto xl:ml-0 xl:flex-nowrap xl:gap-1.5">
                 <select
                   value={selectedCategory}
                   onChange={(e) => setSelectedCategory(e.target.value)}
-                  className="h-[46px] rounded-xl border border-[#dfe2e5] bg-[#faf9f8] px-3 text-[14px] font-medium text-[#2d2d2d] outline-none focus:border-[#d2bc8a]"
+                  className="h-[46px] rounded-xl border border-[#dfe2e5] bg-[#faf9f8] px-3 text-[14px] font-medium text-[#2d2d2d] outline-none focus:border-[#d2bc8a] xl:h-[42px] xl:w-[112px] xl:px-2 xl:text-xs"
                 >
                   <option value="All Categories">All Categories</option>
                   <option value="Gift">Gifts</option>
@@ -278,7 +278,7 @@ const AdminProducts = () => {
               <select
                 value={selectedCuisine}
                 onChange={(e) => setSelectedCuisine(e.target.value)}
-                className="h-[46px] rounded-xl border border-[#dfe2e5] bg-[#faf9f8] px-3 text-[14px] font-medium text-[#2d2d2d] outline-none focus:border-[#d2bc8a]"
+                className="h-[46px] rounded-xl border border-[#dfe2e5] bg-[#faf9f8] px-3 text-[14px] font-medium text-[#2d2d2d] outline-none focus:border-[#d2bc8a] xl:h-[42px] xl:w-[112px] xl:px-2 xl:text-xs"
                 aria-label="Filter by cuisine"
               >
                 <option value="All Cuisines">All Cuisines</option>
@@ -295,7 +295,7 @@ const AdminProducts = () => {
                 <select
                   value={selectedStatus}
                   onChange={(e) => setSelectedStatus(e.target.value)}
-                  className="h-[46px] rounded-xl border border-[#dfe2e5] bg-[#faf9f8] px-3 text-[14px] font-medium text-[#2d2d2d] outline-none focus:border-[#d2bc8a]"
+                  className="h-[46px] rounded-xl border border-[#dfe2e5] bg-[#faf9f8] px-3 text-[14px] font-medium text-[#2d2d2d] outline-none focus:border-[#d2bc8a] xl:h-[42px] xl:w-[96px] xl:px-2 xl:text-xs"
                 >
                   <option value="All Status">All Status</option>
                   <option value="Active">Active</option>
@@ -306,11 +306,11 @@ const AdminProducts = () => {
               </div>
             </div>
 
-            <div className="flex items-center gap-3 lg:shrink-0">
+            <div className="flex items-center gap-3 lg:shrink-0 xl:gap-2">
               <select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value)}
-                className="h-[46px] rounded-xl border border-[#dfe2e5] bg-[#faf9f8] px-3 text-[14px] font-medium text-[#2d2d2d] outline-none focus:border-[#d2bc8a]"
+                className="h-[46px] rounded-xl border border-[#dfe2e5] bg-[#faf9f8] px-3 text-[14px] font-medium text-[#2d2d2d] outline-none focus:border-[#d2bc8a] xl:h-[42px] xl:w-[160px] xl:px-2 xl:text-xs"
               >
                 <option value="latest">Sort by: Latest</option>
                 <option value="prep-time">Preparation: Shortest first</option>
@@ -318,11 +318,11 @@ const AdminProducts = () => {
                 <option value="price-low">Price: Low to High</option>
               </select>
 
-              <div className="flex overflow-hidden rounded-xl border border-[#dfe2e5] bg-[#faf9f8]">
+              <div className="flex shrink-0 overflow-hidden rounded-xl border border-[#dfe2e5] bg-[#faf9f8]">
                 <button
                   type="button"
                   onClick={() => setViewMode('table')}
-                  className={`flex h-[46px] w-[46px] items-center justify-center border-r border-[#dfe2e5] ${viewMode === 'table' ? 'bg-[#1a3c36] text-white' : 'text-[#4d4d4d] hover:bg-white'}`}
+                  className={`flex h-[46px] w-[46px] items-center justify-center border-r border-[#dfe2e5] xl:h-[42px] xl:w-[40px] ${viewMode === 'table' ? 'bg-[#1a3c36] text-white' : 'text-[#4d4d4d] hover:bg-white'}`}
                   aria-label="Table view"
                   title="Table view"
                 >
@@ -331,7 +331,7 @@ const AdminProducts = () => {
                 <button
                   type="button"
                   onClick={() => setViewMode('card')}
-                  className={`flex h-[46px] w-[46px] items-center justify-center ${viewMode === 'card' ? 'bg-[#1a3c36] text-white' : 'text-[#4d4d4d] hover:bg-white'}`}
+                  className={`flex h-[46px] w-[46px] items-center justify-center xl:h-[42px] xl:w-[40px] ${viewMode === 'card' ? 'bg-[#1a3c36] text-white' : 'text-[#4d4d4d] hover:bg-white'}`}
                   aria-label="Card view"
                   title="Card view"
                 >
@@ -341,7 +341,7 @@ const AdminProducts = () => {
               <button
                   type="button"
                   onClick={() => setAddFoodOpen(true)}
-                  className="inline-flex h-[46px] items-center gap-2 rounded-xl bg-[#1a3c36] px-4 text-[15px] font-semibold text-white shadow-[0_6px_14px_rgba(26,60,54,0.18)] transition hover:bg-[#214a42]"
+                  className="inline-flex h-[46px] shrink-0 items-center gap-2 rounded-xl bg-[#1a3c36] px-4 text-[15px] font-semibold text-white shadow-[0_6px_14px_rgba(26,60,54,0.18)] transition hover:bg-[#214a42] xl:h-[42px] xl:gap-1.5 xl:px-2.5 xl:text-xs"
                 >
                   <Plus className="h-4 w-4" />
                   Add Food

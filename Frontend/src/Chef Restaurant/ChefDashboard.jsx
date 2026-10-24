@@ -181,10 +181,10 @@ const ChefDashboard = () => {
   }, [eventOrders]);
 
   const stats = [
-    { label: "Active Orders", value: orderCounts.active, detail: "Open kitchen orders", icon: UtensilsCrossed, bg: "bg-[#22c55e]" },
-    { label: "Pending", value: orderCounts.pending, detail: "Waiting to start", icon: Clock3, bg: "bg-[#f59e0b]" },
-    { label: "Preparing", value: orderCounts.preparing, detail: "In progress", icon: Flame, bg: "bg-[#3b82f6]" },
-    { label: "Ready to Serve", value: orderCounts.ready, detail: "Plated & hot", icon: CheckCircle2, bg: "bg-[#8b5cf6]" },
+    { label: "Active Orders", value: orderCounts.active, detail: "Open kitchen orders", icon: UtensilsCrossed, tone: "bg-gradient-to-tr from-emerald-600 to-green-400 text-white shadow-emerald-500/25", accentColor: "#10b981", glowColor: "#34d399" },
+    { label: "Pending", value: orderCounts.pending, detail: "Waiting to start", icon: Clock3, tone: "bg-gradient-to-tr from-amber-500 to-yellow-400 text-white shadow-amber-500/25", accentColor: "#f59e0b", glowColor: "#fbbf24" },
+    { label: "Preparing", value: orderCounts.preparing, detail: "In progress", icon: Flame, tone: "bg-gradient-to-tr from-blue-600 to-cyan-400 text-white shadow-blue-500/25", accentColor: "#3b82f6", glowColor: "#60a5fa" },
+    { label: "Ready to Serve", value: orderCounts.ready, detail: "Plated & hot", icon: CheckCircle2, tone: "bg-gradient-to-tr from-violet-600 to-purple-400 text-white shadow-purple-500/25", accentColor: "#8b5cf6", glowColor: "#a78bfa" },
   ];
 
   return (
@@ -235,44 +235,42 @@ const ChefDashboard = () => {
       )}
 
       <section aria-label="Kitchen order summary" className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        {stats.map((stat, index) => {
+        {stats.map((stat) => {
           const Icon = stat.icon;
           return (
             <article
               key={stat.label}
-              className={`relative min-w-0 overflow-hidden rounded-xl border border-transparent p-4 sm:p-5 shadow-[0_2px_10px_rgba(20,56,34,0.08)] flex flex-col justify-between min-h-[140px] ${stat.bg} text-white`}
+              className="group relative flex min-h-[140px] min-w-0 flex-col justify-between overflow-hidden rounded-2xl border border-slate-200/90 bg-white p-4 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] transition-all duration-300 hover:-translate-y-1 hover:border-slate-300 hover:shadow-[0_12px_24px_-6px_rgba(0,0,0,0.1)] sm:p-5"
             >
-              <div className="flex items-start gap-3 relative z-10">
-                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg shadow-sm bg-white/20">
-                  <Icon size={24} strokeWidth={2.2} className="text-white" />
-                </div>
-                <div className="flex-1 mt-0.5 min-w-0">
-                  <h3 className="text-[12px] font-semibold opacity-90 mb-1 truncate">{stat.label}</h3>
-                  <div className="text-[26px] font-extrabold leading-none tracking-tight">
+              <div
+                className="pointer-events-none absolute -right-6 -top-6 h-28 w-28 rounded-full opacity-20 blur-2xl transition-all duration-500 group-hover:scale-150 group-hover:opacity-35"
+                style={{ backgroundColor: stat.glowColor }}
+              />
+              <div className="relative z-10 flex items-start justify-between gap-3">
+                <div className="min-w-0 flex-1">
+                  <h3 className="truncate text-[11px] font-bold uppercase tracking-wider text-slate-500">{stat.label}</h3>
+                  <div className="mt-2.5 truncate text-[23px] font-black tracking-tight text-slate-800 sm:text-[27px]">
                     {loading ? "..." : stat.value}
                   </div>
                 </div>
+                <div className={`relative flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl shadow-sm transition-transform duration-300 group-hover:scale-110 ${stat.tone}`}>
+                  <Icon size={24} strokeWidth={2.3} />
+                </div>
               </div>
 
-              <div className="flex items-center gap-2 mt-5 relative z-10">
-                <span className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[11px] font-bold bg-white/25">
-                  Live
-                </span>
-                <span className="text-[11px] font-medium opacity-75 truncate">{stat.detail}</span>
+              <div className="relative z-10 mt-4 flex items-center justify-between border-t border-slate-100 pt-3 text-xs">
+                <div className="flex min-w-0 items-center gap-1.5">
+                  <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-bold text-emerald-600 ring-1 ring-inset ring-emerald-500/20">
+                    Live
+                  </span>
+                  <span className="truncate font-medium text-slate-500">{stat.detail}</span>
+                </div>
+                <span className="h-2 w-2 shrink-0 rounded-full shadow-sm" style={{ backgroundColor: stat.accentColor }} />
               </div>
-
-              <div className="absolute right-0 bottom-0 w-24 h-16 pointer-events-none opacity-50">
-                <svg viewBox="0 0 100 50" preserveAspectRatio="none" className="w-full h-full">
-                  <defs>
-                    <linearGradient id={`chef-grad-${index}`} x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="#ffffff" stopOpacity="0.4" />
-                      <stop offset="100%" stopColor="#ffffff" stopOpacity="0.0" />
-                    </linearGradient>
-                  </defs>
-                  <path d="M0,50 L0,40 Q25,30 50,40 T100,20 L100,50 Z" fill={`url(#chef-grad-${index})`} />
-                  <path d="M0,40 Q25,30 50,40 T100,20" fill="none" stroke="#ffffff" strokeWidth="2.5" />
-                </svg>
-              </div>
+              <div
+                className="absolute bottom-0 left-0 h-[3px] w-0 transition-all duration-300 group-hover:w-full"
+                style={{ backgroundColor: stat.accentColor }}
+              />
             </article>
           );
         })}

@@ -85,7 +85,7 @@
   --purple: #936EC3;
 }
 
-.admin-root {
+.admin-theme {
   --admin-color-primary: #FF5A00;
   --admin-color-primary-dark: #E94B00;
   --admin-color-primary-light: #FF7A1A;
@@ -118,25 +118,25 @@
   --admin-card-shadow: 0 4px 16px rgba(31, 41, 55, 0.06);
 }
 
-.admin-root [data-sidebar="admin-sidebar"] {
+.admin-theme [data-sidebar="admin-sidebar"] {
   background: var(--admin-sidebar-bg) !important;
   color: var(--admin-sidebar-text) !important;
 }
 
-.admin-root .admin-sidebar-link:hover {
+.admin-theme .admin-sidebar-link:hover {
   background-color: var(--admin-sidebar-hover);
 }
 
-.admin-root .admin-sidebar-link-active,
-.admin-root .admin-sidebar-link-active * {
+.admin-theme .admin-sidebar-link-active,
+.admin-theme .admin-sidebar-link-active * {
   color: var(--admin-sidebar-active-text);
 }
 
-.admin-root .admin-sidebar-link-active {
+.admin-theme .admin-sidebar-link-active {
   background-color: var(--admin-sidebar-active-bg);
 }
 
-.admin-root .admin-sidebar-collapse {
+.admin-theme .admin-sidebar-collapse {
   border-color: var(--admin-color-primary-light);
   color: var(--admin-color-primary);
 }
