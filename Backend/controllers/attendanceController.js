@@ -117,7 +117,15 @@ async function adminSaveAttendance(req, res) {
       return res.status(400).json({ success: false, message: 'Employee ID and date are required.' });
     }
 
-    const saved = await saveAttendanceRecord({ employeeId, date, checkIn, checkOut, status, notes });
+    const saved = await saveAttendanceRecord({
+      recordId: req.params.id,
+      employeeId,
+      date,
+      checkIn,
+      checkOut,
+      status,
+      notes,
+    });
     return res.json({ success: true, message: 'Attendance record saved successfully.', data: saved });
   } catch (error) {
     console.error('Failed to save attendance record:', error.message);

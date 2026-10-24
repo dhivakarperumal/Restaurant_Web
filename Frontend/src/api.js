@@ -56,18 +56,13 @@ api.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-// Add response interceptor to handle 401 errors
+// An endpoint-level 401 must not silently erase the signed-in profile. Login
+// state is cleared explicitly by logout or replaced by a successful login.
 api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      // Token might have expired or user not authenticated
-      console.error("[API] 401 Unauthorized - Clearing stored token");
-      localStorage.removeItem("token");
-      localStorage.removeItem("user");
-      sessionStorage.removeItem("token");
-      sessionStorage.removeItem("user");
-      // Optionally redirect to login - you can implement this based on your routing
+      console.warn("[API] Request was unauthorized:", error.config?.url);
     }
     return Promise.reject(error);
   }

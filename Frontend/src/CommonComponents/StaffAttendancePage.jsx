@@ -152,8 +152,18 @@ export default function StaffAttendancePage({
   useEffect(() => {
     refreshAll();
 
-    const handleExternalUpdate = () => {
-      fetchTodayData();
+    const handleExternalUpdate = (event) => {
+      const updatedAttendance = event.detail;
+      if (updatedAttendance && Object.hasOwn(updatedAttendance, "check_in")) {
+        setAttendance(updatedAttendance);
+        if (updatedAttendance.duration_seconds != null) {
+          setLiveSeconds(Number(updatedAttendance.duration_seconds));
+        } else if (updatedAttendance.total_hours != null) {
+          setLiveSeconds(Number(updatedAttendance.total_hours) * 3600);
+        }
+      } else {
+        fetchTodayData();
+      }
       fetchHistory();
       fetchDeliveryStatus();
     };
@@ -181,15 +191,22 @@ export default function StaffAttendancePage({
     try {
       setActionLoading(true);
       if (isDeliveryPartner) {
-        // For delivery partner, going online automatically clocks in
-        try {
-          await api.patch("/delivery-partner/availability", { is_online: true });
-          setIsOnline(true);
-        } catch (ignore) {}
-      }
-
-      const res = await api.post("/attendance/clock-in");
-      if (res.data?.success) {
+        const res = await api.patch("/delivery-partner/availability", { is_online: true });
+        const updatedAttendance = res.data?.data?.attendance;
+        if (!res.data?.success || !updatedAttendance) {
+          throw new Error(res.data?.message || "Failed to clock in.");
+        }
+        setIsOnline(true);
+        setAttendance(updatedAttendance);
+        if (updatedAttendance.duration_seconds != null) {
+          setLiveSeconds(Number(updatedAttendance.duration_seconds));
+        } else {
+          setLiveSeconds(0);
+        }
+        window.dispatchEvent(new CustomEvent("attendance-updated", { detail: updatedAttendance }));
+      } else {
+        const res = await api.post("/attendance/clock-in");
+        if (!res.data?.success) throw new Error(res.data?.message || "Failed to clock in.");
         setAttendance(res.data.data);
         if (res.data.data?.duration_seconds != null) {
           setLiveSeconds(Number(res.data.data.duration_seconds));
@@ -197,9 +214,9 @@ export default function StaffAttendancePage({
           setLiveSeconds(0);
         }
         window.dispatchEvent(new CustomEvent("attendance-updated", { detail: res.data.data }));
-        toast.success("Clocked in successfully! Have a productive shift.");
-        fetchHistory();
       }
+      toast.success("Clocked in successfully! Have a productive shift.");
+      fetchHistory();
     } catch (err) {
       toast.error(err.response?.data?.message || "Failed to clock in.");
     } finally {
@@ -213,24 +230,40 @@ export default function StaffAttendancePage({
     try {
       setActionLoading(true);
       if (isDeliveryPartner) {
-        try {
-          await api.patch("/delivery-partner/availability", {
-            is_online: false,
-            clock_out: true,
-          });
-          setIsOnline(false);
-        } catch (ignore) {}
-      }
-
-      const res = await api.post("/attendance/clock-out");
-      if (res.data?.success) {
+        const res = await api.patch("/delivery-partner/availability", {
+          is_online: false,
+          clock_out: true,
+        });
+        const updatedAttendance = res.data?.data?.attendance;
+        if (!res.data?.success || !updatedAttendance) {
+          throw new Error(res.data?.message || "Failed to clock out.");
+        }
+        setIsOnline(false);
+        setAttendance(updatedAttendance);
+        if (updatedAttendance.duration_seconds != null) {
+          setLiveSeconds(Number(updatedAttendance.duration_seconds));
+        } else if (updatedAttendance.total_hours != null) {
+          setLiveSeconds(Number(updatedAttendance.total_hours) * 3600);
+        }
+        window.dispatchEvent(new CustomEvent("attendance-updated", { detail: updatedAttendance }));
+        toast.success(
+          `Clocked out successfully! Total worked today: ${updatedAttendance.total_hours || 0} hrs.`
+        );
+      } else {
+        const res = await api.post("/attendance/clock-out");
+        if (!res.data?.success) throw new Error(res.data?.message || "Failed to clock out.");
         setAttendance(res.data.data);
+        if (res.data.data?.duration_seconds != null) {
+          setLiveSeconds(Number(res.data.data.duration_seconds));
+        } else if (res.data.data?.total_hours != null) {
+          setLiveSeconds(Number(res.data.data.total_hours) * 3600);
+        }
         window.dispatchEvent(new CustomEvent("attendance-updated", { detail: res.data.data }));
         toast.success(
           `Clocked out successfully! Total worked today: ${res.data.data?.total_hours || 0} hrs.`
         );
-        fetchHistory();
       }
+      fetchHistory();
     } catch (err) {
       toast.error(err.response?.data?.message || "Failed to clock out.");
     } finally {
@@ -308,15 +341,16 @@ export default function StaffAttendancePage({
   // Monthly stats calculations
   const stats = useMemo(() => {
     const totalRecords = historyRecords.length;
+    const totalDays = new Set(historyRecords.map((record) => String(record.date || "").slice(0, 10))).size;
     let totalSecs = 0;
     let lateCount = 0;
     let onTimeCount = 0;
 
     historyRecords.forEach((r) => {
-      if (r.total_hours) {
-        totalSecs += Number(r.total_hours) * 3600;
-      } else if (r.duration_seconds) {
+      if (r.duration_seconds != null) {
         totalSecs += Number(r.duration_seconds);
+      } else if (r.total_hours != null) {
+        totalSecs += Number(r.total_hours) * 3600;
       }
       if (r.status === "Late") {
         lateCount += 1;
@@ -330,7 +364,7 @@ export default function StaffAttendancePage({
     const onTimeRate = totalRecords > 0 ? Math.round((onTimeCount / totalRecords) * 100) : 100;
 
     return {
-      totalDays: totalRecords,
+      totalDays,
       totalHours,
       avgHours,
       lateCount,

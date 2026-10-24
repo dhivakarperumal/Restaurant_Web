@@ -105,7 +105,21 @@ const DeliveryPartnerDashboard = () => {
 
   // Listen to external attendance events (e.g. from header pill)
   useEffect(() => {
-    const handleAttendanceUpdated = () => {
+    const handleAttendanceUpdated = (event) => {
+      const updatedAttendance = event.detail;
+      if (updatedAttendance && Object.hasOwn(updatedAttendance, "check_in")) {
+        setDashboard((current) => ({
+          ...current,
+          attendance: updatedAttendance,
+          ...(updatedAttendance.check_out ? { is_online: false, isCheckedIn: false } : {}),
+        }));
+        if (updatedAttendance.duration_seconds != null) {
+          setLiveSeconds(Number(updatedAttendance.duration_seconds));
+        } else if (updatedAttendance.total_hours != null) {
+          setLiveSeconds(Number(updatedAttendance.total_hours) * 3600);
+        }
+        return;
+      }
       loadDashboard(true);
     };
     window.addEventListener("attendance-updated", handleAttendanceUpdated);
@@ -180,6 +194,11 @@ const DeliveryPartnerDashboard = () => {
         isCheckedIn: false,
         attendance: data.attendance || current?.attendance,
       }));
+      if (data.attendance?.duration_seconds != null) {
+        setLiveSeconds(Number(data.attendance.duration_seconds));
+      } else if (data.attendance?.total_hours != null) {
+        setLiveSeconds(Number(data.attendance.total_hours) * 3600);
+      }
       window.dispatchEvent(new CustomEvent("attendance-updated", { detail: data.attendance }));
       toast.success(
         `Shift ended and clocked out! Total worked: ${data.attendance?.total_hours || 0} hrs.`
@@ -583,7 +602,13 @@ const DeliveryPartnerDashboard = () => {
                           <td className="px-4 py-3 text-gray-600 font-medium">
                             {rec.check_out ? formatTime(rec.check_out) : <span className="text-emerald-600 font-bold">Active</span>}
                           </td>
-                          <td className="px-4 py-3 font-bold text-gray-900">{rec.total_hours != null ? `${rec.total_hours} hrs` : "In Progress"}</td>
+                          <td className="px-4 py-3 font-bold text-gray-900">
+                            {rec.check_out
+                              ? `${rec.total_hours || 0} hrs`
+                              : rec.duration_seconds != null
+                              ? formatDuration(rec.duration_seconds)
+                              : "In Progress"}
+                          </td>
                           <td className="px-4 py-3">
                             <span
                               className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ${
