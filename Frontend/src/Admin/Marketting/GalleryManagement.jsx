@@ -330,7 +330,7 @@ const GalleryManagement = () => {
             ) : (
             <table className="min-w-full border-separate border-spacing-0">
               <thead>
-                <tr className="bg-[#f0e6d2] text-left text-sm font-semibold text-[#3d3d3d]">
+                <tr className="bg-orange-50 text-left text-sm font-semibold text-orange-700 border-b border-orange-100">
                   <th className="rounded-tl-md px-4 py-4 whitespace-nowrap">S.No</th>
                   <th className="px-4 py-4 whitespace-nowrap">Album</th>
                   <th className="px-4 py-4 whitespace-nowrap">Category</th>
