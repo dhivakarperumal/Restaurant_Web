@@ -560,6 +560,73 @@ const getDeliveryPartnerEarnings = async (req, res) => {
   }
 };
 
+const getDeliveryPartnerHistory = async (req, res) => {
+  const employeeId = req.auth.employee_id;
+  if (!employeeId) {
+    return res.status(404).json({ success: false, message: 'Delivery partner record was not found.' });
+  }
+
+  const { from, to } = req.query;
+
+  try {
+    let query = `
+      SELECT
+        o.id,
+        o.order_number        AS order_id,
+        o.customer_name,
+        o.customer_phone,
+        o.total_amount        AS earnings,
+        o.order_status        AS status,
+        o.created_at          AS date,
+        r.restaurant_name,
+        a.address_line, a.area_locality, a.landmark, a.city, a.state, a.pincode
+      FROM orders o
+      LEFT JOIN \`address\` a ON a.id = o.address_id AND a.user_id = o.user_id
+      LEFT JOIN restaurants r ON r.id = o.restaurant_id
+      WHERE o.assigned_delivery_partner_id = ?
+        AND o.order_type = 'home_delivery'
+        AND o.order_status IN ('delivered', 'completed', 'cancelled', 'failed')
+    `;
+    const params = [employeeId];
+
+    if (from) { query += ' AND DATE(o.created_at) >= ?'; params.push(from); }
+    if (to)   { query += ' AND DATE(o.created_at) <= ?'; params.push(to); }
+
+    query += ' ORDER BY o.created_at DESC LIMIT 500';
+
+    const [rows] = await db.execute(query, params);
+
+    const deliveries = rows.map((row) => ({
+      order_id:        row.order_id,
+      customer_name:   row.customer_name,
+      customer_phone:  row.customer_phone,
+      restaurant_name: row.restaurant_name || null,
+      pickup_address:  row.restaurant_name || null,
+      delivery_address: [
+        row.address_line, row.area_locality, row.landmark,
+        row.city, row.state, row.pincode,
+      ].filter(Boolean).join(', ') || null,
+      date:     row.date,
+      status:   row.status === 'delivered' || row.status === 'completed' ? 'Delivered'
+               : row.status === 'cancelled' ? 'Cancelled'
+               : row.status === 'failed'    ? 'Failed'
+               : row.status,
+      earnings: Number(row.earnings) || 0,
+    }));
+
+    const summary = {
+      completed:  deliveries.filter((d) => d.status === 'Delivered').length,
+      cancelled:  deliveries.filter((d) => d.status === 'Cancelled').length,
+      failed:     deliveries.filter((d) => d.status === 'Failed').length,
+    };
+
+    return res.json({ success: true, deliveries, summary });
+  } catch (error) {
+    console.error('Failed to load delivery partner history:', error);
+    return res.status(500).json({ success: false, message: 'Delivery history could not be loaded.' });
+  }
+};
+
 const updateDeliveryPartnerAvailability = async (req, res) => {
   const employeeId = req.auth.employee_id;
   const isOnlineRequested = Boolean(req.body?.is_online);
@@ -605,6 +672,7 @@ const updateDeliveryPartnerAvailability = async (req, res) => {
 };
 
 module.exports = {
+  getDeliveryPartnerHistory,
   getDeliveryPartnerDashboard,
   getDeliveryPartnerEarnings,
   listCustomerOrders: (req, res) => getOrders(req, res, false),
