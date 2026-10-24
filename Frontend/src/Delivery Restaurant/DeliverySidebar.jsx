@@ -39,8 +39,7 @@ const navItems = [
   { path: "/delivery/earnings", label: "Earnings", icon: IndianRupee },
   { path: "/delivery/history", label: "Delivery History", icon: History },
   { path: "/delivery/attendance", label: "Attendance", icon: CalendarCheck },
-  { path: "/delivery/profile", label: "Profile", icon: UserRound },
-  { path: "/delivery/support", label: "Support", icon: LifeBuoy },
+  
 ];
 
 /* ================= SIDEBAR ================= */
@@ -258,11 +257,7 @@ const DeliverySidebar = ({ isOpen, onClose, collapsed, onToggleCollapse }) => {
           {!collapsed && <span className="truncate">Back Home</span>}
         </NavLink>
 
-        <button type="button" onClick={() => setShowLogoutConfirm(true)} title={collapsed ? "Sign out" : ""} className={`mx-3 mb-3 flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-semibold text-white transition hover:bg-white/15 ${collapsed ? "justify-center" : ""}`}>
-          <LogOut className="h-[17px] w-[17px] shrink-0" />
-          {!collapsed && <span>Sign out</span>}
-        </button>
-
+       
         {/* ========== COLLAPSE BUTTON ========== */}
         <button
           onClick={onToggleCollapse}
