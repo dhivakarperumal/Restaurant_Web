@@ -301,7 +301,7 @@ const ChefDashboard = () => {
                     labelStyle={{ color: "#0f172a", fontWeight: 700 }}
                     formatter={(value) => [value, "Orders"]}
                   />
-                  <Bar dataKey="orders" fill="#1a3c36" radius={[6, 6, 0, 0]} maxBarSize={38} />
+                  <Bar dataKey="orders" fill="#FF5A00" radius={[6, 6, 0, 0]} maxBarSize={38} />
                 </BarChart>
               </ResponsiveContainer>
             </div>
@@ -401,7 +401,7 @@ const ChefDashboard = () => {
                       contentStyle={{ border: "1px solid #e2e8f0", borderRadius: 12, boxShadow: "0 8px 24px rgba(15, 23, 42, 0.08)" }}
                       formatter={(value) => [value, "Quantity"]}
                     />
-                    <Bar dataKey="quantity" fill="#1a3c36" radius={[0, 6, 6, 0]} maxBarSize={28} />
+                    <Bar dataKey="quantity" fill="#FF5A00" radius={[0, 6, 6, 0]} maxBarSize={28} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
