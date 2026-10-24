@@ -305,45 +305,36 @@ const AdminCategories = () => {
           const inactiveCount = listData.filter((item) => item.status !== 'Active').length;
           const subCategoryCount = listData.reduce((sum, item) => sum + (item.subCategories?.length || 0), 0);
           const statCards = [
-            { title: 'Total Categories', value: String(listData.length), inc: '18.6%', icon: <Layers />, bg: 'bg-[#22c55e]' },
-            { title: 'Active Categories', value: String(activeCount), inc: '12.4%', icon: <PackageCheck />, bg: 'bg-[#3b82f6]' },
-            { title: 'Total Products', value: String(productCount), inc: '15.3%', icon: <Package />, bg: 'bg-[#f59e0b]' },
-            { title: 'Subcategories', value: String(subCategoryCount), inc: '10.7%', icon: <TrendingUp />, bg: 'bg-[#8b5cf6]' },
+            { title: 'Total Categories', value: String(listData.length), inc: '18.6%', icon: <Layers />, accent: '#f97316', iconBg: 'bg-orange-500' },
+            { title: 'Active Categories', value: String(activeCount), inc: '12.4%', icon: <PackageCheck />, accent: '#10b981', iconBg: 'bg-emerald-500' },
+            { title: 'Total Products', value: String(productCount), inc: '15.3%', icon: <Package />, accent: '#3b82f6', iconBg: 'bg-blue-500' },
+            { title: 'Subcategories', value: String(subCategoryCount), inc: '10.7%', icon: <TrendingUp />, accent: '#ec4899', iconBg: 'bg-pink-500' },
           ];
           return (
             <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-              {statCards.map((stat, index) => (
+              {statCards.map((stat) => (
                 <article
-                  key={index}
-                  className={`relative flex min-h-[175px] min-w-0 flex-col justify-between overflow-hidden rounded-2xl border border-transparent p-5 text-white shadow-[0_4px_14px_rgba(20,56,34,0.08)] sm:p-6 ${stat.bg}`}
+                  key={stat.title}
+                  className="relative flex min-h-[194px] min-w-0 flex-col justify-between overflow-hidden rounded-[20px] border border-slate-200/90 bg-white p-5 shadow-[0_4px_16px_-5px_rgba(15,23,42,0.08)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_10px_22px_-7px_rgba(15,23,42,0.12)] sm:p-6"
+                  style={{ background: `linear-gradient(135deg, #ffffff 48%, ${stat.accent}12 100%)` }}
                 >
-                  <div className="relative z-10 flex items-start gap-4">
-                    <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-white/20 shadow-sm sm:h-[60px] sm:w-[60px]">
+                  <div className="relative z-10 flex items-start justify-between gap-3">
+                    <div className="min-w-0 flex-1 pt-1">
+                      <h3 className="truncate text-[12px] font-bold uppercase tracking-[0.08em] text-slate-500">{stat.title}</h3>
+                      <div className="mt-4 truncate text-[30px] font-black leading-none tracking-tight text-slate-900 sm:text-[34px]">{stat.value}</div>
+                    </div>
+                    <div className={`flex h-[60px] w-[60px] shrink-0 items-center justify-center rounded-[18px] shadow-[0_5px_12px_-4px_rgba(15,23,42,0.25)] ${stat.iconBg}`}>
                       {React.cloneElement(stat.icon, { size: 27, strokeWidth: 2.2, className: 'text-white' })}
                     </div>
-                    <div className="mt-0.5 min-w-0 flex-1">
-                      <h3 className="mb-1 truncate text-sm font-bold opacity-95">{stat.title}</h3>
-                      <div className="truncate text-[30px] font-black leading-none tracking-tight sm:text-[34px]">{stat.value}</div>
-                    </div>
                   </div>
-                  <div className="relative z-10 mt-5 flex items-center gap-2">
-                    <span className="inline-flex items-center gap-1 rounded-lg bg-white/25 px-2 py-1 text-[11px] font-bold">
+                  <div className="relative z-10 mt-5 flex items-center gap-2 border-t border-slate-100/90 pt-3.5 text-xs">
+                    <span className="inline-flex shrink-0 items-center rounded-full border border-emerald-200/80 bg-emerald-50/90 px-2 py-0.5 text-[11px] font-bold text-emerald-600">
                       ↑ {stat.inc}
                     </span>
-                    <span className="truncate text-xs font-medium opacity-90">from last month</span>
+                    <span className="truncate text-xs font-medium text-slate-500">vs last week</span>
+                    <span className="ml-auto h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: stat.accent }} />
                   </div>
-                  <div className="pointer-events-none absolute bottom-0 right-0 h-14 w-28 opacity-40 sm:h-16 sm:w-32">
-                    <svg viewBox="0 0 100 50" preserveAspectRatio="none" className="h-full w-full">
-                      <defs>
-                        <linearGradient id={`catgrad-${index}`} x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="0%" stopColor="#ffffff" stopOpacity="0.45" />
-                          <stop offset="100%" stopColor="#ffffff" stopOpacity="0" />
-                        </linearGradient>
-                      </defs>
-                      <path d="M0,50 L0,40 Q25,30 50,40 T100,20 L100,50 Z" fill={`url(#catgrad-${index})`} />
-                      <path d="M0,40 Q25,30 50,40 T100,20" fill="none" stroke="#ffffff" strokeWidth="2.5" />
-                    </svg>
-                  </div>
+                  <div aria-hidden="true" className="pointer-events-none absolute -right-6 -top-6 h-28 w-28 rounded-full opacity-20 blur-2xl" style={{ backgroundColor: stat.accent }} />
                 </article>
               ))}
             </div>
