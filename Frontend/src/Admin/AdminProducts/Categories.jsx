@@ -315,29 +315,29 @@ const AdminCategories = () => {
               {statCards.map((stat, index) => (
                 <article
                   key={index}
-                  className={`relative min-w-0 overflow-hidden rounded-xl border border-transparent p-4 sm:p-5 shadow-[0_2px_10px_rgba(20,56,34,0.04)] flex flex-col justify-between min-h-[140px] ${stat.bg} text-white`}
+                  className={`relative flex min-h-[175px] min-w-0 flex-col justify-between overflow-hidden rounded-2xl border border-transparent p-5 text-white shadow-[0_4px_14px_rgba(20,56,34,0.08)] sm:p-6 ${stat.bg}`}
                 >
-                  <div className="flex items-start gap-3 relative z-10">
-                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg shadow-sm bg-white/20">
-                      {React.cloneElement(stat.icon, { size: 24, strokeWidth: 2.2, className: 'text-white' })}
+                  <div className="relative z-10 flex items-start gap-4">
+                    <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-white/20 shadow-sm sm:h-[60px] sm:w-[60px]">
+                      {React.cloneElement(stat.icon, { size: 27, strokeWidth: 2.2, className: 'text-white' })}
                     </div>
-                    <div className="flex-1 mt-0.5 min-w-0">
-                      <h3 className="text-[12px] font-semibold opacity-90 mb-1 truncate">{stat.title}</h3>
-                      <div className="text-[22px] sm:text-[25px] font-extrabold leading-none tracking-tight truncate">{stat.value}</div>
+                    <div className="mt-0.5 min-w-0 flex-1">
+                      <h3 className="mb-1 truncate text-sm font-bold opacity-95">{stat.title}</h3>
+                      <div className="truncate text-[30px] font-black leading-none tracking-tight sm:text-[34px]">{stat.value}</div>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2 mt-5 relative z-10">
-                    <span className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[11px] font-bold bg-white/25">
+                  <div className="relative z-10 mt-5 flex items-center gap-2">
+                    <span className="inline-flex items-center gap-1 rounded-lg bg-white/25 px-2 py-1 text-[11px] font-bold">
                       ↑ {stat.inc}
                     </span>
-                    <span className="text-[11px] font-medium opacity-75 truncate">from last month</span>
+                    <span className="truncate text-xs font-medium opacity-90">from last month</span>
                   </div>
-                  <div className="absolute right-0 bottom-0 w-24 h-16 pointer-events-none opacity-50">
-                    <svg viewBox="0 0 100 50" preserveAspectRatio="none" className="w-full h-full">
+                  <div className="pointer-events-none absolute bottom-0 right-0 h-14 w-28 opacity-40 sm:h-16 sm:w-32">
+                    <svg viewBox="0 0 100 50" preserveAspectRatio="none" className="h-full w-full">
                       <defs>
                         <linearGradient id={`catgrad-${index}`} x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="0%" stopColor="#ffffff" stopOpacity="0.4" />
-                          <stop offset="100%" stopColor="#ffffff" stopOpacity="0.0" />
+                          <stop offset="0%" stopColor="#ffffff" stopOpacity="0.45" />
+                          <stop offset="100%" stopColor="#ffffff" stopOpacity="0" />
                         </linearGradient>
                       </defs>
                       <path d="M0,50 L0,40 Q25,30 50,40 T100,20 L100,50 Z" fill={`url(#catgrad-${index})`} />
