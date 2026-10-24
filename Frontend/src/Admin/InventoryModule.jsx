@@ -509,10 +509,10 @@ function ProductsPage({ readOnly = false }) {
   const outOfStockCount = products.filter(p => (Number(p.current_stock) || 0) === 0).length;
 
   const statCardsData = [
-    { title: readOnly ? "Total Stock Items" : "Total Groceries", value: products.length, icon: Package, bg: "bg-[#22c55e]", hint: "Registered inventory items" },
-    { title: "Categories", value: totalCategories, icon: Tags, bg: "bg-[#3b82f6]", hint: "Active categories" },
-    { title: "Low Stock", value: lowStockCount, icon: AlertTriangle, bg: "bg-[#f59e0b]", hint: "Below reorder level" },
-    { title: "Out of Stock", value: outOfStockCount, icon: TrendingDown, bg: outOfStockCount > 0 ? "bg-[#ef4444]" : "bg-[#8b5cf6]", hint: "No units left" },
+    { title: readOnly ? "Total Stock Items" : "Total Groceries", value: products.length, icon: Package, bg: "bg-[#22c55e]", accent: "#f97316", iconBg: "bg-orange-500", hint: "Registered inventory items" },
+    { title: "Categories", value: totalCategories, icon: Tags, bg: "bg-[#3b82f6]", accent: "#10b981", iconBg: "bg-emerald-500", hint: "Active categories" },
+    { title: "Low Stock", value: lowStockCount, icon: AlertTriangle, bg: "bg-[#f59e0b]", accent: "#3b82f6", iconBg: "bg-blue-500", hint: "Below reorder level" },
+    { title: "Out of Stock", value: outOfStockCount, icon: TrendingDown, bg: outOfStockCount > 0 ? "bg-[#ef4444]" : "bg-[#8b5cf6]", accent: "#ec4899", iconBg: "bg-pink-500", hint: "No units left" },
   ];
 
   return (
@@ -537,33 +537,61 @@ function ProductsPage({ readOnly = false }) {
         )}
         
         <div className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
-          {statCardsData.map(({ title, value, icon: Icon, bg, hint }, index) => (
-            <article key={title} className={`relative min-w-0 overflow-hidden rounded-xl border border-transparent p-4 sm:p-5 shadow-[0_2px_10px_rgba(20,56,34,0.08)] flex flex-col justify-between min-h-[140px] ${bg} text-white`}>
-              <div className="flex items-start gap-3 relative z-10">
-                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg shadow-sm bg-white/20">
-                  <Icon size={24} strokeWidth={2.2} className="text-white" />
-                </div>
-                <div className="flex-1 mt-0.5 min-w-0">
-                  <h3 className="text-[12px] font-semibold opacity-90 mb-1 truncate">{title}</h3>
-                  <div className="text-[26px] font-extrabold leading-none tracking-tight">{value}</div>
-                </div>
-              </div>
-              <div className="flex items-center gap-2 mt-5 relative z-10">
-                <span className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[11px] font-bold bg-white/25">↑ 12%</span>
-                <span className="text-[11px] font-medium opacity-75 truncate">{hint}</span>
-              </div>
-              <div className="absolute right-0 bottom-0 w-24 h-16 pointer-events-none opacity-50">
-                <svg viewBox="0 0 100 50" preserveAspectRatio="none" className="w-full h-full">
-                  <defs>
-                    <linearGradient id={`grograd-${index}`} x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="#ffffff" stopOpacity="0.4" />
-                      <stop offset="100%" stopColor="#ffffff" stopOpacity="0.0" />
-                    </linearGradient>
-                  </defs>
-                  <path d="M0,50 L0,40 Q25,30 50,40 T100,20 L100,50 Z" fill={`url(#grograd-${index})`} />
-                  <path d="M0,40 Q25,30 50,40 T100,20" fill="none" stroke="#ffffff" strokeWidth="2.5" />
-                </svg>
-              </div>
+          {statCardsData.map(({ title, value, icon: Icon, bg, accent, iconBg, hint }, index) => (
+            <article
+              key={title}
+              className={readOnly
+                ? `relative flex min-h-[140px] min-w-0 flex-col justify-between overflow-hidden rounded-xl border border-transparent p-4 text-white shadow-[0_2px_10px_rgba(20,56,34,0.08)] sm:p-5 ${bg}`
+                : "relative flex min-h-[194px] min-w-0 flex-col justify-between overflow-hidden rounded-[20px] border border-slate-200/90 bg-white p-5 shadow-[0_4px_16px_-5px_rgba(15,23,42,0.08)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_10px_22px_-7px_rgba(15,23,42,0.12)] sm:p-6"}
+              style={!readOnly ? { background: `linear-gradient(135deg, #ffffff 48%, ${accent}12 100%)` } : undefined}
+            >
+              {readOnly ? (
+                <>
+                  <div className="relative z-10 flex items-start gap-3">
+                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-white/20 shadow-sm">
+                      <Icon size={24} strokeWidth={2.2} className="text-white" />
+                    </div>
+                    <div className="mt-0.5 min-w-0 flex-1">
+                      <h3 className="mb-1 truncate text-[12px] font-semibold opacity-90">{title}</h3>
+                      <div className="text-[26px] font-extrabold leading-none tracking-tight">{value}</div>
+                    </div>
+                  </div>
+                  <div className="relative z-10 mt-5 flex items-center gap-2">
+                    <span className="inline-flex items-center gap-1 rounded-md bg-white/25 px-1.5 py-0.5 text-[11px] font-bold">↑ 12%</span>
+                    <span className="truncate text-[11px] font-medium opacity-75">{hint}</span>
+                  </div>
+                  <div className="pointer-events-none absolute bottom-0 right-0 h-16 w-24 opacity-50">
+                    <svg viewBox="0 0 100 50" preserveAspectRatio="none" className="h-full w-full">
+                      <defs>
+                        <linearGradient id={`grograd-${index}`} x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="0%" stopColor="#ffffff" stopOpacity="0.4" />
+                          <stop offset="100%" stopColor="#ffffff" stopOpacity="0" />
+                        </linearGradient>
+                      </defs>
+                      <path d="M0,50 L0,40 Q25,30 50,40 T100,20 L100,50 Z" fill={`url(#grograd-${index})`} />
+                      <path d="M0,40 Q25,30 50,40 T100,20" fill="none" stroke="#ffffff" strokeWidth="2.5" />
+                    </svg>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="relative z-10 flex items-start justify-between gap-3">
+                    <div className="min-w-0 flex-1 pt-1">
+                      <h3 className="truncate text-[12px] font-bold uppercase tracking-[0.08em] text-slate-500">{title}</h3>
+                      <div className="mt-4 truncate text-[30px] font-black leading-none tracking-tight text-slate-900 sm:text-[34px]">{value}</div>
+                    </div>
+                    <div className={`flex h-[60px] w-[60px] shrink-0 items-center justify-center rounded-[18px] shadow-[0_5px_12px_-4px_rgba(15,23,42,0.25)] ${iconBg}`}>
+                      <Icon size={27} strokeWidth={2.2} className="text-white" />
+                    </div>
+                  </div>
+                  <div className="relative z-10 mt-5 flex items-center gap-2 border-t border-slate-100/90 pt-3.5 text-xs">
+                    <span className="inline-flex shrink-0 items-center rounded-full border border-emerald-200/80 bg-emerald-50/90 px-2 py-0.5 text-[11px] font-bold text-emerald-600">↑ 12%</span>
+                    <span className="truncate text-xs font-medium text-slate-500">{hint}</span>
+                    <span className="ml-auto h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: accent }} />
+                  </div>
+                  <div aria-hidden="true" className="pointer-events-none absolute -right-6 -top-6 h-28 w-28 rounded-full opacity-20 blur-2xl" style={{ backgroundColor: accent }} />
+                </>
+              )}
             </article>
           ))}
         </div>
@@ -1762,10 +1790,10 @@ function KitchenRequestsPage() {
   });
 
   const kitchenCards = [
-    { title: "Total Requests", value: requests.length, icon: ClipboardList, bg: "bg-[#22c55e]", hint: "All kitchen requests" },
-    { title: "Pending", value: pendingCount, icon: CalendarClock, bg: "bg-[#f59e0b]", hint: "Awaiting approval" },
-    { title: "Approved", value: approvedCount, icon: UtensilsCrossed, bg: "bg-[#3b82f6]", hint: "Ready to issue stock" },
-    { title: "Completed", value: completedCount, icon: Boxes, bg: "bg-[#8b5cf6]", hint: "Fulfilled requests" },
+    { title: "Total Requests", value: requests.length, icon: ClipboardList, accent: "#f97316", iconBg: "bg-orange-500", hint: "All kitchen requests" },
+    { title: "Pending", value: pendingCount, icon: CalendarClock, accent: "#10b981", iconBg: "bg-emerald-500", hint: "Awaiting approval" },
+    { title: "Approved", value: approvedCount, icon: UtensilsCrossed, accent: "#3b82f6", iconBg: "bg-blue-500", hint: "Ready to issue stock" },
+    { title: "Completed", value: completedCount, icon: Boxes, accent: "#ec4899", iconBg: "bg-pink-500", hint: "Fulfilled requests" },
   ];
 
   return (
@@ -1773,33 +1801,27 @@ function KitchenRequestsPage() {
       <div>
 
         <div className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
-          {kitchenCards.map(({ title, value, icon: Icon, bg, hint }, index) => (
-            <article key={title} className={`relative min-w-0 overflow-hidden rounded-xl border border-transparent p-4 sm:p-5 shadow-[0_2px_10px_rgba(20,56,34,0.08)] flex flex-col justify-between min-h-[140px] ${bg} text-white`}>
-              <div className="flex items-start gap-3 relative z-10">
-                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg shadow-sm bg-white/20">
-                  <Icon size={24} strokeWidth={2.2} className="text-white" />
+          {kitchenCards.map(({ title, value, icon: Icon, accent, iconBg, hint }) => (
+            <article
+              key={title}
+              className="relative flex min-h-[194px] min-w-0 flex-col justify-between overflow-hidden rounded-[20px] border border-slate-200/90 bg-white p-5 shadow-[0_4px_16px_-5px_rgba(15,23,42,0.08)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_10px_22px_-7px_rgba(15,23,42,0.12)] sm:p-6"
+              style={{ background: `linear-gradient(135deg, #ffffff 48%, ${accent}12 100%)` }}
+            >
+              <div className="relative z-10 flex items-start justify-between gap-3">
+                <div className="min-w-0 flex-1 pt-1">
+                  <h3 className="truncate text-[12px] font-bold uppercase tracking-[0.08em] text-slate-500">{title}</h3>
+                  <div className="mt-4 truncate text-[30px] font-black leading-none tracking-tight text-slate-900 sm:text-[34px]">{value}</div>
                 </div>
-                <div className="flex-1 mt-0.5 min-w-0">
-                  <h3 className="text-[12px] font-semibold opacity-90 mb-1 truncate">{title}</h3>
-                  <div className="text-[26px] font-extrabold leading-none tracking-tight">{value}</div>
+                <div className={`flex h-[60px] w-[60px] shrink-0 items-center justify-center rounded-[18px] shadow-[0_5px_12px_-4px_rgba(15,23,42,0.25)] ${iconBg}`}>
+                  <Icon size={27} strokeWidth={2.2} className="text-white" />
                 </div>
               </div>
-              <div className="flex items-center gap-2 mt-5 relative z-10">
-                <span className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[11px] font-bold bg-white/25">↑ Live</span>
-                <span className="text-[11px] font-medium opacity-75 truncate">{hint}</span>
+              <div className="relative z-10 mt-5 flex items-center gap-2 border-t border-slate-100/90 pt-3.5 text-xs">
+                <span className="inline-flex shrink-0 items-center rounded-full border border-emerald-200/80 bg-emerald-50/90 px-2 py-0.5 text-[11px] font-bold text-emerald-600">Live</span>
+                <span className="truncate text-xs font-medium text-slate-500">{hint}</span>
+                <span className="ml-auto h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: accent }} />
               </div>
-              <div className="absolute right-0 bottom-0 w-24 h-16 pointer-events-none opacity-50">
-                <svg viewBox="0 0 100 50" preserveAspectRatio="none" className="w-full h-full">
-                  <defs>
-                    <linearGradient id={`krgrad-${index}`} x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="#ffffff" stopOpacity="0.4" />
-                      <stop offset="100%" stopColor="#ffffff" stopOpacity="0.0" />
-                    </linearGradient>
-                  </defs>
-                  <path d="M0,50 L0,40 Q25,30 50,40 T100,20 L100,50 Z" fill={`url(#krgrad-${index})`} />
-                  <path d="M0,40 Q25,30 50,40 T100,20" fill="none" stroke="#ffffff" strokeWidth="2.5" />
-                </svg>
-              </div>
+              <div aria-hidden="true" className="pointer-events-none absolute -right-6 -top-6 h-28 w-28 rounded-full opacity-20 blur-2xl" style={{ backgroundColor: accent }} />
             </article>
           ))}
         </div>
