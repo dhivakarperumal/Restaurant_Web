@@ -429,19 +429,22 @@ export default function ServerDashboard() {
         </section>
 
         {/* Assigned Tables Section */}
-        <section className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm md:p-6">
-          <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between border-b border-gray-100 pb-4">
+        <section className="rounded-2xl border border-slate-200/90 bg-white p-5 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] md:p-6">
+          <div className="mb-5 flex flex-col gap-3 border-b border-slate-100 pb-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <h2 className="font-serif text-lg font-bold text-gray-900 flex items-center gap-2">
-                <Table2 className="h-5 w-5 text-[#1a3c36]" /> Assigned Station Tables
+              <h2 className="flex items-center gap-2 text-lg font-bold text-slate-900">
+                <span className="grid h-9 w-9 place-items-center rounded-xl bg-orange-50 text-orange-600">
+                  <Table2 className="h-5 w-5" />
+                </span>
+                Assigned Station Tables
               </h2>
-              <p className="text-xs text-gray-500">
+              <p className="mt-1 text-xs text-slate-500">
                 Click "Take Order" on any table to select items and send directly to the kitchen.
               </p>
             </div>
             <Link
               to="/server/tables"
-              className="text-xs font-semibold text-[#1a3c36] hover:underline flex items-center gap-1"
+              className="inline-flex items-center gap-1 self-start rounded-lg border border-orange-100 bg-orange-50 px-3 py-2 text-xs font-semibold text-orange-700 transition hover:border-orange-200 hover:bg-orange-100 sm:self-auto"
             >
               <span>See full station layout</span>
               <ArrowRight className="h-3.5 w-3.5" />
@@ -450,7 +453,7 @@ export default function ServerDashboard() {
 
           {loading ? (
             <div className="py-12 text-center text-sm text-gray-500">
-              <RefreshCw className="mx-auto h-6 w-6 animate-spin text-[#1a3c36] mb-2" />
+              <RefreshCw className="mx-auto mb-2 h-6 w-6 animate-spin text-orange-500" />
               Loading tables...
             </div>
           ) : tables.length > 0 ? (
@@ -464,35 +467,39 @@ export default function ServerDashboard() {
                 return (
                   <div
                     key={table.table_id || table.id}
-                    className={`flex flex-col justify-between rounded-xl border p-4 transition ${
+                    className={`group relative flex min-h-[172px] flex-col justify-between overflow-hidden rounded-xl border p-4 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md ${
                       tableOrder?.status === "Ready to Serve"
-                        ? "border-emerald-400 bg-emerald-50/30 ring-2 ring-emerald-500/20"
-                        : "border-gray-200 bg-[#fafbfa] hover:border-[#1a3c36]"
+                        ? "border-emerald-200 bg-gradient-to-br from-white to-emerald-50/70 hover:border-emerald-300"
+                        : "border-slate-200 bg-white hover:border-orange-200"
                     }`}
                   >
+                    <div className={`absolute inset-x-0 top-0 h-1 ${tableOrder?.status === "Ready to Serve" ? "bg-emerald-500" : isAvailable ? "bg-orange-400" : "bg-amber-400"}`} />
                     <div>
-                      <div className="flex items-center justify-between">
-                        <span className="font-serif text-base font-bold text-gray-900">
-                          Table {table.table_number}
-                        </span>
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex min-w-0 items-center gap-2">
+                          <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-orange-50 text-orange-600 transition group-hover:bg-orange-100">
+                            <Table2 className="h-5 w-5" />
+                          </span>
+                          <div className="min-w-0">
+                            <p className="truncate text-sm font-bold text-slate-900">Table {table.table_number}</p>
+                            <p className="mt-0.5 text-[11px] text-slate-500">{table.no_of_seats} Seats <span aria-hidden="true">·</span> Dining</p>
+                          </div>
+                        </div>
                         <span
-                          className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${
+                          className={`shrink-0 rounded-full border px-2.5 py-1 text-[10px] font-bold ${
                             isAvailable
-                              ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
-                              : "bg-amber-50 text-amber-700 border border-amber-200"
+                              ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                              : "border-amber-200 bg-amber-50 text-amber-700"
                           }`}
                         >
                           {table.status || "Available"}
                         </span>
                       </div>
-                      <p className="mt-1 text-xs text-gray-500">
-                        {table.no_of_seats} Seats • Dining
-                      </p>
 
                       {/* Live order status pill if active */}
                       {tableOrder && (
-                        <div className="mt-2.5">
-                          <span className={`inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[10px] font-bold border ${STATUS_BADGES[tableOrder.status]?.bg || ""}`}>
+                        <div className="mt-3 border-t border-slate-100 pt-3">
+                          <span className={`inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-[10px] font-bold ${STATUS_BADGES[tableOrder.status]?.bg || ""}`}>
                             {tableOrder.status === "Ready to Serve" ? (
                               <Bell className="h-3 w-3 animate-bounce text-emerald-700" />
                             ) : tableOrder.status === "Preparing" ? (
@@ -506,13 +513,13 @@ export default function ServerDashboard() {
                       )}
                     </div>
 
-                    <div className="mt-4 pt-2 border-t border-gray-100 flex items-center gap-2">
+                    <div className="mt-4 flex items-center gap-2 border-t border-slate-100 pt-3">
                       <button
                         type="button"
                         onClick={() => startOrderForTable(table)}
-                        className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-lg bg-[#1a3c36] px-3 py-1.5 text-xs font-semibold text-white shadow-sm transition hover:bg-[#25524a]"
+                        className="inline-flex min-h-9 flex-1 items-center justify-center gap-1.5 rounded-lg bg-gradient-to-r from-orange-500 to-amber-400 px-3 py-2 text-xs font-bold text-white shadow-sm shadow-orange-500/15 transition hover:from-orange-600 hover:to-amber-500"
                       >
-                        <Utensils className="h-3.5 w-3.5 text-[#d4a843]" />
+                        <Utensils className="h-3.5 w-3.5" />
                         <span>{tableOrder ? "Add Food" : "Take Order"}</span>
                       </button>
 
@@ -521,7 +528,7 @@ export default function ServerDashboard() {
                           type="button"
                           onClick={() => handleMarkServed(tableOrder.order_id)}
                           title="Mark as Served"
-                          className="p-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm text-xs font-bold"
+                          className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-emerald-600 text-white shadow-sm transition hover:bg-emerald-700"
                         >
                           <Check className="h-3.5 w-3.5" />
                         </button>
