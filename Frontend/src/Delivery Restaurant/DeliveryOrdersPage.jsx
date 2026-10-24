@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { ArrowUpRight, Bike, CalendarDays, Check, CheckCircle2, ChevronLeft, ChevronRight, Clock3, LayoutGrid, List, MapPin, Phone, RefreshCw, Search, ShoppingBag, X, XCircle } from "lucide-react";
+import { ArrowUpRight, Bike, CalendarDays, Check, CheckCircle2, ChevronLeft, ChevronRight, Clock3, LayoutGrid, List, MapPin, Phone, Search, ShoppingBag, X, XCircle } from "lucide-react";
 import api from "../api";
 import toast from "react-hot-toast";
 
@@ -65,7 +65,6 @@ const DeliveryOrdersPage = ({ view = "all" }) => {
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [refreshKey, setRefreshKey] = useState(0);
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [pendingStatus, setPendingStatus] = useState("");
   const [updating, setUpdating] = useState(false);
@@ -96,7 +95,7 @@ const DeliveryOrdersPage = ({ view = "all" }) => {
     return () => {
       active = false;
     };
-  }, [refreshKey]);
+  }, []);
 
   const scopedOrders = useMemo(() => {
     return orders.filter((order) => {
@@ -190,23 +189,6 @@ const DeliveryOrdersPage = ({ view = "all" }) => {
 
   return (
     <section className="min-h-[60vh] text-gray-900">
-      <header className="mb-5 flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[#39754a]">Deliveries</p>
-          <h1 className="mt-1 text-2xl font-bold">{config.title}</h1>
-          <p className="mt-1 text-sm text-gray-500">Only orders assigned to your account appear here.</p>
-        </div>
-        <button
-          type="button"
-          onClick={() => setRefreshKey((current) => current + 1)}
-          disabled={loading}
-          className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 disabled:opacity-50"
-        >
-          <RefreshCw size={16} className={loading ? "animate-spin" : ""} />
-          Refresh
-        </button>
-      </header>
-
       <div className="mb-5 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {summaryCards.map(({ label, value, icon: Icon, accent, iconStyle, caption }) => (
           <article key={label} className="group relative flex min-h-[140px] min-w-0 flex-col justify-between overflow-hidden rounded-2xl border border-slate-200/90 bg-white p-4 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] transition-all duration-300 hover:-translate-y-1 hover:border-slate-300 hover:shadow-[0_12px_24px_-6px_rgba(0,0,0,0.1)] sm:p-5">

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { CalendarDays, CheckCheck, ChevronLeft, ChevronRight, CircleHelp, FileText, IndianRupee, LayoutGrid, List, LockKeyhole, MessageSquareText, RefreshCw, Search, Send, ShieldCheck, WalletCards } from "lucide-react";
+import { CheckCheck, ChevronLeft, ChevronRight, CircleHelp, FileText, IndianRupee, LayoutGrid, List, LockKeyhole, MessageSquareText, RefreshCw, Search, Send, ShieldCheck, WalletCards } from "lucide-react";
 import api from "../api";
 import toast from "react-hot-toast";
 import { useAuth } from "../PrivateRouter/AuthContext";
@@ -92,18 +92,12 @@ const EarningsCard = ({ label, value, icon: Icon, tone, loading }) => (
   </article>
 );
 
-const dateRanges = ["today", "yesterday", "this-week", "last-week", "this-month", "last-month", "this-year", "last-year", "custom"];
-const rangeLabel = (value) => ({ today: "Today", yesterday: "Yesterday", "this-week": "This Week", "last-week": "Last Week", "this-month": "This Month", "last-month": "Last Month", "this-year": "This Year", "last-year": "Last Year", custom: "Custom Date" }[value] || value);
-
 const EarningsPage = () => {
-  const [range, setRange] = useState("this-month");
-  const [from, setFrom] = useState("");
-  const [to, setTo] = useState("");
   const [search, setSearch] = useState("");
   const [paymentFilter, setPaymentFilter] = useState("all");
   const [sortBy, setSortBy] = useState("latest");
   const [viewMode, setViewMode] = useState("list");
-  const params = { range, ...(range === "custom" ? { from, to } : {}) };
+  const params = { range: "this-month" };
   const { resource, loading, error, refresh } = usePartnerResource("/delivery-partner/earnings", params);
   const summary = resource?.summary || resource || {};
   const entries = rowsFrom(resource?.entries || resource?.history || resource?.rows || []);
@@ -124,9 +118,8 @@ const EarningsPage = () => {
       });
   }, [entries, paymentFilter, search, sortBy]);
 
-  return <section className="space-y-5"><PageHeading eyebrow="Payouts" title="Earnings" description="Delivery pay and payout history for your account." onRefresh={refresh} loading={loading} />
+  return <section className="space-y-5">
     <ServiceNotice error={error} loading={loading} refresh={refresh} noun="Earnings" />
-    <div className="flex flex-wrap items-center gap-2"><label className="flex items-center gap-2 rounded-lg border border-[#dce6de] bg-white px-3 py-2 text-sm"><CalendarDays size={15} className="text-[#448052]" /><span className="sr-only">Date range</span><select value={range} onChange={(event) => setRange(event.target.value)} className="bg-transparent font-medium text-gray-700 outline-none">{dateRanges.map((option) => <option key={option} value={option}>{rangeLabel(option)}</option>)}</select></label>{range === "custom" && <><input aria-label="From date" type="date" value={from} onChange={(event) => setFrom(event.target.value)} className="rounded-lg border border-[#dce6de] bg-white px-3 py-2 text-sm" /><input aria-label="To date" type="date" value={to} onChange={(event) => setTo(event.target.value)} className="rounded-lg border border-[#dce6de] bg-white px-3 py-2 text-sm" /></>}</div>
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">{[
       ["Today's earnings", summary.today_earnings ?? summary.todayEarnings, IndianRupee, "mint"], ["This week", summary.week_earnings ?? summary.weekEarnings, IndianRupee, "violet"], ["This month", summary.month_earnings ?? summary.monthEarnings, IndianRupee, "pink"], ["Total earnings", summary.total_earnings ?? summary.totalEarnings, WalletCards, "amber"], ["Completed deliveries", summary.completed_deliveries ?? summary.completedDeliveries, CheckCheck, "green"], ["Cash collected", summary.cash_collected ?? summary.cashCollected, WalletCards, "forest"],
     ].map(([label, value, Icon, tone]) => <EarningsCard key={label} label={label} value={currency(value)} icon={Icon} tone={tone} loading={loading} />)}</div>
@@ -196,7 +189,7 @@ const DeliveryHistoryPage = () => {
   const visible = filtered.slice((page - 1) * pageSize, page * pageSize);
   const summary = resource?.summary || {};
 
-  return <section className="space-y-5"><PageHeading eyebrow="Completed work" title="Delivery history" description="Completed, cancelled, and failed deliveries assigned to you." onRefresh={refresh} loading={loading} /><ServiceNotice error={error} loading={loading} refresh={refresh} noun="History" />
+  return <section className="space-y-5"><ServiceNotice error={error} loading={loading} refresh={refresh} noun="History" />
     <div className="grid grid-cols-3 gap-3"><SummaryCard label="Completed" value={summary.completed ?? entries.filter((row) => row.status === "Delivered").length} icon={CheckCheck} /><SummaryCard label="Cancelled" value={summary.cancelled ?? entries.filter((row) => row.status === "Cancelled").length} icon={FileText} /><SummaryCard label="Failed" value={summary.failed ?? entries.filter((row) => row.status === "Failed").length} icon={CircleHelp} /></div>
     <div className="overflow-hidden rounded-2xl border border-[#e5e1dc] bg-white">
       <div className="flex flex-col gap-3 border-b border-gray-100 p-3 sm:flex-row sm:items-center sm:gap-4 sm:p-4">
