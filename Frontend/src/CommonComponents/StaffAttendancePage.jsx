@@ -443,24 +443,30 @@ export default function StaffAttendancePage({
             <span className="text-emerald-300">•</span>
             <span>Attendance & Shift Management</span>
           </div>
-          <h1 className="mt-2 text-2xl font-extrabold tracking-tight text-gray-900 sm:text-3xl">
-            {role} Attendance & Shift Log
-          </h1>
-          <p className="mt-1 text-xs text-gray-500 sm:text-sm">
-            Mark your daily duty check-in, track working hours, and view historical attendance records.
-          </p>
+          {!isDeliveryPartner && (
+            <>
+              <h1 className="mt-2 text-2xl font-extrabold tracking-tight text-gray-900 sm:text-3xl">
+                {role} Attendance & Shift Log
+              </h1>
+              <p className="mt-1 text-xs text-gray-500 sm:text-sm">
+                Mark your daily duty check-in, track working hours, and view historical attendance records.
+              </p>
+            </>
+          )}
         </div>
 
         <div className="flex flex-wrap items-center gap-2.5">
-          <button
-            type="button"
-            onClick={refreshAll}
-            disabled={loading}
-            title="Refresh Attendance"
-            className="grid h-10 w-10 place-items-center rounded-xl border border-gray-200 bg-white text-gray-700 shadow-sm transition hover:bg-gray-50 disabled:opacity-50"
-          >
-            <RefreshCw size={16} className={loading ? "animate-spin text-emerald-600" : ""} />
-          </button>
+          {!isDeliveryPartner && (
+            <button
+              type="button"
+              onClick={refreshAll}
+              disabled={loading}
+              title="Refresh Attendance"
+              className="grid h-10 w-10 place-items-center rounded-xl border border-gray-200 bg-white text-gray-700 shadow-sm transition hover:bg-gray-50 disabled:opacity-50"
+            >
+              <RefreshCw size={16} className={loading ? "animate-spin text-emerald-600" : ""} />
+            </button>
+          )}
           <button
             type="button"
             onClick={handleExportCSV}
