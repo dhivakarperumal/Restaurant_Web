@@ -353,7 +353,7 @@ const AdminCategories = () => {
                   value={searchTerm}
                   onChange={(event) => { setSearchTerm(event.target.value); setCurrentPage(1); }}
                   placeholder="Search categories..."
-                  className="h-[46px] w-full rounded-xl border border-[#dfe2e5] bg-[#faf9f8] pl-10 pr-3 text-[14px] text-[#2d2d2d] outline-none placeholder:text-[#8a8a8a] focus:border-[#d2bc8a]"
+                  className="h-[46px] w-full rounded-xl border border-[#dfe2e5] bg-[#faf9f8] pl-10 pr-3 text-[14px] text-[#2d2d2d] outline-none placeholder:text-[#8a8a8a] focus:border-[#FF5A00]"
                 />
               </div>
 
@@ -361,7 +361,7 @@ const AdminCategories = () => {
               <select
                 value={selectedStatus}
                 onChange={(event) => { setSelectedStatus(event.target.value); setCurrentPage(1); }}
-                className="h-[46px] rounded-xl border border-[#dfe2e5] bg-[#faf9f8] px-3 text-[14px] font-medium text-[#2d2d2d] outline-none focus:border-[#d2bc8a]"
+                className="h-[46px] rounded-xl border border-[#dfe2e5] bg-[#faf9f8] px-3 text-[14px] font-medium text-[#2d2d2d] outline-none focus:border-[#FF5A00]"
               >
                 <option>All Status</option>
                 <option>Active</option>
@@ -376,7 +376,7 @@ const AdminCategories = () => {
               <select
                 value={sortBy}
                 onChange={(event) => { setSortBy(event.target.value); setCurrentPage(1); }}
-                className="h-[46px] rounded-xl border border-[#dfe2e5] bg-[#faf9f8] px-3 text-[14px] font-medium text-[#2d2d2d] outline-none focus:border-[#d2bc8a]"
+                className="h-[46px] rounded-xl border border-[#dfe2e5] bg-[#faf9f8] px-3 text-[14px] font-medium text-[#2d2d2d] outline-none focus:border-[#FF5A00]"
               >
                 <option value="latest">Sort by: Latest</option>
                 <option value="name">Name: A to Z</option>
@@ -389,7 +389,7 @@ const AdminCategories = () => {
                   type="button"
                   onClick={() => { setViewMode('table'); setCurrentPage(1); }}
                   className={`flex h-[46px] w-[46px] items-center justify-center border-r border-[#dfe2e5] transition ${
-                    viewMode === 'table' ? 'bg-[#1a3c36] text-white' : 'text-[#4d4d4d] hover:bg-white'
+                    viewMode === 'table' ? 'bg-[#FF5A00] text-white' : 'text-[#4d4d4d] hover:bg-orange-50 hover:text-[#FF5A00]'
                   }`}
                   aria-label="Table view"
                 >
@@ -399,7 +399,7 @@ const AdminCategories = () => {
                   type="button"
                   onClick={() => { setViewMode('card'); setCurrentPage(1); }}
                   className={`flex h-[46px] w-[46px] items-center justify-center transition ${
-                    viewMode === 'card' ? 'bg-[#1a3c36] text-white' : 'text-[#4d4d4d] hover:bg-white'
+                    viewMode === 'card' ? 'bg-[#FF5A00] text-white' : 'text-[#4d4d4d] hover:bg-orange-50 hover:text-[#FF5A00]'
                   }`}
                   aria-label="Card view"
                 >
@@ -409,7 +409,7 @@ const AdminCategories = () => {
               <button
                 type="button"
                 onClick={openAddCategory}
-                className="inline-flex h-[46px] items-center gap-2 rounded-xl bg-[#1a3c36] px-4 text-[15px] font-semibold text-white shadow-[0_6px_14px_rgba(26,60,54,0.18)] transition hover:bg-[#214a42]"
+                className="inline-flex h-[46px] items-center gap-2 rounded-xl bg-[#FF5A00] px-4 text-[15px] font-semibold text-white shadow-[0_6px_14px_rgba(255,90,0,0.18)] transition hover:bg-[#E94B00]"
               >
                 <Plus className="h-4 w-4" />
                 Add New Category
@@ -420,7 +420,7 @@ const AdminCategories = () => {
           {error && (
             <div role="alert" className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[#f2d7d7] bg-[#fff5f5] px-4 py-3 text-sm text-[#a23939]">
               {error}
-              <button type="button" onClick={fetchCategories} disabled={loading} className="font-semibold underline disabled:opacity-50">Retry</button>
+              <button type="button" onClick={fetchCategories} disabled={loading} className="font-semibold text-[#FF5A00] underline disabled:opacity-50">Retry</button>
             </div>
           )}
           {productLoadError && <p role="status" className="mb-4 text-sm text-amber-800">{productLoadError}</p>}
@@ -454,7 +454,7 @@ const AdminCategories = () => {
                           <button
                             type="button"
                             onClick={() => openEditCategory(category.id)}
-                            className="flex h-8 w-8 items-center justify-center rounded-lg border border-[#e7e0d8] bg-white text-[#4d4d4d] hover:bg-[#f8f6f3]"
+                            className="flex h-8 w-8 items-center justify-center rounded-lg border border-orange-200 bg-white text-[#FF5A00] transition hover:bg-orange-50"
                             aria-label={`Edit ${category.name}`}
                             title="Edit category"
                           >
@@ -493,7 +493,7 @@ const AdminCategories = () => {
               ) : (
                 <div className="mt-0 overflow-x-auto rounded-[16px] border border-[#e8e4df]">
                   <table className="w-full min-w-[760px] border-collapse bg-white text-left">
-                    <thead className="bg-[#d4a843] text-left text-sm font-semibold text-white">
+                    <thead className="bg-[#FF5A00] text-left text-sm font-semibold text-white">
                       <tr>
                         <th className="px-4 py-4">S.No</th>
                         <th className="px-4 py-4">Category</th>
@@ -538,7 +538,7 @@ const AdminCategories = () => {
                               <button
                                 type="button"
                                 onClick={() => openEditCategory(item.id)}
-                                className="rounded-lg border border-[#e7e0d8] bg-white p-2 text-[#4d4d4d] hover:bg-[#f8f6f3]"
+                                className="rounded-lg border border-orange-200 bg-white p-2 text-[#FF5A00] transition hover:bg-orange-50"
                                 aria-label={`Edit ${item.name}`}
                               >
                                 <Pencil className="h-4 w-4" />
@@ -565,7 +565,7 @@ const AdminCategories = () => {
                 <div className="flex items-center gap-2">
                   <button type="button" onClick={() => setCurrentPage((page) => Math.max(1, Math.min(page, pageCount) - 1))} disabled={displayPage === 1} aria-label="Previous page" className="flex h-8 w-8 items-center justify-center rounded-lg border border-[#e7e0d8] bg-white text-[#666] disabled:cursor-not-allowed disabled:opacity-40">&lt;</button>
                   {Array.from({ length: pageCount }, (_, index) => index + 1).map((page) => (
-                    <button key={page} type="button" onClick={() => setCurrentPage(page)} aria-current={displayPage === page ? 'page' : undefined} aria-label={`Page ${page}`} className={`flex h-8 min-w-8 items-center justify-center rounded-lg px-2 ${displayPage === page ? 'bg-[#1d3d36] text-white' : 'border border-[#e7e0d8] bg-white text-[#666]'}`}>{page}</button>
+                    <button key={page} type="button" onClick={() => setCurrentPage(page)} aria-current={displayPage === page ? 'page' : undefined} aria-label={`Page ${page}`} className={`flex h-8 min-w-8 items-center justify-center rounded-lg px-2 ${displayPage === page ? 'bg-[#FF5A00] text-white' : 'border border-[#e7e0d8] bg-white text-[#666] hover:border-orange-200 hover:text-[#FF5A00]'}`}>{page}</button>
                   ))}
                   <button type="button" onClick={() => setCurrentPage((page) => Math.min(pageCount, Math.min(page, pageCount) + 1))} disabled={displayPage === pageCount} aria-label="Next page" className="flex h-8 w-8 items-center justify-center rounded-lg border border-[#e7e0d8] bg-white text-[#666] disabled:cursor-not-allowed disabled:opacity-40">&gt;</button>
                 </div>
@@ -625,7 +625,7 @@ const AdminCategories = () => {
                     value={categoryForm.categoryName}
                     onChange={(event) => setCategoryForm((current) => ({ ...current, categoryName: event.target.value }))}
                     placeholder="e.g. Biryani"
-                    className="h-10 w-full rounded-md border border-gray-300 px-3 outline-none focus:border-emerald-700 focus:ring-1 focus:ring-emerald-700"
+                    className="h-10 w-full rounded-md border border-gray-300 px-3 outline-none focus:border-[#FF5A00] focus:ring-1 focus:ring-[#FF5A00]"
                   />
                 </label>
                 <label className="space-y-1.5 text-sm font-medium text-gray-700 sm:col-span-2">
@@ -636,7 +636,7 @@ const AdminCategories = () => {
                     value={categoryForm.description}
                     onChange={(event) => setCategoryForm((current) => ({ ...current, description: event.target.value }))}
                     placeholder="Describe this category"
-                    className="w-full resize-y rounded-md border border-gray-300 px-3 py-2 outline-none focus:border-emerald-700 focus:ring-1 focus:ring-emerald-700"
+                    className="w-full resize-y rounded-md border border-gray-300 px-3 py-2 outline-none focus:border-[#FF5A00] focus:ring-1 focus:ring-[#FF5A00]"
                   />
                 </label>
                 <div className="space-y-2 text-sm font-medium text-gray-700 sm:col-span-2">
@@ -653,12 +653,12 @@ const AdminCategories = () => {
                         }
                       }}
                       placeholder="e.g. Chicken Biryani"
-                      className="h-10 min-w-0 flex-1 rounded-md border border-gray-300 px-3 outline-none focus:border-emerald-700 focus:ring-1 focus:ring-emerald-700"
+                      className="h-10 min-w-0 flex-1 rounded-md border border-gray-300 px-3 outline-none focus:border-[#FF5A00] focus:ring-1 focus:ring-[#FF5A00]"
                     />
                     <button
                       type="button"
                       onClick={handleAddSubcategory}
-                      className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-[#1a3c36] text-white hover:bg-[#214a42]"
+                      className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-[#FF5A00] text-white transition hover:bg-[#E94B00]"
                       aria-label="Add subcategory"
                       title="Add subcategory"
                     >
@@ -709,7 +709,7 @@ const AdminCategories = () => {
                   <select
                     value={categoryForm.status}
                     onChange={(event) => setCategoryForm((current) => ({ ...current, status: event.target.value }))}
-                    className="h-10 w-full rounded-md border border-gray-300 bg-white px-3 outline-none focus:border-emerald-700 focus:ring-1 focus:ring-emerald-700"
+                    className="h-10 w-full rounded-md border border-gray-300 bg-white px-3 outline-none focus:border-[#FF5A00] focus:ring-1 focus:ring-[#FF5A00]"
                   >
                     <option>Active</option>
                     <option>Inactive</option>
@@ -733,7 +733,7 @@ const AdminCategories = () => {
                 <button
                   type="submit"
                   disabled={isSavingCategory || isUploadingImage || isGeneratingCategoryId}
-                  className="inline-flex h-10 items-center gap-2 rounded-md bg-[#1a3c36] px-4 text-sm font-semibold text-white hover:bg-[#214a42] disabled:cursor-wait disabled:opacity-60"
+                  className="inline-flex h-10 items-center gap-2 rounded-md bg-[#FF5A00] px-4 text-sm font-semibold text-white transition hover:bg-[#E94B00] disabled:cursor-wait disabled:opacity-60"
                 >
                   {editingCategoryId ? <Pencil className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
                   {isUploadingImage ? 'Uploading image...' : isSavingCategory ? 'Saving...' : editingCategoryId ? 'Update category' : 'Save category'}

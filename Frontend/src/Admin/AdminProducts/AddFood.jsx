@@ -64,7 +64,7 @@ const SearchableSelect = ({ label, value, options, onChange, placeholder, error,
         }}
         onBlur={() => setTimeout(() => setOpen(false), 120)}
         placeholder={placeholder}
-        className={`h-10 w-full rounded-md border bg-white px-3 text-sm outline-none focus:border-emerald-700 focus:ring-1 focus:ring-emerald-700 disabled:bg-gray-100 ${error ? 'border-red-500' : 'border-gray-300'}`}
+        className={`h-10 w-full rounded-md border bg-white px-3 text-sm outline-none focus:border-[#FF5A00] focus:ring-1 focus:ring-[#FF5A00] disabled:bg-gray-100 ${error ? 'border-red-500' : 'border-gray-300'}`}
       />
       {open && !disabled && (
         <ul role="listbox" className="absolute z-30 mt-1 max-h-52 w-full overflow-y-auto rounded-md border border-gray-200 bg-white py-1 shadow-lg">
@@ -440,7 +440,7 @@ const AddFood = ({ drawer = false, onClose, onSaved }) => {
         <div className="space-y-4">
           <Section number="01" title="Basic details" description="Name and classify this menu item.">
             <label className="block text-sm font-medium text-gray-700">Food name
-              <input value={form.foodName} onChange={(event) => setValue('foodName', event.target.value)} maxLength={180} placeholder="e.g. Chicken Biryani" className={`mt-1.5 h-10 w-full rounded-md border px-3 outline-none focus:border-emerald-700 ${errors.foodName ? 'border-red-500' : 'border-gray-300'}`} />
+              <input value={form.foodName} onChange={(event) => setValue('foodName', event.target.value)} maxLength={180} placeholder="e.g. Chicken Biryani" className={`mt-1.5 h-10 w-full rounded-md border px-3 outline-none focus:border-[#FF5A00] ${errors.foodName ? 'border-red-500' : 'border-gray-300'}`} />
               {errors.foodName && <span className="mt-1 block text-xs text-red-700">{errors.foodName}</span>}
             </label>
             <label className="block text-sm font-medium text-gray-700">Food type
@@ -450,7 +450,7 @@ const AddFood = ({ drawer = false, onClose, onSaved }) => {
             <SearchableSelect label="Category" value={form.categoryId} options={categoryOptions} placeholder="Search categories" onChange={(value) => { setValue('categoryId', value); setValue('subcategoryName', ''); }} error={errors.categoryId} />
             <SearchableSelect label="Subcategory" value={form.subcategoryName} options={subcategoryOptions.map((value) => ({ value, label: value }))} placeholder={form.categoryId ? 'Search subcategories' : 'Choose a category first'} disabled={!form.categoryId} onChange={(value) => setValue('subcategoryName', value)} error={errors.subcategoryName} />
             <label className="block text-sm font-medium text-gray-700">Description
-              <textarea value={form.description} onChange={(event) => setValue('description', event.target.value)} rows={3} maxLength={2000} placeholder="Describe ingredients, flavor, or serving details" className="mt-1.5 w-full resize-y rounded-md border border-gray-300 px-3 py-2 outline-none focus:border-emerald-700" />
+              <textarea value={form.description} onChange={(event) => setValue('description', event.target.value)} rows={3} maxLength={2000} placeholder="Describe ingredients, flavor, or serving details" className="mt-1.5 w-full resize-y rounded-md border border-gray-300 px-3 py-2 outline-none focus:border-[#FF5A00]" />
             </label>
             <div className="sm:col-span-2">
               <div className="mb-2 flex flex-wrap items-center justify-between gap-2"><div><h3 className="text-sm font-medium text-gray-800">Food images</h3><p className="mt-0.5 text-xs text-gray-500">Upload multiple JPG, PNG, or WEBP images, up to 5 MB each. Drag to reorder.</p></div><label className="inline-flex h-9 cursor-pointer items-center gap-2 rounded-md border border-gray-300 bg-white px-3 text-sm font-medium text-gray-700 hover:bg-gray-50"><ImagePlus className="h-4 w-4" /> Add images<input type="file" accept="image/jpeg,image/png,image/webp" multiple className="sr-only" onChange={(event) => addImageFiles(event.target.files)} /></label></div>
@@ -469,11 +469,11 @@ const AddFood = ({ drawer = false, onClose, onSaved }) => {
 
           <Section number="02" title="Pricing" description="Final price updates automatically and is recalculated by the server." columns={3}>
             <label className="block text-sm font-medium text-gray-700">MRP (₹)
-              <input type="number" min="0" step="0.01" value={form.mrp} onChange={(event) => setValue('mrp', event.target.value)} className={`mt-1.5 h-10 w-full rounded-md border px-3 outline-none focus:border-emerald-700 ${errors.mrp ? 'border-red-500' : 'border-gray-300'}`} />
+              <input type="number" min="0" step="0.01" value={form.mrp} onChange={(event) => setValue('mrp', event.target.value)} className={`mt-1.5 h-10 w-full rounded-md border px-3 outline-none focus:border-[#FF5A00] ${errors.mrp ? 'border-red-500' : 'border-gray-300'}`} />
               {errors.mrp && <span className="mt-1 block text-xs text-red-700">{errors.mrp}</span>}
             </label>
             <label className="block text-sm font-medium text-gray-700">Discount (%)
-              <input type="number" min="0" max="100" step="0.01" value={form.discount} onChange={(event) => setValue('discount', event.target.value)} className={`mt-1.5 h-10 w-full rounded-md border px-3 outline-none focus:border-emerald-700 ${errors.discount ? 'border-red-500' : 'border-gray-300'}`} />
+              <input type="number" min="0" max="100" step="0.01" value={form.discount} onChange={(event) => setValue('discount', event.target.value)} className={`mt-1.5 h-10 w-full rounded-md border px-3 outline-none focus:border-[#FF5A00] ${errors.discount ? 'border-red-500' : 'border-gray-300'}`} />
               {errors.discount && <span className="mt-1 block text-xs text-red-700">{errors.discount}</span>}
             </label>
             <label className="block text-sm font-medium text-gray-700">Final price (₹)
@@ -483,20 +483,20 @@ const AddFood = ({ drawer = false, onClose, onSaved }) => {
 
           <Section number="03" title="Food details" columns={3}>
             <label className="block text-sm font-medium text-gray-700">Preparation time (minutes)
-              <input type="number" min="0" step="1" value={form.preparationTime} onChange={(event) => setValue('preparationTime', event.target.value)} className={`mt-1.5 h-10 w-full rounded-md border px-3 outline-none focus:border-emerald-700 ${errors.preparationTime ? 'border-red-500' : 'border-gray-300'}`} />
+              <input type="number" min="0" step="1" value={form.preparationTime} onChange={(event) => setValue('preparationTime', event.target.value)} className={`mt-1.5 h-10 w-full rounded-md border px-3 outline-none focus:border-[#FF5A00] ${errors.preparationTime ? 'border-red-500' : 'border-gray-300'}`} />
               {errors.preparationTime && <span className="mt-1 block text-xs text-red-700">{errors.preparationTime}</span>}
             </label>
             <label className="block text-sm font-medium text-gray-700">Food rating (0–5)
-              <input type="number" min="0" max="5" step="0.1" value={form.rating} onChange={(event) => setValue('rating', event.target.value)} className="mt-1.5 h-10 w-full rounded-md border border-gray-300 px-3 outline-none focus:border-emerald-700" />
+              <input type="number" min="0" max="5" step="0.1" value={form.rating} onChange={(event) => setValue('rating', event.target.value)} className="mt-1.5 h-10 w-full rounded-md border border-gray-300 px-3 outline-none focus:border-[#FF5A00]" />
             </label>
             <label className="block text-sm font-medium text-gray-700">Stock quantity (units)
-              <input type="number" min="0" step="1" value={form.stockQuantity} onChange={(event) => setValue('stockQuantity', event.target.value)} className="mt-1.5 h-10 w-full rounded-md border border-gray-300 px-3 outline-none focus:border-emerald-700" />
+              <input type="number" min="0" step="1" value={form.stockQuantity} onChange={(event) => setValue('stockQuantity', event.target.value)} className="mt-1.5 h-10 w-full rounded-md border border-gray-300 px-3 outline-none focus:border-[#FF5A00]" />
             </label>
             <label className="block text-sm font-medium text-gray-700">Is spicy?
               <select value={form.isSpicy ? 'Yes' : 'No'} onChange={(event) => setValue('isSpicy', event.target.value === 'Yes')} className="mt-1.5 h-10 w-full rounded-md border border-gray-300 bg-white px-3"><option>No</option><option>Yes</option></select>
             </label>
             <label className="block text-sm font-medium text-gray-700">Serving size
-              <input value={form.servingSize} onChange={(event) => setValue('servingSize', event.target.value)} placeholder="e.g. Serves 1" className="mt-1.5 h-10 w-full rounded-md border border-gray-300 px-3 outline-none focus:border-emerald-700" />
+              <input value={form.servingSize} onChange={(event) => setValue('servingSize', event.target.value)} placeholder="e.g. Serves 1" className="mt-1.5 h-10 w-full rounded-md border border-gray-300 px-3 outline-none focus:border-[#FF5A00]" />
             </label>
             <label className="block text-sm font-medium text-gray-700">Portion size
               <select value={form.portionSize} onChange={(event) => setValue('portionSize', event.target.value)} className="mt-1.5 h-10 w-full rounded-md border border-gray-300 bg-white px-3"><option>Half</option><option>Full</option><option>Your Choice</option></select>
@@ -516,7 +516,7 @@ const AddFood = ({ drawer = false, onClose, onSaved }) => {
               {errors.mealType && <span className="mt-1 block text-xs text-red-700">{errors.mealType}</span>}
             </label>
             <label className="block text-sm font-medium text-gray-700">Available time
-              <input type="text" value={form.availableTime} onChange={(event) => setValue('availableTime', event.target.value)} maxLength={100} placeholder="e.g. 10:00 AM - 1:00 PM" className="mt-1.5 h-10 w-full rounded-md border border-gray-300 px-3 outline-none focus:border-emerald-700" />
+              <input type="text" value={form.availableTime} onChange={(event) => setValue('availableTime', event.target.value)} maxLength={100} placeholder="e.g. 10:00 AM - 1:00 PM" className="mt-1.5 h-10 w-full rounded-md border border-gray-300 px-3 outline-none focus:border-[#FF5A00]" />
               <span className="mt-1 block text-xs font-normal text-gray-500">Default: 10:00 AM - 1:00 PM</span>
             </label>
             <Toggle label="Available" checked={form.isAvailable} onChange={(value) => setValue('isAvailable', value)} />
