@@ -182,7 +182,7 @@ const navItems = [
     children: [
       { path: "/admin/banners", label: "Banners", icon: Image },
       { path: "/admin/videos", label: "Videos Management", icon: Image },
-      // { path: "/admin/gallery", label: "Gallery", icon: Image },
+      { path: "/admin/gallery", label: "Gallery", icon: Album },
       { path: "/admin/coupons", label: "Coupons & Offers", icon: Tag },
       {
         path: "/admin/expenses",
