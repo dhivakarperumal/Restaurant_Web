@@ -240,42 +240,48 @@ export default function AdminAttendance() {
       title: "Total Staff",
       value: summary?.total_active_staff ?? records.length,
       icon: Users,
-      bg: "bg-[#1f4e42]",
+      accent: "#f97316",
+      iconBg: "bg-orange-500",
       hint: "Active employees registered",
     },
     {
       title: "Present Today",
       value: summary?.present_count ?? 0,
       icon: UserCheck,
-      bg: "bg-[#16a34a]",
+      accent: "#10b981",
+      iconBg: "bg-emerald-500",
       hint: "Clocked in today",
     },
     {
       title: "Active on Duty",
       value: summary?.working_now_count ?? 0,
       icon: Timer,
-      bg: "bg-[#0284c7]",
+      accent: "#3b82f6",
+      iconBg: "bg-blue-500",
       hint: "Currently working shifts",
     },
     {
       title: "Completed Shift",
       value: summary?.completed_count ?? 0,
       icon: CheckCircle2,
-      bg: "bg-[#6366f1]",
+      accent: "#ec4899",
+      iconBg: "bg-pink-500",
       hint: "Clocked out today",
     },
     {
       title: "Late Arrivals",
       value: summary?.late_count ?? 0,
       icon: Clock,
-      bg: "bg-[#d97706]",
+      accent: "#8b5cf6",
+      iconBg: "bg-violet-500",
       hint: "Arrived after start time",
     },
     {
       title: "Absent Today",
       value: summary?.absent_count ?? 0,
       icon: UserRound,
-      bg: "bg-[#e11d48]",
+      accent: "#06b6d4",
+      iconBg: "bg-cyan-500",
       hint: "Did not check in",
     },
   ];
@@ -317,28 +323,30 @@ export default function AdminAttendance() {
         </div>
 
         {/* Top KPI Summary Cards */}
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-6">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-6">
           {statCards.map((card) => {
             const Icon = card.icon;
             return (
               <div
                 key={card.title}
-                className={`relative flex flex-col justify-between overflow-hidden rounded-2xl p-4 text-white shadow-sm transition hover:shadow-md ${card.bg}`}
+                className="relative flex min-h-[174px] min-w-0 flex-col justify-between overflow-hidden rounded-[20px] border border-slate-200/90 bg-white p-4 shadow-[0_4px_16px_-5px_rgba(15,23,42,0.08)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_10px_22px_-7px_rgba(15,23,42,0.12)]"
+                style={{ background: `linear-gradient(135deg, #ffffff 48%, ${card.accent}12 100%)` }}
               >
-                <div className="flex items-center justify-between">
-                  <span className="text-[11px] font-bold uppercase tracking-wider text-white/80">
-                    {card.title}
-                  </span>
-                  <div className="grid h-8 w-8 place-items-center rounded-lg bg-white/20">
-                    <Icon size={16} className="text-white" />
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0 pt-1">
+                    <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">{card.title}</span>
+                    <div className="mt-3 text-[26px] font-black leading-none tabular-nums text-slate-900">{loading ? "..." : card.value}</div>
+                  </div>
+                  <div className={`grid h-11 w-11 shrink-0 place-items-center rounded-[15px] text-white shadow-[0_5px_12px_-4px_rgba(15,23,42,0.25)] ${card.iconBg}`}>
+                    <Icon size={21} />
                   </div>
                 </div>
-                <div className="mt-3">
-                  <div className="text-2xl font-extrabold tabular-nums">
-                    {loading ? "..." : card.value}
-                  </div>
-                  <p className="text-[10px] text-white/75 truncate mt-0.5">{card.hint}</p>
+                <div className="relative z-10 mt-4 flex items-center gap-2 border-t border-slate-100/90 pt-3 text-[10px]">
+                  <span className="inline-flex shrink-0 items-center rounded-full border border-emerald-200/80 bg-emerald-50/90 px-2 py-0.5 font-bold text-emerald-600">Live</span>
+                  <span className="truncate font-medium text-slate-500">{card.hint}</span>
+                  <span className="ml-auto h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: card.accent }} />
                 </div>
+                <span aria-hidden="true" className="pointer-events-none absolute -right-5 -top-5 h-24 w-24 rounded-full opacity-20 blur-2xl" style={{ backgroundColor: card.accent }} />
               </div>
             );
           })}
