@@ -276,7 +276,7 @@ const router = createHashRouter([
           },
           {
             path: 'orders/dining',
-            element: <ChefKitchenOrders key="admin-orders-dining" defaultViewMode="table" orderTypeFilter="dine-in" todayOnly />,
+            element: <ChefKitchenOrders key="admin-orders-dining" defaultViewMode="table" orderTypeFilter="dine-in" todayOnly adminTheme />,
           },
           {
             path: 'orders/cancelled',

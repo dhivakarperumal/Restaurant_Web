@@ -90,7 +90,7 @@ const formatKotNumber = (order) => {
   return `KOT-${ticketId.slice(0, 8)}`;
 };
 
-const ChefKitchenOrders = ({ defaultViewMode = "table", orderTypeFilter = "", todayOnly = false }) => {
+const ChefKitchenOrders = ({ defaultViewMode = "table", orderTypeFilter = "", todayOnly = false, adminTheme = false }) => {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -233,24 +233,24 @@ const ChefKitchenOrders = ({ defaultViewMode = "table", orderTypeFilter = "", to
         <div className="flex flex-col gap-3 rounded-xl border border-[#e1ded8] bg-white p-3 sm:flex-row sm:items-center sm:justify-between">
           <label className="relative block w-full sm:max-w-sm sm:flex-1">
             <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-[#7a857d]" />
-            <input type="search" value={searchQuery} onChange={(event) => { setSearchQuery(event.target.value); setPage(1); }} placeholder="Search table, ticket, food..." aria-label="Search kitchen orders" className="h-[46px] w-full rounded-xl border border-[#dfe2e5] bg-[#faf9f8] pl-11 pr-3 text-sm text-[#2d3830] outline-none placeholder:text-[#89938c] focus:border-[#6d9a79]" />
+            <input type="search" value={searchQuery} onChange={(event) => { setSearchQuery(event.target.value); setPage(1); }} placeholder="Search table, ticket, food..." aria-label="Search kitchen orders" className={`h-[46px] w-full rounded-xl border border-[#dfe2e5] bg-[#faf9f8] pl-11 pr-3 text-sm text-[#2d3830] outline-none placeholder:text-[#89938c] ${adminTheme ? "focus:border-[#FF5A00] focus:ring-1 focus:ring-[#FF5A00]" : "focus:border-[#6d9a79]"}`} />
           </label>
           <div className="flex flex-wrap items-center gap-2 sm:justify-end">
             <span className="mr-1 text-xs text-gray-500">{filteredOrders.length} of {orders.length}</span>
-            <select value={activeTab} onChange={(event) => { setActiveTab(event.target.value); setPage(1); }} aria-label="Filter kitchen orders by status" className="h-[46px] rounded-xl border border-[#dfe2e5] bg-white px-3 text-sm text-[#34443b] outline-none focus:border-[#6d9a79]">
+            <select value={activeTab} onChange={(event) => { setActiveTab(event.target.value); setPage(1); }} aria-label="Filter kitchen orders by status" className={`h-[46px] rounded-xl border border-[#dfe2e5] bg-white px-3 text-sm text-[#34443b] outline-none ${adminTheme ? "focus:border-[#FF5A00] focus:ring-1 focus:ring-[#FF5A00]" : "focus:border-[#6d9a79]"}`}>
               <option value="all">All Status ({counts.all})</option>
               <option value="Pending">Pending ({counts.Pending})</option>
               <option value="Preparing">Preparing ({counts.Preparing})</option>
               <option value="Ready to Serve">Ready to Serve ({counts["Ready to Serve"]})</option>
               <option value="Served">Served / Completed ({counts.Served})</option>
             </select>
-            <select value={sortBy} onChange={(event) => { setSortBy(event.target.value); setPage(1); }} aria-label="Sort kitchen orders" className="h-[46px] rounded-xl border border-[#dfe2e5] bg-white px-3 text-sm text-[#34443b] outline-none focus:border-[#6d9a79]">
+            <select value={sortBy} onChange={(event) => { setSortBy(event.target.value); setPage(1); }} aria-label="Sort kitchen orders" className={`h-[46px] rounded-xl border border-[#dfe2e5] bg-white px-3 text-sm text-[#34443b] outline-none ${adminTheme ? "focus:border-[#FF5A00] focus:ring-1 focus:ring-[#FF5A00]" : "focus:border-[#6d9a79]"}`}>
               <option value="latest">Sort by: Latest</option>
               <option value="oldest">Sort by: Oldest</option>
             </select>
             <div className="flex h-[46px] overflow-hidden rounded-xl border border-[#dfe2e5] bg-white" role="group" aria-label="Kitchen orders view">
-              <button type="button" onClick={() => setViewMode("table")} aria-label="Table view" aria-pressed={viewMode === "table"} title="Table view" className={`grid w-11 place-items-center border-r border-[#dfe2e5] ${viewMode === "table" ? "bg-[#1a3c36] text-white" : "text-[#66736b] hover:bg-gray-50"}`}><List size={16} /></button>
-              <button type="button" onClick={() => setViewMode("card")} aria-label="Card view" aria-pressed={viewMode === "card"} title="Card view" className={`grid w-11 place-items-center ${viewMode === "card" ? "bg-[#1a3c36] text-white" : "text-[#66736b] hover:bg-gray-50"}`}><LayoutGrid size={16} /></button>
+              <button type="button" onClick={() => setViewMode("table")} aria-label="Table view" aria-pressed={viewMode === "table"} title="Table view" className={`grid w-11 place-items-center border-r border-[#dfe2e5] ${viewMode === "table" ? (adminTheme ? "bg-[#FF5A00] text-white" : "bg-[#1a3c36] text-white") : `text-[#66736b] ${adminTheme ? "hover:bg-orange-50 hover:text-[#FF5A00]" : "hover:bg-gray-50"}`}`}><List size={16} /></button>
+              <button type="button" onClick={() => setViewMode("card")} aria-label="Card view" aria-pressed={viewMode === "card"} title="Card view" className={`grid w-11 place-items-center ${viewMode === "card" ? (adminTheme ? "bg-[#FF5A00] text-white" : "bg-[#1a3c36] text-white") : `text-[#66736b] ${adminTheme ? "hover:bg-orange-50 hover:text-[#FF5A00]" : "hover:bg-gray-50"}`}`}><LayoutGrid size={16} /></button>
             </div>
           </div>
         </div>
@@ -281,7 +281,7 @@ const ChefKitchenOrders = ({ defaultViewMode = "table", orderTypeFilter = "", to
         ) : viewMode === "table" ? (
           <div className="overflow-x-auto rounded-2xl border border-[#e7e0d8] bg-white shadow-sm">
             <table className="w-full min-w-[940px] border-collapse text-left text-sm">
-              <thead className="sticky top-0 bg-[#d4a843] text-[11px] uppercase tracking-wide text-white">
+              <thead className={`sticky top-0 ${adminTheme ? "bg-[#FF5A00]" : "bg-[#d4a843]"} text-[11px] uppercase tracking-wide text-white`}>
                 <tr>
                   {['S No', 'Kitchen Order', 'Table / Bill', 'Round', 'Items', 'Amount', 'Status', 'Placed', 'Action'].map((heading) => <th key={heading} className="whitespace-nowrap px-4 py-4 font-bold">{heading}</th>)}
                 </tr>
@@ -336,7 +336,7 @@ const ChefKitchenOrders = ({ defaultViewMode = "table", orderTypeFilter = "", to
                     <div className="flex items-start justify-between border-b border-[#f0ebe6] pb-3.5">
                       <div>
                         <div className="flex items-center gap-2 flex-wrap">
-                          <span className="rounded-lg bg-[#1a3c36] px-2.5 py-1 font-serif text-sm font-bold text-white">
+                          <span className={`rounded-lg px-2.5 py-1 font-serif text-sm font-bold text-white ${adminTheme ? "bg-[#FF5A00]" : "bg-[#1a3c36]"}`}>
                             Table {order.table_number}
                           </span>
                           <span

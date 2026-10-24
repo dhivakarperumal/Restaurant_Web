@@ -496,8 +496,8 @@ function ProductsPage({ readOnly = false }) {
       label: 'Actions',
       render: (row) => (
         <div className="flex gap-3">
-          <button type="button" className="text-sky-600 hover:text-sky-800" title="View" aria-label={`View ${row.product_name}`} onClick={() => setViewProduct(row)}><Eye size={15} /></button>
-          <button type="button" className="text-amber-600 hover:text-amber-800" title="Edit" aria-label={`Edit ${row.product_name}`} onClick={() => openEditProduct(row)}><Pencil size={15} /></button>
+          <button type="button" className="text-[#FF5A00] transition hover:text-[#E94B00]" title="View" aria-label={`View ${row.product_name}`} onClick={() => setViewProduct(row)}><Eye size={15} /></button>
+          <button type="button" className="text-[#FF5A00] transition hover:text-[#E94B00]" title="Edit" aria-label={`Edit ${row.product_name}`} onClick={() => openEditProduct(row)}><Pencil size={15} /></button>
           <button type="button" className="text-rose-600 hover:text-rose-800" title="Delete" aria-label={`Delete ${row.product_name}`} onClick={() => deleteProduct(row)}><Trash2 size={15} /></button>
         </div>
       ),
@@ -575,7 +575,7 @@ function ProductsPage({ readOnly = false }) {
                 type="search"
                 value={search}
                 onChange={(event) => setSearch(event.target.value)}
-                className="h-[46px] w-full rounded-xl border border-slate-200 bg-slate-50 pl-10 pr-3 text-sm text-slate-700 outline-none placeholder:text-slate-400 focus:border-[#1a3c36]"
+                className={`h-[46px] w-full rounded-xl border border-slate-200 bg-slate-50 pl-10 pr-3 text-sm text-slate-700 outline-none placeholder:text-slate-400 ${readOnly ? 'focus:border-[#1a3c36]' : 'focus:border-[#FF5A00]'}`}
                 placeholder={readOnly ? "Search stock items by name, SKU or barcode..." : "Search groceries by name, SKU or barcode..."}
               />
             </label>
@@ -584,7 +584,7 @@ function ProductsPage({ readOnly = false }) {
                 aria-label="Filter by status"
                 value={selectedStatus}
                 onChange={(event) => setSelectedStatus(event.target.value)}
-                className="h-[46px] min-w-36 rounded-xl border border-slate-200 bg-slate-50 px-3 text-sm font-medium text-slate-700 outline-none focus:border-[#1a3c36]"
+                className={`h-[46px] min-w-36 rounded-xl border border-slate-200 bg-slate-50 px-3 text-sm font-medium text-slate-700 outline-none ${readOnly ? 'focus:border-[#1a3c36]' : 'focus:border-[#FF5A00]'}`}
               >
                 <option value="All Status">All Status</option>
                 <option value="Active">Active</option>
@@ -594,7 +594,7 @@ function ProductsPage({ readOnly = false }) {
                 aria-label="Filter by stock level"
                 value={selectedStockLevel}
                 onChange={(event) => setSelectedStockLevel(event.target.value)}
-                className="h-[46px] min-w-36 rounded-xl border border-slate-200 bg-slate-50 px-3 text-sm font-medium text-slate-700 outline-none focus:border-[#1a3c36]"
+                className={`h-[46px] min-w-36 rounded-xl border border-slate-200 bg-slate-50 px-3 text-sm font-medium text-slate-700 outline-none ${readOnly ? 'focus:border-[#1a3c36]' : 'focus:border-[#FF5A00]'}`}
               >
                 <option value="All Stock">All Stock</option>
                 <option value="In Stock">In Stock</option>
@@ -605,7 +605,7 @@ function ProductsPage({ readOnly = false }) {
                 aria-label="Sort groceries"
                 value={sortBy}
                 onChange={(event) => setSortBy(event.target.value)}
-                className="h-[46px] rounded-xl border border-slate-200 bg-slate-50 px-3 text-sm font-medium text-slate-700 outline-none focus:border-[#1a3c36]"
+                className={`h-[46px] rounded-xl border border-slate-200 bg-slate-50 px-3 text-sm font-medium text-slate-700 outline-none ${readOnly ? 'focus:border-[#1a3c36]' : 'focus:border-[#FF5A00]'}`}
               >
                 <option value="latest">Sort by: Latest</option>
                 <option value="name">Name: A to Z</option>
@@ -619,7 +619,7 @@ function ProductsPage({ readOnly = false }) {
                   aria-label="Card view"
                   aria-pressed={viewMode === 'card'}
                   title="Card view"
-                  className={`flex h-[46px] w-[46px] items-center justify-center transition ${viewMode === 'card' ? 'bg-[#1a3c36] text-white' : 'text-slate-600 hover:bg-white'}`}
+                  className={`flex h-[46px] w-[46px] items-center justify-center transition ${viewMode === 'card' ? `${readOnly ? 'bg-[#1a3c36]' : 'bg-[#FF5A00]'} text-white` : `text-slate-600 ${readOnly ? 'hover:bg-white' : 'hover:bg-orange-50 hover:text-[#FF5A00]'}`}`}
                 >
                   <LayoutGrid className="h-4 w-4" />
                 </button>
@@ -629,7 +629,7 @@ function ProductsPage({ readOnly = false }) {
                   aria-label="Table view"
                   aria-pressed={viewMode === 'table'}
                   title="Table view"
-                  className={`flex h-[46px] w-[46px] items-center justify-center transition ${viewMode === 'table' ? 'bg-[#1a3c36] text-white' : 'text-slate-600 hover:bg-white'}`}
+                  className={`flex h-[46px] w-[46px] items-center justify-center transition ${viewMode === 'table' ? `${readOnly ? 'bg-[#1a3c36]' : 'bg-[#FF5A00]'} text-white` : `text-slate-600 ${readOnly ? 'hover:bg-white' : 'hover:bg-orange-50 hover:text-[#FF5A00]'}`}`}
                 >
                   <Table2 className="h-4 w-4" />
                 </button>
@@ -637,7 +637,7 @@ function ProductsPage({ readOnly = false }) {
               {!readOnly && <button
                 type="button"
                 onClick={openAddGrocery}
-                className="inline-flex h-[46px] items-center gap-2 rounded-xl bg-[#1a3c36] px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-[#214a42]"
+                className="inline-flex h-[46px] items-center gap-2 rounded-xl bg-[#FF5A00] px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-[#E94B00]"
               >
                 <Plus className="h-4 w-4" />
                 Add Grocery
@@ -683,8 +683,8 @@ function ProductsPage({ readOnly = false }) {
                       <StatusBadge value={product.status || 'Active'} />
                       {!readOnly && (
                         <div className="flex gap-2">
-                          <button type="button" className="text-sky-600 hover:text-sky-800" title="View" aria-label={`View ${product.product_name}`} onClick={() => setViewProduct(product)}><Eye size={15} /></button>
-                          <button type="button" className="text-amber-600 hover:text-amber-800" title="Edit" aria-label={`Edit ${product.product_name}`} onClick={() => openEditProduct(product)}><Pencil size={15} /></button>
+                          <button type="button" className="text-[#FF5A00] transition hover:text-[#E94B00]" title="View" aria-label={`View ${product.product_name}`} onClick={() => setViewProduct(product)}><Eye size={15} /></button>
+                          <button type="button" className="text-[#FF5A00] transition hover:text-[#E94B00]" title="Edit" aria-label={`Edit ${product.product_name}`} onClick={() => openEditProduct(product)}><Pencil size={15} /></button>
                           <button type="button" className="text-rose-600 hover:text-rose-800" title="Delete" aria-label={`Delete ${product.product_name}`} onClick={() => deleteProduct(product)}><Trash2 size={15} /></button>
                         </div>
                       )}
@@ -820,29 +820,29 @@ function ProductsPage({ readOnly = false }) {
             </div>
             <form className="space-y-3" onSubmit={handleSubmit}>
               <FormField label="Grocery name" required>
-                <input value={form.product_name} onChange={(e) => setForm({ ...form, product_name: e.target.value })} placeholder="Enter grocery name" className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" required />
+                <input value={form.product_name} onChange={(e) => setForm({ ...form, product_name: e.target.value })} placeholder="Enter grocery name" className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-[#FF5A00] focus:ring-1 focus:ring-[#FF5A00]" required />
               </FormField>
               <FormField label="Unit">
-                <select value={form.unit_id} onChange={(e) => setForm({ ...form, unit_id: e.target.value })} className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm">
+                <select value={form.unit_id} onChange={(e) => setForm({ ...form, unit_id: e.target.value })} className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-[#FF5A00] focus:ring-1 focus:ring-[#FF5A00]">
                   <option value="">Select unit</option>
                   {units.map((unit) => <option key={unit.id} value={unit.id}>{unit.unit_name}</option>)}
                 </select>
               </FormField>
               <FormField label="Purchase price">
-                <input value={form.purchase_price} onChange={(e) => setForm({ ...form, purchase_price: e.target.value })} placeholder="0.00" type="number" className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" />
+                <input value={form.purchase_price} onChange={(e) => setForm({ ...form, purchase_price: e.target.value })} placeholder="0.00" type="number" className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-[#FF5A00] focus:ring-1 focus:ring-[#FF5A00]" />
               </FormField>
               <FormField label="Stock">
-                <input value={form.current_stock} onChange={(e) => setForm({ ...form, current_stock: e.target.value })} placeholder="0" type="number" className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" min="0" />
+                <input value={form.current_stock} onChange={(e) => setForm({ ...form, current_stock: e.target.value })} placeholder="0" type="number" className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-[#FF5A00] focus:ring-1 focus:ring-[#FF5A00]" min="0" />
               </FormField>
               <FormField label="Status">
-                <select value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value })} className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm">
+                <select value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value })} className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-[#FF5A00] focus:ring-1 focus:ring-[#FF5A00]">
                   <option value="Active">Active</option>
                   <option value="Inactive">Inactive</option>
                 </select>
               </FormField>
               <div className="flex justify-end gap-3 pt-2">
                 <button type="button" onClick={() => { setIsAddModalOpen(false); setEditingProductId(null); }} className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700" disabled={isSavingProduct}>Cancel</button>
-                <button type="submit" disabled={isSavingProduct} className="rounded-xl bg-[#1a3c36] px-4 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60">{isSavingProduct ? "Saving..." : editingProductId ? "Save Changes" : "Save Product"}</button>
+                <button type="submit" disabled={isSavingProduct} className="rounded-xl bg-[#FF5A00] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#E94B00] disabled:cursor-not-allowed disabled:opacity-60">{isSavingProduct ? "Saving..." : editingProductId ? "Save Changes" : "Save Product"}</button>
               </div>
             </form>
           </div>
@@ -1726,7 +1726,7 @@ function KitchenRequestsPage() {
     if (status === 'Pending') {
       workflowAction = (
         <>
-          <button type="button" onClick={() => setApprovalRequest(request)} className="rounded-lg bg-sky-600 px-2.5 py-1.5 text-xs font-semibold text-white">Approve</button>
+          <button type="button" onClick={() => setApprovalRequest(request)} className="rounded-lg bg-[#FF5A00] px-2.5 py-1.5 text-xs font-semibold text-white transition hover:bg-[#E94B00]">Approve</button>
           <button type="button" onClick={() => { setRejectionRequest(request); setRejectionReason(''); }} className="rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-slate-700">Reject</button>
         </>
       );
@@ -1735,10 +1735,10 @@ function KitchenRequestsPage() {
     return (
       <div className="flex flex-wrap items-center gap-2">
         {workflowAction}
-        <button type="button" onClick={() => setViewRequest(request)} className="rounded-lg border border-slate-200 p-1.5 text-sky-600 hover:bg-sky-50" title="View" aria-label={`View ${request.request_number}`}><Eye size={15} /></button>
+        <button type="button" onClick={() => setViewRequest(request)} className="rounded-lg border border-orange-200 p-1.5 text-[#FF5A00] transition hover:bg-orange-50" title="View" aria-label={`View ${request.request_number}`}><Eye size={15} /></button>
         {canEditDelete && (
           <>
-            <button type="button" onClick={() => openEditRequest(request)} className="rounded-lg border border-slate-200 p-1.5 text-amber-600 hover:bg-amber-50" title="Edit" aria-label={`Edit ${request.request_number}`}><Pencil size={15} /></button>
+            <button type="button" onClick={() => openEditRequest(request)} className="rounded-lg border border-orange-200 p-1.5 text-[#FF5A00] transition hover:bg-orange-50" title="Edit" aria-label={`Edit ${request.request_number}`}><Pencil size={15} /></button>
             <button type="button" onClick={() => deleteRequest(request)} className="rounded-lg border border-slate-200 p-1.5 text-rose-600 hover:bg-rose-50" title="Delete" aria-label={`Delete ${request.request_number}`}><Trash2 size={15} /></button>
           </>
         )}
@@ -1814,7 +1814,7 @@ function KitchenRequestsPage() {
                 onChange={(event) => setRequestSearch(event.target.value)}
                 placeholder="Search request number, requester, or notes..."
                 aria-label="Search kitchen requests"
-                className="h-[52px] w-full rounded-xl border border-slate-200 bg-slate-50 pl-11 pr-3 text-sm outline-none focus:border-[#1a3c36]"
+                className="h-[52px] w-full rounded-xl border border-slate-200 bg-slate-50 pl-11 pr-3 text-sm outline-none focus:border-[#FF5A00]"
               />
             </label>
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:flex">
@@ -1822,7 +1822,7 @@ function KitchenRequestsPage() {
                 value={priorityFilter}
                 onChange={(event) => setPriorityFilter(event.target.value)}
                 aria-label="Filter by priority"
-                className="h-[52px] min-w-0 rounded-xl border border-slate-200 bg-white px-4 text-sm text-slate-700 outline-none focus:border-[#1a3c36] xl:w-[170px]"
+                className="h-[52px] min-w-0 rounded-xl border border-slate-200 bg-white px-4 text-sm text-slate-700 outline-none focus:border-[#FF5A00] xl:w-[170px]"
               >
                 <option value="All">All Priorities</option>
                 <option value="Low">Low</option>
@@ -1834,7 +1834,7 @@ function KitchenRequestsPage() {
                 value={statusFilter}
                 onChange={(event) => setStatusFilter(event.target.value)}
                 aria-label="Filter by status"
-                className="h-[52px] min-w-0 rounded-xl border border-slate-200 bg-white px-4 text-sm text-slate-700 outline-none focus:border-[#1a3c36] xl:w-[170px]"
+                className="h-[52px] min-w-0 rounded-xl border border-slate-200 bg-white px-4 text-sm text-slate-700 outline-none focus:border-[#FF5A00] xl:w-[170px]"
               >
                 <option value="All">All Status</option>
                 <option value="Pending">Pending</option>
@@ -1847,7 +1847,7 @@ function KitchenRequestsPage() {
                 value={requestSort}
                 onChange={(event) => setRequestSort(event.target.value)}
                 aria-label="Sort kitchen requests"
-                className="col-span-2 h-[52px] min-w-0 rounded-xl border border-slate-200 bg-white px-4 text-sm text-slate-700 outline-none focus:border-[#1a3c36] sm:col-span-1 xl:w-[180px]"
+                className="col-span-2 h-[52px] min-w-0 rounded-xl border border-slate-200 bg-white px-4 text-sm text-slate-700 outline-none focus:border-[#FF5A00] sm:col-span-1 xl:w-[180px]"
               >
                 <option value="latest">Sort by: Latest</option>
                 <option value="oldest">Sort by: Oldest</option>
@@ -1859,7 +1859,7 @@ function KitchenRequestsPage() {
                 onClick={() => setRequestView('grid')}
                 aria-label="Grid view"
                 aria-pressed={requestView === 'grid'}
-                className={`flex w-14 items-center justify-center ${requestView === 'grid' ? 'bg-[#1a3c36] text-white' : 'bg-white text-slate-600 hover:bg-slate-50'}`}
+                className={`flex w-14 items-center justify-center transition-colors ${requestView === 'grid' ? 'bg-[#FF5A00] text-white' : 'bg-white text-slate-600 hover:bg-orange-50 hover:text-[#FF5A00]'}`}
               >
                 <LayoutGrid size={19} />
               </button>
@@ -1868,7 +1868,7 @@ function KitchenRequestsPage() {
                 onClick={() => setRequestView('table')}
                 aria-label="Table view"
                 aria-pressed={requestView === 'table'}
-                className={`flex w-14 items-center justify-center border-l border-slate-200 ${requestView === 'table' ? 'bg-[#1a3c36] text-white' : 'bg-white text-slate-600 hover:bg-slate-50'}`}
+                className={`flex w-14 items-center justify-center border-l border-slate-200 transition-colors ${requestView === 'table' ? 'bg-[#FF5A00] text-white' : 'bg-white text-slate-600 hover:bg-orange-50 hover:text-[#FF5A00]'}`}
               >
                 <Table2 size={19} />
               </button>
@@ -1876,7 +1876,7 @@ function KitchenRequestsPage() {
             <button
               type="button"
               onClick={() => setIsAddModalOpen(true)}
-              className="inline-flex h-[52px] shrink-0 items-center justify-center gap-2 rounded-xl bg-[#1a3c36] px-5 text-sm font-semibold text-white hover:bg-[#244e45]"
+              className="inline-flex h-[52px] shrink-0 items-center justify-center gap-2 rounded-xl bg-[#FF5A00] px-5 text-sm font-semibold text-white transition hover:bg-[#E94B00]"
             >
               <Plus size={18} />
               Add Kitchen Request
@@ -1931,25 +1931,25 @@ function KitchenRequestsPage() {
             <form className="space-y-4" onSubmit={handleSubmit}>
               <div className="grid gap-3 md:grid-cols-2">
                 <FormField label="Request number" required>
-                  <input value={form.request_number} onChange={(e) => setForm({ ...form, request_number: e.target.value })} className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="KR-1001" required />
+                  <input value={form.request_number} onChange={(e) => setForm({ ...form, request_number: e.target.value })} className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-[#FF5A00] focus:ring-1 focus:ring-[#FF5A00]" placeholder="KR-1001" required />
                 </FormField>
                 <FormField label="Requested by" required>
-                  <input value={form.requested_by} onChange={(e) => setForm({ ...form, requested_by: e.target.value })} className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Chef / Admin" required />
+                  <input value={form.requested_by} onChange={(e) => setForm({ ...form, requested_by: e.target.value })} className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-[#FF5A00] focus:ring-1 focus:ring-[#FF5A00]" placeholder="Chef / Admin" required />
                 </FormField>
                 <FormField label="Department">
-                  <input value={form.department} onChange={(e) => setForm({ ...form, department: e.target.value })} className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Kitchen" />
+                  <input value={form.department} onChange={(e) => setForm({ ...form, department: e.target.value })} className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-[#FF5A00] focus:ring-1 focus:ring-[#FF5A00]" placeholder="Kitchen" />
                 </FormField>
                 <FormField label="Request date">
-                  <input type="date" value={form.request_date} onChange={(e) => setForm({ ...form, request_date: e.target.value })} className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" />
+                  <input type="date" value={form.request_date} onChange={(e) => setForm({ ...form, request_date: e.target.value })} className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-[#FF5A00] focus:ring-1 focus:ring-[#FF5A00]" />
                 </FormField>
                 <FormField label="Start date">
-                  <input type="date" value={form.start_date} max={form.end_date || undefined} onChange={(e) => setForm({ ...form, start_date: e.target.value })} className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" />
+                  <input type="date" value={form.start_date} max={form.end_date || undefined} onChange={(e) => setForm({ ...form, start_date: e.target.value })} className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-[#FF5A00] focus:ring-1 focus:ring-[#FF5A00]" />
                 </FormField>
                 <FormField label="End date">
-                  <input type="date" value={form.end_date} min={form.start_date || undefined} onChange={(e) => setForm({ ...form, end_date: e.target.value })} className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" />
+                  <input type="date" value={form.end_date} min={form.start_date || undefined} onChange={(e) => setForm({ ...form, end_date: e.target.value })} className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-[#FF5A00] focus:ring-1 focus:ring-[#FF5A00]" />
                 </FormField>
                 <FormField label="Priority">
-                  <select value={form.priority} onChange={(e) => setForm({ ...form, priority: e.target.value })} className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm">
+                  <select value={form.priority} onChange={(e) => setForm({ ...form, priority: e.target.value })} className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-[#FF5A00] focus:ring-1 focus:ring-[#FF5A00]">
                     <option value="Low">Low</option>
                     <option value="Normal">Normal</option>
                     <option value="High">High</option>
@@ -1961,13 +1961,13 @@ function KitchenRequestsPage() {
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
                   <h3 className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-500">Items</h3>
-                  <button type="button" onClick={addItemRow} className="rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700">+ Add Item</button>
+                  <button type="button" onClick={addItemRow} className="rounded-xl border border-orange-200 bg-white px-3 py-1.5 text-xs font-semibold text-[#FF5A00] transition hover:bg-orange-50">+ Add Item</button>
                 </div>
 
                 {form.items.map((item, index) => (
                   <div key={`kitchen-item-${index}`} className="grid gap-3 rounded-xl border border-slate-200 p-3 md:grid-cols-[1.5fr_0.8fr_0.7fr_auto]">
                     <FormField label="Product">
-                      <select value={item.product_id} onChange={(e) => updateItem(index, 'product_id', e.target.value)} className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" required>
+                      <select value={item.product_id} onChange={(e) => updateItem(index, 'product_id', e.target.value)} className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-[#FF5A00] focus:ring-1 focus:ring-[#FF5A00]" required>
                         <option value="">Select product</option>
                         {products.map((product) => (
                           <option key={product.id} value={product.id}>{product.product_name}</option>
@@ -1975,10 +1975,10 @@ function KitchenRequestsPage() {
                       </select>
                     </FormField>
                     <FormField label="Quantity">
-                      <input type="number" min="1" value={item.quantity} onChange={(e) => updateItem(index, 'quantity', e.target.value)} className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="1" required />
+                      <input type="number" min="1" value={item.quantity} onChange={(e) => updateItem(index, 'quantity', e.target.value)} className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-[#FF5A00] focus:ring-1 focus:ring-[#FF5A00]" placeholder="1" required />
                     </FormField>
                     <FormField label="Unit">
-                      <input value={item.unit} onChange={(e) => updateItem(index, 'unit', e.target.value)} className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="pcs" />
+                      <input value={item.unit} onChange={(e) => updateItem(index, 'unit', e.target.value)} className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-[#FF5A00] focus:ring-1 focus:ring-[#FF5A00]" placeholder="pcs" />
                     </FormField>
                     <div className="flex items-end pb-0.5">
                       <button type="button" onClick={() => removeItemRow(index)} className="rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-semibold text-rose-600">Remove</button>
@@ -1988,12 +1988,12 @@ function KitchenRequestsPage() {
               </div>
 
               <FormField label="Notes">
-                <textarea value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" rows={3} placeholder="Add chef requirement or notes" />
+                <textarea value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-[#FF5A00] focus:ring-1 focus:ring-[#FF5A00]" rows={3} placeholder="Add chef requirement or notes" />
               </FormField>
 
               <div className="flex justify-end gap-3 pt-2">
                 <button type="button" onClick={() => { setIsAddModalOpen(false); setEditingRequestId(null); resetForm(); }} className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700">Cancel</button>
-                <button type="submit" className="rounded-xl bg-[#1a3c36] px-4 py-2 text-sm font-semibold text-white">{editingRequestId ? 'Save Changes' : 'Send Request'}</button>
+                <button type="submit" className="rounded-xl bg-[#FF5A00] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#E94B00]">{editingRequestId ? 'Save Changes' : 'Send Request'}</button>
               </div>
             </form>
           </div>
@@ -2090,7 +2090,7 @@ function KitchenRequestsPage() {
                   setApprovalRequest(null);
                   await handleRequestAction(requestId, 'approve');
                 }}
-                className="rounded-xl bg-sky-600 px-4 py-2 text-sm font-semibold text-white hover:bg-sky-700"
+                className="rounded-xl bg-[#FF5A00] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#E94B00]"
               >
                 Approve & Add Stock
               </button>

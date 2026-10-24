@@ -191,6 +191,7 @@ function CustomerOrdersPage({
   }
 
   const isCustomer = audience === 'customer';
+  const isAdminOrdersOrangePage = audience === 'admin' && ['all', 'pickup', 'delivery', 'delivered', 'cancelled'].includes(view);
   const showChefDeliveryTable = audience === 'chef' && view === 'delivery';
   const canAssignDelivery = showChefDeliveryTable || (showOrderFilters && view === 'delivery');
   const showOrderSummary = audience === 'admin' || (audience === 'chef' && showOrderFilters);
@@ -397,7 +398,7 @@ function CustomerOrdersPage({
           onChange={(event) => setAssignmentDrafts((current) => ({ ...current, [order.order_number]: event.target.value }))}
           disabled={loadingDeliveryPartners || updatingOrder === order.order_number}
           aria-label={`Choose delivery partner for order ${order.order_number}`}
-          className="rounded-lg border border-[#d9ded8] bg-white px-2 py-1.5 text-xs text-[#263830] disabled:opacity-50"
+          className={`rounded-lg border border-[#d9ded8] bg-white px-2 py-1.5 text-xs text-[#263830] disabled:opacity-50 ${isAdminOrdersOrangePage ? 'outline-none focus:border-[#FF5A00] focus:ring-1 focus:ring-[#FF5A00]' : ''}`}
         >
           <option value="">
             {loadingDeliveryPartners
@@ -422,7 +423,7 @@ function CustomerOrdersPage({
           type="button"
           onClick={() => changeStatus(order, 'assigned', assignmentDrafts[order.order_number])}
           disabled={!assignmentDrafts[order.order_number] || loadingDeliveryPartners || updatingOrder === order.order_number}
-          className="rounded-lg bg-[#1a3c36] px-3 py-1.5 text-xs font-bold text-white disabled:cursor-not-allowed disabled:opacity-50"
+          className={`rounded-lg px-3 py-1.5 text-xs font-bold text-white disabled:cursor-not-allowed disabled:opacity-50 ${isAdminOrdersOrangePage ? 'bg-[#FF5A00] transition hover:bg-[#E94B00]' : 'bg-[#1a3c36]'}`}
         >
           {updatingOrder === order.order_number ? 'Assigning…' : 'Assign'}
         </button>
@@ -499,28 +500,28 @@ function CustomerOrdersPage({
                 onChange={(event) => { setSearchTerm(event.target.value); setPage(1); }}
                 placeholder="Search order, customer, phone..."
                 aria-label="Search orders"
-                className="h-[46px] w-full rounded-xl border border-[#dfe2e5] bg-white pl-11 pr-3 text-sm text-[#263830] outline-none placeholder:text-[#89938c] focus:border-[#6d9a79]"
+                className={`h-[46px] w-full rounded-xl border border-[#dfe2e5] bg-white pl-11 pr-3 text-sm text-[#263830] outline-none placeholder:text-[#89938c] ${isAdminOrdersOrangePage ? 'focus:border-[#FF5A00] focus:ring-1 focus:ring-[#FF5A00]' : 'focus:border-[#6d9a79]'}`}
               />
             </label>
             <div className="flex flex-wrap items-center gap-2 sm:justify-end">
               <span className="mr-1 whitespace-nowrap text-xs text-[#68766e]">{visibleOrders.length} of {orders.length}</span>
-              <select value={orderTypeFilter} onChange={(event) => { setOrderTypeFilter(event.target.value); setPage(1); }} aria-label="Filter orders by type" className="h-[46px] rounded-xl border border-[#dfe2e5] bg-white px-3 text-sm text-[#263830] outline-none focus:border-[#6d9a79]">
+              <select value={orderTypeFilter} onChange={(event) => { setOrderTypeFilter(event.target.value); setPage(1); }} aria-label="Filter orders by type" className={`h-[46px] rounded-xl border border-[#dfe2e5] bg-white px-3 text-sm text-[#263830] outline-none ${isAdminOrdersOrangePage ? 'focus:border-[#FF5A00] focus:ring-1 focus:ring-[#FF5A00]' : 'focus:border-[#6d9a79]'}`}>
                 <option value="all">All Types</option>
                 <option value="home_delivery">Home Delivery</option>
                 <option value="pickup">Pickup</option>
                 {includeKitchenOrders && <option value="dine-in">Dining</option>}
               </select>
-              <select value={statusFilter} onChange={(event) => { setStatusFilter(event.target.value); setPage(1); }} aria-label="Filter orders by status" className="h-[46px] rounded-xl border border-[#dfe2e5] bg-white px-3 text-sm text-[#263830] outline-none focus:border-[#6d9a79]">
+              <select value={statusFilter} onChange={(event) => { setStatusFilter(event.target.value); setPage(1); }} aria-label="Filter orders by status" className={`h-[46px] rounded-xl border border-[#dfe2e5] bg-white px-3 text-sm text-[#263830] outline-none ${isAdminOrdersOrangePage ? 'focus:border-[#FF5A00] focus:ring-1 focus:ring-[#FF5A00]' : 'focus:border-[#6d9a79]'}`}>
                 <option value="all">All Status ({orders.length})</option>
                 {STATUS_OPTIONS.map((status) => <option key={status.value} value={status.value}>{status.label} ({statusCounts[status.value]})</option>)}
               </select>
-              <select value={sortOrder} onChange={(event) => { setSortOrder(event.target.value); setPage(1); }} aria-label="Sort orders" className="h-[46px] rounded-xl border border-[#dfe2e5] bg-white px-3 text-sm text-[#263830] outline-none focus:border-[#6d9a79]">
+              <select value={sortOrder} onChange={(event) => { setSortOrder(event.target.value); setPage(1); }} aria-label="Sort orders" className={`h-[46px] rounded-xl border border-[#dfe2e5] bg-white px-3 text-sm text-[#263830] outline-none ${isAdminOrdersOrangePage ? 'focus:border-[#FF5A00] focus:ring-1 focus:ring-[#FF5A00]' : 'focus:border-[#6d9a79]'}`}>
                 <option value="latest">Sort by: Latest</option>
                 <option value="oldest">Sort by: Oldest</option>
               </select>
               <div className="flex h-[46px] overflow-hidden rounded-xl border border-[#dfe2e5] bg-white" role="group" aria-label="Orders view">
-                <button type="button" onClick={() => setLayout('table')} aria-label="Table view" aria-pressed={layout === 'table'} title="Table view" className={`grid w-11 place-items-center border-r border-[#dfe2e5] ${layout === 'table' ? 'bg-[#1a3c36] text-white' : 'text-[#66736b] hover:bg-gray-50'}`}><List size={16} /></button>
-                <button type="button" onClick={() => setLayout('card')} aria-label="Card view" aria-pressed={layout === 'card'} title="Card view" className={`grid w-11 place-items-center ${layout === 'card' ? 'bg-[#1a3c36] text-white' : 'text-[#66736b] hover:bg-gray-50'}`}><LayoutGrid size={16} /></button>
+                <button type="button" onClick={() => setLayout('table')} aria-label="Table view" aria-pressed={layout === 'table'} title="Table view" className={`grid w-11 place-items-center border-r border-[#dfe2e5] ${layout === 'table' ? (isAdminOrdersOrangePage ? 'bg-[#FF5A00] text-white' : 'bg-[#1a3c36] text-white') : `text-[#66736b] ${isAdminOrdersOrangePage ? 'hover:bg-orange-50 hover:text-[#FF5A00]' : 'hover:bg-gray-50'}`}`}><List size={16} /></button>
+                <button type="button" onClick={() => setLayout('card')} aria-label="Card view" aria-pressed={layout === 'card'} title="Card view" className={`grid w-11 place-items-center ${layout === 'card' ? (isAdminOrdersOrangePage ? 'bg-[#FF5A00] text-white' : 'bg-[#1a3c36] text-white') : `text-[#66736b] ${isAdminOrdersOrangePage ? 'hover:bg-orange-50 hover:text-[#FF5A00]' : 'hover:bg-gray-50'}`}`}><LayoutGrid size={16} /></button>
               </div>
             </div>
           </section>
@@ -545,7 +546,7 @@ function CustomerOrdersPage({
           <div className="overflow-hidden rounded-2xl border border-[#e3e7e1] bg-white shadow-sm">
             <div className="overflow-x-auto">
               <table className="w-full min-w-[900px] text-left text-sm">
-                <thead className="bg-[#d4a843] text-xs uppercase tracking-wide text-white">
+                <thead className={`${isAdminOrdersOrangePage ? 'bg-[#FF5A00]' : 'bg-[#d4a843]'} text-xs uppercase tracking-wide text-white`}>
                   <tr>{['Order', 'Customer', 'Items', 'Type', 'Status', ...(canAssignDelivery ? ['Delivery Partner'] : []), 'Payment', 'Total', 'Placed'].map((heading) => <th key={heading} className="whitespace-nowrap px-4 py-4 font-bold">{heading}</th>)}</tr>
                 </thead>
                 <tbody className="divide-y divide-[#edf0eb]">
@@ -564,7 +565,7 @@ function CustomerOrdersPage({
                             disabled={updatingOrder === order.order_number || order.payment_status === 'failed' || ['delivered', 'completed', 'cancelled'].includes(String(order.order_status || '').toLowerCase())}
                             onChange={(event) => selectOrderStatus(order, event.target.value)}
                             aria-label={`Update order ${order.order_number} status`}
-                            className="rounded-lg border border-[#d9ded8] bg-white px-2 py-1.5 text-xs font-semibold capitalize text-[#263830] disabled:opacity-50"
+                            className={`rounded-lg border border-[#d9ded8] bg-white px-2 py-1.5 text-xs font-semibold capitalize text-[#263830] disabled:opacity-50 ${isAdminOrdersOrangePage ? 'outline-none focus:border-[#FF5A00] focus:ring-1 focus:ring-[#FF5A00]' : ''}`}
                           >
                             {getAvailableStatusOptions(order).map((status) => (
                               <option key={status.value} value={status.value}>{status.label}</option>
