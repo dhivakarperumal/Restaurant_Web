@@ -438,17 +438,17 @@ export default function ServerSupplies() {
             aria-selected={activeTab === tab.id}
             aria-controls={`supplies-panel-${tab.id}`}
             onClick={() => setActiveTab(tab.id)}
-            className={`-mb-px inline-flex items-center gap-2 border-b-2 px-4 py-3 text-sm font-semibold transition ${activeTab === tab.id ? 'border-[#1a3c36] text-[#1a3c36]' : 'border-transparent text-slate-500 hover:text-slate-800'}`}
+            className={`-mb-px inline-flex items-center gap-2 border-b-2 px-4 py-3 text-sm font-semibold transition ${activeTab === tab.id ? 'border-[#FF5A00] text-[#FF5A00]' : 'border-transparent text-slate-500 hover:text-slate-800'}`}
           >
             {tab.label}
-            <span className={`rounded-full px-2 py-0.5 text-xs ${activeTab === tab.id ? 'bg-emerald-50 text-[#1a3c36]' : 'bg-slate-100 text-slate-500'}`}>{tab.count}</span>
+            <span className={`rounded-full px-2 py-0.5 text-xs ${activeTab === tab.id ? 'bg-orange-50 text-[#FF5A00]' : 'bg-slate-100 text-slate-500'}`}>{tab.count}</span>
           </button>
         ))}
       </div>
-      {isAdmin && <button type="button" onClick={openAddForm} className="mb-1 inline-flex h-11 shrink-0 items-center justify-center gap-2 rounded-xl bg-[#1a3c36] px-4 text-sm font-semibold text-white hover:bg-[#214a42]">
+      {isAdmin && <button type="button" onClick={openAddForm} className="mb-1 inline-flex h-11 shrink-0 items-center justify-center gap-2 rounded-xl bg-[#FF5A00] px-4 text-sm font-semibold text-white transition-colors hover:bg-[#E94B00]">
         <Plus size={17} /> Add Supply Item
       </button>}
-      {!isAdmin && <button type="button" onClick={() => openRequestForm()} className="mb-1 inline-flex h-11 shrink-0 items-center justify-center gap-2 rounded-xl bg-[#1a3c36] px-4 text-sm font-semibold text-white hover:bg-[#244e45]">
+      {!isAdmin && <button type="button" onClick={() => openRequestForm()} className="mb-1 inline-flex h-11 shrink-0 items-center justify-center gap-2 rounded-xl bg-[#FF5A00] px-4 text-sm font-semibold text-white transition-colors hover:bg-[#E94B00]">
         <Plus size={18} /> Request Supplies
       </button>}
       </div>
@@ -457,7 +457,7 @@ export default function ServerSupplies() {
         {activeTab === 'items' ? <>
           <label className="relative min-w-0 flex-1">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-            <input value={search} onChange={(event) => { setSearch(event.target.value); setPage(1); }} placeholder="Search by item name or code..." aria-label="Search supply items" className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50 pl-10 pr-3 text-sm outline-none focus:border-[#1a3c36]" />
+            <input value={search} onChange={(event) => { setSearch(event.target.value); setPage(1); }} placeholder="Search by item name or code..." aria-label="Search supply items" className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50 pl-10 pr-3 text-sm outline-none focus:border-[#FF5A00]" />
           </label>
           <select aria-label="Filter by category" value={selectedCategory} onChange={(event) => { setSelectedCategory(event.target.value); setPage(1); }} className="h-11 rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700">
             <option value="All">All Categories</option>
@@ -467,33 +467,33 @@ export default function ServerSupplies() {
             <option value="All">All Stock Status</option><option value="Available">Available</option><option value="Low Stock">Low Stock</option><option value="Out of Stock">Out of Stock</option>
           </select>
           <div className="flex h-11 shrink-0 items-stretch overflow-hidden rounded-xl border border-slate-200" role="group" aria-label="Supply item display mode">
-            <button type="button" onClick={() => setInventoryView('grid')} aria-label="Card mode" title="Card mode" aria-pressed={inventoryView === 'grid'} className={`flex w-12 items-center justify-center ${inventoryView === 'grid' ? 'bg-[#1a3c36] text-white' : 'bg-white text-slate-600 hover:bg-slate-50'}`}><LayoutGrid size={18} /></button>
-            <button type="button" onClick={() => setInventoryView('table')} aria-label="Table mode" title="Table mode" aria-pressed={inventoryView === 'table'} className={`flex w-12 items-center justify-center border-l border-slate-200 ${inventoryView === 'table' ? 'bg-[#1a3c36] text-white' : 'bg-white text-slate-600 hover:bg-slate-50'}`}><Table2 size={18} /></button>
+            <button type="button" onClick={() => setInventoryView('grid')} aria-label="Card mode" title="Card mode" aria-pressed={inventoryView === 'grid'} className={`flex w-12 items-center justify-center transition-colors ${inventoryView === 'grid' ? 'bg-[#FF5A00] text-white' : 'bg-white text-slate-600 hover:bg-slate-50'}`}><LayoutGrid size={18} /></button>
+            <button type="button" onClick={() => setInventoryView('table')} aria-label="Table mode" title="Table mode" aria-pressed={inventoryView === 'table'} className={`flex w-12 items-center justify-center border-l border-slate-200 transition-colors ${inventoryView === 'table' ? 'bg-[#FF5A00] text-white' : 'bg-white text-slate-600 hover:bg-slate-50'}`}><Table2 size={18} /></button>
           </div>
         </> : <>
           <label className="relative min-w-0 flex-1">
             <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
-            <input type="search" value={requestSearch} onChange={(event) => setRequestSearch(event.target.value)} placeholder="Search request number, item, requester, or remarks..." aria-label="Search supply requests" className="h-[52px] w-full rounded-xl border border-slate-200 bg-slate-50 pl-11 pr-3 text-sm outline-none focus:border-[#1a3c36]" />
+            <input type="search" value={requestSearch} onChange={(event) => setRequestSearch(event.target.value)} placeholder="Search request number, item, requester, or remarks..." aria-label="Search supply requests" className="h-[52px] w-full rounded-xl border border-slate-200 bg-slate-50 pl-11 pr-3 text-sm outline-none focus:border-[#FF5A00]" />
           </label>
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:flex">
-            <select value={requesterFilter} onChange={(event) => setRequesterFilter(event.target.value)} aria-label="Filter by requester" className="h-[52px] min-w-0 rounded-xl border border-slate-200 bg-white px-4 text-sm text-slate-700 outline-none focus:border-[#1a3c36] xl:w-[170px]">
+            <select value={requesterFilter} onChange={(event) => setRequesterFilter(event.target.value)} aria-label="Filter by requester" className="h-[52px] min-w-0 rounded-xl border border-slate-200 bg-white px-4 text-sm text-slate-700 outline-none focus:border-[#FF5A00] xl:w-[170px]">
               <option value="All">All Requesters</option>
               {requesters.map((requester) => <option key={requester} value={requester}>{requester}</option>)}
             </select>
-            <select value={requestStatus} onChange={(event) => setRequestStatus(event.target.value)} aria-label="Filter by request status" className="h-[52px] min-w-0 rounded-xl border border-slate-200 bg-white px-4 text-sm text-slate-700 outline-none focus:border-[#1a3c36] xl:w-[170px]">
+            <select value={requestStatus} onChange={(event) => setRequestStatus(event.target.value)} aria-label="Filter by request status" className="h-[52px] min-w-0 rounded-xl border border-slate-200 bg-white px-4 text-sm text-slate-700 outline-none focus:border-[#FF5A00] xl:w-[170px]">
               <option value="All">All Status</option>
               <option value="pending">Pending</option>
               <option value="approved">Approved</option>
               <option value="rejected">Rejected</option>
             </select>
-            <select value={requestSort} onChange={(event) => setRequestSort(event.target.value)} aria-label="Sort supply requests" className="col-span-2 h-[52px] min-w-0 rounded-xl border border-slate-200 bg-white px-4 text-sm text-slate-700 outline-none focus:border-[#1a3c36] sm:col-span-1 xl:w-[180px]">
+            <select value={requestSort} onChange={(event) => setRequestSort(event.target.value)} aria-label="Sort supply requests" className="col-span-2 h-[52px] min-w-0 rounded-xl border border-slate-200 bg-white px-4 text-sm text-slate-700 outline-none focus:border-[#FF5A00] sm:col-span-1 xl:w-[180px]">
               <option value="latest">Sort by: Latest</option>
               <option value="oldest">Sort by: Oldest</option>
             </select>
           </div>
           <div className="flex h-[52px] shrink-0 items-stretch overflow-hidden rounded-xl border border-slate-200" role="group" aria-label="Request display mode">
-            <button type="button" onClick={() => setRequestView('grid')} aria-label="Grid view" aria-pressed={requestView === 'grid'} className={`flex w-14 items-center justify-center ${requestView === 'grid' ? 'bg-[#1a3c36] text-white' : 'bg-white text-slate-600 hover:bg-slate-50'}`}><LayoutGrid size={19} /></button>
-            <button type="button" onClick={() => setRequestView('table')} aria-label="Table view" aria-pressed={requestView === 'table'} className={`flex w-14 items-center justify-center border-l border-slate-200 ${requestView === 'table' ? 'bg-[#1a3c36] text-white' : 'bg-white text-slate-600 hover:bg-slate-50'}`}><Table2 size={19} /></button>
+            <button type="button" onClick={() => setRequestView('grid')} aria-label="Grid view" aria-pressed={requestView === 'grid'} className={`flex w-14 items-center justify-center transition-colors ${requestView === 'grid' ? 'bg-[#FF5A00] text-white' : 'bg-white text-slate-600 hover:bg-slate-50'}`}><LayoutGrid size={19} /></button>
+            <button type="button" onClick={() => setRequestView('table')} aria-label="Table view" aria-pressed={requestView === 'table'} className={`flex w-14 items-center justify-center border-l border-slate-200 transition-colors ${requestView === 'table' ? 'bg-[#FF5A00] text-white' : 'bg-white text-slate-600 hover:bg-slate-50'}`}><Table2 size={19} /></button>
           </div>
         </>}
       </div>
@@ -642,7 +642,7 @@ export default function ServerSupplies() {
                           <button type="button" title="Edit" aria-label={`Edit ${item.item_name}`} onClick={() => openEditForm(item)} className="rounded-lg p-2 text-slate-600 hover:bg-slate-100"><Pencil size={16} /></button>
                           <button type="button" title="Delete" aria-label={`Delete ${item.item_name}`} onClick={() => deleteItem(item)} className="rounded-lg p-2 text-rose-600 hover:bg-rose-50"><Trash2 size={16} /></button>
                         </> : <>
-                          <button type="button" title="Request stock" aria-label={`Request stock for ${item.item_name}`} onClick={() => openRequestForm(item)} className="inline-flex items-center gap-1 rounded-lg bg-[#1a3c36] px-2.5 py-2 text-xs font-semibold text-white hover:bg-[#214a42]"><Plus size={14} /> Request</button>
+                          <button type="button" title="Request stock" aria-label={`Request stock for ${item.item_name}`} onClick={() => openRequestForm(item)} className="inline-flex items-center gap-1 rounded-lg bg-[#FF5A00] px-2.5 py-2 text-xs font-semibold text-white transition-colors hover:bg-[#E94B00]"><Plus size={14} /> Request</button>
                           <button type="button" title="View item details" aria-label={`View ${item.item_name}`} onClick={() => openItemDetails(item)} className="rounded-lg p-2 text-sky-700 hover:bg-sky-50"><Eye size={16} /></button>
                         </>}
                       </div></td>
@@ -671,7 +671,7 @@ export default function ServerSupplies() {
                       <button type="button" onClick={() => openEditForm(item)} title="Edit" className="rounded-lg p-2 text-slate-600 hover:bg-slate-100"><Pencil size={17} /></button>
                       <button type="button" onClick={() => deleteItem(item)} title="Delete" className="rounded-lg p-2 text-rose-600 hover:bg-rose-50"><Trash2 size={17} /></button>
                     </> : <>
-                      <button type="button" onClick={() => openRequestForm(item)} title="Request stock" className="inline-flex items-center gap-1 rounded-lg bg-[#1a3c36] px-3 py-2 text-xs font-semibold text-white"><Plus size={14} /> Request</button>
+                      <button type="button" onClick={() => openRequestForm(item)} title="Request stock" className="inline-flex items-center gap-1 rounded-lg bg-[#FF5A00] px-3 py-2 text-xs font-semibold text-white transition-colors hover:bg-[#E94B00]"><Plus size={14} /> Request</button>
                       <button type="button" onClick={() => openItemDetails(item)} title="View item details" className="rounded-lg p-2 text-sky-700 hover:bg-sky-50"><Eye size={17} /></button>
                     </>}
                   </div>
@@ -705,7 +705,7 @@ export default function ServerSupplies() {
               <label className="text-sm font-medium text-slate-700">Item Image<input key={imageInputKey} type="file" accept="image/jpeg,image/png,image/webp" onChange={(e) => { const file = e.target.files?.[0] || null; if (file && file.size > 5 * 1024 * 1024) { toast.error('Image size must be 5 MB or less.'); e.target.value = ''; return; } if (file && !['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) { toast.error('Choose a JPG, PNG, or WEBP image.'); e.target.value = ''; return; } setImageFile(file); }} className="mt-1.5 block w-full text-sm" /></label>
               <label className="text-sm font-medium text-slate-700">Status (automatic)<input readOnly value={getStatus({ ...form, current_stock: Number(form.current_stock), minimum_stock: editingItem?.minimum_stock ?? 1 })} className="mt-1.5 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5" /></label>
               <label className="text-sm font-medium text-slate-700 sm:col-span-2">Description<textarea rows={3} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} className="mt-1.5 w-full rounded-xl border border-slate-200 px-3 py-2.5" /></label>
-              <div className="flex flex-wrap justify-end gap-2 pt-2 sm:col-span-2"><button type="button" onClick={() => setFormOpen(false)} className="rounded-xl border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700">Cancel</button>{!editingItem && <button type="submit" value="add-another" disabled={saving} className="rounded-xl border border-[#1a3c36] px-4 py-2 text-sm font-semibold text-[#1a3c36] disabled:opacity-60">{saving ? 'Saving…' : 'Save & Add Another'}</button>}<button type="submit" disabled={saving} className="rounded-xl bg-[#1a3c36] px-4 py-2 text-sm font-semibold text-white disabled:opacity-60">{saving ? 'Saving…' : editingItem ? 'Save Changes' : 'Add Item'}</button></div>
+              <div className="flex flex-wrap justify-end gap-2 pt-2 sm:col-span-2"><button type="button" onClick={() => setFormOpen(false)} className="rounded-xl border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700">Cancel</button>{!editingItem && <button type="submit" value="add-another" disabled={saving} className="rounded-xl border border-[#FF5A00] px-4 py-2 text-sm font-semibold text-[#FF5A00] transition-colors hover:bg-orange-50 disabled:opacity-60">{saving ? 'Saving…' : 'Save & Add Another'}</button>}<button type="submit" disabled={saving} className="rounded-xl bg-[#FF5A00] px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-[#E94B00] disabled:opacity-60">{saving ? 'Saving…' : editingItem ? 'Save Changes' : 'Add Item'}</button></div>
             </form>
           </section>
         </div>
@@ -722,7 +722,7 @@ export default function ServerSupplies() {
               <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_150px_auto] sm:items-end">
                 <label className="block text-sm font-medium text-slate-700">Supply Item / Type<select value={requestCustomMode ? 'other' : requestItem?.id || ''} onChange={(event) => { const isOther = event.target.value === 'other'; const selectedItem = items.find((item) => String(item.id) === event.target.value) || null; setRequestCustomMode(isOther); setRequestCustomName(''); setRequestItem(selectedItem); setRequestForm((formState) => ({ ...formState, quantity: '' })); }} className="mt-1.5 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5"><option value="">Select supply item</option>{itemsByCategory.map(([category, categoryItems]) => <optgroup key={category} label={category}>{categoryItems.map((item) => <option key={item.id} value={item.id} disabled={requestLines.some((line) => !line.is_custom && line.item.id === item.id)}>{item.item_name} · {item.material || 'General'} · {item.unit} · {item.current_stock} available</option>)}</optgroup>)}<option value="other">Other — enter a custom item</option></select></label>
                 <label className="block text-sm font-medium text-slate-700">Quantity<input autoFocus type="number" min="0.01" step="any" value={requestForm.quantity} onChange={(event) => setRequestForm((formState) => ({ ...formState, quantity: event.target.value }))} className="mt-1.5 w-full rounded-xl border border-slate-200 px-3 py-2.5" /></label>
-                <button type="button" onClick={addRequestLine} className="inline-flex h-[42px] items-center justify-center gap-2 rounded-xl border border-[#1a3c36] px-4 text-sm font-semibold text-[#1a3c36] hover:bg-emerald-50"><Plus size={16} /> Add Item</button>
+                <button type="button" onClick={addRequestLine} className="inline-flex h-[42px] items-center justify-center gap-2 rounded-xl border border-[#FF5A00] px-4 text-sm font-semibold text-[#FF5A00] transition-colors hover:bg-orange-50"><Plus size={16} /> Add Item</button>
               </div>
               {requestCustomMode && (
                 <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_180px]">
@@ -743,7 +743,7 @@ export default function ServerSupplies() {
               )}
               <label className="block text-sm font-medium text-slate-700">Remarks<textarea rows={3} value={requestForm.remarks} onChange={(event) => setRequestForm({ ...requestForm, remarks: event.target.value })} placeholder="Reason or additional details" className="mt-1.5 w-full rounded-xl border border-slate-200 px-3 py-2.5" /></label>
               <p className="rounded-xl bg-amber-50 p-3 text-sm text-amber-800">This request will not change stock until an Admin approves it.</p>
-              <div className="flex justify-end gap-2"><button type="button" onClick={closeRequestForm} className="rounded-xl border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700">Cancel</button><button type="submit" disabled={savingRequest || !requestLines.length} className="rounded-xl bg-[#1a3c36] px-4 py-2 text-sm font-semibold text-white disabled:opacity-60">{savingRequest ? 'Sending…' : 'Send Request'}</button></div>
+              <div className="flex justify-end gap-2"><button type="button" onClick={closeRequestForm} className="rounded-xl border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700">Cancel</button><button type="submit" disabled={savingRequest || !requestLines.length} className="rounded-xl bg-[#FF5A00] px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-[#E94B00] disabled:opacity-60">{savingRequest ? 'Sending…' : 'Send Request'}</button></div>
             </form>
           </section>
         </div>
@@ -757,7 +757,7 @@ export default function ServerSupplies() {
               <label className="block text-sm font-medium text-slate-700">Date<input required type="date" value={movementForm.date} onChange={(e) => setMovementForm({ ...movementForm, date: e.target.value })} className="mt-1.5 w-full rounded-xl border border-slate-200 px-3 py-2.5" /></label>
               <label className="block text-sm font-medium text-slate-700">Quantity<input required type="number" min="0.01" step="any" max={movementForm.type === 'out' ? movementItem.current_stock : undefined} value={movementForm.quantity} onChange={(e) => setMovementForm({ ...movementForm, quantity: e.target.value })} className="mt-1.5 w-full rounded-xl border border-slate-200 px-3 py-2.5" /></label>
               <label className="block text-sm font-medium text-slate-700">Remarks<textarea required rows={3} value={movementForm.remarks} onChange={(e) => setMovementForm({ ...movementForm, remarks: e.target.value })} className="mt-1.5 w-full rounded-xl border border-slate-200 px-3 py-2.5" /></label>
-              <div className="flex justify-end gap-2"><button type="button" onClick={() => setMovementItem(null)} className="rounded-xl border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700">Cancel</button><button type="submit" disabled={savingMovement} className="rounded-xl bg-[#1a3c36] px-4 py-2 text-sm font-semibold text-white disabled:opacity-60">{savingMovement ? 'Saving…' : 'Save Movement'}</button></div>
+              <div className="flex justify-end gap-2"><button type="button" onClick={() => setMovementItem(null)} className="rounded-xl border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700">Cancel</button><button type="submit" disabled={savingMovement} className="rounded-xl bg-[#FF5A00] px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-[#E94B00] disabled:opacity-60">{savingMovement ? 'Saving…' : 'Save Movement'}</button></div>
             </form>
           </section>
         </div>

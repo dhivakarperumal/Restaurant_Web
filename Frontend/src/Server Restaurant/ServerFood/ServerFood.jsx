@@ -415,43 +415,8 @@ export default function ServerFood() {
 
   return (
     <div className="space-y-6">
-      {/* Top Banner / Header */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-white p-5 rounded-2xl border border-gray-100 shadow-sm">
-        <div className="flex items-center gap-3">
-          <div className="p-3 rounded-2xl bg-[#1f3228] text-[#d4a843] shadow-inner">
-            <Utensils className="w-6 h-6" />
-          </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <h1 className="text-xl sm:text-2xl font-bold text-gray-900 font-serif">
-                Restaurant Food Menu
-              </h1>
-              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                <ShieldCheck className="w-3 h-3" />
-                {selectedTable ? "Dine-in Ordering" : "View Only"}
-              </span>
-            </div>
-            <p className="text-xs sm:text-sm text-gray-500 mt-0.5">
-              {selectedTable
-                ? "Select dishes and quantities to send this table's order to the kitchen."
-                : "Browse dining dishes and beverages configured by administrator."}
-            </p>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-2.5 w-full sm:w-auto">
-          <button
-            onClick={fetchFoodsAndCategories}
-            title="Refresh menu items"
-            className="flex items-center gap-2 px-3.5 py-2.5 rounded-xl border border-gray-200 text-gray-700 hover:bg-gray-50 transition cursor-pointer text-sm font-medium shadow-sm"
-          >
-            <RefreshCw
-              className={`w-4 h-4 ${loading ? "animate-spin text-[#d4a843]" : ""}`}
-            />
-            <span className="hidden sm:inline">Refresh Menu</span>
-          </button>
-        </div>
-      </div>
+     
+        
 
       {/* Active Dining Bill Banner for Table (Consolidating Rounds) */}
       {selectedTable && activeBill && (
