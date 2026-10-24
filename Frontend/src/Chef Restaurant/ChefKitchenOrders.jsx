@@ -189,42 +189,71 @@ const ChefKitchenOrders = ({ defaultViewMode = "table", orderTypeFilter = "", to
        
         <section aria-label="Kitchen order status summaries" className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
           {[
-            { status: 'Pending', label: 'Pending Orders', count: counts.Pending, caption: 'Waiting to start', icon: Clock3, bg: 'bg-[#f59e0b]' },
-            { status: 'Preparing', label: 'Preparing', count: counts.Preparing, caption: 'Being prepared', icon: Flame, bg: 'bg-[#3b82f6]' },
-            { status: 'Ready to Serve', label: 'Ready to Serve', count: counts['Ready to Serve'], caption: 'Ready for pickup', icon: Bell, bg: 'bg-[#06b6d4]' },
-            { status: 'Served', label: 'Served', count: counts.Served, caption: 'Completed tickets', icon: CheckCircle2, bg: 'bg-[#22c55e]' },
-          ].map(({ status, label, count, caption, icon: Icon, bg }) => (
+            { status: 'Pending', label: 'Pending Orders', count: counts.Pending, caption: 'Waiting to start', icon: Clock3, bg: 'bg-[#f59e0b]', accent: '#f97316', iconBg: 'bg-orange-500' },
+            { status: 'Preparing', label: 'Preparing', count: counts.Preparing, caption: 'Being prepared', icon: Flame, bg: 'bg-[#3b82f6]', accent: '#10b981', iconBg: 'bg-emerald-500' },
+            { status: 'Ready to Serve', label: 'Ready to Serve', count: counts['Ready to Serve'], caption: 'Ready for pickup', icon: Bell, bg: 'bg-[#06b6d4]', accent: '#3b82f6', iconBg: 'bg-blue-500' },
+            { status: 'Served', label: 'Served', count: counts.Served, caption: 'Completed tickets', icon: CheckCircle2, bg: 'bg-[#22c55e]', accent: '#ec4899', iconBg: 'bg-pink-500' },
+          ].map(({ status, label, count, caption, icon: Icon, bg, accent, iconBg }) => (
             <button
               key={status}
               type="button"
               aria-pressed={activeTab === status}
               onClick={() => { setActiveTab(activeTab === status ? 'all' : status); setSearchQuery(''); setPage(1); }}
-              className={`relative min-w-0 overflow-hidden rounded-xl border border-transparent p-4 sm:p-5 shadow-[0_2px_10px_rgba(20,56,34,0.08)] flex flex-col justify-between min-h-[140px] text-white text-left transition hover:-translate-y-0.5 hover:shadow-lg ${bg} ${activeTab === status ? 'ring-4 ring-white/40' : ''}`}
+              className={adminTheme
+                ? `group relative flex min-h-[194px] min-w-0 flex-col justify-between overflow-hidden rounded-[20px] border bg-white p-5 text-left shadow-[0_4px_16px_-5px_rgba(15,23,42,0.08)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_10px_22px_-7px_rgba(15,23,42,0.12)] sm:p-6 ${activeTab === status ? 'border-slate-300 ring-2 ring-offset-2' : 'border-slate-200/90'}`
+                : `relative min-w-0 overflow-hidden rounded-xl border border-transparent p-4 sm:p-5 shadow-[0_2px_10px_rgba(20,56,34,0.08)] flex flex-col justify-between min-h-[140px] text-white text-left transition hover:-translate-y-0.5 hover:shadow-lg ${bg} ${activeTab === status ? 'ring-4 ring-white/40' : ''}`}
+              style={adminTheme ? {
+                background: `linear-gradient(135deg, #ffffff 48%, ${accent}12 100%)`,
+                ...(activeTab === status ? { '--tw-ring-color': accent } : {}),
+              } : undefined}
             >
-              <div className="flex items-start gap-3 relative z-10">
-                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg shadow-sm bg-white/20">
-                  <Icon size={24} strokeWidth={2.2} className="text-white" />
-                </div>
-                <div className="flex-1 mt-0.5 min-w-0">
-                  <h3 className="text-[12px] font-semibold opacity-90 mb-1 truncate">{label}</h3>
-                  <div className="text-[26px] font-extrabold leading-none tracking-tight">{count}</div>
-                </div>
-              </div>
-              <div className="flex items-center gap-2 mt-5 relative z-10">
-                <span className="text-[11px] font-medium opacity-75">{caption}</span>
-              </div>
-              <div className="absolute right-0 bottom-0 w-24 h-16 pointer-events-none opacity-50">
-                <svg viewBox="0 0 100 50" preserveAspectRatio="none" className="w-full h-full">
-                  <defs>
-                    <linearGradient id={`kitchengrad-${status}`} x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="#ffffff" stopOpacity="0.4" />
-                      <stop offset="100%" stopColor="#ffffff" stopOpacity="0.0" />
-                    </linearGradient>
-                  </defs>
-                  <path d={`M0,50 L0,40 Q25,30 50,40 T100,20 L100,50 Z`} fill={`url(#kitchengrad-${status})`} />
-                  <path d="M0,40 Q25,30 50,40 T100,20" fill="none" stroke="#ffffff" strokeWidth="2.5" />
-                </svg>
-              </div>
+              {adminTheme ? (
+                <>
+                  <div className="relative z-10 flex items-start justify-between gap-3">
+                    <div className="min-w-0 flex-1 pt-1">
+                      <h3 className="truncate text-[12px] font-bold uppercase tracking-[0.08em] text-slate-500">{label}</h3>
+                      <div className="mt-4 truncate text-[30px] font-black leading-none tracking-tight text-slate-900 sm:text-[34px]">{count}</div>
+                    </div>
+                    <span className={`flex h-[60px] w-[60px] shrink-0 items-center justify-center rounded-[18px] text-white shadow-[0_5px_12px_-4px_rgba(15,23,42,0.25)] ${iconBg}`}>
+                      <Icon size={27} strokeWidth={2.3} />
+                    </span>
+                  </div>
+                  <div className="relative z-10 mt-5 flex items-center gap-2 border-t border-slate-100/90 pt-3.5 text-xs">
+                    <span className="inline-flex shrink-0 items-center rounded-full border border-emerald-200/80 bg-emerald-50/90 px-2 py-0.5 text-[11px] font-bold text-emerald-600">Live</span>
+                    <span className="truncate text-xs font-medium text-slate-500">{caption}</span>
+                    <span className="ml-auto h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: accent }} />
+                  </div>
+                  <span aria-hidden="true" className="pointer-events-none absolute -right-6 -top-6 h-28 w-28 rounded-full opacity-20 blur-2xl" style={{ backgroundColor: accent }} />
+                  <span aria-hidden="true" className="pointer-events-none absolute bottom-0 left-0 h-1 w-full origin-left scale-x-0 transition-transform duration-300 group-hover:scale-x-100" style={{ backgroundColor: accent }} />
+                </>
+              ) : (
+                <>
+                  <div className="relative z-10 flex items-start gap-3">
+                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-white/20 shadow-sm">
+                      <Icon size={24} strokeWidth={2.2} className="text-white" />
+                    </div>
+                    <div className="mt-0.5 min-w-0 flex-1">
+                      <h3 className="mb-1 truncate text-[12px] font-semibold opacity-90">{label}</h3>
+                      <div className="text-[26px] font-extrabold leading-none tracking-tight">{count}</div>
+                    </div>
+                  </div>
+                  <div className="relative z-10 mt-5 flex items-center gap-2">
+                    <span className="text-[11px] font-medium opacity-75">{caption}</span>
+                  </div>
+                  <div className="pointer-events-none absolute bottom-0 right-0 h-16 w-24 opacity-50">
+                    <svg viewBox="0 0 100 50" preserveAspectRatio="none" className="h-full w-full">
+                      <defs>
+                        <linearGradient id={`kitchengrad-${status}`} x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="0%" stopColor="#ffffff" stopOpacity="0.4" />
+                          <stop offset="100%" stopColor="#ffffff" stopOpacity="0" />
+                        </linearGradient>
+                      </defs>
+                      <path d="M0,50 L0,40 Q25,30 50,40 T100,20 L100,50 Z" fill={`url(#kitchengrad-${status})`} />
+                      <path d="M0,40 Q25,30 50,40 T100,20" fill="none" stroke="#ffffff" strokeWidth="2.5" />
+                    </svg>
+                  </div>
+                </>
+              )}
             </button>
           ))}
         </section>
