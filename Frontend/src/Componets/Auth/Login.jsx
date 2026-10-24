@@ -15,7 +15,10 @@ const Login = () => {
     const returnTo = location.state?.from;
     const isCustomer = String(user?.role || "user").trim().toLowerCase() === "user";
     const safeReturnTo = typeof returnTo === "string" && returnTo.startsWith("/") && !returnTo.startsWith("//");
-    navigate(isCustomer && safeReturnTo ? returnTo : getRoleHome(user.role), { replace: true });
+    navigate(isCustomer && safeReturnTo ? returnTo : getRoleHome(user.role), {
+      replace: true,
+      state: isCustomer && safeReturnTo ? location.state?.returnState : undefined,
+    });
   };
   const [formData, setFormData] = useState({
     username: "",

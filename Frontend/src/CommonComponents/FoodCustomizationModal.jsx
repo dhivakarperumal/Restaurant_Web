@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Clock, Flame, Minus, Plus, ShoppingCart, Star, Utensils, UtensilsCrossed, X } from 'lucide-react';
+import { ArrowRight, Clock, Flame, Minus, Plus, ShoppingCart, Star, Utensils, UtensilsCrossed, X } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { BACKEND_BASE_URL } from '../api';
 
@@ -9,7 +9,7 @@ const imageUrl = (image) => {
   return `${BACKEND_BASE_URL}${image.startsWith('/') ? image : `/${image}`}`;
 };
 
-function FoodCustomizationModal({ food, initialQuantity = 1, onClose, onAdd }) {
+function FoodCustomizationModal({ food, initialQuantity = 1, onClose, onAdd, onBuyNow }) {
   const [imageIndex, setImageIndex] = useState(0);
   const [quantity, setQuantity] = useState(initialQuantity);
   const [selectedAddons, setSelectedAddons] = useState([]);
@@ -55,7 +55,7 @@ function FoodCustomizationModal({ food, initialQuantity = 1, onClose, onAdd }) {
       : current.filter((item) => item !== name));
   };
 
-  const submit = async () => {
+  const submit = async (buyNow = false) => {
     const requestedAddons = customAddonRequests.split(/\r?\n/).map((name) => name.trim()).filter(Boolean);
     if (requestedAddons.length > 50 || requestedAddons.some((name) => name.length > 150)) {
       toast.error('Enter up to 50 add-on requests, with no more than 150 characters each.');
@@ -81,6 +81,19 @@ function FoodCustomizationModal({ food, initialQuantity = 1, onClose, onAdd }) {
     ])];
     const selectedCustomizationValues = { ...customizations };
     if (customizationRequest.trim()) selectedCustomizationValues.__custom_request__ = customizationRequest.trim();
+    if (buyNow) {
+      if (!onBuyNow) {
+        toast.error('Buy Now is unavailable right now.');
+        return;
+      }
+      onBuyNow({
+        quantity,
+        selectedAddons: addonNames,
+        selectedCustomizations: selectedCustomizationValues,
+        unitPrice,
+      });
+      return;
+    }
     const result = await onAdd({
       quantity,
       selectedAddons: addonNames,
@@ -126,22 +139,23 @@ function FoodCustomizationModal({ food, initialQuantity = 1, onClose, onAdd }) {
           >
             <X className="h-5 w-5" />
           </button>
-          {images.length > 1 && (
-            <div className="absolute bottom-3 left-3 flex gap-1.5 rounded-xl bg-black/40 p-1">
+        </div>
+        {images.length > 1 && (
+          <div className="flex shrink-0 gap-2 overflow-x-auto border-b border-slate-100 bg-slate-50 px-4 py-2.5 scrollbar-hide">
               {images.map((image, index) => (
                 <button
                   key={`${image}-${index}`}
                   type="button"
                   onClick={() => setImageIndex(index)}
                   aria-label={`View food image ${index + 1}`}
-                  className={`h-10 w-10 overflow-hidden rounded-lg border-2 ${imageIndex === index ? 'border-[#d4a843]' : 'border-transparent opacity-70'}`}
+                  aria-pressed={imageIndex === index}
+                  className={`h-11 w-11 shrink-0 overflow-hidden rounded-lg border-2 transition ${imageIndex === index ? 'border-[#d4a843]' : 'border-transparent opacity-70 hover:opacity-100'}`}
                 >
                   <img src={imageUrl(image)} alt="" className="h-full w-full object-cover" />
                 </button>
               ))}
-            </div>
-          )}
-        </div>
+          </div>
+        )}
 
         <div className="flex-1 space-y-5 overflow-y-auto p-5 sm:p-7">
           <div>
@@ -235,10 +249,15 @@ function FoodCustomizationModal({ food, initialQuantity = 1, onClose, onAdd }) {
             </div>
             <span className="text-xs text-slate-500">₹{basePrice.toFixed(2)} each</span>
           </div>
-          <button type="button" onClick={submit} className="inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#1a3c36] to-[#25524a] px-5 py-3 text-xs font-bold text-white shadow-md transition hover:from-[#142f2a] hover:to-[#1e453e]">
-            <ShoppingCart className="h-4 w-4 text-[#d4a843]" />
-            Add to Cart · ₹{(unitPrice * quantity).toFixed(2)}
-          </button>
+          <div className="flex flex-col gap-2 sm:flex-row">
+            <button type="button" onClick={() => submit()} className="inline-flex items-center justify-center gap-2 rounded-xl border border-[#1a3c36] bg-white px-4 py-3 text-xs font-bold text-[#1a3c36] transition hover:bg-emerald-50">
+              <ShoppingCart className="h-4 w-4" />
+              Add to Cart · ₹{(unitPrice * quantity).toFixed(2)}
+            </button>
+            <button type="button" onClick={() => submit(true)} className="inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#1a3c36] to-[#25524a] px-4 py-3 text-xs font-bold text-white shadow-md transition hover:from-[#142f2a] hover:to-[#1e453e]">
+              Buy Now <ArrowRight className="h-4 w-4 text-[#d4a843]" />
+            </button>
+          </div>
         </footer>
       </section>
     </div>

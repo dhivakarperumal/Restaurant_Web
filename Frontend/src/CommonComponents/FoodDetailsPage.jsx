@@ -1,5 +1,5 @@
 import { useContext, useEffect, useState } from 'react';
-import { ArrowLeft, ArrowRight, BadgeCheck, CheckCircle2, ChevronLeft, ChevronRight, Clock3, Flame, Heart, Leaf, Minus, Plus, ShoppingCart, Sparkles, Star, Truck, UtensilsCrossed } from 'lucide-react';
+import { ArrowLeft, ArrowRight, BadgeCheck, CheckCircle2, ChevronLeft, ChevronRight, Clock3, Flame, Heart, Leaf, Minus, Plus, Sparkles, Star, Truck, UtensilsCrossed } from 'lucide-react';
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import toast from 'react-hot-toast';
@@ -37,6 +37,7 @@ function FoodDetailsPage() {
   const [customizing, setCustomizing] = useState(false);
   const [quantity, setQuantity] = useState(1);
   const [zoomPosition, setZoomPosition] = useState(null);
+  const [imageAspect, setImageAspect] = useState(1);
   const [activeDetailsTab, setActiveDetailsTab] = useState('overview');
   const [relatedFoods, setRelatedFoods] = useState([]);
   const [relatedFoodsLoading, setRelatedFoodsLoading] = useState(false);
@@ -130,6 +131,31 @@ function FoodDetailsPage() {
     });
   };
 
+  const addCurrentFoodDirectly = async () => {
+    if (!food || !addToCart) {
+      toast.error('Unable to add this item to your cart.');
+      return false;
+    }
+    const size = food.portion_size || 'Standard';
+    return addToCart({
+      ...food,
+      id: food.food_id || food.id,
+      food_id: food.food_id || food.id,
+      product_id: food.food_id || food.id,
+      product_name: food.food_name,
+      name: food.food_name,
+      price,
+      portion_size: size,
+      product_image: food.food_images?.[0] || '',
+      image: food.food_images?.[0] || '',
+      quantity,
+    }, {
+      size,
+      price,
+      quantity,
+    });
+  };
+
   const addRelatedFoodToCart = async ({
     quantity,
     selectedAddons,
@@ -220,6 +246,28 @@ function FoodDetailsPage() {
   const mrp = Number(food?.mrp || 0);
   const hasDiscount = Number(food?.discount || 0) > 0 && mrp > price;
   const isAvailable = getFoodAvailability(food || {}, currentTime).available;
+  const goToCheckoutWithFood = (selectedFood, options = {}) => {
+    const selectedQuantity = options.quantity || 1;
+    navigate('/checkout', {
+      state: {
+        buyNowItem: {
+          food_id: String(selectedFood.food_id || selectedFood.id),
+          food_name: selectedFood.food_name,
+          product_name: selectedFood.food_name,
+          food_images: selectedFood.food_images || [],
+          product_image: selectedFood.food_images?.[0] || '',
+          price: options.unitPrice ?? Number(selectedFood.final_price || selectedFood.mrp || 0),
+          portion_size: selectedFood.portion_size || 'Standard',
+          quantity: selectedQuantity,
+          selected_addons: options.selectedAddons || [],
+          selected_customizations: options.selectedCustomizations || {},
+        },
+      },
+    });
+  };
+  const zoomAspect = 4 / 3;
+  const zoomScale = Math.max(1.5, (zoomAspect / imageAspect) * 1.5);
+  const zoomScaleY = zoomScale * imageAspect / zoomAspect;
   const isInWishlist = wishlist.some((item) => (
     String(item.food_id || item.id || item.product_id || item._id)
       === String(food?.food_id || food?.id)
@@ -378,8 +426,8 @@ function FoodDetailsPage() {
 
                 <div className="mt-4 rounded-2xl bg-gradient-to-r from-[#edf5e8] to-[#fff2dc] p-4 sm:px-5">
                   <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-                    <span className="font-serif text-3xl font-black text-[#16432d]">₹{price.toFixed(2)}</span>
-                    {hasDiscount && <span className="text-sm font-medium text-slate-500 line-through">₹{mrp.toFixed(2)}</span>}
+                    <span className="font-sans text-3xl font-extrabold tracking-tight tabular-nums text-[#16432d]">₹{price.toFixed(2)}</span>
+                    {hasDiscount && <span className="font-sans text-sm font-medium tabular-nums text-slate-500 line-through">₹{mrp.toFixed(2)}</span>}
                     {hasDiscount && <span className="rounded-lg bg-orange-600 px-3 py-1 text-[11px] font-extrabold text-white">{food.discount}% OFF</span>}
                   </div>
                   {hasDiscount && <p className="mt-1 text-xs font-semibold text-emerald-800">You save ₹{(mrp - price).toFixed(2)} on this dish!</p>}
@@ -411,9 +459,33 @@ function FoodDetailsPage() {
                     </button>
                     </div>
                   </div>
-                  <button type="button" onClick={() => setCustomizing(true)} disabled={!isAvailable} className="inline-flex min-h-11 flex-1 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#10482f] to-[#075b39] px-4 py-3 text-sm font-bold text-white shadow-md shadow-emerald-950/10 transition hover:from-[#0c3d28] hover:to-[#064a30] disabled:cursor-not-allowed disabled:bg-slate-300 sm:flex-none">
-                  {isAvailable ? <><ShoppingCart className="h-4 w-4" />Customize & add to cart <ArrowLeft className="h-4 w-4 rotate-180" /></> : 'Unavailable'}
-                  </button>
+                  <div className="flex min-w-[220px] flex-1 gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => setCustomizing(true)}
+                      disabled={!isAvailable}
+                      className="inline-flex min-h-11 min-w-0 flex-1 items-center justify-center whitespace-nowrap rounded-xl border border-[#1a3c36] px-1 py-2 text-[10px] font-bold text-[#1a3c36] transition hover:bg-emerald-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 focus-visible:ring-offset-2 active:scale-95 disabled:cursor-not-allowed disabled:border-slate-200 disabled:text-slate-400"
+                    >
+                      Customize
+                    </button>
+                    <button
+                      type="button"
+                      onClick={addCurrentFoodDirectly}
+                      disabled={!isAvailable}
+                      className="inline-flex min-h-11 min-w-0 flex-1 items-center justify-center gap-1 whitespace-nowrap rounded-xl bg-[#1a3c36] px-1 py-2 text-[10px] font-bold text-white shadow-sm transition hover:bg-[#245048] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 focus-visible:ring-offset-2 active:scale-95 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400"
+                    >
+                      {isAvailable && <Plus className="h-3.5 w-3.5 text-emerald-300" />}
+                      {isAvailable ? 'Add' : 'Unavailable'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => goToCheckoutWithFood(food, { quantity })}
+                      disabled={!isAvailable}
+                      className="inline-flex min-h-11 min-w-0 flex-1 items-center justify-center gap-1 whitespace-nowrap rounded-xl bg-[#d4a843] px-1 py-2 text-[10px] font-bold text-slate-950 shadow-sm transition hover:bg-[#c69a35] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2 active:scale-95 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400"
+                    >
+                      Buy Now
+                    </button>
+                  </div>
                 </div>
                 <p className={`mt-3 flex items-center gap-2 text-xs font-semibold ${isAvailable ? 'text-emerald-700' : 'text-rose-600'}`}>
                   <span className={`h-2 w-2 rounded-full ${isAvailable ? 'bg-emerald-600' : 'bg-rose-500'}`} />
@@ -444,14 +516,36 @@ function FoodDetailsPage() {
                     onMouseEnter={() => setZoomPosition({ x: 50, y: 50 })}
                     onMouseMove={(event) => {
                       const bounds = event.currentTarget.getBoundingClientRect();
+                      const stageAspect = bounds.width / bounds.height;
+                      const contentWidth = imageAspect > stageAspect
+                        ? bounds.width
+                        : bounds.height * imageAspect;
+                      const contentHeight = imageAspect > stageAspect
+                        ? bounds.width / imageAspect
+                        : bounds.height;
+                      const offsetX = (bounds.width - contentWidth) / 2;
+                      const offsetY = (bounds.height - contentHeight) / 2;
                       setZoomPosition({
-                        x: ((event.clientX - bounds.left) / bounds.width) * 100,
-                        y: ((event.clientY - bounds.top) / bounds.height) * 100,
+                        x: Math.max(0, Math.min(100, ((event.clientX - bounds.left - offsetX) / contentWidth) * 100)),
+                        y: Math.max(0, Math.min(100, ((event.clientY - bounds.top - offsetY) / contentHeight) * 100)),
                       });
                     }}
                   >
                     {images.length ? (
-                      <img src={imageUrl(images[activeImage] || images[0])} alt={food.food_name} className="h-full w-full object-cover" />
+                      <>
+                        <img
+                          src={imageUrl(images[activeImage] || images[0])}
+                          alt=""
+                          aria-hidden="true"
+                          className="pointer-events-none absolute inset-0 h-full w-full scale-110 object-cover opacity-50 blur-xl"
+                        />
+                        <img
+                          src={imageUrl(images[activeImage] || images[0])}
+                          alt={food.food_name}
+                          onLoad={(event) => setImageAspect(event.currentTarget.naturalWidth / event.currentTarget.naturalHeight)}
+                          className="relative z-[1] h-full w-full object-contain"
+                        />
+                      </>
                     ) : (
                       <div className="flex h-full items-center justify-center text-[#1a3c36]/40"><UtensilsCrossed className="h-16 w-16" /></div>
                     )}
@@ -492,8 +586,8 @@ function FoodDetailsPage() {
                       className="pointer-events-auto absolute left-[calc(100%+1rem)] top-0 z-30 hidden aspect-[4/3] w-[min(40vw,560px)] rounded-2xl border border-white/80 bg-white shadow-2xl lg:block"
                       style={{
                         backgroundImage: `url("${imageUrl(images[activeImage] || images[0])}")`,
-                        backgroundSize: '250% 250%',
-                        backgroundPosition: `${Math.max(0, Math.min(100, (zoomPosition.x * 2.5 - 50) / 1.5))}% ${Math.max(0, Math.min(100, (zoomPosition.y * 2.5 - 50) / 1.5))}%`,
+                        backgroundSize: `${zoomScale * 100}% auto`,
+                        backgroundPosition: `${Math.max(0, Math.min(100, (zoomPosition.x * zoomScale - 50) / (zoomScale - 1)))}% ${Math.max(0, Math.min(100, (zoomPosition.y * zoomScaleY - 50) / (zoomScaleY - 1)))}%`,
                         backgroundRepeat: 'no-repeat',
                       }}
                     />
@@ -715,6 +809,7 @@ function FoodDetailsPage() {
           initialQuantity={quantity}
           onClose={() => setCustomizing(false)}
           onAdd={addSelectedFoodToCart}
+          onBuyNow={(options) => goToCheckoutWithFood(food, options)}
         />
       )}
       {relatedFoodToCustomize && (
@@ -723,6 +818,7 @@ function FoodDetailsPage() {
           food={relatedFoodToCustomize}
           onClose={() => setRelatedFoodToCustomize(null)}
           onAdd={addRelatedFoodToCart}
+          onBuyNow={(options) => goToCheckoutWithFood(relatedFoodToCustomize, options)}
         />
       )}
     </>
