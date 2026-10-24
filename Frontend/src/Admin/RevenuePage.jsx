@@ -57,40 +57,39 @@ const itemImage = (value) => {
 };
 
 const CARD_THEMES = [
-  'bg-[#22c55e]', 'bg-[#3b82f6]', 'bg-[#8b5cf6]', 'bg-[#f59e0b]',
+  { accent: "#f97316", iconBg: "bg-orange-500" },
+  { accent: "#10b981", iconBg: "bg-emerald-500" },
+  { accent: "#3b82f6", iconBg: "bg-blue-500" },
+  { accent: "#ec4899", iconBg: "bg-pink-500" },
 ];
 
-const Card = ({ label, value, detail, icon: Icon, loading, index = 0 }) => (
-  <article className={`relative min-w-0 overflow-hidden rounded-xl border border-transparent p-4 sm:p-5 shadow-[0_2px_10px_rgba(20,56,34,0.08)] flex flex-col justify-between min-h-[140px] ${CARD_THEMES[index % CARD_THEMES.length]} text-white`}>
-    <div className="flex items-start gap-3 relative z-10">
-      <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg shadow-sm bg-white/20">
-        <Icon size={24} strokeWidth={2.2} className="text-white" />
+const Card = ({ label, value, detail, icon: Icon, loading, index = 0 }) => {
+  const theme = CARD_THEMES[index % CARD_THEMES.length];
+  return (
+    <article
+      className="relative flex min-h-[194px] min-w-0 flex-col justify-between overflow-hidden rounded-[20px] border border-slate-200/90 bg-white p-5 shadow-[0_4px_16px_-5px_rgba(15,23,42,0.08)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_10px_22px_-7px_rgba(15,23,42,0.12)] sm:p-6"
+      style={{ background: `linear-gradient(135deg, #ffffff 48%, ${theme.accent}12 100%)` }}
+    >
+      <div className="relative z-10 flex items-start justify-between gap-3">
+        <div className="min-w-0 flex-1 pt-1">
+          <h3 className="truncate text-[12px] font-bold uppercase tracking-[0.08em] text-slate-500">{label}</h3>
+          {loading
+            ? <div className="mt-4 h-9 w-28 animate-pulse rounded-lg bg-slate-100" />
+            : <p className="mt-4 truncate text-[27px] font-black leading-none tracking-tight text-slate-900 sm:text-[30px]">{value}</p>}
+        </div>
+        <span className={`flex h-[60px] w-[60px] shrink-0 items-center justify-center rounded-[18px] text-white shadow-[0_5px_12px_-4px_rgba(15,23,42,0.25)] ${theme.iconBg}`}>
+          <Icon size={27} strokeWidth={2.3} />
+        </span>
       </div>
-      <div className="flex-1 mt-0.5 min-w-0">
-        <h3 className="text-[12px] font-semibold opacity-90 mb-1 truncate">{label}</h3>
-        {loading
-          ? <div className="mt-1 h-7 w-28 animate-pulse rounded bg-white/30" />
-          : <div className="text-[20px] sm:text-[22px] font-extrabold leading-none tracking-tight truncate">{value}</div>}
+      <div className="relative z-10 mt-5 flex items-center gap-2 border-t border-slate-100/90 pt-3.5 text-xs">
+        <span className="inline-flex shrink-0 items-center rounded-full border border-emerald-200/80 bg-emerald-50/90 px-2 py-0.5 text-[11px] font-bold text-emerald-600">↑ 12%</span>
+        {detail && <span className="truncate font-medium text-slate-500">{detail}</span>}
+        <span className="ml-auto h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: theme.accent }} />
       </div>
-    </div>
-    <div className="flex items-center gap-2 mt-5 relative z-10">
-      <span className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[11px] font-bold bg-white/25">↑ 12%</span>
-      {detail && <span className="text-[11px] font-medium opacity-75 truncate">{detail}</span>}
-    </div>
-    <div className="absolute right-0 bottom-0 w-24 h-16 pointer-events-none opacity-50">
-      <svg viewBox="0 0 100 50" preserveAspectRatio="none" className="w-full h-full">
-        <defs>
-          <linearGradient id={`revgrad-${index}`} x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#ffffff" stopOpacity="0.4" />
-            <stop offset="100%" stopColor="#ffffff" stopOpacity="0.0" />
-          </linearGradient>
-        </defs>
-        <path d="M0,50 L0,40 Q25,30 50,40 T100,20 L100,50 Z" fill={`url(#revgrad-${index})`} />
-        <path d="M0,40 Q25,30 50,40 T100,20" fill="none" stroke="#ffffff" strokeWidth="2.5" />
-      </svg>
-    </div>
-  </article>
-);
+      <span aria-hidden="true" className="pointer-events-none absolute -right-6 -top-6 h-28 w-28 rounded-full opacity-20 blur-2xl" style={{ backgroundColor: theme.accent }} />
+    </article>
+  );
+};
 
 const SectionHeading = ({ title, caption, action }) => (
   <div className="flex flex-wrap items-end justify-between gap-3">
