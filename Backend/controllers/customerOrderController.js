@@ -176,6 +176,16 @@ const updateCustomerOrderStatus = async (req, res) => {
            AND e.status = 'Active' AND u.status = 'Active'
            AND COALESCE(e.available_for_delivery, 'Yes') != 'No'
            AND COALESCE(e.current_status, 'Available') != 'Offline'
+           AND a.id = (
+             SELECT active_attendance.id
+             FROM employee_attendance active_attendance
+             WHERE active_attendance.employee_id = e.employee_id
+               AND active_attendance.date = CURDATE()
+               AND active_attendance.check_in IS NOT NULL
+               AND active_attendance.check_out IS NULL
+             ORDER BY active_attendance.check_in DESC
+             LIMIT 1
+           )
          LIMIT 1`,
         [partnerId]
       );
@@ -262,7 +272,14 @@ const listDeliveryPartners = async (req, res) => {
 
     if (includeAll) {
       query += `
-        LEFT JOIN employee_attendance a ON a.employee_id = e.employee_id AND a.date = CURDATE()
+        LEFT JOIN employee_attendance a ON a.id = (
+          SELECT latest_attendance.id
+          FROM employee_attendance latest_attendance
+          WHERE latest_attendance.employee_id = e.employee_id
+            AND latest_attendance.date = CURDATE()
+          ORDER BY (latest_attendance.check_out IS NULL) DESC, latest_attendance.check_in DESC
+          LIMIT 1
+        )
         WHERE e.employee_type = 'Delivery Partner'
           AND e.status = 'Active' AND u.status = 'Active'
         ORDER BY e.full_name
@@ -273,6 +290,16 @@ const listDeliveryPartners = async (req, res) => {
           AND a.date = CURDATE() 
           AND a.check_in IS NOT NULL 
           AND a.check_out IS NULL
+          AND a.id = (
+            SELECT active_attendance.id
+            FROM employee_attendance active_attendance
+            WHERE active_attendance.employee_id = e.employee_id
+              AND active_attendance.date = CURDATE()
+              AND active_attendance.check_in IS NOT NULL
+              AND active_attendance.check_out IS NULL
+            ORDER BY active_attendance.check_in DESC
+            LIMIT 1
+          )
         WHERE e.employee_type = 'Delivery Partner'
           AND e.status = 'Active' 
           AND u.status = 'Active'

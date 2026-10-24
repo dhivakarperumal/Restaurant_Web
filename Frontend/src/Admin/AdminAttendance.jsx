@@ -160,7 +160,9 @@ export default function AdminAttendance() {
         notes: modalData.notes,
       };
 
-      const res = await api.post("/attendance/admin/mark", payload);
+      const res = modalData.attendance_record_id
+        ? await api.put(`/attendance/admin/${modalData.attendance_record_id}`, payload)
+        : await api.post("/attendance/admin/mark", payload);
       if (res.data?.success) {
         toast.success(res.data.message || "Attendance saved successfully.");
         setModalOpen(false);

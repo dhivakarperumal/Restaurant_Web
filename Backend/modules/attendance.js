@@ -36,7 +36,6 @@ async function initializeAttendanceSchema() {
       notes TEXT NULL,
       created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
       updated_at TIMESTAMP NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
-      UNIQUE KEY unique_employee_daily_attendance (employee_id, date),
       INDEX attendance_date_idx (date),
       INDEX attendance_employee_idx (employee_id),
       INDEX attendance_status_idx (status),
@@ -46,6 +45,58 @@ async function initializeAttendanceSchema() {
         REFERENCES users (user_id) ON DELETE CASCADE
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
   `);
+
+  const [dailyUniqueKeys] = await db.execute(
+    `SELECT INDEX_NAME
+     FROM information_schema.STATISTICS
+     WHERE TABLE_SCHEMA = DATABASE()
+       AND TABLE_NAME = 'employee_attendance'
+       AND INDEX_NAME = 'unique_employee_daily_attendance'
+     LIMIT 1`
+  );
+  if (dailyUniqueKeys.length > 0) {
+    await db.query('ALTER TABLE employee_attendance DROP INDEX unique_employee_daily_attendance');
+  }
+}
+
+async function createAttendanceSession(userId, employeeId) {
+  if (!userId) throw new Error('User ID is required to record attendance');
+
+  const [empRows] = await db.execute(
+    'SELECT start_time FROM employees WHERE employee_id = ? LIMIT 1',
+    [employeeId]
+  );
+
+  let initialStatus = 'Present';
+  if (empRows[0]?.start_time) {
+    const [timeCheck] = await db.execute(
+      "SELECT IF(CURTIME() > ADDTIME(?, '00:15:00'), 'Late', 'Present') AS check_status",
+      [empRows[0].start_time]
+    );
+    if (timeCheck[0]?.check_status === 'Late') initialStatus = 'Late';
+  }
+
+  const attendanceId = `ATT-${randomUUID()}`;
+  await db.execute(
+    `INSERT INTO employee_attendance (attendance_id, employee_id, user_id, date, check_in, status)
+     VALUES (?, ?, ?, CURDATE(), NOW(), ?)`,
+    [attendanceId, employeeId, userId, initialStatus]
+  );
+
+  const [created] = await db.execute(
+    'SELECT * FROM employee_attendance WHERE attendance_id = ? LIMIT 1',
+    [attendanceId]
+  );
+  await notifyAttendanceChange(employeeId, 'clocked in');
+
+  try {
+    await db.execute(
+      "UPDATE employees SET available_for_delivery = 'Yes', current_status = 'Available', updated_at = CURRENT_TIMESTAMP WHERE employee_id = ? AND employee_type = 'Delivery Partner'",
+      [employeeId]
+    );
+  } catch (ignore) {}
+
+  return created[0] || null;
 }
 
 async function recordLoginAttendance(userId, employeeId) {
@@ -62,58 +113,17 @@ async function recordLoginAttendance(userId, employeeId) {
   if (!empId) return null;
 
   try {
-    // 1. Check if record already exists for today
     const [existing] = await db.execute(
-      'SELECT * FROM employee_attendance WHERE employee_id = ? AND date = CURDATE() LIMIT 1',
+      `SELECT * FROM employee_attendance
+       WHERE employee_id = ? AND date = CURDATE()
+       ORDER BY check_in DESC
+       LIMIT 1`,
       [empId]
     );
-
-    if (existing.length > 0) {
-      return existing[0];
-    }
-
-    // 2. Check if employee has a start_time to check for late arrival (>15 mins after shift start)
-    const [empRows] = await db.execute(
-      'SELECT start_time FROM employees WHERE employee_id = ? LIMIT 1',
-      [empId]
-    );
-
-    let initialStatus = 'Present';
-    if (empRows.length > 0 && empRows[0].start_time) {
-      const [timeCheck] = await db.execute(
-        "SELECT IF(CURTIME() > ADDTIME(?, '00:15:00'), 'Late', 'Present') AS check_status",
-        [empRows[0].start_time]
-      );
-      if (timeCheck.length > 0 && timeCheck[0].check_status === 'Late') {
-        initialStatus = 'Late';
-      }
-    }
-
-    const attendanceId = `ATT-${randomUUID()}`;
-    await db.execute(
-      `INSERT INTO employee_attendance (attendance_id, employee_id, user_id, date, check_in, status)
-       VALUES (?, ?, ?, CURDATE(), NOW(), ?)`,
-      [attendanceId, empId, userId, initialStatus]
-    );
-
-    const [created] = await db.execute(
-      'SELECT * FROM employee_attendance WHERE attendance_id = ? LIMIT 1',
-      [attendanceId]
-    );
-    await notifyAttendanceChange(empId, 'clocked in');
-
-    // Auto set delivery partner online upon checkin
-    try {
-      await db.execute(
-        "UPDATE employees SET available_for_delivery = 'Yes', current_status = 'Available', updated_at = CURRENT_TIMESTAMP WHERE employee_id = ? AND employee_type = 'Delivery Partner'",
-        [empId]
-      );
-    } catch (ignore) {}
-
-    return created[0] || null;
+    if (existing.length > 0) return existing[0];
+    return await createAttendanceSession(userId, empId);
   } catch (error) {
     console.error('Error recording login attendance:', error);
-    // Don't throw to avoid failing login, but return null
     return null;
   }
 }
@@ -122,30 +132,14 @@ async function clockInEmployee(employeeId, userId) {
   if (!employeeId) throw new Error('Employee ID is required');
 
   const [existing] = await db.execute(
-    'SELECT * FROM employee_attendance WHERE employee_id = ? AND date = CURDATE() LIMIT 1',
+    `SELECT * FROM employee_attendance
+     WHERE employee_id = ? AND date = CURDATE() AND check_out IS NULL
+     ORDER BY check_in DESC
+     LIMIT 1`,
     [employeeId]
   );
 
   if (existing.length > 0) {
-    // If they were clocked out, resume/reopen
-    if (existing[0].check_out) {
-      await db.execute(
-        'UPDATE employee_attendance SET check_out = NULL, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
-        [existing[0].id]
-      );
-      try {
-        await db.execute(
-          "UPDATE employees SET available_for_delivery = 'Yes', current_status = 'Available', updated_at = CURRENT_TIMESTAMP WHERE employee_id = ? AND employee_type = 'Delivery Partner'",
-          [employeeId]
-        );
-      } catch (ignore) {}
-      const [updated] = await db.execute(
-        'SELECT * FROM employee_attendance WHERE id = ? LIMIT 1',
-        [existing[0].id]
-      );
-      await notifyAttendanceChange(employeeId, 'clocked in');
-      return updated[0];
-    }
     try {
       await db.execute(
         "UPDATE employees SET available_for_delivery = 'Yes', current_status = 'Available', updated_at = CURRENT_TIMESTAMP WHERE employee_id = ? AND employee_type = 'Delivery Partner'",
@@ -155,21 +149,24 @@ async function clockInEmployee(employeeId, userId) {
     return existing[0];
   }
 
-  // Not yet clocked in today
+  // Start a new session after the previous one has been closed.
   let uid = userId;
   if (!uid) {
     const [emp] = await db.execute('SELECT user_id FROM employees WHERE employee_id = ? LIMIT 1', [employeeId]);
     uid = emp[0]?.user_id;
   }
 
-  return recordLoginAttendance(uid, employeeId);
+  return createAttendanceSession(uid, employeeId);
 }
 
 async function clockOutEmployee(employeeId) {
   if (!employeeId) throw new Error('Employee ID is required');
 
   const [existing] = await db.execute(
-    'SELECT * FROM employee_attendance WHERE employee_id = ? AND date = CURDATE() LIMIT 1',
+    `SELECT * FROM employee_attendance
+     WHERE employee_id = ? AND date = CURDATE() AND check_out IS NULL
+     ORDER BY check_in DESC
+     LIMIT 1`,
     [employeeId]
   );
 
@@ -215,6 +212,7 @@ async function getTodayAttendance(employeeId) {
      FROM employee_attendance a
      LEFT JOIN employees e ON a.employee_id = e.employee_id
      WHERE a.employee_id = ? AND a.date = CURDATE()
+     ORDER BY (a.check_out IS NULL) DESC, a.check_in DESC
      LIMIT 1`,
     [employeeId]
   );
@@ -351,7 +349,7 @@ async function getAdminAttendanceSummary(date) {
   };
 }
 
-async function adminSaveAttendance({ employeeId, date, checkIn, checkOut, status, notes }) {
+async function adminSaveAttendance({ recordId, employeeId, date, checkIn, checkOut, status, notes }) {
   if (!employeeId || !date) throw new Error('Employee ID and date are required');
 
   const [emp] = await db.execute('SELECT user_id FROM employees WHERE employee_id = ? LIMIT 1', [employeeId]);
@@ -359,11 +357,6 @@ async function adminSaveAttendance({ employeeId, date, checkIn, checkOut, status
   const userId = emp[0].user_id;
 
   const targetDate = String(date).slice(0, 10);
-  const [existing] = await db.execute(
-    'SELECT * FROM employee_attendance WHERE employee_id = ? AND date = ? LIMIT 1',
-    [employeeId, targetDate]
-  );
-
   let checkInVal = checkIn ? new Date(checkIn) : null;
   let checkOutVal = checkOut ? new Date(checkOut) : null;
   let totalHours = 0;
@@ -373,7 +366,13 @@ async function adminSaveAttendance({ employeeId, date, checkIn, checkOut, status
     totalHours = Math.max(0, Math.round((diffMs / 3600000) * 100) / 100);
   }
 
-  if (existing.length > 0) {
+  if (recordId) {
+    const [existing] = await db.execute(
+      'SELECT id FROM employee_attendance WHERE id = ? LIMIT 1',
+      [recordId]
+    );
+    if (existing.length === 0) throw new Error('Attendance record not found');
+
     await db.execute(
       `UPDATE employee_attendance
        SET check_in = COALESCE(?, check_in),
@@ -381,24 +380,25 @@ async function adminSaveAttendance({ employeeId, date, checkIn, checkOut, status
            total_hours = ?,
            status = COALESCE(?, status),
            notes = ?,
+           date = ?,
            updated_at = CURRENT_TIMESTAMP
        WHERE id = ?`,
-      [checkInVal, checkOutVal, totalHours, status || 'Present', notes || null, existing[0].id]
+      [checkInVal, checkOutVal, totalHours, status || 'Present', notes || null, targetDate, existing[0].id]
     );
 
     const [updated] = await db.execute('SELECT * FROM employee_attendance WHERE id = ? LIMIT 1', [existing[0].id]);
     return updated[0];
-  } else {
-    const attendanceId = `ATT-${randomUUID()}`;
-    await db.execute(
-      `INSERT INTO employee_attendance (attendance_id, employee_id, user_id, date, check_in, check_out, total_hours, status, notes)
-       VALUES (?, ?, ?, ?, COALESCE(?, NOW()), ?, ?, ?, ?)`,
-      [attendanceId, employeeId, userId, targetDate, checkInVal, checkOutVal, totalHours, status || 'Present', notes || null]
-    );
-
-    const [created] = await db.execute('SELECT * FROM employee_attendance WHERE attendance_id = ? LIMIT 1', [attendanceId]);
-    return created[0];
   }
+
+  const attendanceId = `ATT-${randomUUID()}`;
+  await db.execute(
+    `INSERT INTO employee_attendance (attendance_id, employee_id, user_id, date, check_in, check_out, total_hours, status, notes)
+     VALUES (?, ?, ?, ?, COALESCE(?, NOW()), ?, ?, ?, ?)`,
+    [attendanceId, employeeId, userId, targetDate, checkInVal, checkOutVal, totalHours, status || 'Present', notes || null]
+  );
+
+  const [created] = await db.execute('SELECT * FROM employee_attendance WHERE attendance_id = ? LIMIT 1', [attendanceId]);
+  return created[0];
 }
 
 async function adminDeleteAttendance(recordId) {

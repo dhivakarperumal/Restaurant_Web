@@ -308,15 +308,16 @@ export default function StaffAttendancePage({
   // Monthly stats calculations
   const stats = useMemo(() => {
     const totalRecords = historyRecords.length;
+    const totalDays = new Set(historyRecords.map((record) => String(record.date || "").slice(0, 10))).size;
     let totalSecs = 0;
     let lateCount = 0;
     let onTimeCount = 0;
 
     historyRecords.forEach((r) => {
-      if (r.total_hours) {
-        totalSecs += Number(r.total_hours) * 3600;
-      } else if (r.duration_seconds) {
+      if (r.duration_seconds != null) {
         totalSecs += Number(r.duration_seconds);
+      } else if (r.total_hours != null) {
+        totalSecs += Number(r.total_hours) * 3600;
       }
       if (r.status === "Late") {
         lateCount += 1;
@@ -330,7 +331,7 @@ export default function StaffAttendancePage({
     const onTimeRate = totalRecords > 0 ? Math.round((onTimeCount / totalRecords) * 100) : 100;
 
     return {
-      totalDays: totalRecords,
+      totalDays,
       totalHours,
       avgHours,
       lateCount,

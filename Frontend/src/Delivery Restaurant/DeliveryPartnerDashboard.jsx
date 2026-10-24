@@ -583,7 +583,13 @@ const DeliveryPartnerDashboard = () => {
                           <td className="px-4 py-3 text-gray-600 font-medium">
                             {rec.check_out ? formatTime(rec.check_out) : <span className="text-emerald-600 font-bold">Active</span>}
                           </td>
-                          <td className="px-4 py-3 font-bold text-gray-900">{rec.total_hours != null ? `${rec.total_hours} hrs` : "In Progress"}</td>
+                          <td className="px-4 py-3 font-bold text-gray-900">
+                            {rec.check_out
+                              ? `${rec.total_hours || 0} hrs`
+                              : rec.duration_seconds != null
+                              ? formatDuration(rec.duration_seconds)
+                              : "In Progress"}
+                          </td>
                           <td className="px-4 py-3">
                             <span
                               className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ${
