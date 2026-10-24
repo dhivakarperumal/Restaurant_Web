@@ -562,8 +562,8 @@ export default function ServerTables() {
   return (
     <div className={isAdminTablesPage ? "min-h-screen bg-[#f2f3f0] p-4 md:p-6" : "space-y-6"}>
       <div className={isAdminTablesPage ? "mx-auto max-w-[1500px] space-y-6" : "space-y-6"}>
-      {/* Top Banner / Header */}
-      <div className={isAdminTablesPage ? "mb-5 flex flex-col gap-4 md:flex-row md:items-center md:justify-between" : "flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-white p-5 rounded-2xl border border-gray-100 shadow-sm"}>
+      {isAdminTablesPage && (
+      <div className="mb-5 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
           <div className="flex items-center gap-2">
             {!isAdminTablesPage && <div className="p-2 rounded-xl bg-[#1f3228] text-[#d4a843]">
@@ -573,13 +573,11 @@ export default function ServerTables() {
               <h1 className={isAdminTablesPage ? "text-[2.1rem] font-bold tracking-[-0.05em] text-[#1f1d1b]" : "text-xl sm:text-2xl font-bold text-gray-900 font-serif"}>
                 {isAdminTablesPage ? "Tables" : "My Assigned Tables"}
               </h1>
-              <p className={isAdminTablesPage ? "mt-2 text-[13px] text-[#646464]" : "text-xs sm:text-sm text-gray-500"}>
-                {isAdminTablesPage ? (
-                  <>Dashboard <span className="mx-2 text-[#9a9a9a]">&gt;</span> <span className="font-medium text-[#2a2a2a]">Tables</span></>
-                ) : (
-                  "Dining tables assigned to your station. View real-time seating and update dining status."
-                )}
-              </p>
+              {isAdminTablesPage && (
+                <p className="mt-2 text-[13px] text-[#646464]">
+                  Dashboard <span className="mx-2 text-[#9a9a9a]">&gt;</span> <span className="font-medium text-[#2a2a2a]">Tables</span>
+                </p>
+              )}
             </div>
           </div>
         </div>
@@ -603,6 +601,7 @@ export default function ServerTables() {
           )}
         </div>
       </div>
+      )}
 
       {/* Ready to Serve Alert Banner for Servers */}
       {!isAdminTablesPage && readyToServeOrders.length > 0 && (
@@ -640,6 +639,9 @@ export default function ServerTables() {
             value: stats.total,
             icon: Layers,
             bg: "bg-[#22c55e]",
+            tone: "bg-gradient-to-tr from-orange-500 to-amber-400 text-white shadow-orange-500/25",
+            accentColor: "#f97316",
+            glowColor: "#fb923c",
             hint: isAdminTablesPage ? "Dining tables" : "Assigned to station",
           },
           {
@@ -647,6 +649,9 @@ export default function ServerTables() {
             value: stats.available,
             icon: CheckCircle2,
             bg: "bg-[#3b82f6]",
+            tone: "bg-gradient-to-tr from-emerald-600 to-teal-400 text-white shadow-emerald-500/25",
+            accentColor: "#10b981",
+            glowColor: "#34d399",
             hint: "Ready for guests",
           },
           {
@@ -654,6 +659,9 @@ export default function ServerTables() {
             value: stats.occupied,
             icon: Clock,
             bg: "bg-[#f59e0b]",
+            tone: "bg-gradient-to-tr from-blue-600 to-cyan-400 text-white shadow-blue-500/25",
+            accentColor: "#3b82f6",
+            glowColor: "#60a5fa",
             hint: "Currently in use",
           },
           {
@@ -661,40 +669,55 @@ export default function ServerTables() {
             value: stats.totalSeats,
             icon: Armchair,
             bg: "bg-[#8b5cf6]",
+            tone: "bg-gradient-to-tr from-violet-600 to-purple-400 text-white shadow-purple-500/25",
+            accentColor: "#8b5cf6",
+            glowColor: "#a78bfa",
             hint: "Dining capacity",
           },
-        ].map(({ title, value, icon: Icon, bg, hint }, index) => (
+        ].map(({ title, value, icon: Icon, bg, tone, accentColor, glowColor, hint }) => (
           <article
             key={title}
-            className={`relative min-w-0 overflow-hidden rounded-xl border border-transparent p-4 sm:p-5 shadow-[0_2px_10px_rgba(20,56,34,0.08)] flex flex-col justify-between min-h-[140px] ${bg} text-white`}
+            className={isAdminTablesPage
+              ? `relative flex min-h-[140px] min-w-0 flex-col justify-between overflow-hidden rounded-xl border border-transparent ${bg} p-4 text-white shadow-[0_2px_10px_rgba(20,56,34,0.08)] sm:p-5`
+              : "group relative flex min-h-[140px] min-w-0 flex-col justify-between overflow-hidden rounded-2xl border border-slate-200/90 bg-white p-4 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] transition-all duration-300 hover:-translate-y-1 hover:border-slate-300 hover:shadow-[0_12px_24px_-6px_rgba(0,0,0,0.1)] sm:p-5"}
           >
-            <div className="flex items-start gap-3 relative z-10">
-              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg shadow-sm bg-white/20">
-                <Icon size={24} strokeWidth={2.2} className="text-white" />
+            {!isAdminTablesPage && (
+              <div
+                className="pointer-events-none absolute -right-6 -top-6 h-28 w-28 rounded-full opacity-20 blur-2xl transition-all duration-500 group-hover:scale-150 group-hover:opacity-35"
+                style={{ backgroundColor: glowColor }}
+              />
+            )}
+            <div className={`relative z-10 flex items-start ${isAdminTablesPage ? "gap-3" : "justify-between gap-3"}`}>
+              {isAdminTablesPage && (
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-white/20 shadow-sm">
+                  <Icon size={24} strokeWidth={2.2} className="text-white" />
+                </div>
+              )}
+              <div className="min-w-0 flex-1">
+                <h3 className={isAdminTablesPage ? "mb-1 truncate text-[12px] font-semibold opacity-90" : "truncate text-[11px] font-bold uppercase tracking-wider text-slate-500"}>{title}</h3>
+                <div className={isAdminTablesPage ? "text-[26px] font-extrabold leading-none tracking-tight" : "mt-2.5 truncate text-[23px] font-black tracking-tight text-slate-800 sm:text-[27px]"}>{value}</div>
               </div>
-              <div className="flex-1 mt-0.5 min-w-0">
-                <h3 className="text-[12px] font-semibold opacity-90 mb-1 truncate">{title}</h3>
-                <div className="text-[26px] font-extrabold leading-none tracking-tight">{value}</div>
+              {!isAdminTablesPage && (
+                <div className={`relative flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl shadow-sm transition-transform duration-300 group-hover:scale-110 ${tone}`}>
+                  <Icon size={24} strokeWidth={2.3} />
+                </div>
+              )}
+            </div>
+            <div className={isAdminTablesPage ? "relative z-10 mt-5 flex items-center gap-2" : "relative z-10 mt-4 flex items-center justify-between border-t border-slate-100 pt-3 text-xs"}>
+              <div className={isAdminTablesPage ? "contents" : "flex min-w-0 items-center gap-1.5"}>
+                <span className={isAdminTablesPage ? "inline-flex items-center gap-1 rounded-md bg-white/25 px-1.5 py-0.5 text-[11px] font-bold" : "inline-flex shrink-0 items-center rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-bold text-emerald-600 ring-1 ring-inset ring-emerald-500/20"}>
+                  Live
+                </span>
+                <span className={isAdminTablesPage ? "truncate text-[11px] font-medium opacity-75" : "truncate font-medium text-slate-500"}>{hint}</span>
               </div>
+              {!isAdminTablesPage && <span className="h-2 w-2 shrink-0 rounded-full shadow-sm" style={{ backgroundColor: accentColor }} />}
             </div>
-            <div className="flex items-center gap-2 mt-5 relative z-10">
-              <span className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[11px] font-bold bg-white/25">
-                Live
-              </span>
-              <span className="text-[11px] font-medium opacity-75 truncate">{hint}</span>
-            </div>
-            <div className="absolute right-0 bottom-0 w-24 h-16 pointer-events-none opacity-50">
-              <svg viewBox="0 0 100 50" preserveAspectRatio="none" className="w-full h-full">
-                <defs>
-                  <linearGradient id={`tbl-grad-${index}`} x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#ffffff" stopOpacity="0.4" />
-                    <stop offset="100%" stopColor="#ffffff" stopOpacity="0.0" />
-                  </linearGradient>
-                </defs>
-                <path d="M0,50 L0,40 Q25,30 50,40 T100,20 L100,50 Z" fill={`url(#tbl-grad-${index})`} />
-                <path d="M0,40 Q25,30 50,40 T100,20" fill="none" stroke="#ffffff" strokeWidth="2.5" />
-              </svg>
-            </div>
+            {!isAdminTablesPage && (
+              <div
+                className="absolute bottom-0 left-0 h-[3px] w-0 transition-all duration-300 group-hover:w-full"
+                style={{ backgroundColor: accentColor }}
+              />
+            )}
           </article>
         ))}
       </div>
@@ -708,7 +731,7 @@ export default function ServerTables() {
             placeholder={isAdminTablesPage ? "Search by table number or server..." : "Search table, ticket, food..."}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className={isAdminTablesPage ? "h-[46px] w-full rounded-xl border border-[#dfe2e5] bg-[#faf9f8] pl-10 pr-3 text-[14px] text-[#2d2d2d] outline-none placeholder:text-[#8a8a8a] focus:border-[#d2bc8a]" : "h-[58px] w-full rounded-2xl border border-[#dfe2e5] bg-[#faf9f8] pl-12 pr-4 text-[15px] text-[#2d2d2d] outline-none placeholder:text-[#8a8a8a] focus:border-[#d2bc8a]"}
+            className={isAdminTablesPage ? "h-[46px] w-full rounded-xl border border-[#dfe2e5] bg-[#faf9f8] pl-10 pr-3 text-[14px] text-[#2d2d2d] outline-none placeholder:text-[#8a8a8a] focus:border-[#d2bc8a]" : "h-[58px] w-full rounded-2xl border border-[#dfe2e5] bg-[#faf9f8] pl-12 pr-4 text-[15px] text-[#2d2d2d] outline-none placeholder:text-[#8a8a8a] focus:border-[#FF5A00]"}
           />
         </div>
 
@@ -722,7 +745,7 @@ export default function ServerTables() {
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className={isAdminTablesPage ? "h-[46px] rounded-xl border border-[#dfe2e5] bg-[#faf9f8] px-3 text-[14px] font-medium text-[#2d2d2d] outline-none focus:border-[#d2bc8a]" : "h-[58px] min-w-[180px] rounded-2xl border border-[#dfe2e5] bg-white px-4 text-[15px] font-medium text-[#2d2d2d] outline-none focus:border-[#d2bc8a]"}
+            className={isAdminTablesPage ? "h-[46px] rounded-xl border border-[#dfe2e5] bg-[#faf9f8] px-3 text-[14px] font-medium text-[#2d2d2d] outline-none focus:border-[#d2bc8a]" : "h-[58px] min-w-[180px] rounded-2xl border border-[#dfe2e5] bg-white px-4 text-[15px] font-medium text-[#2d2d2d] outline-none focus:border-[#FF5A00]"}
           >
             <option value="all">{isAdminTablesPage ? "All Statuses" : "All Status"} ({baseTables.length})</option>
             <option value="Available">Available ({stats.available})</option>
@@ -763,7 +786,7 @@ export default function ServerTables() {
               onClick={() => setViewMode(isAdminTablesPage ? "grid" : "table")}
               className={isAdminTablesPage
                 ? `flex h-[46px] w-[46px] cursor-pointer items-center justify-center transition ${viewMode === "grid" ? "bg-[#1a3c36] text-white" : "text-[#4d4d4d] hover:bg-white"}`
-                : `h-full w-[54px] cursor-pointer transition ${viewMode === "table" ? "bg-[#1a3c36] text-white" : "text-[#4d4d4d] hover:bg-[#faf9f8]"}`}
+                : `h-full w-[54px] cursor-pointer transition ${viewMode === "table" ? "bg-[#FF5A00] text-white" : "text-[#4d4d4d] hover:bg-orange-50"}`}
               aria-label={isAdminTablesPage ? "Card view" : "List view"}
               aria-pressed={isAdminTablesPage ? viewMode === "grid" : viewMode === "table"}
               title={isAdminTablesPage ? "Card view" : "List view"}
@@ -775,7 +798,7 @@ export default function ServerTables() {
               onClick={() => setViewMode(isAdminTablesPage ? "table" : "grid")}
               className={isAdminTablesPage
                 ? `flex h-[46px] w-[46px] cursor-pointer items-center justify-center border-l border-[#dfe2e5] transition ${viewMode === "table" ? "bg-[#1a3c36] text-white" : "text-[#4d4d4d] hover:bg-white"}`
-                : `h-full w-[54px] border-l border-[#dfe2e5] cursor-pointer transition ${viewMode === "grid" ? "bg-[#1a3c36] text-white" : "text-[#4d4d4d] hover:bg-[#faf9f8]"}`}
+                : `h-full w-[54px] border-l border-[#dfe2e5] cursor-pointer transition ${viewMode === "grid" ? "bg-[#FF5A00] text-white" : "text-[#4d4d4d] hover:bg-orange-50"}`}
               aria-label={isAdminTablesPage ? "Table view" : "Grid view"}
               aria-pressed={isAdminTablesPage ? viewMode === "table" : viewMode === "grid"}
               title={isAdminTablesPage ? "Table view" : "Grid view"}
@@ -1006,7 +1029,7 @@ export default function ServerTables() {
                               table.table_number
                             )
                           }
-                          className="mt-1 w-full py-2 px-3 rounded-lg bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white text-xs font-bold flex items-center justify-center gap-1.5 shadow transition cursor-pointer disabled:opacity-50"
+                          className="mt-1 w-full py-2 px-3 rounded-lg bg-[#FF5A00] hover:bg-[#E94B00] text-white text-xs font-bold flex items-center justify-center gap-1.5 shadow transition cursor-pointer disabled:opacity-50"
                         >
                           <Check className="w-3.5 h-3.5" />
                           {updatingOrderId ===
@@ -1030,7 +1053,7 @@ export default function ServerTables() {
                           onClick={() => handleQuickStatusChange(table, st)}
                           className={`px-2.5 py-1 rounded text-[11px] font-medium transition cursor-pointer ${
                             table.status === st
-                              ? "bg-[#1f3228] text-white shadow-sm"
+                              ? `${isAdminTablesPage ? "bg-[#1f3228]" : "bg-[#FF5A00]"} text-white shadow-sm`
                               : "bg-gray-100 text-gray-600 hover:bg-gray-200"
                           }`}
                         >
@@ -1064,13 +1087,13 @@ export default function ServerTables() {
                         <button
                           type="button"
                           onClick={() => handleOpenBillModal(table)}
-                          className="inline-flex w-full cursor-pointer items-center justify-between rounded-xl border border-emerald-300 bg-emerald-50 px-3 py-2 text-xs font-bold text-emerald-900 transition hover:bg-emerald-100 shadow-sm"
+                          className="inline-flex w-full cursor-pointer items-center justify-between rounded-xl border border-orange-200 bg-orange-50 px-3 py-2 text-xs font-bold text-orange-800 transition hover:bg-orange-100 shadow-sm"
                         >
                           <span className="flex items-center gap-1.5">
-                            <FileText className="h-3.5 w-3.5 text-emerald-700" />
+                            <FileText className="h-3.5 w-3.5 text-[#FF5A00]" />
                             Bill #{activeBill.bill_number}
                           </span>
-                          <span className="font-mono text-emerald-800 text-[11px]">
+                          <span className="font-mono text-orange-800 text-[11px]">
                             ₹{Number(activeBill.grand_total || 0).toFixed(0)} ({activeBill.total_items_count || "Items"}) · View & Settle
                           </span>
                         </button>
@@ -1080,7 +1103,7 @@ export default function ServerTables() {
                         disabled={!canOrder}
                         onClick={() => selectTableForOrder(table)}
                         title={canOrder ? "Select table and create an order" : "Mark the table as Occupied before ordering"}
-                        className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#1a3c36] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#214a42] enabled:cursor-pointer disabled:cursor-not-allowed disabled:opacity-45 disabled:hover:bg-[#1a3c36]"
+                        className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#FF5A00] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#E94B00] enabled:cursor-pointer disabled:cursor-not-allowed disabled:opacity-45 disabled:hover:bg-[#FF5A00]"
                       >
                         {activeBill ? "+ Add Round / Items" : "Select Table & Order"} <ArrowRight className="h-4 w-4" />
                       </button>
@@ -1259,7 +1282,7 @@ export default function ServerTables() {
                                       type="button"
                                       disabled={updatingOrderId === (activeOrder.kitchen_order_id || activeOrder.order_id)}
                                       onClick={() => handleMarkServed(activeOrder.kitchen_order_id || activeOrder.order_id, table.table_number)}
-                                      className="px-2 py-1 rounded bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition flex items-center gap-1 cursor-pointer disabled:opacity-50"
+                                      className="px-2 py-1 rounded bg-[#FF5A00] hover:bg-[#E94B00] text-white text-xs font-bold transition flex items-center gap-1 cursor-pointer disabled:opacity-50"
                                     >
                                       <Check className="w-3 h-3" /> Mark Served
                                     </button>
@@ -1276,7 +1299,7 @@ export default function ServerTables() {
                                   onClick={() => handleQuickStatusChange(table, st)}
                                   className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition cursor-pointer ${
                                     table.status === st
-                                      ? "bg-[#1f3228] text-white shadow-sm"
+                                      ? `${isAdminTablesPage ? "bg-[#1f3228]" : "bg-[#FF5A00]"} text-white shadow-sm`
                                       : "bg-gray-100 text-gray-700 hover:bg-gray-200"
                                   }`}
                                 >
@@ -1296,7 +1319,7 @@ export default function ServerTables() {
                                       <button
                                         type="button"
                                         onClick={() => handleOpenBillModal(table)}
-                                        className="inline-flex cursor-pointer items-center gap-1 rounded-lg border border-emerald-300 bg-emerald-50 px-2.5 py-1.5 text-xs font-bold text-emerald-800 transition hover:bg-emerald-100"
+                                        className="inline-flex cursor-pointer items-center gap-1 rounded-lg border border-orange-200 bg-orange-50 px-2.5 py-1.5 text-xs font-bold text-orange-800 transition hover:bg-orange-100"
                                       >
                                         <FileText className="h-3.5 w-3.5" /> Bill #{activeBill.bill_number} (₹{Number(activeBill.grand_total || 0).toFixed(0)})
                                       </button>
@@ -1306,7 +1329,7 @@ export default function ServerTables() {
                                       disabled={!canOrder}
                                       onClick={() => selectTableForOrder(table)}
                                       title={canOrder ? "Select table and create an order" : "Mark the table as Occupied before ordering"}
-                                      className="inline-flex items-center gap-1.5 rounded-lg bg-[#1a3c36] px-3 py-2 text-xs font-semibold text-white transition hover:bg-[#214a42] enabled:cursor-pointer disabled:cursor-not-allowed disabled:opacity-45 disabled:hover:bg-[#1a3c36]"
+                                      className="inline-flex items-center gap-1.5 rounded-lg bg-[#FF5A00] px-3 py-2 text-xs font-semibold text-white transition hover:bg-[#E94B00] enabled:cursor-pointer disabled:cursor-not-allowed disabled:opacity-45 disabled:hover:bg-[#FF5A00]"
                                     >
                                       {activeBill ? "+ Add Round" : "Select Table"} <ArrowRight className="h-3.5 w-3.5" />
                                     </button>
@@ -1590,7 +1613,7 @@ export default function ServerTables() {
                     max={viewingBill.subtotal}
                     value={settleDiscount}
                     onChange={(e) => setSettleDiscount(e.target.value)}
-                    className="w-20 px-2 py-1 text-right text-xs border border-gray-200 rounded-lg outline-none focus:border-[#1a3c36]"
+                    className="w-20 px-2 py-1 text-right text-xs border border-gray-200 rounded-lg outline-none focus:border-[#FF5A00]"
                   />
                 </div>
               )}
@@ -1617,7 +1640,7 @@ export default function ServerTables() {
                         onClick={() => setPaymentMethod(method)}
                         className={`py-2 px-3 text-xs font-bold rounded-xl border transition cursor-pointer ${
                           paymentMethod === method
-                            ? "bg-[#1a3c36] text-white border-[#1a3c36] shadow-sm"
+                            ? "bg-[#FF5A00] text-white border-[#FF5A00] shadow-sm"
                             : "bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100"
                         }`}
                       >
@@ -1639,7 +1662,7 @@ export default function ServerTables() {
                     type="button"
                     disabled={settlingBill}
                     onClick={handleSettleBill}
-                    className="flex-1 py-2.5 px-3 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold flex items-center justify-center gap-1.5 shadow transition cursor-pointer disabled:opacity-50"
+                    className="flex-1 py-2.5 px-3 rounded-xl bg-[#FF5A00] hover:bg-[#E94B00] text-white text-xs font-bold flex items-center justify-center gap-1.5 shadow transition cursor-pointer disabled:opacity-50"
                   >
                     {settlingBill ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
                     Settle & Free Table ✓

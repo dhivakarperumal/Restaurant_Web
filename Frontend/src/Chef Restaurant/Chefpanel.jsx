@@ -28,7 +28,7 @@ const ChefLayout = () => {
 
 
   return (
-    <div className={`admin-root flex min-h-screen ${isPrintPage ? 'bg-gray-100 text-black' : 'bg-white text-gray-900'} print:bg-white print:text-black print:min-h-0 print:block`}>
+    <div className={`admin-root admin-theme flex min-h-screen ${isPrintPage ? 'bg-gray-100 text-black' : 'bg-white text-gray-900'} print:bg-white print:text-black print:min-h-0 print:block`}>
       
       {/* Sidebar */}
       {!isPrintPage && (
@@ -48,7 +48,7 @@ const ChefLayout = () => {
           flex flex-col flex-1 min-w-0 min-h-screen
           transition-all duration-300 ease-in-out
           bg-[#fafcff]
-          ${!isPrintPage && isLargeScreen ? (sidebarCollapsed ? "lg:ml-[80px]" : "lg:ml-72") : ""}
+          ${!isPrintPage && isLargeScreen ? (sidebarCollapsed ? "lg:ml-[88px]" : "lg:ml-72") : ""}
           print:ml-0 print:min-h-0 print:block print:w-full
         `}
       >

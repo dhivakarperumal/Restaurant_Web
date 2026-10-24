@@ -539,7 +539,7 @@ const AdminReviews = () => {
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   placeholder="Search reviews by name, text, user ID or product..."
-                  className="h-11 w-full rounded-xl border border-[#dfe2e5] bg-[#faf9f8] pl-10 pr-3 text-xs text-[#2d2d2d] outline-none placeholder:text-[#8a8a8a] focus:border-[#d2bc8a]"
+                  className="h-11 w-full rounded-xl border border-[#dfe2e5] bg-[#faf9f8] pl-10 pr-3 text-xs text-[#2d2d2d] outline-none placeholder:text-[#8a8a8a] focus:border-[#FF5A00] focus:ring-1 focus:ring-[#FF5A00]"
                 />
               </div>
 
@@ -551,7 +551,7 @@ const AdminReviews = () => {
                   value={selectedProductId}
                   onChange={(event) => setSelectedProductId(event.target.value)}
                   aria-label="Filter reviews by food"
-                  className="h-11 max-w-56 appearance-none rounded-xl border border-[#dfe2e5] bg-[#faf9f8] pl-3 pr-8 text-xs font-medium text-[#2d2d2d] outline-none focus:border-[#d2bc8a]"
+                  className="h-11 max-w-56 appearance-none rounded-xl border border-[#dfe2e5] bg-[#faf9f8] pl-3 pr-8 text-xs font-medium text-[#2d2d2d] outline-none focus:border-[#FF5A00] focus:ring-1 focus:ring-[#FF5A00]"
                 >
                   <option value="all">All Foods</option>
                   {productsList.map((product) => (
@@ -567,7 +567,7 @@ const AdminReviews = () => {
                 <select
                   value={filterRating}
                   onChange={(e) => setFilterRating(e.target.value)}
-                  className="h-11 appearance-none rounded-xl border border-[#dfe2e5] bg-[#faf9f8] pl-3 pr-8 text-xs font-medium text-[#2d2d2d] outline-none focus:border-[#d2bc8a]"
+                  className="h-11 appearance-none rounded-xl border border-[#dfe2e5] bg-[#faf9f8] pl-3 pr-8 text-xs font-medium text-[#2d2d2d] outline-none focus:border-[#FF5A00] focus:ring-1 focus:ring-[#FF5A00]"
                 >
                   <option value="all">All Ratings</option>
                   <option value="5">5 Stars ★★★★★</option>
@@ -584,7 +584,7 @@ const AdminReviews = () => {
                 <select
                   value={filterStatus}
                   onChange={(e) => setFilterStatus(e.target.value)}
-                  className="h-11 appearance-none rounded-xl border border-[#dfe2e5] bg-[#faf9f8] pl-3 pr-8 text-xs font-medium text-[#2d2d2d] outline-none focus:border-[#d2bc8a]"
+                  className="h-11 appearance-none rounded-xl border border-[#dfe2e5] bg-[#faf9f8] pl-3 pr-8 text-xs font-medium text-[#2d2d2d] outline-none focus:border-[#FF5A00] focus:ring-1 focus:ring-[#FF5A00]"
                 >
                   <option value="all">All Status</option>
                   <option value="Published">Published</option>
@@ -594,15 +594,15 @@ const AdminReviews = () => {
               </div>
 
               <div className="flex overflow-hidden rounded-xl border border-[#dfe2e5] bg-[#faf9f8]">
-                <button type="button" onClick={() => setViewMode("table")} title="Table view" className={`flex h-11 w-11 items-center justify-center border-r border-[#dfe2e5] ${viewMode === "table" ? "bg-[#1a3c36] text-white" : "text-[#666] hover:bg-white"}`}><List className="h-4 w-4" /></button>
-                <button type="button" onClick={() => setViewMode("card")} title="Card view" className={`flex h-11 w-11 items-center justify-center ${viewMode === "card" ? "bg-[#1a3c36] text-white" : "text-[#666] hover:bg-white"}`}><LayoutGrid className="h-4 w-4" /></button>
+                <button type="button" onClick={() => setViewMode("table")} title="Table view" aria-pressed={viewMode === "table"} className={`flex h-11 w-11 items-center justify-center border-r border-[#dfe2e5] ${viewMode === "table" ? "bg-[#FF5A00] text-white" : "text-[#666] transition hover:bg-orange-50 hover:text-[#FF5A00]"}`}><List className="h-4 w-4" /></button>
+                <button type="button" onClick={() => setViewMode("card")} title="Card view" aria-pressed={viewMode === "card"} className={`flex h-11 w-11 items-center justify-center ${viewMode === "card" ? "bg-[#FF5A00] text-white" : "text-[#666] transition hover:bg-orange-50 hover:text-[#FF5A00]"}`}><LayoutGrid className="h-4 w-4" /></button>
               </div>
 
               <div className="flex flex-wrap items-center gap-3">
             <button
               type="button"
               onClick={() => handleOpenCreateModal()}
-              className="inline-flex items-center gap-2 rounded-md bg-[#1a3c36] px-5 py-2.5 text-sm font-semibold text-white shadow-[0_6px_14px_rgba(26,60,54,0.18)] transition hover:bg-[#214a42]"
+              className="inline-flex items-center gap-2 rounded-md bg-[#FF5A00] px-5 py-2.5 text-sm font-semibold text-white shadow-[0_6px_14px_rgba(255,90,0,0.18)] transition hover:bg-[#E94B00]"
             >
               <Plus className="h-6 w-6" />
               Add Review
@@ -638,7 +638,7 @@ const AdminReviews = () => {
                 <button
                   type="button"
                   onClick={() => handleOpenCreateModal()}
-                  className="mt-5 inline-flex items-center gap-2 rounded-xl bg-[#1a3c36] px-5 py-2.5 text-xs font-bold text-white shadow-sm transition hover:bg-[#235048]"
+                  className="mt-5 inline-flex items-center gap-2 rounded-xl bg-[#FF5A00] px-5 py-2.5 text-xs font-bold text-white shadow-sm transition hover:bg-[#E94B00]"
                 >
                   <Plus className="h-4 w-4" />
                   Add Review
@@ -649,17 +649,17 @@ const AdminReviews = () => {
             <div className="grid gap-4 p-1 sm:grid-cols-2 xl:grid-cols-3">
               {filteredReviews.map((rev) => (
                 <article key={rev.id} className="rounded-2xl border border-[#e7e0d8] bg-[#fffdfa] p-4 shadow-sm">
-                  <div className="flex items-start justify-between gap-3"><div><p className="font-mono text-[10px] font-bold text-[#1a3c36]">{rev.review_id}</p><h3 className="mt-1 text-sm font-bold text-[#222]">{rev.product_name}</h3></div><span className="rounded-full bg-[#eef5f1] px-2 py-1 text-[10px] font-semibold text-[#2d7b5a]">{rev.status}</span></div>
-                  <div className="mt-4 flex items-center gap-2"><div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#d4a843] text-xs font-bold text-white">{(rev.reviewer_name?.[0] || "U").toUpperCase()}</div><div><p className="text-xs font-bold text-[#333]">{rev.reviewer_name}</p><div className="flex items-center">{[1, 2, 3, 4, 5].map((star) => <Star key={star} className={`h-3 w-3 ${star <= rev.rating ? "fill-amber-400 text-amber-400" : "text-gray-300"}`} />)}</div></div></div>
+                  <div className="flex items-start justify-between gap-3"><div><p className="font-mono text-[10px] font-bold text-[#FF5A00]">{rev.review_id}</p><h3 className="mt-1 text-sm font-bold text-[#222]">{rev.product_name}</h3></div><span className={`rounded-full px-2 py-1 text-[10px] font-semibold ${rev.status === "Published" ? "bg-[#eef5f1] text-[#2d7b5a]" : "bg-[#fff6e6] text-[#b87840]"}`}>{rev.status}</span></div>
+                  <div className="mt-4 flex items-center gap-2"><div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#FF5A00] text-xs font-bold text-white">{(rev.reviewer_name?.[0] || "U").toUpperCase()}</div><div><p className="text-xs font-bold text-[#333]">{rev.reviewer_name}</p><div className="flex items-center">{[1, 2, 3, 4, 5].map((star) => <Star key={star} className={`h-3 w-3 ${star <= rev.rating ? "fill-amber-400 text-amber-400" : "text-gray-300"}`} />)}</div></div></div>
                   <p className="mt-4 line-clamp-3 text-xs leading-5 text-[#555]">{rev.comment}</p>
-                  <div className="mt-4 flex items-center justify-end gap-2 border-t border-[#f0ebe6] pt-3"><button type="button" onClick={() => handleOpenEditModal(rev)} className="rounded-lg border border-[#e2d9cf] bg-white p-2 text-[#444]" title="Edit review"><Pencil className="h-3.5 w-3.5" /></button><button type="button" onClick={() => setViewingReview(rev)} className="rounded-lg border border-[#e2d9cf] bg-white p-2 text-[#444]" title="View details"><Eye className="h-3.5 w-3.5" /></button><button type="button" onClick={() => handleDeleteReview(rev.id, rev.review_id)} className="rounded-lg border border-[#f3d7d7] bg-[#fff8f8] p-2 text-[#d04d4d]" title="Delete review"><Trash2 className="h-3.5 w-3.5" /></button></div>
+                  <div className="mt-4 flex items-center justify-end gap-2 border-t border-[#f0ebe6] pt-3"><button type="button" onClick={() => handleOpenEditModal(rev)} className="rounded-lg border border-orange-200 bg-white p-2 text-[#FF5A00] transition hover:bg-orange-50" title="Edit review"><Pencil className="h-3.5 w-3.5" /></button><button type="button" onClick={() => setViewingReview(rev)} className="rounded-lg border border-orange-200 bg-white p-2 text-[#FF5A00] transition hover:bg-orange-50" title="View details"><Eye className="h-3.5 w-3.5" /></button><button type="button" onClick={() => handleDeleteReview(rev.id, rev.review_id)} className="rounded-lg border border-[#f3d7d7] bg-[#fff8f8] p-2 text-[#d04d4d]" title="Delete review"><Trash2 className="h-3.5 w-3.5" /></button></div>
                 </article>
               ))}
             </div>
           ) : (
             <div className="overflow-x-auto rounded-xl border border-[#e8e4df]">
               <table className="min-w-full border-separate border-spacing-0">
-                <thead className="bg-[#d4a843] text-white">
+                <thead className="bg-[#FF5A00] text-white">
                   <tr className="text-left text-xs font-bold capitalize tracking-wider">
                     <th className="rounded-tl-md px-4 py-4">S.No</th>
                     <th className="px-4 py-4">ID & Product</th>
@@ -712,7 +712,7 @@ const AdminReviews = () => {
                         {/* REVIEWER */}
                         <td className="px-4 py-4 align-middle">
                           <div className="flex items-center gap-2">
-                            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#d4a843] text-xs font-bold text-white shadow-xs">
+                            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#FF5A00] text-xs font-bold text-white shadow-xs">
                               {(rev.reviewer_name?.[0] || "U").toUpperCase()}
                             </div>
                             <div>
@@ -807,7 +807,7 @@ const AdminReviews = () => {
                             <button
                               type="button"
                               onClick={() => handleOpenEditModal(rev)}
-                              className="flex h-8 w-8 items-center justify-center rounded-lg border border-[#e2d9cf] bg-white text-[#444] transition hover:border-[#d0b997] hover:text-[#1a1a1a]"
+                              className="flex h-8 w-8 items-center justify-center rounded-lg border border-orange-200 bg-white text-[#FF5A00] transition hover:bg-orange-50"
                               title="Edit review"
                             >
                               <Pencil className="h-3.5 w-3.5" />
@@ -816,7 +816,7 @@ const AdminReviews = () => {
                             <button
                               type="button"
                               onClick={() => setViewingReview(rev)}
-                              className="flex h-8 w-8 items-center justify-center rounded-lg border border-[#e2d9cf] bg-white text-[#444] transition hover:border-[#d0b997] hover:text-[#1a1a1a]"
+                              className="flex h-8 w-8 items-center justify-center rounded-lg border border-orange-200 bg-white text-[#FF5A00] transition hover:bg-orange-50"
                               title="View details"
                             >
                               <Eye className="h-3.5 w-3.5" />
@@ -854,7 +854,7 @@ const AdminReviews = () => {
               </button>
 
               <div className="mb-5 flex items-center gap-3 border-b border-[#f0ebe3] pb-4">
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#e8f3ef] text-[#1a3c36]">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-orange-50 text-[#FF5A00]">
                   <MessageSquare className="h-5 w-5" />
                 </div>
                 <div>
@@ -895,7 +895,7 @@ const AdminReviews = () => {
                         const p = productsList.find((item) => getCatalogKey(item) === val);
                         setFormProduct(p || null);
                       }}
-                      className="h-10 w-full rounded-xl border border-[#e8e1d9] bg-white px-3 text-xs text-[#222] shadow-xs outline-none focus:border-[#d4a553]"
+                      className="h-10 w-full rounded-xl border border-[#e8e1d9] bg-white px-3 text-xs text-[#222] shadow-xs outline-none focus:border-[#FF5A00] focus:ring-1 focus:ring-[#FF5A00]"
                       required
                     >
                       {productsList.map((p) => (
@@ -918,7 +918,7 @@ const AdminReviews = () => {
                       value={formReviewerName}
                       onChange={(e) => setFormReviewerName(e.target.value)}
                       placeholder="e.g. Priya Sundaram"
-                      className="h-10 w-full rounded-xl border border-[#e8e1d9] bg-white px-3 text-xs text-[#222] shadow-xs outline-none focus:border-[#d4a553]"
+                      className="h-10 w-full rounded-xl border border-[#e8e1d9] bg-white px-3 text-xs text-[#222] shadow-xs outline-none focus:border-[#FF5A00] focus:ring-1 focus:ring-[#FF5A00]"
                       required
                     />
                   </div>
@@ -932,7 +932,7 @@ const AdminReviews = () => {
                       value={formReviewerEmail}
                       onChange={(e) => setFormReviewerEmail(e.target.value)}
                       placeholder="e.g. priya@example.com"
-                      className="h-10 w-full rounded-xl border border-[#e8e1d9] bg-white px-3 text-xs text-[#222] shadow-xs outline-none focus:border-[#d4a553]"
+                      className="h-10 w-full rounded-xl border border-[#e8e1d9] bg-white px-3 text-xs text-[#222] shadow-xs outline-none focus:border-[#FF5A00] focus:ring-1 focus:ring-[#FF5A00]"
                     />
                   </div>
                 </div>
@@ -967,7 +967,7 @@ const AdminReviews = () => {
                           </button>
                         );
                       })}
-                      <span className="ml-2 text-xs font-bold text-[#1a3c36]">
+                      <span className="ml-2 text-xs font-bold text-[#FF5A00]">
                         {formRating === 5
                           ? "5.0 - Excellent"
                           : formRating === 4
@@ -991,7 +991,7 @@ const AdminReviews = () => {
                       value={formComment}
                       onChange={(e) => setFormComment(e.target.value)}
                       placeholder="Write the customer's detailed review..."
-                      className="h-full min-h-[150px] w-full rounded-xl border border-[#e8e1d9] bg-white p-3 text-xs text-[#222] shadow-xs outline-none focus:border-[#d4a553]"
+                      className="h-full min-h-[150px] w-full rounded-xl border border-[#e8e1d9] bg-white p-3 text-xs text-[#222] shadow-xs outline-none focus:border-[#FF5A00] focus:ring-1 focus:ring-[#FF5A00]"
                       required
                     />
                   </div>
@@ -1025,9 +1025,9 @@ const AdminReviews = () => {
                   {!formPhoto ? (
                     <div
                       onClick={() => fileInputRef.current?.click()}
-                      className="flex cursor-pointer items-center justify-center gap-3 rounded-xl border-2 border-dashed border-[#d8d0c5] bg-[#faf8f6] p-4 text-center hover:border-[#d4a553] hover:bg-[#fffcf7]"
+                      className="flex cursor-pointer items-center justify-center gap-3 rounded-xl border-2 border-dashed border-orange-200 bg-[#faf8f6] p-4 text-center transition hover:border-[#FF5A00] hover:bg-orange-50"
                     >
-                      <ImagePlus className="h-6 w-6 text-[#1a3c36]" />
+                      <ImagePlus className="h-6 w-6 text-[#FF5A00]" />
                       <div className="text-left">
                         <p className="text-xs font-bold text-[#2d2d2d]">
                           Upload Customer Review Photo
@@ -1072,7 +1072,7 @@ const AdminReviews = () => {
                     <select
                       value={formStatus}
                       onChange={(e) => setFormStatus(e.target.value)}
-                      className="h-10 w-full rounded-xl border border-[#e8e1d9] bg-white px-3 text-xs text-[#222] shadow-xs outline-none focus:border-[#d4a553]"
+                      className="h-10 w-full rounded-xl border border-[#e8e1d9] bg-white px-3 text-xs text-[#222] shadow-xs outline-none focus:border-[#FF5A00] focus:ring-1 focus:ring-[#FF5A00]"
                     >
                       <option value="Published">Published (Active)</option>
                       <option value="Pending">Pending Review</option>
@@ -1093,7 +1093,7 @@ const AdminReviews = () => {
                   <button
                     type="submit"
                     disabled={submitting || isUploadingPhoto || Boolean(formPhoto && !formPhoto.url)}
-                    className="rounded-xl bg-[#1a3c36] px-6 py-2 text-xs font-bold text-white shadow-xs hover:bg-[#235048] disabled:opacity-60"
+                    className="rounded-xl bg-[#FF5A00] px-6 py-2 text-xs font-bold text-white shadow-xs transition hover:bg-[#E94B00] disabled:opacity-60"
                   >
                     {submitting
                       ? "Saving..."
@@ -1120,7 +1120,7 @@ const AdminReviews = () => {
               </button>
 
               <div className="flex items-center gap-3 border-b border-[#f0ebe3] pb-4">
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#e8f3ef] text-[#1a3c36]">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-orange-50 text-[#FF5A00]">
                   <MessageSquare className="h-5 w-5" />
                 </div>
                 <div>
@@ -1191,7 +1191,7 @@ const AdminReviews = () => {
                       <button
                         type="button"
                         onClick={() => copyToClipboard(viewingReview.created_by, "Created By User ID")}
-                        className="text-[#888] hover:text-[#1a3c36]"
+                        className="text-[#888] transition hover:text-[#FF5A00]"
                       >
                         <Copy className="h-3 w-3" />
                       </button>
@@ -1210,7 +1210,7 @@ const AdminReviews = () => {
                       <button
                         type="button"
                         onClick={() => copyToClipboard(viewingReview.updated_by, "Updated By User ID")}
-                        className="text-[#888] hover:text-[#1a3c36]"
+                        className="text-[#888] transition hover:text-[#FF5A00]"
                       >
                         <Copy className="h-3 w-3" />
                       </button>
@@ -1223,7 +1223,7 @@ const AdminReviews = () => {
                 <button
                   type="button"
                   onClick={() => setViewingReview(null)}
-                  className="rounded-xl bg-[#1a3c36] px-5 py-2 text-xs font-bold text-white hover:bg-[#235048]"
+                  className="rounded-xl bg-[#FF5A00] px-5 py-2 text-xs font-bold text-white transition hover:bg-[#E94B00]"
                 >
                   Close
                 </button>

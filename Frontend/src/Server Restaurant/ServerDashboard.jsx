@@ -180,42 +180,46 @@ export default function ServerDashboard() {
   return (
     <main className="min-h-screen bg-[#f8faf8] p-2 md:p-2 lg:p-2">
       <div className="mx-auto max-w-[1400px] space-y-6">
-        {/* Welcome Banner */}
-        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-[#1a3c36] via-[#214a42] to-[#16332e] p-6 text-white shadow-xl md:p-8">
-          <div className="relative z-10 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-            <div>
-              <div className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-xs font-semibold text-[#d4a843] backdrop-blur-md">
-                <Sparkles className="h-3.5 w-3.5" /> Server Station Dashboard
+        <section className="group relative isolate overflow-hidden rounded-2xl border border-slate-200/90 bg-white shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] transition-shadow duration-300 hover:shadow-[0_12px_24px_-6px_rgba(0,0,0,0.1)]">
+          <div className="pointer-events-none absolute -right-10 -top-16 h-56 w-56 rounded-full bg-orange-400/15 blur-3xl transition-transform duration-500 group-hover:scale-110" />
+          <div className="pointer-events-none absolute bottom-0 left-0 h-1 w-full bg-gradient-to-r from-orange-500 via-amber-400 to-emerald-400" />
+          <div className="relative z-10 p-5 md:p-7">
+            <div className="flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
+              <div>
+                <div className="inline-flex items-center gap-2 rounded-full border border-orange-100 bg-orange-50 px-3 py-1 text-xs font-bold text-orange-700">
+                  <Sparkles className="h-3.5 w-3.5 text-orange-500" /> Server Station Dashboard
+                </div>
+                <h1 className="mt-2 font-serif text-2xl font-bold tracking-tight text-slate-900 md:text-3xl">
+                  Welcome back, {userProfile?.username || "Server"}!
+                </h1>
+                <p className="mt-1 text-xs text-slate-500 md:text-sm">
+                  Manage your dining tables, monitor kitchen orders in real-time, and serve hot meals to guests.
+                </p>
               </div>
-              <h1 className="mt-2 font-serif text-2xl font-bold tracking-tight text-white md:text-3xl">
-                Welcome back, {userProfile?.username || "Server"}!
-              </h1>
-              <p className="mt-1 text-xs text-white/70 md:text-sm">
-                Manage your dining tables, monitor kitchen orders in real-time, and serve hot meals to guests.
-              </p>
-            </div>
 
-            <div className="flex flex-wrap items-center gap-3">
-              <button
-                type="button"
-                onClick={fetchDashboardData}
-                title="Refresh dashboard"
-                className="flex h-11 w-11 items-center justify-center rounded-xl bg-white/10 text-white backdrop-blur-md transition hover:bg-white/20"
-              >
-                <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
-              </button>
-              <Link
-                to="/server/foods"
-                className="inline-flex h-11 items-center gap-2 rounded-xl bg-[#d4a843] px-4 text-xs font-bold text-[#1a3c36] shadow-md transition hover:bg-[#e2b755]"
-              >
-                <Utensils className="h-4 w-4" /> Food Menu & Orders
-              </Link>
+              <div className="flex flex-wrap items-center gap-3">
+                <button
+                  type="button"
+                  onClick={fetchDashboardData}
+                  title="Refresh dashboard"
+                  className="flex h-11 w-11 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 shadow-sm transition hover:border-orange-200 hover:bg-orange-50 hover:text-orange-600"
+                >
+                  <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
+                </button>
+                <Link
+                  to="/server/foods"
+                  className="inline-flex h-11 items-center gap-2 rounded-xl bg-gradient-to-r from-orange-500 to-amber-400 px-4 text-xs font-bold text-white shadow-sm shadow-orange-500/20 transition hover:from-orange-600 hover:to-amber-500"
+                >
+                  <Utensils className="h-4 w-4" /> Food Menu & Orders
+                </Link>
+              </div>
             </div>
           </div>
-        </div>
 
-        {/* Server Attendance Banner */}
-        <AttendanceWidget variant="dashboard" />
+          <div className="relative z-10 border-t border-slate-100 bg-gradient-to-r from-slate-50/70 to-emerald-50/40">
+            <AttendanceWidget variant="dashboard" embedded />
+          </div>
+        </section>
 
         {/* READY TO SERVE ALERT BANNER */}
         {readyOrders.length > 0 && (
@@ -257,63 +261,70 @@ export default function ServerDashboard() {
               value: tables.length,
               hint: "Total station tables",
               icon: Table2,
-              bg: "bg-[#22c55e]",
+              tone: "bg-gradient-to-tr from-orange-500 to-amber-400 text-white shadow-orange-500/25",
+              accentColor: "#f97316",
+              glowColor: "#fb923c",
             },
             {
               title: "Available Tables",
               value: availableTables.length,
               hint: "Ready for guest seating",
               icon: CheckCircle2,
-              bg: "bg-[#3b82f6]",
+              tone: "bg-gradient-to-tr from-emerald-600 to-teal-400 text-white shadow-emerald-500/25",
+              accentColor: "#10b981",
+              glowColor: "#34d399",
             },
             {
               title: "Kitchen Cooking",
               value: preparingOrders.length,
               hint: "Orders currently in kitchen",
               icon: Flame,
-              bg: "bg-[#f59e0b]",
+              tone: "bg-gradient-to-tr from-blue-600 to-cyan-400 text-white shadow-blue-500/25",
+              accentColor: "#3b82f6",
+              glowColor: "#60a5fa",
             },
             {
               title: "Ready to Serve",
               value: readyOrders.length,
               hint: "Waiting at pickup counter",
               icon: Bell,
-              bg: readyOrders.length > 0 ? "bg-[#ec4899]" : "bg-[#8b5cf6]",
+              tone: "bg-gradient-to-tr from-pink-600 to-rose-400 text-white shadow-pink-500/25",
+              accentColor: "#ec4899",
+              glowColor: "#f472b6",
             },
-          ].map((stat, index) => {
+          ].map((stat) => {
             const Icon = stat.icon;
             return (
               <article
                 key={stat.title}
-                className={`relative min-w-0 overflow-hidden rounded-xl border border-transparent p-4 sm:p-5 shadow-[0_2px_10px_rgba(20,56,34,0.08)] flex flex-col justify-between min-h-[140px] ${stat.bg} text-white`}
+                className="group relative flex min-h-[140px] min-w-0 flex-col justify-between overflow-hidden rounded-2xl border border-slate-200/90 bg-white p-4 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] transition-all duration-300 hover:-translate-y-1 hover:border-slate-300 hover:shadow-[0_12px_24px_-6px_rgba(0,0,0,0.1)] sm:p-5"
               >
-                <div className="flex items-start gap-3 relative z-10">
-                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg shadow-sm bg-white/20">
-                    <Icon size={24} strokeWidth={2.2} className="text-white" />
+                <div
+                  className="pointer-events-none absolute -right-6 -top-6 h-28 w-28 rounded-full opacity-20 blur-2xl transition-all duration-500 group-hover:scale-150 group-hover:opacity-35"
+                  style={{ backgroundColor: stat.glowColor }}
+                />
+                <div className="relative z-10 flex items-start justify-between gap-3">
+                  <div className="min-w-0 flex-1">
+                    <h3 className="truncate text-[11px] font-bold uppercase tracking-wider text-slate-500">{stat.title}</h3>
+                    <div className="mt-2.5 truncate text-[23px] font-black tracking-tight text-slate-800 sm:text-[27px]">{stat.value}</div>
                   </div>
-                  <div className="flex-1 mt-0.5 min-w-0">
-                    <h3 className="text-[12px] font-semibold opacity-90 mb-1 truncate">{stat.title}</h3>
-                    <div className="text-[26px] font-extrabold leading-none tracking-tight">{stat.value}</div>
+                  <div className={`relative flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl shadow-sm transition-transform duration-300 group-hover:scale-110 ${stat.tone}`}>
+                    <Icon size={24} strokeWidth={2.3} />
                   </div>
                 </div>
-                <div className="flex items-center gap-2 mt-5 relative z-10">
-                  <span className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[11px] font-bold bg-white/25">
-                    Live
-                  </span>
-                  <span className="text-[11px] font-medium opacity-75 truncate">{stat.hint}</span>
+                <div className="relative z-10 mt-4 flex items-center justify-between border-t border-slate-100 pt-3 text-xs">
+                  <div className="flex min-w-0 items-center gap-1.5">
+                    <span className="inline-flex shrink-0 items-center rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-bold text-emerald-600 ring-1 ring-inset ring-emerald-500/20">
+                      Live
+                    </span>
+                    <span className="truncate font-medium text-slate-500">{stat.hint}</span>
+                  </div>
+                  <span className="h-2 w-2 shrink-0 rounded-full shadow-sm" style={{ backgroundColor: stat.accentColor }} />
                 </div>
-                <div className="absolute right-0 bottom-0 w-24 h-16 pointer-events-none opacity-50">
-                  <svg viewBox="0 0 100 50" preserveAspectRatio="none" className="w-full h-full">
-                    <defs>
-                      <linearGradient id={`server-grad-${index}`} x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor="#ffffff" stopOpacity="0.4" />
-                        <stop offset="100%" stopColor="#ffffff" stopOpacity="0.0" />
-                      </linearGradient>
-                    </defs>
-                    <path d="M0,50 L0,40 Q25,30 50,40 T100,20 L100,50 Z" fill={`url(#server-grad-${index})`} />
-                    <path d="M0,40 Q25,30 50,40 T100,20" fill="none" stroke="#ffffff" strokeWidth="2.5" />
-                  </svg>
-                </div>
+                <div
+                  className="absolute bottom-0 left-0 h-[3px] w-0 transition-all duration-300 group-hover:w-full"
+                  style={{ backgroundColor: stat.accentColor }}
+                />
               </article>
             );
           })}
@@ -418,19 +429,22 @@ export default function ServerDashboard() {
         </section>
 
         {/* Assigned Tables Section */}
-        <section className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm md:p-6">
-          <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between border-b border-gray-100 pb-4">
+        <section className="rounded-2xl border border-slate-200/90 bg-white p-5 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] md:p-6">
+          <div className="mb-5 flex flex-col gap-3 border-b border-slate-100 pb-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <h2 className="font-serif text-lg font-bold text-gray-900 flex items-center gap-2">
-                <Table2 className="h-5 w-5 text-[#1a3c36]" /> Assigned Station Tables
+              <h2 className="flex items-center gap-2 text-lg font-bold text-slate-900">
+                <span className="grid h-9 w-9 place-items-center rounded-xl bg-orange-50 text-orange-600">
+                  <Table2 className="h-5 w-5" />
+                </span>
+                Assigned Station Tables
               </h2>
-              <p className="text-xs text-gray-500">
+              <p className="mt-1 text-xs text-slate-500">
                 Click "Take Order" on any table to select items and send directly to the kitchen.
               </p>
             </div>
             <Link
               to="/server/tables"
-              className="text-xs font-semibold text-[#1a3c36] hover:underline flex items-center gap-1"
+              className="inline-flex items-center gap-1 self-start rounded-lg border border-orange-100 bg-orange-50 px-3 py-2 text-xs font-semibold text-orange-700 transition hover:border-orange-200 hover:bg-orange-100 sm:self-auto"
             >
               <span>See full station layout</span>
               <ArrowRight className="h-3.5 w-3.5" />
@@ -439,7 +453,7 @@ export default function ServerDashboard() {
 
           {loading ? (
             <div className="py-12 text-center text-sm text-gray-500">
-              <RefreshCw className="mx-auto h-6 w-6 animate-spin text-[#1a3c36] mb-2" />
+              <RefreshCw className="mx-auto mb-2 h-6 w-6 animate-spin text-orange-500" />
               Loading tables...
             </div>
           ) : tables.length > 0 ? (
@@ -453,35 +467,39 @@ export default function ServerDashboard() {
                 return (
                   <div
                     key={table.table_id || table.id}
-                    className={`flex flex-col justify-between rounded-xl border p-4 transition ${
+                    className={`group relative flex min-h-[172px] flex-col justify-between overflow-hidden rounded-xl border p-4 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md ${
                       tableOrder?.status === "Ready to Serve"
-                        ? "border-emerald-400 bg-emerald-50/30 ring-2 ring-emerald-500/20"
-                        : "border-gray-200 bg-[#fafbfa] hover:border-[#1a3c36]"
+                        ? "border-emerald-200 bg-gradient-to-br from-white to-emerald-50/70 hover:border-emerald-300"
+                        : "border-slate-200 bg-white hover:border-orange-200"
                     }`}
                   >
+                    <div className={`absolute inset-x-0 top-0 h-1 ${tableOrder?.status === "Ready to Serve" ? "bg-emerald-500" : isAvailable ? "bg-orange-400" : "bg-amber-400"}`} />
                     <div>
-                      <div className="flex items-center justify-between">
-                        <span className="font-serif text-base font-bold text-gray-900">
-                          Table {table.table_number}
-                        </span>
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex min-w-0 items-center gap-2">
+                          <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-orange-50 text-orange-600 transition group-hover:bg-orange-100">
+                            <Table2 className="h-5 w-5" />
+                          </span>
+                          <div className="min-w-0">
+                            <p className="truncate text-sm font-bold text-slate-900">Table {table.table_number}</p>
+                            <p className="mt-0.5 text-[11px] text-slate-500">{table.no_of_seats} Seats <span aria-hidden="true">·</span> Dining</p>
+                          </div>
+                        </div>
                         <span
-                          className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${
+                          className={`shrink-0 rounded-full border px-2.5 py-1 text-[10px] font-bold ${
                             isAvailable
-                              ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
-                              : "bg-amber-50 text-amber-700 border border-amber-200"
+                              ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                              : "border-amber-200 bg-amber-50 text-amber-700"
                           }`}
                         >
                           {table.status || "Available"}
                         </span>
                       </div>
-                      <p className="mt-1 text-xs text-gray-500">
-                        {table.no_of_seats} Seats • Dining
-                      </p>
 
                       {/* Live order status pill if active */}
                       {tableOrder && (
-                        <div className="mt-2.5">
-                          <span className={`inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[10px] font-bold border ${STATUS_BADGES[tableOrder.status]?.bg || ""}`}>
+                        <div className="mt-3 border-t border-slate-100 pt-3">
+                          <span className={`inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-[10px] font-bold ${STATUS_BADGES[tableOrder.status]?.bg || ""}`}>
                             {tableOrder.status === "Ready to Serve" ? (
                               <Bell className="h-3 w-3 animate-bounce text-emerald-700" />
                             ) : tableOrder.status === "Preparing" ? (
@@ -495,13 +513,13 @@ export default function ServerDashboard() {
                       )}
                     </div>
 
-                    <div className="mt-4 pt-2 border-t border-gray-100 flex items-center gap-2">
+                    <div className="mt-4 flex items-center gap-2 border-t border-slate-100 pt-3">
                       <button
                         type="button"
                         onClick={() => startOrderForTable(table)}
-                        className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-lg bg-[#1a3c36] px-3 py-1.5 text-xs font-semibold text-white shadow-sm transition hover:bg-[#25524a]"
+                        className="inline-flex min-h-9 flex-1 items-center justify-center gap-1.5 rounded-lg bg-gradient-to-r from-orange-500 to-amber-400 px-3 py-2 text-xs font-bold text-white shadow-sm shadow-orange-500/15 transition hover:from-orange-600 hover:to-amber-500"
                       >
-                        <Utensils className="h-3.5 w-3.5 text-[#d4a843]" />
+                        <Utensils className="h-3.5 w-3.5" />
                         <span>{tableOrder ? "Add Food" : "Take Order"}</span>
                       </button>
 
@@ -510,7 +528,7 @@ export default function ServerDashboard() {
                           type="button"
                           onClick={() => handleMarkServed(tableOrder.order_id)}
                           title="Mark as Served"
-                          className="p-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm text-xs font-bold"
+                          className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-emerald-600 text-white shadow-sm transition hover:bg-emerald-700"
                         >
                           <Check className="h-3.5 w-3.5" />
                         </button>

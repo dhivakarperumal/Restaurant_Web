@@ -64,7 +64,7 @@ const SearchableSelect = ({ label, value, options, onChange, placeholder, error,
         }}
         onBlur={() => setTimeout(() => setOpen(false), 120)}
         placeholder={placeholder}
-        className={`h-10 w-full rounded-md border bg-white px-3 text-sm outline-none focus:border-emerald-700 focus:ring-1 focus:ring-emerald-700 disabled:bg-gray-100 ${error ? 'border-red-500' : 'border-gray-300'}`}
+        className={`h-10 w-full rounded-md border bg-white px-3 text-sm outline-none focus:border-[#FF5A00] focus:ring-1 focus:ring-[#FF5A00] disabled:bg-gray-100 ${error ? 'border-red-500' : 'border-gray-300'}`}
       />
       {open && !disabled && (
         <ul role="listbox" className="absolute z-30 mt-1 max-h-52 w-full overflow-y-auto rounded-md border border-gray-200 bg-white py-1 shadow-lg">
@@ -440,7 +440,7 @@ const AddFood = ({ drawer = false, onClose, onSaved }) => {
         <div className="space-y-4">
           <Section number="01" title="Basic details" description="Name and classify this menu item.">
             <label className="block text-sm font-medium text-gray-700">Food name
-              <input value={form.foodName} onChange={(event) => setValue('foodName', event.target.value)} maxLength={180} placeholder="e.g. Chicken Biryani" className={`mt-1.5 h-10 w-full rounded-md border px-3 outline-none focus:border-emerald-700 ${errors.foodName ? 'border-red-500' : 'border-gray-300'}`} />
+              <input value={form.foodName} onChange={(event) => setValue('foodName', event.target.value)} maxLength={180} placeholder="e.g. Chicken Biryani" className={`mt-1.5 h-10 w-full rounded-md border px-3 outline-none focus:border-[#FF5A00] ${errors.foodName ? 'border-red-500' : 'border-gray-300'}`} />
               {errors.foodName && <span className="mt-1 block text-xs text-red-700">{errors.foodName}</span>}
             </label>
             <label className="block text-sm font-medium text-gray-700">Food type
@@ -450,7 +450,7 @@ const AddFood = ({ drawer = false, onClose, onSaved }) => {
             <SearchableSelect label="Category" value={form.categoryId} options={categoryOptions} placeholder="Search categories" onChange={(value) => { setValue('categoryId', value); setValue('subcategoryName', ''); }} error={errors.categoryId} />
             <SearchableSelect label="Subcategory" value={form.subcategoryName} options={subcategoryOptions.map((value) => ({ value, label: value }))} placeholder={form.categoryId ? 'Search subcategories' : 'Choose a category first'} disabled={!form.categoryId} onChange={(value) => setValue('subcategoryName', value)} error={errors.subcategoryName} />
             <label className="block text-sm font-medium text-gray-700">Description
-              <textarea value={form.description} onChange={(event) => setValue('description', event.target.value)} rows={3} maxLength={2000} placeholder="Describe ingredients, flavor, or serving details" className="mt-1.5 w-full resize-y rounded-md border border-gray-300 px-3 py-2 outline-none focus:border-emerald-700" />
+              <textarea value={form.description} onChange={(event) => setValue('description', event.target.value)} rows={3} maxLength={2000} placeholder="Describe ingredients, flavor, or serving details" className="mt-1.5 w-full resize-y rounded-md border border-gray-300 px-3 py-2 outline-none focus:border-[#FF5A00]" />
             </label>
             <div className="sm:col-span-2">
               <div className="mb-2 flex flex-wrap items-center justify-between gap-2"><div><h3 className="text-sm font-medium text-gray-800">Food images</h3><p className="mt-0.5 text-xs text-gray-500">Upload multiple JPG, PNG, or WEBP images, up to 5 MB each. Drag to reorder.</p></div><label className="inline-flex h-9 cursor-pointer items-center gap-2 rounded-md border border-gray-300 bg-white px-3 text-sm font-medium text-gray-700 hover:bg-gray-50"><ImagePlus className="h-4 w-4" /> Add images<input type="file" accept="image/jpeg,image/png,image/webp" multiple className="sr-only" onChange={(event) => addImageFiles(event.target.files)} /></label></div>
@@ -469,11 +469,11 @@ const AddFood = ({ drawer = false, onClose, onSaved }) => {
 
           <Section number="02" title="Pricing" description="Final price updates automatically and is recalculated by the server." columns={3}>
             <label className="block text-sm font-medium text-gray-700">MRP (₹)
-              <input type="number" min="0" step="0.01" value={form.mrp} onChange={(event) => setValue('mrp', event.target.value)} className={`mt-1.5 h-10 w-full rounded-md border px-3 outline-none focus:border-emerald-700 ${errors.mrp ? 'border-red-500' : 'border-gray-300'}`} />
+              <input type="number" min="0" step="0.01" value={form.mrp} onChange={(event) => setValue('mrp', event.target.value)} className={`mt-1.5 h-10 w-full rounded-md border px-3 outline-none focus:border-[#FF5A00] ${errors.mrp ? 'border-red-500' : 'border-gray-300'}`} />
               {errors.mrp && <span className="mt-1 block text-xs text-red-700">{errors.mrp}</span>}
             </label>
             <label className="block text-sm font-medium text-gray-700">Discount (%)
-              <input type="number" min="0" max="100" step="0.01" value={form.discount} onChange={(event) => setValue('discount', event.target.value)} className={`mt-1.5 h-10 w-full rounded-md border px-3 outline-none focus:border-emerald-700 ${errors.discount ? 'border-red-500' : 'border-gray-300'}`} />
+              <input type="number" min="0" max="100" step="0.01" value={form.discount} onChange={(event) => setValue('discount', event.target.value)} className={`mt-1.5 h-10 w-full rounded-md border px-3 outline-none focus:border-[#FF5A00] ${errors.discount ? 'border-red-500' : 'border-gray-300'}`} />
               {errors.discount && <span className="mt-1 block text-xs text-red-700">{errors.discount}</span>}
             </label>
             <label className="block text-sm font-medium text-gray-700">Final price (₹)
@@ -483,20 +483,20 @@ const AddFood = ({ drawer = false, onClose, onSaved }) => {
 
           <Section number="03" title="Food details" columns={3}>
             <label className="block text-sm font-medium text-gray-700">Preparation time (minutes)
-              <input type="number" min="0" step="1" value={form.preparationTime} onChange={(event) => setValue('preparationTime', event.target.value)} className={`mt-1.5 h-10 w-full rounded-md border px-3 outline-none focus:border-emerald-700 ${errors.preparationTime ? 'border-red-500' : 'border-gray-300'}`} />
+              <input type="number" min="0" step="1" value={form.preparationTime} onChange={(event) => setValue('preparationTime', event.target.value)} className={`mt-1.5 h-10 w-full rounded-md border px-3 outline-none focus:border-[#FF5A00] ${errors.preparationTime ? 'border-red-500' : 'border-gray-300'}`} />
               {errors.preparationTime && <span className="mt-1 block text-xs text-red-700">{errors.preparationTime}</span>}
             </label>
             <label className="block text-sm font-medium text-gray-700">Food rating (0–5)
-              <input type="number" min="0" max="5" step="0.1" value={form.rating} onChange={(event) => setValue('rating', event.target.value)} className="mt-1.5 h-10 w-full rounded-md border border-gray-300 px-3 outline-none focus:border-emerald-700" />
+              <input type="number" min="0" max="5" step="0.1" value={form.rating} onChange={(event) => setValue('rating', event.target.value)} className="mt-1.5 h-10 w-full rounded-md border border-gray-300 px-3 outline-none focus:border-[#FF5A00]" />
             </label>
             <label className="block text-sm font-medium text-gray-700">Stock quantity (units)
-              <input type="number" min="0" step="1" value={form.stockQuantity} onChange={(event) => setValue('stockQuantity', event.target.value)} className="mt-1.5 h-10 w-full rounded-md border border-gray-300 px-3 outline-none focus:border-emerald-700" />
+              <input type="number" min="0" step="1" value={form.stockQuantity} onChange={(event) => setValue('stockQuantity', event.target.value)} className="mt-1.5 h-10 w-full rounded-md border border-gray-300 px-3 outline-none focus:border-[#FF5A00]" />
             </label>
             <label className="block text-sm font-medium text-gray-700">Is spicy?
               <select value={form.isSpicy ? 'Yes' : 'No'} onChange={(event) => setValue('isSpicy', event.target.value === 'Yes')} className="mt-1.5 h-10 w-full rounded-md border border-gray-300 bg-white px-3"><option>No</option><option>Yes</option></select>
             </label>
             <label className="block text-sm font-medium text-gray-700">Serving size
-              <input value={form.servingSize} onChange={(event) => setValue('servingSize', event.target.value)} placeholder="e.g. Serves 1" className="mt-1.5 h-10 w-full rounded-md border border-gray-300 px-3 outline-none focus:border-emerald-700" />
+              <input value={form.servingSize} onChange={(event) => setValue('servingSize', event.target.value)} placeholder="e.g. Serves 1" className="mt-1.5 h-10 w-full rounded-md border border-gray-300 px-3 outline-none focus:border-[#FF5A00]" />
             </label>
             <label className="block text-sm font-medium text-gray-700">Portion size
               <select value={form.portionSize} onChange={(event) => setValue('portionSize', event.target.value)} className="mt-1.5 h-10 w-full rounded-md border border-gray-300 bg-white px-3"><option>Half</option><option>Full</option><option>Your Choice</option></select>
@@ -516,7 +516,7 @@ const AddFood = ({ drawer = false, onClose, onSaved }) => {
               {errors.mealType && <span className="mt-1 block text-xs text-red-700">{errors.mealType}</span>}
             </label>
             <label className="block text-sm font-medium text-gray-700">Available time
-              <input type="text" value={form.availableTime} onChange={(event) => setValue('availableTime', event.target.value)} maxLength={100} placeholder="e.g. 10:00 AM - 1:00 PM" className="mt-1.5 h-10 w-full rounded-md border border-gray-300 px-3 outline-none focus:border-emerald-700" />
+              <input type="text" value={form.availableTime} onChange={(event) => setValue('availableTime', event.target.value)} maxLength={100} placeholder="e.g. 10:00 AM - 1:00 PM" className="mt-1.5 h-10 w-full rounded-md border border-gray-300 px-3 outline-none focus:border-[#FF5A00]" />
               <span className="mt-1 block text-xs font-normal text-gray-500">Default: 10:00 AM - 1:00 PM</span>
             </label>
             <Toggle label="Available" checked={form.isAvailable} onChange={(value) => setValue('isAvailable', value)} />
@@ -530,7 +530,7 @@ const AddFood = ({ drawer = false, onClose, onSaved }) => {
           </Section>
 
           <Section number="05" title="Add-ons" description="Optional extras customers can add to this food.">
-            <div className="flex items-center justify-between sm:col-span-2"><p className="text-sm text-gray-600">{form.addons.length} add-on{form.addons.length === 1 ? '' : 's'}</p><button type="button" onClick={addAddon} className="inline-flex h-9 items-center gap-1.5 rounded-md border border-gray-300 px-3 text-sm font-medium text-gray-700 hover:bg-gray-50"><Plus className="h-4 w-4" /> Add add-on</button></div>
+            <div className="flex items-center justify-between sm:col-span-2"><p className="text-sm text-gray-600">{form.addons.length} add-on{form.addons.length === 1 ? '' : 's'}</p><button type="button" onClick={addAddon} className="inline-flex h-9 items-center gap-1.5 rounded-md border border-orange-200 px-3 text-sm font-medium text-[#FF5A00] transition hover:bg-orange-50"><Plus className="h-4 w-4" /> Add add-on</button></div>
             {form.addons.map((addon, index) => (
               <div key={addon.key} className="grid gap-3 rounded-md border border-gray-200 bg-gray-50 p-3 sm:col-span-2 sm:grid-cols-[1fr_150px_150px_auto] sm:items-end">
                 <label className="text-sm font-medium text-gray-700">Add-on name<input value={addon.name} onChange={(event) => updateAddon(addon.key, 'name', event.target.value)} placeholder="e.g. Extra cheese" className="mt-1.5 h-10 w-full rounded-md border border-gray-300 bg-white px-3" />{errors[`addon-${index}`] && <span className="mt-1 block text-xs text-red-700">{errors[`addon-${index}`]}</span>}</label>
@@ -542,7 +542,7 @@ const AddFood = ({ drawer = false, onClose, onSaved }) => {
           </Section>
 
           <Section number="06" title="Customizations" description="Add customer choices, such as spice level or side dishes.">
-            <div className="flex items-center justify-between sm:col-span-2"><p className="text-sm text-gray-600">{form.customizations.length} group{form.customizations.length === 1 ? '' : 's'}</p><button type="button" onClick={addCustomization} className="inline-flex h-9 items-center gap-1.5 rounded-md border border-gray-300 px-3 text-sm font-medium text-gray-700 hover:bg-gray-50"><Plus className="h-4 w-4" /> Add group</button></div>
+            <div className="flex items-center justify-between sm:col-span-2"><p className="text-sm text-gray-600">{form.customizations.length} group{form.customizations.length === 1 ? '' : 's'}</p><button type="button" onClick={addCustomization} className="inline-flex h-9 items-center gap-1.5 rounded-md border border-orange-200 px-3 text-sm font-medium text-[#FF5A00] transition hover:bg-orange-50"><Plus className="h-4 w-4" /> Add group</button></div>
             {form.customizations.map((group, groupIndex) => (
               <fieldset key={group.key} className="space-y-3 rounded-md border border-gray-200 bg-gray-50 p-3 sm:col-span-2">
                 <div className="grid gap-3 sm:grid-cols-[1fr_170px_auto_auto] sm:items-end">
@@ -552,7 +552,7 @@ const AddFood = ({ drawer = false, onClose, onSaved }) => {
                   <button type="button" onClick={() => removeCustomization(group.key)} className="mb-0.5 flex h-10 w-10 items-center justify-center rounded-md border border-red-200 bg-white text-red-700 hover:bg-red-50" aria-label="Remove customization group"><Trash2 className="h-4 w-4" /></button>
                 </div>
                 <div className="space-y-2 border-t border-gray-200 pt-3">
-                  <div className="flex items-center justify-between"><h4 className="text-xs font-semibold uppercase tracking-wide text-gray-600">Options</h4><button type="button" onClick={() => addCustomizationOption(group.key)} className="inline-flex h-8 items-center gap-1 rounded-md px-2 text-xs font-medium text-emerald-800 hover:bg-emerald-50"><Plus className="h-3.5 w-3.5" /> Add option</button></div>
+                  <div className="flex items-center justify-between"><h4 className="text-xs font-semibold uppercase tracking-wide text-gray-600">Options</h4><button type="button" onClick={() => addCustomizationOption(group.key)} className="inline-flex h-8 items-center gap-1 rounded-md px-2 text-xs font-medium text-[#FF5A00] transition hover:bg-orange-50"><Plus className="h-3.5 w-3.5" /> Add option</button></div>
                   {group.options.map((option, optionIndex) => (
                     <div key={option.key} className="grid gap-2 sm:grid-cols-[1fr_150px_auto]">
                       <label className="text-xs font-medium text-gray-600">Option name<input value={option.name} onChange={(event) => updateCustomizationOption(group.key, option.key, 'name', event.target.value)} placeholder="e.g. Mild" className="mt-1 h-9 w-full rounded-md border border-gray-300 bg-white px-3 text-sm" />{errors[`option-${groupIndex}-${optionIndex}`] && <span className="mt-1 block text-xs text-red-700">{errors[`option-${groupIndex}-${optionIndex}`]}</span>}</label>
@@ -571,7 +571,7 @@ const AddFood = ({ drawer = false, onClose, onSaved }) => {
         <div className={`mx-auto flex flex-wrap justify-end gap-2 ${drawer ? '' : 'max-w-5xl'}`}>
           <button type="button" onClick={closeForm} className="inline-flex h-10 items-center gap-2 rounded-md border border-gray-300 px-4 text-sm font-medium text-gray-700 hover:bg-gray-50"><ArrowLeft className="h-4 w-4" /> Cancel</button>
           <button type="button" onClick={handleReset} disabled={saving || uploading} className="h-10 rounded-md border border-gray-300 px-4 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50">Reset</button>
-          <button type="submit" disabled={saving || uploading || loading} className="inline-flex h-10 items-center gap-2 rounded-md bg-emerald-800 px-4 text-sm font-semibold text-white hover:bg-emerald-900 disabled:opacity-50"><Save className="h-4 w-4" />{saving ? 'Saving…' : 'Save Food'}</button>
+          <button type="submit" disabled={saving || uploading || loading} className="inline-flex h-10 items-center gap-2 rounded-md bg-[#FF5A00] px-4 text-sm font-semibold text-white transition hover:bg-[#E94B00] disabled:opacity-50"><Save className="h-4 w-4" />{saving ? 'Saving…' : 'Save Food'}</button>
         </div>
       </div>
     </form>

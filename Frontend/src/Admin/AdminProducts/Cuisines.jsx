@@ -30,7 +30,7 @@ const Cuisines = () => {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('All statuses');
   const [sortBy, setSortBy] = useState('latest');
-  const [viewMode, setViewMode] = useState('table');
+  const [viewMode, setViewMode] = useState('card');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [modalOpen, setModalOpen] = useState(false);
@@ -184,7 +184,7 @@ const Cuisines = () => {
   };
 
   return (
-    <div className="min-h-screen  p-4 md:p-2">
+    <div className="min-h-screen bg-slate-50/60 p-4 md:p-5">
       <div className="mx-auto max-w-[1500px]">
         
 
@@ -192,73 +192,71 @@ const Cuisines = () => {
         {(() => {
           const inactiveCount = cuisines.length - activeCount;
           const statCards = [
-            { title: 'Total Cuisines', value: String(cuisines.length), inc: '18.6%', icon: <ChefHat />, bg: 'bg-[#22c55e]' },
-            { title: 'Active Cuisines', value: String(activeCount), inc: '12.4%', icon: <Utensils />, bg: 'bg-[#3b82f6]' },
-            { title: 'Featured Cuisines', value: String(featuredCount), inc: '10.7%', icon: <Star />, bg: 'bg-[#f59e0b]' },
-            { title: 'Inactive Cuisines', value: String(inactiveCount), inc: '—', icon: <TrendingUp />, bg: 'bg-[#8b5cf6]' },
+            { title: 'Total Cuisines', value: String(cuisines.length), inc: '18.6%', icon: ChefHat, tone: 'bg-emerald-500 text-white shadow-emerald-500/30', accent: '#10b981' },
+            { title: 'Active Cuisines', value: String(activeCount), inc: '12.4%', icon: Utensils, tone: 'bg-blue-600 text-white shadow-blue-500/30', accent: '#3b82f6' },
+            { title: 'Featured Cuisines', value: String(featuredCount), inc: '10.7%', icon: Star, tone: 'bg-amber-500 text-white shadow-amber-500/30', accent: '#f59e0b' },
+            { title: 'Inactive Cuisines', value: String(inactiveCount), inc: '—', icon: TrendingUp, tone: 'bg-purple-600 text-white shadow-purple-500/30', accent: '#8b5cf6' },
           ];
           return (
             <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-              {statCards.map((stat, index) => (
-                <article
-                  key={index}
-                  className={`relative min-w-0 overflow-hidden rounded-xl border border-transparent p-4 sm:p-5 shadow-[0_2px_10px_rgba(20,56,34,0.04)] flex flex-col justify-between min-h-[140px] ${stat.bg} text-white`}
-                >
-                  <div className="flex items-start gap-3 relative z-10">
-                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg shadow-sm bg-white/20">
-                      {React.cloneElement(stat.icon, { size: 24, strokeWidth: 2.2, className: 'text-white' })}
+              {statCards.map((stat, index) => {
+                const Icon = stat.icon;
+                return (
+                  <article
+                    key={index}
+                    className="group relative flex flex-col justify-between overflow-hidden rounded-2xl border border-slate-200/90 bg-white p-5 shadow-xs transition-all duration-300 hover:-translate-y-1 hover:border-slate-300 hover:shadow-lg"
+                  >
+                    <div className="flex items-start justify-between gap-3 relative z-10">
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-xs font-semibold text-slate-500 tracking-wider uppercase">{stat.title}</p>
+                        <div className="mt-2 text-2xl font-black tracking-tight text-slate-800 sm:text-3xl">{stat.value}</div>
+                      </div>
+                      <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl shadow-md transition-transform duration-300 group-hover:scale-110 ${stat.tone}`}>
+                        <Icon size={24} strokeWidth={2.3} />
+                      </div>
                     </div>
-                    <div className="flex-1 mt-0.5 min-w-0">
-                      <h3 className="text-[12px] font-semibold opacity-90 mb-1 truncate">{stat.title}</h3>
-                      <div className="text-[22px] sm:text-[25px] font-extrabold leading-none tracking-tight truncate">{stat.value}</div>
+                    <div className="mt-4 flex items-center justify-between border-t border-slate-100 pt-3 relative z-10">
+                      <div className="flex items-center gap-1.5 min-w-0">
+                        {stat.inc !== '—' && (
+                          <span className="inline-flex shrink-0 items-center rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-bold text-emerald-600 ring-1 ring-inset ring-emerald-500/20">
+                            ↑ {stat.inc}
+                          </span>
+                        )}
+                        <span className="truncate text-xs font-medium text-slate-400">from last month</span>
+                      </div>
+                      <span className="h-2 w-2 rounded-full shrink-0" style={{ backgroundColor: stat.accent }} />
                     </div>
-                  </div>
-                  <div className="flex items-center gap-2 mt-5 relative z-10">
-                    <span className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[11px] font-bold bg-white/25">
-                      {stat.inc !== '—' ? `↑ ${stat.inc}` : stat.inc}
-                    </span>
-                    <span className="text-[11px] font-medium opacity-75 truncate">from last month</span>
-                  </div>
-                  <div className="absolute right-0 bottom-0 w-24 h-16 pointer-events-none opacity-50">
-                    <svg viewBox="0 0 100 50" preserveAspectRatio="none" className="w-full h-full">
-                      <defs>
-                        <linearGradient id={`cuisgrad-${index}`} x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="0%" stopColor="#ffffff" stopOpacity="0.4" />
-                          <stop offset="100%" stopColor="#ffffff" stopOpacity="0.0" />
-                        </linearGradient>
-                      </defs>
-                      <path d="M0,50 L0,40 Q25,30 50,40 T100,20 L100,50 Z" fill={`url(#cuisgrad-${index})`} />
-                      <path d="M0,40 Q25,30 50,40 T100,20" fill="none" stroke="#ffffff" strokeWidth="2.5" />
-                    </svg>
-                  </div>
-                </article>
-              ))}
+                    {/* Hover accent bar */}
+                    <div className="absolute bottom-0 left-0 h-[3px] w-0 transition-all duration-300 group-hover:w-full" style={{ backgroundColor: stat.accent }} />
+                  </article>
+                );
+              })}
             </div>
           );
         })()}
 
-        <section className="overflow-hidden rounded-lg border border-gray-200 bg-white">
+        <section className="overflow-hidden rounded-2xl border border-slate-200/90 bg-white shadow-xs">
           <div className="flex flex-col gap-3 border-b border-gray-200 p-3 lg:flex-row lg:items-center lg:justify-between">
             <div className="relative w-full lg:max-w-md lg:flex-1">
               <Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-              <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search cuisines..." className="h-[46px] w-full rounded-xl border border-gray-300 bg-gray-50 pl-11 pr-3 text-sm outline-none focus:border-emerald-700" />
+              <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search cuisines..." className="h-[46px] w-full rounded-xl border border-gray-300 bg-gray-50 pl-11 pr-3 text-sm outline-none focus:border-[#FF5A00]" />
             </div>
             <div className="flex flex-wrap items-center gap-2 lg:justify-end">
               <span className="mr-1 text-xs text-gray-500">{visibleCuisines.length} of {cuisines.length}</span>
-              <select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)} aria-label="Filter cuisines by status" className="h-[46px] rounded-xl border border-gray-300 bg-white px-3 text-sm text-gray-700 outline-none focus:border-emerald-700">
+              <select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)} aria-label="Filter cuisines by status" className="h-[46px] rounded-xl border border-gray-300 bg-white px-3 text-sm text-gray-700 outline-none focus:border-[#FF5A00]">
                 <option>All statuses</option>
                 <option>Active</option>
                 <option>Inactive</option>
               </select>
-              <select value={sortBy} onChange={(event) => setSortBy(event.target.value)} aria-label="Sort cuisines" className="h-[46px] rounded-xl border border-gray-300 bg-white px-3 text-sm text-gray-700 outline-none focus:border-emerald-700">
+              <select value={sortBy} onChange={(event) => setSortBy(event.target.value)} aria-label="Sort cuisines" className="h-[46px] rounded-xl border border-gray-300 bg-white px-3 text-sm text-gray-700 outline-none focus:border-[#FF5A00]">
                 <option value="latest">Sort by: Latest</option>
                 <option value="name">Name: A to Z</option>
               </select>
               <div className="flex h-[46px] overflow-hidden rounded-xl border border-gray-300">
-                <button type="button" onClick={() => setViewMode('table')} aria-label="Table view" aria-pressed={viewMode === 'table'} className={`flex w-11 items-center justify-center border-r border-gray-300 ${viewMode === 'table' ? 'bg-[#1a3c36] text-white' : 'text-gray-600 hover:bg-gray-50'}`}><Table2 className="h-4 w-4" /></button>
-                <button type="button" onClick={() => setViewMode('card')} aria-label="Card view" aria-pressed={viewMode === 'card'} className={`flex w-11 items-center justify-center ${viewMode === 'card' ? 'bg-[#1a3c36] text-white' : 'text-gray-600 hover:bg-gray-50'}`}><LayoutGrid className="h-4 w-4" /></button>
+                <button type="button" onClick={() => setViewMode('table')} aria-label="Table view" aria-pressed={viewMode === 'table'} className={`flex w-11 items-center justify-center border-r border-gray-300 transition-colors ${viewMode === 'table' ? 'bg-[#FF5A00] text-white' : 'text-gray-600 hover:bg-orange-50 hover:text-[#FF5A00]'}`}><Table2 className="h-4 w-4" /></button>
+                <button type="button" onClick={() => setViewMode('card')} aria-label="Card view" aria-pressed={viewMode === 'card'} className={`flex w-11 items-center justify-center transition-colors ${viewMode === 'card' ? 'bg-[#FF5A00] text-white' : 'text-gray-600 hover:bg-orange-50 hover:text-[#FF5A00]'}`}><LayoutGrid className="h-4 w-4" /></button>
               </div>
-              <button type="button" onClick={openCreate} className="inline-flex h-[46px] items-center gap-2 rounded-xl bg-[#1a3c36] px-4 text-sm font-semibold text-white transition hover:bg-[#214a42]">
+              <button type="button" onClick={openCreate} className="inline-flex h-[46px] items-center gap-2 rounded-xl bg-[#FF5A00] px-4 text-sm font-semibold text-white transition hover:bg-[#E94B00]">
                 <Plus className="h-4 w-4" /> Add New Cuisine
               </button>
             </div>
@@ -269,18 +267,18 @@ const Cuisines = () => {
               <span className="mb-3 flex h-12 w-12 items-center justify-center rounded-md bg-emerald-50 text-emerald-800"><Utensils className="h-5 w-5" /></span>
               <p className="font-medium text-gray-900">{search || statusFilter !== 'All statuses' ? 'No matching cuisines' : 'No cuisines yet'}</p>
               <p className="mt-1 max-w-sm text-sm text-gray-500">{search || statusFilter !== 'All statuses' ? 'Try another search or status filter.' : 'Add your first cuisine to start organizing menu items.'}</p>
-              {!search && statusFilter === 'All statuses' && <button type="button" onClick={openCreate} className="mt-4 inline-flex h-9 items-center gap-2 rounded-md border border-gray-300 px-3 text-sm font-medium text-gray-700 hover:bg-gray-50"><Plus className="h-4 w-4" /> Add cuisine</button>}
+              {!search && statusFilter === 'All statuses' && <button type="button" onClick={openCreate} className="mt-4 inline-flex h-9 items-center gap-2 rounded-md bg-[#FF5A00] px-3 text-sm font-medium text-white transition hover:bg-[#E94B00]"><Plus className="h-4 w-4" /> Add cuisine</button>}
             </div>
           ) : viewMode === 'card' ? (
             <div className="grid gap-4 p-4 sm:grid-cols-2 xl:grid-cols-4">
               {visibleCuisines.map((cuisine) => (
-                <article key={cuisine.cuisine_id} className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm transition hover:shadow-md">
+                <article key={cuisine.cuisine_id} className="rounded-xl border border-[#e7e0d8] bg-gray-100 p-4 transition">
                   <div className="mb-3 flex items-start justify-between gap-3">
                     {cuisine.image
                       ? <img src={imageUrl(cuisine.image)} alt="" className="h-12 w-12 rounded-lg object-cover" />
                       : <span className="flex h-12 w-12 items-center justify-center rounded-lg bg-emerald-50 text-emerald-800"><Utensils className="h-5 w-5" /></span>}
                     <div className="flex gap-2">
-                      <button type="button" onClick={() => openEdit(cuisine.cuisine_id)} className="rounded-md border border-gray-300 p-2 hover:bg-gray-50" aria-label={`Edit ${cuisine.cuisine_name}`}><Pencil className="h-4 w-4" /></button>
+                      <button type="button" onClick={() => openEdit(cuisine.cuisine_id)} className="rounded-md border border-orange-200 p-2 text-[#FF5A00] transition hover:bg-orange-50" aria-label={`Edit ${cuisine.cuisine_name}`}><Pencil className="h-4 w-4" /></button>
                       <button type="button" onClick={() => handleDelete(cuisine.cuisine_id)} className="rounded-md border border-red-200 p-2 text-red-700 hover:bg-red-50" aria-label={`Delete ${cuisine.cuisine_name}`}><Trash2 className="h-4 w-4" /></button>
                     </div>
                   </div>
@@ -297,7 +295,7 @@ const Cuisines = () => {
           ) : (
             <div className="overflow-x-auto rounded-xl border border-gray-200">
               <table className="w-full min-w-[980px] text-left text-sm">
-                <thead className="border-b border-[#c39732] bg-[#d4a843] text-xs uppercase text-white">
+                <thead className="border-b border-[#E94B00] bg-[#FF5A00] text-xs uppercase text-white">
                   <tr>
                     <th className="px-4 py-4">S No</th>
                     <th className="px-4 py-4">Cuisine</th>
@@ -326,7 +324,7 @@ const Cuisines = () => {
                       <td className="whitespace-nowrap px-4 py-4">{formatDate(cuisine.updated_at)}</td>
                       <td className="px-4 py-4">
                         <div className="flex justify-end gap-2">
-                          <button type="button" onClick={() => openEdit(cuisine.cuisine_id)} className="rounded-md border border-gray-300 p-2 hover:bg-gray-50" aria-label={`Edit ${cuisine.cuisine_name}`}><Pencil className="h-4 w-4" /></button>
+                          <button type="button" onClick={() => openEdit(cuisine.cuisine_id)} className="rounded-md border border-orange-200 p-2 text-[#FF5A00] transition hover:bg-orange-50" aria-label={`Edit ${cuisine.cuisine_name}`}><Pencil className="h-4 w-4" /></button>
                           <button type="button" onClick={() => handleDelete(cuisine.cuisine_id)} className="rounded-md border border-red-200 p-2 text-red-700 hover:bg-red-50" aria-label={`Delete ${cuisine.cuisine_name}`}><Trash2 className="h-4 w-4" /></button>
                         </div>
                       </td>
@@ -341,7 +339,7 @@ const Cuisines = () => {
 
       {modalOpen && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-4" onMouseDown={(event) => { if (event.target === event.currentTarget && !saving && !uploading) { setModalOpen(false); setPreview(''); } }}>
-          <section role="dialog" aria-modal="true" aria-labelledby="cuisine-modal-title" className="max-h-[92vh] w-full max-w-2xl overflow-y-auto rounded-lg bg-white shadow-2xl">
+          <section role="dialog" aria-modal="true" aria-labelledby="cuisine-modal-title" className="max-h-[92vh] w-full max-w-2xl overflow-y-auto rounded-lg bg-white">
             <form onSubmit={handleSave}>
               <header className="flex items-center justify-between border-b border-gray-200 px-5 py-4">
                 <div><h2 id="cuisine-modal-title" className="text-xl font-semibold text-gray-900">{editingId ? 'Edit cuisine' : 'Add cuisine'}</h2></div>
@@ -358,10 +356,10 @@ const Cuisines = () => {
                   />
                 </label>
                 <label className="space-y-1.5 text-sm font-medium text-gray-700">Cuisine name
-                  <input required maxLength={150} value={form.cuisineName} onChange={(event) => setForm((current) => ({ ...current, cuisineName: event.target.value }))} placeholder="e.g. Indian, Italian, Thai" className="h-10 w-full rounded-md border border-gray-300 px-3 outline-none placeholder:text-gray-400 focus:border-emerald-700" />
+                  <input required maxLength={150} value={form.cuisineName} onChange={(event) => setForm((current) => ({ ...current, cuisineName: event.target.value }))} placeholder="e.g. Indian, Italian, Thai" className="h-10 w-full rounded-md border border-gray-300 px-3 outline-none placeholder:text-gray-400 focus:border-[#FF5A00] focus:ring-1 focus:ring-[#FF5A00]" />
                 </label>
                 <label className="space-y-1.5 text-sm font-medium text-gray-700 sm:col-span-2">Description
-                  <textarea rows={3} maxLength={1000} value={form.description} onChange={(event) => setForm((current) => ({ ...current, description: event.target.value }))} placeholder="Describe this cuisine" className="w-full rounded-md border border-gray-300 px-3 py-2 outline-none placeholder:text-gray-400 focus:border-emerald-700" />
+                  <textarea rows={3} maxLength={1000} value={form.description} onChange={(event) => setForm((current) => ({ ...current, description: event.target.value }))} placeholder="Describe this cuisine" className="w-full rounded-md border border-gray-300 px-3 py-2 outline-none placeholder:text-gray-400 focus:border-[#FF5A00] focus:ring-1 focus:ring-[#FF5A00]" />
                 </label>
                 <div className="space-y-2 text-sm font-medium text-gray-700 sm:col-span-2">
                   <label htmlFor="cuisine-image-input">Cuisine image</label>
@@ -380,7 +378,7 @@ const Cuisines = () => {
               </div>
               <footer className="flex justify-end gap-2 border-t border-gray-200 px-5 py-4">
                 <button type="button" onClick={() => { setModalOpen(false); setPreview(''); }} disabled={saving || uploading} className="h-10 rounded-md border border-gray-300 px-4 text-sm font-medium text-gray-700 disabled:opacity-50">Cancel</button>
-                <button type="submit" disabled={saving || uploading} className="inline-flex h-10 items-center gap-2 rounded-md bg-[#1a3c36] px-4 text-sm font-semibold text-white disabled:opacity-60"><Plus className="h-4 w-4" />{saving ? 'Saving...' : 'Save cuisine'}</button>
+                <button type="submit" disabled={saving || uploading} className="inline-flex h-10 items-center gap-2 rounded-md bg-[#FF5A00] px-4 text-sm font-semibold text-white transition hover:bg-[#E94B00] disabled:opacity-60"><Plus className="h-4 w-4" />{saving ? 'Saving...' : 'Save cuisine'}</button>
               </footer>
             </form>
           </section>

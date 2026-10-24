@@ -183,20 +183,20 @@ const AllEmployees = () => {
               value={search}
               onChange={(event) => setSearch(event.target.value)}
               placeholder="Search employees by name or ID..."
-              className="h-[46px] w-full rounded-xl border border-[#dfe2e5] bg-[#faf9f8] pl-10 pr-3 text-[14px] text-[#2d2d2d] outline-none placeholder:text-[#8a8a8a] focus:border-[#d2bc8a]"
+              className="h-[46px] w-full rounded-xl border border-[#dfe2e5] bg-[#faf9f8] pl-10 pr-3 text-[14px] text-[#2d2d2d] outline-none placeholder:text-[#8a8a8a] focus:border-[#FF5A00] focus:ring-1 focus:ring-[#FF5A00]"
             />
           </label>
           <div className="flex flex-wrap items-center gap-3 sm:justify-end">
-            <select aria-label="Filter by employee type" value={selectedEmployeeType} onChange={(event) => setSelectedEmployeeType(event.target.value)} className="h-[46px] min-w-36 rounded-xl border border-[#dfe2e5] bg-[#faf9f8] px-3 text-[14px] font-medium text-[#2d2d2d] outline-none focus:border-[#d2bc8a]">
+            <select aria-label="Filter by employee type" value={selectedEmployeeType} onChange={(event) => setSelectedEmployeeType(event.target.value)} className="h-[46px] min-w-36 rounded-xl border border-[#dfe2e5] bg-[#faf9f8] px-3 text-[14px] font-medium text-[#2d2d2d] outline-none focus:border-[#FF5A00] focus:ring-1 focus:ring-[#FF5A00]">
               <option value="All Types">All Types</option>
               {employeeTypes.map((type) => <option key={type} value={type}>{type}</option>)}
             </select>
-            <select aria-label="Filter by employee status" value={selectedStatus} onChange={(event) => setSelectedStatus(event.target.value)} className="h-[46px] min-w-36 rounded-xl border border-[#dfe2e5] bg-[#faf9f8] px-3 text-[14px] font-medium text-[#2d2d2d] outline-none focus:border-[#d2bc8a]">
+            <select aria-label="Filter by employee status" value={selectedStatus} onChange={(event) => setSelectedStatus(event.target.value)} className="h-[46px] min-w-36 rounded-xl border border-[#dfe2e5] bg-[#faf9f8] px-3 text-[14px] font-medium text-[#2d2d2d] outline-none focus:border-[#FF5A00] focus:ring-1 focus:ring-[#FF5A00]">
               <option value="All Status">All Status</option>
               <option value="Active">Active</option>
               <option value="Inactive">Inactive</option>
             </select>
-            <select aria-label="Sort employees" value={sortBy} onChange={(event) => setSortBy(event.target.value)} className="h-[46px] rounded-xl border border-[#dfe2e5] bg-[#faf9f8] px-3 text-[14px] font-medium text-[#2d2d2d] outline-none focus:border-[#d2bc8a]">
+            <select aria-label="Sort employees" value={sortBy} onChange={(event) => setSortBy(event.target.value)} className="h-[46px] rounded-xl border border-[#dfe2e5] bg-[#faf9f8] px-3 text-[14px] font-medium text-[#2d2d2d] outline-none focus:border-[#FF5A00] focus:ring-1 focus:ring-[#FF5A00]">
               <option value="latest">Sort by: Latest</option>
               <option value="name">Name: A to Z</option>
               <option value="id">ID: Low to High</option>
@@ -208,7 +208,7 @@ const AllEmployees = () => {
                 aria-label="Card view"
                 aria-pressed={viewMode === "card"}
                 title="Card view"
-                className={`flex h-[46px] w-[46px] cursor-pointer items-center justify-center transition ${viewMode === "card" ? "bg-[#1a3c36] text-white" : "text-[#4d4d4d] hover:bg-white"}`}
+                className={`flex h-[46px] w-[46px] cursor-pointer items-center justify-center transition ${viewMode === "card" ? "bg-[#FF5A00] text-white" : "text-[#4d4d4d] hover:bg-orange-50 hover:text-[#FF5A00]"}`}
               >
                 <LayoutGrid className="h-4 w-4" />
               </button>
@@ -218,12 +218,12 @@ const AllEmployees = () => {
                 aria-label="Table view"
                 aria-pressed={viewMode === "table"}
                 title="Table view"
-                className={`flex h-[46px] w-[46px] cursor-pointer items-center justify-center border-l border-[#dfe2e5] transition ${viewMode === "table" ? "bg-[#1a3c36] text-white" : "text-[#4d4d4d] hover:bg-white"}`}
+                className={`flex h-[46px] w-[46px] cursor-pointer items-center justify-center border-l border-[#dfe2e5] transition ${viewMode === "table" ? "bg-[#FF5A00] text-white" : "text-[#4d4d4d] hover:bg-orange-50 hover:text-[#FF5A00]"}`}
               >
                 <Table2 className="h-4 w-4" />
               </button>
             </div>
-             <Link to="/admin/employees/add" className="inline-flex h-[46px] items-center gap-2 rounded-xl bg-[#1a3c36] px-4 text-[15px] font-semibold text-white shadow-[0_6px_14px_rgba(26,60,54,0.18)] transition hover:bg-[#214a42]">
+             <Link to="/admin/employees/add" className="inline-flex h-[46px] items-center gap-2 rounded-xl bg-[#FF5A00] px-4 text-[15px] font-semibold text-white shadow-[0_6px_14px_rgba(255,90,0,0.18)] transition hover:bg-[#E94B00]">
           <UserRoundPlus className="h-4 w-4" /> Add Employee
         </Link>
           </div>
@@ -235,7 +235,7 @@ const AllEmployees = () => {
           <div className="overflow-x-auto">
             <table className="min-w-full border-separate border-spacing-0 text-left">
               <thead>
-                <tr className="bg-[#d4a843] text-sm font-semibold text-white">
+                <tr className="bg-[#FF5A00] text-sm font-semibold text-white">
                   <th className="px-4 py-4">S No</th>
                   <th className="px-4 py-4">Employee</th>
                   <th className="px-4 py-4">Employee Type</th>
@@ -312,14 +312,14 @@ const AllEmployees = () => {
                             onClick={() => setAssignModalServer(employee)}
                             title="Assign Dining Tables"
                             aria-label={`Assign tables to ${employee.full_name}`}
-                            className="flex h-9 cursor-pointer items-center gap-1.5 rounded-lg border border-[#1a3c36] bg-[#1a3c36] px-2.5 text-xs font-semibold text-white shadow-sm transition hover:bg-[#25524a]"
+                            className="flex h-9 cursor-pointer items-center gap-1.5 rounded-lg border border-[#FF5A00] bg-[#FF5A00] px-2.5 text-xs font-semibold text-white shadow-sm transition hover:border-[#E94B00] hover:bg-[#E94B00]"
                           >
                             <UtensilsCrossed className="h-3.5 w-3.5 text-[#d4a843]" />
                             <span>Assign Table</span>
                           </button>
                         )}
-                        <button type="button" onClick={() => viewEmployee(employee.employee_id)} title="View employee" aria-label={`View ${employee.full_name}`} className="flex h-9 w-9 items-center justify-center rounded-lg border border-[#e2d9cf] bg-white text-[#4d4d4d] transition hover:border-[#d0b997] hover:text-[#1a1a1a]"><Eye className="h-4 w-4" /></button>
-                        <Link to={`/admin/employees/${encodeURIComponent(employee.employee_id)}/edit`} title="Edit employee" aria-label={`Edit ${employee.full_name}`} className="flex h-9 w-9 items-center justify-center rounded-lg border border-[#e2d9cf] bg-white text-[#4d4d4d] transition hover:border-[#d0b997] hover:text-[#1a1a1a]"><Pencil className="h-4 w-4" /></Link>
+                        <button type="button" onClick={() => viewEmployee(employee.employee_id)} title="View employee" aria-label={`View ${employee.full_name}`} className="flex h-9 w-9 items-center justify-center rounded-lg border border-orange-200 bg-white text-[#FF5A00] transition hover:bg-orange-50"><Eye className="h-4 w-4" /></button>
+                        <Link to={`/admin/employees/${encodeURIComponent(employee.employee_id)}/edit`} title="Edit employee" aria-label={`Edit ${employee.full_name}`} className="flex h-9 w-9 items-center justify-center rounded-lg border border-orange-200 bg-white text-[#FF5A00] transition hover:bg-orange-50"><Pencil className="h-4 w-4" /></Link>
                         <button type="button" onClick={() => deleteEmployee(employee)} disabled={deletingEmployeeId === employee.employee_id} title="Delete employee" aria-label={`Delete ${employee.full_name}`} className="flex h-9 w-9 items-center justify-center rounded-lg border border-[#f3d7d7] bg-[#fff8f8] text-[#d04d4d] transition hover:bg-[#fff0f0] disabled:opacity-50"><Trash2 className="h-4 w-4" /></button>
                       </div>
                     </td>
@@ -409,14 +409,14 @@ const AllEmployees = () => {
                       onClick={() => setAssignModalServer(employee)}
                       title="Assign Dining Tables"
                       aria-label={`Assign tables to ${employee.full_name}`}
-                      className="flex h-9 cursor-pointer items-center gap-1.5 rounded-lg border border-[#1a3c36] bg-[#1a3c36] px-2.5 text-xs font-semibold text-white shadow-sm transition hover:bg-[#25524a]"
+                      className="flex h-9 cursor-pointer items-center gap-1.5 rounded-lg border border-[#FF5A00] bg-[#FF5A00] px-2.5 text-xs font-semibold text-white shadow-sm transition hover:border-[#E94B00] hover:bg-[#E94B00]"
                     >
                       <UtensilsCrossed className="h-3.5 w-3.5 text-[#d4a843]" />
                       <span>Assign Table</span>
                     </button>
                   )}
-                  <button type="button" onClick={() => viewEmployee(employee.employee_id)} title="View employee" aria-label={`View ${employee.full_name}`} className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-lg border border-[#e2d9cf] bg-white text-[#4d4d4d] transition hover:border-[#d0b997] hover:text-[#1a1a1a]"><Eye className="h-4 w-4" /></button>
-                  <Link to={`/admin/employees/${encodeURIComponent(employee.employee_id)}/edit`} title="Edit employee" aria-label={`Edit ${employee.full_name}`} className="flex h-9 w-9 items-center justify-center rounded-lg border border-[#e2d9cf] bg-white text-[#4d4d4d] transition hover:border-[#d0b997] hover:text-[#1a1a1a]"><Pencil className="h-4 w-4" /></Link>
+                  <button type="button" onClick={() => viewEmployee(employee.employee_id)} title="View employee" aria-label={`View ${employee.full_name}`} className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-lg border border-orange-200 bg-white text-[#FF5A00] transition hover:bg-orange-50"><Eye className="h-4 w-4" /></button>
+                  <Link to={`/admin/employees/${encodeURIComponent(employee.employee_id)}/edit`} title="Edit employee" aria-label={`Edit ${employee.full_name}`} className="flex h-9 w-9 items-center justify-center rounded-lg border border-orange-200 bg-white text-[#FF5A00] transition hover:bg-orange-50"><Pencil className="h-4 w-4" /></Link>
                   <button type="button" onClick={() => deleteEmployee(employee)} disabled={deletingEmployeeId === employee.employee_id} title="Delete employee" aria-label={`Delete ${employee.full_name}`} className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-lg border border-[#f3d7d7] bg-[#fff8f8] text-[#d04d4d] transition hover:bg-[#fff0f0] disabled:cursor-wait disabled:opacity-50"><Trash2 className="h-4 w-4" /></button>
                 </div>
               </article>
@@ -427,7 +427,7 @@ const AllEmployees = () => {
             <div className="mb-3 flex justify-center text-[#8a8a8a]"><Users className="h-10 w-10" /></div>
             <p className="text-base font-bold text-[#333]">{normalizedSearch || selectedStatus !== "All Status" || selectedEmployeeType !== "All Types" ? "No matching employees" : "No employee records yet"}</p>
             <p className="mx-auto mt-1 max-w-sm text-xs text-[#888]">{normalizedSearch || selectedStatus !== "All Status" || selectedEmployeeType !== "All Types" ? "Try another search or adjust the selected filters." : "Add an employee to start building your directory."}</p>
-            {!normalizedSearch && selectedStatus === "All Status" && selectedEmployeeType === "All Types" && <Link to="/admin/employees/add" className="mt-4 inline-flex items-center gap-2 text-xs font-bold text-[#42694f] hover:text-[#244b36]"><UserRoundPlus className="h-4 w-4" /> Add your first employee</Link>}
+            {!normalizedSearch && selectedStatus === "All Status" && selectedEmployeeType === "All Types" && <Link to="/admin/employees/add" className="mt-4 inline-flex items-center gap-2 text-xs font-bold text-[#FF5A00] hover:text-[#E94B00]"><UserRoundPlus className="h-4 w-4" /> Add your first employee</Link>}
           </div>
         )}
         <div className="mt-5 border-t border-[#efebe7] pt-4 text-sm text-[#6a6a6a]">

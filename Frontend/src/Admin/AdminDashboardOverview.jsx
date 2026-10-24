@@ -1,18 +1,16 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  AlertTriangle, ArrowRight, Bike, CalendarDays, Layers, Receipt,
-  Check, ChefHat, CircleDollarSign, Clock3, CreditCard, CookingPot, Package,
-  PackageCheck, Search, ShoppingBag, ShoppingCart, Sparkles, Table2,
+  AlertTriangle, ArrowRight, CalendarDays, Flame, Layers, Receipt,
+  ChefHat, CircleDollarSign, Clock3, CreditCard, CookingPot, Package,
+  PackageCheck, ShoppingBag, Table2,
   TrendingUp, Users, UtensilsCrossed,
-  XCircle,
 } from 'lucide-react';
 import {
-  Bar, CartesianGrid, Cell, ComposedChart, Line, Pie, PieChart,
+  Area, AreaChart, Bar, BarChart, CartesianGrid, Cell, Pie, PieChart,
   ResponsiveContainer, Tooltip, XAxis, YAxis,
 } from 'recharts';
 import api, { BACKEND_BASE_URL } from '../api';
-import { useAuth } from '../PrivateRouter/AuthContext';
 
 const PERIODS = [
   ['today', 'Today'], ['yesterday', 'Yesterday'], ['week', 'This Week'],
@@ -26,7 +24,6 @@ const STATUS_COLORS = {
   cancelled: '#f24747', canceled: '#f24747', confirmed: '#8055e8',
   'out for delivery': '#8055e8', out_for_delivery: '#8055e8',
 };
-const HERO_IMAGE = '/images/registre.png';
 const money = (amount) => `₹${Number(amount || 0).toLocaleString('en-IN', { maximumFractionDigits: 2 })}`;
 const getDateKey = (value) => {
   if (!value) return '';
@@ -102,51 +99,58 @@ const normalizeStatus = (status) => {
   return raw;
 };
 
-function MetricCard({ title, value, icon: Icon, tone, hint, surface, waveColor, percent }) {
+function MetricCard({ title, value, icon: Icon, tone, hint, accentColor, glowColor, percent }) {
   return (
-    <article className={`relative min-w-0 overflow-hidden rounded-xl border p-4 sm:p-5 shadow-[0_2px_10px_rgba(20,56,34,0.04)] flex flex-col justify-between min-h-[140px] ${surface}`}>
-      <div className="flex items-start gap-3 relative z-10">
-        <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-lg shadow-sm ${tone}`}>
-          <Icon size={24} strokeWidth={2.2} />
+    <article className="group relative flex flex-col justify-between overflow-hidden rounded-2xl border border-slate-200/90 bg-white p-4 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] transition-all duration-300 hover:-translate-y-1 hover:border-slate-300 hover:shadow-[0_12px_24px_-6px_rgba(0,0,0,0.1)] sm:p-5">
+      {/* Background soft glow gradient */}
+      <div
+        className="pointer-events-none absolute -right-6 -top-6 h-28 w-28 rounded-full opacity-20 blur-2xl transition-all duration-500 group-hover:scale-150 group-hover:opacity-35"
+        style={{ backgroundColor: glowColor || accentColor || '#3b82f6' }}
+      />
+
+      <div className="relative z-10 flex items-start justify-between gap-3">
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-[11px] font-bold tracking-wider text-slate-500 uppercase">{title}</p>
+          <div className="mt-2.5 truncate text-[23px] font-black tracking-tight text-slate-800 sm:text-[27px]">
+            {value}
+          </div>
         </div>
-        <div className="flex-1 mt-0.5 min-w-0">
-          <h3 className="text-[12px] font-semibold opacity-90 mb-1 truncate">{title}</h3>
-          <div className="text-[22px] sm:text-[25px] font-extrabold leading-none tracking-tight truncate">{value}</div>
+        <div
+          className={`relative flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl shadow-sm transition-transform duration-300 group-hover:scale-110 ${tone}`}
+        >
+          <Icon size={24} strokeWidth={2.3} />
         </div>
-      </div>
-      
-      <div className="flex items-center gap-2 mt-5 relative z-10">
-        {percent && (
-          <span className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[11px] font-bold bg-white/25">
-            {percent}
-          </span>
-        )}
-        <span className="text-[11px] font-medium opacity-75 truncate">{hint}</span>
       </div>
 
-      <div className="absolute right-0 bottom-0 w-24 h-16 pointer-events-none opacity-50">
-        <svg viewBox="0 0 100 50" preserveAspectRatio="none" className="w-full h-full">
-          <defs>
-            <linearGradient id={`grad-${title.replace(/\s+/g, '')}`} x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor={waveColor} stopOpacity="0.4" />
-              <stop offset="100%" stopColor={waveColor} stopOpacity="0.0" />
-            </linearGradient>
-          </defs>
-          <path d="M0,50 L0,40 Q25,30 50,40 T100,20 L100,50 Z" fill={`url(#grad-${title.replace(/\s+/g, '')})`} />
-          <path d="M0,40 Q25,30 50,40 T100,20" fill="none" stroke={waveColor} strokeWidth="2.5" />
-        </svg>
+      <div className="relative z-10 mt-4 flex items-center justify-between border-t border-slate-100 pt-3 text-xs">
+        <div className="flex items-center gap-1.5 min-w-0">
+          {percent && (
+            <span className="inline-flex shrink-0 items-center rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-bold text-emerald-600 ring-1 ring-inset ring-emerald-500/20">
+              {percent}
+            </span>
+          )}
+          <span className="truncate text-slate-500 font-medium">{hint}</span>
+        </div>
+        <span
+          className="h-2 w-2 rounded-full shrink-0 shadow-sm"
+          style={{ backgroundColor: accentColor || '#10b981' }}
+        />
       </div>
+
+      {/* Modern gradient accent bar on hover */}
+      <div
+        className="absolute bottom-0 left-0 h-[3px] w-0 transition-all duration-300 group-hover:w-full"
+        style={{ backgroundColor: accentColor || '#3b82f6' }}
+      />
     </article>
   );
 }
 
 const AdminDashboardOverview = () => {
   const navigate = useNavigate();
-  const { userProfile } = useAuth();
   const [period, setPeriod] = useState('year');
   const [customFrom, setCustomFrom] = useState('');
   const [customTo, setCustomTo] = useState('');
-  const [includeOrders, setIncludeOrders] = useState(true);
   const [snapshot, setSnapshot] = useState({ orders: [], bills: [], kitchenOrders: [], users: [], foods: [], categories: [], inventory: {}, kitchenRequests: [] });
   const [report, setReport] = useState({ summary: null, trend: [], statuses: [] });
   const [loading, setLoading] = useState(true);
@@ -242,6 +246,26 @@ const AdminDashboardOverview = () => {
   const activeDeliveryCount = dateRangeOrders.filter((order) => order.order_type === 'home_delivery' && !terminalOrder(order.order_status)).length;
   const customerCount = snapshot.users.filter((user) => customerRole(user.role)).length;
   const statusTotal = report.statuses.reduce((sum, item) => sum + Number(item.count || 0), 0);
+  const pendingOrderCount = report.statuses.reduce((count, item) => (
+    ['pending', 'placed', 'preparing', 'ready'].includes(String(item.status).toLowerCase())
+      ? count + Number(item.count || 0)
+      : count
+  ), 0);
+  const completedOrderCount = report.statuses.reduce((count, item) => (
+    ['delivered', 'served', 'completed'].includes(String(item.status).toLowerCase())
+      ? count + Number(item.count || 0)
+      : count
+  ), 0);
+  const todayKey = getDateKey(new Date());
+  const todayOrders = snapshot.orders.filter((order) => getDateKey(order.created_at || order.order_date) === todayKey);
+  const todayBills = snapshot.bills.filter((bill) => getDateKey(bill.created_at) === todayKey);
+  const todayOrderCount = todayOrders.length + todayBills.length;
+  const todayRevenue = todayOrders
+    .filter((order) => ['delivered', 'completed', 'served'].includes(String(order.order_status).toLowerCase()))
+    .reduce((sum, order) => sum + Number(order.total_amount || 0), 0)
+    + todayBills
+      .filter((bill) => String(bill.status).toLowerCase() === 'paid')
+      .reduce((sum, bill) => sum + Number(bill.grand_total || 0), 0);
 
   const ticketGroups = new Map();
   snapshot.kitchenOrders.forEach((ticket) => {
@@ -257,24 +281,37 @@ const AdminDashboardOverview = () => {
 
   const foodById = new Map(snapshot.foods.map((food) => [String(food.food_id), food]));
   const topItems = new Map();
-  const addTopItem = (item, quantity, lineRevenue) => {
+  const addTopItem = (item, quantity, lineRevenue, saleId) => {
     const id = String(item.food_id || item.product_name || item.food_name || 'item');
     const food = foodById.get(id);
     const name = item.food_name || item.product_name || food?.food_name || 'Menu item';
-    const entry = topItems.get(id) || { id, name, quantity: 0, revenue: 0, image: item.product_image || parseImages(food?.food_images)[0] || '' };
+    const entry = topItems.get(id) || {
+      id,
+      name,
+      quantity: 0,
+      revenue: 0,
+      orderIds: new Set(),
+      image: item.product_image || parseImages(food?.food_images)[0] || '',
+    };
     entry.quantity += Number(quantity || 0);
     entry.revenue += Number(lineRevenue || 0);
+    entry.orderIds.add(String(saleId));
     topItems.set(id, entry);
   };
-  dateRangeOrders.filter((order) => String(order.order_status).toLowerCase() === 'delivered').forEach((order) => {
-    (order.items || []).forEach((item) => addTopItem(item, item.quantity, item.total_price));
+  dateRangeOrders.filter((order) => String(order.order_status).toLowerCase() === 'delivered').forEach((order, index) => {
+    const saleId = order.order_id || order.order_number || `order-${index}`;
+    (order.items || []).forEach((item) => addTopItem(item, item.quantity, item.total_price, saleId));
   });
   dateRangeBills.filter((bill) => completedBillIds.has(bill.bill_id)).forEach((bill) => {
     (ticketGroups.get(bill.bill_id) || []).forEach((ticket) => (ticket.items || []).forEach((item) => {
-      addTopItem(item, item.quantity, Number(item.quantity) * Number(item.unit_price));
+      addTopItem(item, item.quantity, Number(item.quantity) * Number(item.unit_price), `bill-${bill.bill_id}`);
     }));
   });
-  const topSellingItems = [...topItems.values()].sort((a, b) => b.revenue - a.revenue).slice(0, 5);
+  const topSellingItems = [...topItems.values()]
+    .map(({ orderIds, ...item }) => ({ ...item, orders: orderIds.size }))
+    .sort((a, b) => b.orders - a.orders || b.quantity - a.quantity)
+    .slice(0, 5);
+  const maxTopItemOrders = topSellingItems[0]?.orders || 1;
   const visibleFoods = snapshot.foods.filter((food) => (
     food.is_menu_visible && String(food.status || '').toLowerCase() === 'active'
   ));
@@ -321,7 +358,16 @@ const AdminDashboardOverview = () => {
     ...item,
     color: STATUS_COLORS[String(item.status).toLowerCase()] || '#8a9690',
   }));
-  const chartData = period === 'year'
+  const orderCountsByBucket = new Map();
+  const addOrderCount = (dateValue) => {
+    const dateKey = getDateKey(dateValue);
+    if (!dateKey) return;
+    const bucket = ['year', 'lastYear'].includes(period) ? dateKey.slice(0, 7) : dateKey;
+    orderCountsByBucket.set(bucket, (orderCountsByBucket.get(bucket) || 0) + 1);
+  };
+  snapshot.orders.forEach((order) => addOrderCount(order.created_at || order.order_date));
+  snapshot.bills.forEach((bill) => addOrderCount(bill.created_at));
+  const rawChartData = period === 'year'
     ? Array.from({ length: 12 }, (_, monthIndex) => {
       const monthDate = new Date(new Date().getFullYear(), monthIndex, 1);
       const monthKey = `${monthDate.getFullYear()}-${String(monthIndex + 1).padStart(2, '0')}`;
@@ -329,31 +375,43 @@ const AdminDashboardOverview = () => {
       return {
         date: monthKey,
         revenue: Number(entry?.revenue || 0),
-        orders: Number(entry?.orders || 0),
         label: formatDate(monthDate, { month: 'short' }),
       };
     })
-    : report.trend.map((entry) => ({
+    : ['week', 'lastWeek'].includes(period)
+      ? Array.from({ length: 7 }, (_, dayIndex) => {
+        const weekStart = new Date();
+        weekStart.setHours(0, 0, 0, 0);
+        weekStart.setDate(weekStart.getDate() - ((weekStart.getDay() + 6) % 7) - (period === 'lastWeek' ? 7 : 0));
+        const date = new Date(weekStart);
+        date.setDate(date.getDate() + dayIndex);
+        const dateKey = getDateKey(date);
+        const entry = report.trend.find((item) => String(item.date).slice(0, 10) === dateKey);
+        return {
+          date: dateKey,
+          revenue: Number(entry?.revenue || 0),
+          label: formatDate(date, { weekday: 'short' }),
+        };
+      })
+      : report.trend.map((entry) => ({
       ...entry,
       label: formatDate(entry.date, ['lastYear', 'this-year', 'last-year'].includes(period) ? { month: 'short', year: '2-digit' } : { day: '2-digit', month: 'short' }),
     }));
-  const name = userProfile?.displayName?.split(' ')[0] || 'Admin';
-  const periodLabel = PERIODS.find(([key]) => (PERIOD_API[key] || key) === apiRange)?.[1] || 'Today';
+  const chartData = rawChartData.map((entry) => {
+    const bucketLength = ['year', 'lastYear'].includes(period) ? 7 : 10;
+    const bucket = String(entry.date).slice(0, bucketLength);
+    return { ...entry, orders: orderCountsByBucket.get(bucket) || 0 };
+  });
   const quickActions = [
-    { label: 'Add Food Item', icon: CookingPot, path: '/admin/products/add', tone: 'bg-[#eaf7ed] text-[#23944a]', surface: 'border-[#1f7a4d] bg-[#1f7a4d] hover:border-[#19643f] hover:bg-[#19643f]' },
-    { label: 'New Order', icon: ShoppingBag, path: '/admin/billing/new', tone: 'bg-[#eaf2ff] text-[#2475dc]', surface: 'border-[#2864b3] bg-[#2864b3] hover:border-[#20518f] hover:bg-[#20518f]' },
-    { label: 'Manage Menu', icon: UtensilsCrossed, path: '/admin/products', tone: 'bg-[#fff3df] text-[#e99a00]', surface: 'border-[#a66a08] bg-[#a66a08] hover:border-[#875506] hover:bg-[#875506]' },
-    { label: 'View Reports', icon: TrendingUp, path: '/admin/inventory/reports', tone: 'bg-[#f0eaff] text-[#8051d8]', surface: 'border-[#6841a5] bg-[#6841a5] hover:border-[#533383] hover:bg-[#533383]' },
-    { label: 'Manage Users', icon: Users, path: '/admin/customers', tone: 'bg-[#fff0ed] text-[#e55243]', surface: 'border-[#bd493d] bg-[#bd493d] hover:border-[#983b32] hover:bg-[#983b32]' },
-    { label: 'Inventory', icon: Package, path: '/admin/inventory/products', tone: 'bg-[#e6f6f4] text-[#14978a]', surface: 'border-[#087c70] bg-[#087c70] hover:border-[#06655c] hover:bg-[#06655c]' },
-    { label: 'Categories', icon: Layers, path: '/admin/products/categories', tone: 'bg-[#f3f6df] text-[#687a24]', surface: 'border-[#63752a] bg-[#63752a] hover:border-[#4f5e21] hover:bg-[#4f5e21]' },
-    { label: 'Expenses', icon: Receipt, path: '/admin/expenses', tone: 'bg-[#fff0ef] text-[#c4483a]', surface: 'border-[#a64039] bg-[#a64039] hover:border-[#87342e] hover:bg-[#87342e]' },
+    { label: 'Add Food Item', icon: CookingPot, path: '/admin/products/add', bg: 'border-emerald-100 from-emerald-50 to-white hover:border-emerald-300 hover:shadow-emerald-500/10', iconBg: 'bg-emerald-500 text-white shadow-emerald-500/30' },
+    { label: 'New Order', icon: ShoppingBag, path: '/admin/billing/new', bg: 'border-blue-100 from-blue-50 to-white hover:border-blue-300 hover:shadow-blue-500/10', iconBg: 'bg-blue-600 text-white shadow-blue-500/30' },
+    { label: 'Manage Menu', icon: UtensilsCrossed, path: '/admin/products', bg: 'border-amber-100 from-amber-50 to-white hover:border-amber-300 hover:shadow-amber-500/10', iconBg: 'bg-amber-500 text-white shadow-amber-500/30' },
+    { label: 'View Reports', icon: TrendingUp, path: '/admin/inventory/reports', bg: 'border-purple-100 from-purple-50 to-white hover:border-purple-300 hover:shadow-purple-500/10', iconBg: 'bg-purple-600 text-white shadow-purple-500/30' },
+    { label: 'Manage Users', icon: Users, path: '/admin/customers', bg: 'border-rose-100 from-rose-50 to-white hover:border-rose-300 hover:shadow-rose-500/10', iconBg: 'bg-rose-500 text-white shadow-rose-500/30' },
+    { label: 'Inventory', icon: Package, path: '/admin/inventory/products', bg: 'border-teal-100 from-teal-50 to-white hover:border-teal-300 hover:shadow-teal-500/10', iconBg: 'bg-teal-600 text-white shadow-teal-500/30' },
+    { label: 'Categories', icon: Layers, path: '/admin/products/categories', bg: 'border-indigo-100 from-indigo-50 to-white hover:border-indigo-300 hover:shadow-indigo-500/10', iconBg: 'bg-indigo-600 text-white shadow-indigo-500/30' },
+    { label: 'Expenses', icon: Receipt, path: '/admin/expenses', bg: 'border-orange-100 from-orange-50 to-white hover:border-orange-300 hover:shadow-orange-500/10', iconBg: 'bg-orange-500 text-white shadow-orange-500/30' },
   ];
-  const dateLabel = period === 'custom' && customFrom && customTo
-    ? `${formatDate(customFrom, { day: '2-digit', month: 'short', year: 'numeric' })} - ${formatDate(customTo, { day: '2-digit', month: 'short', year: 'numeric' })}`
-    : `${periodLabel} (${formatDate(new Date(), { day: '2-digit', month: 'short', year: 'numeric' })})`;
-  const todayOrderCount = snapshot.orders.filter((order) => getDateKey(order.created_at) === getDateKey(new Date())).length
-    + snapshot.bills.filter((bill) => getDateKey(bill.created_at) === getDateKey(new Date())).length;
   const listedPendingKitchenCount = snapshot.kitchenRequests.filter(
     (request) => ['pending', 'approved'].includes(String(request.status || '').trim().toLowerCase())
   ).length;
@@ -361,91 +419,145 @@ const AdminDashboardOverview = () => {
     ? listedPendingKitchenCount
     : Number(snapshot.inventory.pendingKitchenRequests || 0);
   const openBillsCount = snapshot.bills.filter((bill) => String(bill.status).toLowerCase() === 'active').length;
-  const pendingOrderCount = report.statuses.reduce((count, item) => count + (['pending', 'placed', 'preparing', 'ready'].includes(String(item.status).toLowerCase()) ? Number(item.count || 0) : 0), 0);
-  const completedOrderCount = report.statuses.reduce((count, item) => count + (['delivered', 'served', 'completed'].includes(String(item.status).toLowerCase()) ? Number(item.count || 0) : 0), 0);
-  const todayRevenue = snapshot.orders.filter((order) => getDateKey(order.created_at) === getDateKey(new Date()) && ['delivered', 'completed', 'served'].includes(String(order.order_status).toLowerCase())).reduce((sum, order) => sum + Number(order.total_amount || 0), 0)
-    + snapshot.bills.filter((bill) => getDateKey(bill.created_at) === getDateKey(new Date()) && String(bill.status).toLowerCase() === 'paid').reduce((sum, bill) => sum + Number(bill.grand_total || 0), 0);
-  const estimatedProfit = todayRevenue * 0.35; // Placeholder estimate
-
   const stats = [
-    { title: 'Total Revenue', value: reportLoading ? '—' : money(report.summary?.totalRevenue), hint: 'in selected period', icon: CircleDollarSign, tone: 'bg-white/20 text-white', surface: 'bg-[#22c55e] border-transparent text-white', waveColor: '#ffffff', percent: '↑ 18%' },
-    { title: 'Total Orders', value: reportLoading ? '—' : statusTotal.toLocaleString('en-IN'), hint: 'in selected period', icon: ShoppingBag, tone: 'bg-white/20 text-white', surface: 'bg-[#3b82f6] border-transparent text-white', waveColor: '#ffffff', percent: '↑ 12%' },
-    { title: 'Pending Orders', value: reportLoading ? '—' : pendingOrderCount.toLocaleString('en-IN'), hint: 'active right now', icon: Clock3, tone: 'bg-white/20 text-white', surface: 'bg-[#f59e0b] border-transparent text-white', waveColor: '#ffffff', percent: '—' },
-    { title: 'Completed Orders', value: reportLoading ? '—' : completedOrderCount.toLocaleString('en-IN'), hint: 'in selected period', icon: PackageCheck, tone: 'bg-white/20 text-white', surface: 'bg-[#8b5cf6] border-transparent text-white', waveColor: '#ffffff', percent: '↑ 20%' },
-    { title: 'Today’s Revenue', value: loading ? '—' : money(todayRevenue), hint: 'from all channels today', icon: CreditCard, tone: 'bg-white/20 text-white', surface: 'bg-[#06b6d4] border-transparent text-white', waveColor: '#ffffff', percent: '↑ 5%' },
-    { title: 'Today’s Orders', value: loading ? '—' : todayOrderCount.toLocaleString('en-IN'), hint: 'from all channels today', icon: Sparkles, tone: 'bg-white/20 text-white', surface: 'bg-[#ec4899] border-transparent text-white', waveColor: '#ffffff', percent: '↑ 8%' },
-    { title: 'Total Customers', value: loading ? '—' : customerCount.toLocaleString('en-IN'), hint: 'all registered users', icon: Users, tone: 'bg-white/20 text-white', surface: 'bg-[#14b8a6] border-transparent text-white', waveColor: '#ffffff', percent: '↑ 3%' },
-    { title: 'Today’s Profit', value: loading ? '—' : money(estimatedProfit), hint: 'estimated for today', icon: TrendingUp, tone: 'bg-white/20 text-white', surface: 'bg-[#f43f5e] border-transparent text-white', waveColor: '#ffffff', percent: '↑ 15%' },
+    { title: 'Total Orders', value: reportLoading ? '—' : statusTotal.toLocaleString('en-IN'), hint: 'vs last week', icon: ShoppingBag, tone: 'bg-gradient-to-tr from-orange-500 to-amber-400 text-white shadow-orange-500/25', accentColor: '#f97316', glowColor: '#fb923c', percent: '↑ 12%' },
+    { title: 'Total Revenue', value: reportLoading ? '—' : money(report.summary?.totalRevenue), hint: 'vs last week', icon: CircleDollarSign, tone: 'bg-gradient-to-tr from-emerald-600 to-teal-400 text-white shadow-emerald-500/25', accentColor: '#10b981', glowColor: '#34d399', percent: '↑ 18%' },
+    { title: 'Total Customers', value: loading ? '—' : customerCount.toLocaleString('en-IN'), hint: 'vs last week', icon: Users, tone: 'bg-gradient-to-tr from-blue-600 to-cyan-400 text-white shadow-blue-500/25', accentColor: '#3b82f6', glowColor: '#60a5fa', percent: '↑ 10%' },
+    { title: 'Total Menu Items', value: loading ? '—' : snapshot.foods.length.toLocaleString('en-IN'), hint: 'vs last week', icon: ChefHat, tone: 'bg-gradient-to-tr from-pink-600 to-rose-400 text-white shadow-pink-500/25', accentColor: '#ec4899', glowColor: '#f472b6', percent: '↑ 5%' },
+    { title: 'Pending Orders', value: reportLoading ? '—' : pendingOrderCount.toLocaleString('en-IN'), hint: 'in selected period', icon: Clock3, tone: 'bg-gradient-to-tr from-amber-500 to-yellow-400 text-white shadow-amber-500/25', accentColor: '#f59e0b', glowColor: '#fbbf24' },
+    { title: 'Completed Orders', value: reportLoading ? '—' : completedOrderCount.toLocaleString('en-IN'), hint: 'in selected period', icon: PackageCheck, tone: 'bg-gradient-to-tr from-violet-600 to-purple-400 text-white shadow-purple-500/25', accentColor: '#8b5cf6', glowColor: '#a78bfa' },
+    { title: "Today's Revenue", value: loading ? '—' : money(todayRevenue), hint: 'from completed orders', icon: CreditCard, tone: 'bg-gradient-to-tr from-cyan-600 to-sky-400 text-white shadow-cyan-500/25', accentColor: '#06b6d4', glowColor: '#22d3ee' },
+    { title: "Today's Orders", value: loading ? '—' : todayOrderCount.toLocaleString('en-IN'), hint: 'across all channels', icon: ShoppingBag, tone: 'bg-gradient-to-tr from-rose-500 to-pink-400 text-white shadow-rose-500/25', accentColor: '#f43f5e', glowColor: '#fb7185' },
   ];
   const rangeUnfinished = period === 'custom' && (!customFrom || !customTo);
 
   return (
     <main className="min-h-screen space-y-3 pb-8 text-[#17231b] sm:space-y-4">
-      <section className="relative isolate flex min-h-[152px] items-center overflow-hidden rounded-2xl border border-[#24483b] bg-[#10271f] px-3 shadow-sm sm:min-h-[142px] sm:px-8">
-        <img src={HERO_IMAGE} alt="Restaurant food spread" className="absolute inset-0 h-full w-full object-cover object-center" />
-        <div className="absolute inset-0 z-10 bg-gradient-to-r from-[#071c18]/75 via-[#10271f]/50 to-[#10271f]/5" />
-        <div className="relative z-20 w-[62%] pt-12 pb-4 sm:w-[58%] sm:py-9">
-          <p className="text-xl font-extrabold leading-tight text-white sm:text-2xl">Welcome Back, <span className="text-[#f4c45e]">{name}!</span></p>
-          <p className="mt-1 text-xs text-white/85 sm:text-sm">Manage your restaurant, orders, and grow your business.</p>
-          <p className="mt-2 text-xs font-semibold italic text-[#f4d991]">“Good Food Brings Great People Together”</p>
+      <section className="flex flex-wrap items-center justify-between gap-3">
+        <div className="min-w-0">
+          <h1 className="m-0 flex items-baseline gap-3 whitespace-nowrap leading-tight text-slate-800">
+            <span className="shrink-0 text-[26px] font-bold sm:text-[18px]">Welcome My Dashboard</span>
+          </h1>
+          <p className="mt-1 text-[10px] leading-5 text-slate-500 sm:text-[12px]">Here’s what’s happening at your restaurant today.</p>
         </div>
-        <div className="absolute right-3 top-3 z-30 flex flex-wrap justify-end gap-2 sm:right-4 sm:top-4">
-          <label className="flex h-9 items-center gap-2 rounded-xl border border-[#e4e9e3] bg-white/95 px-2.5 text-xs shadow-sm sm:px-3">
-            <CalendarDays size={15} className="text-[#536259]" />
-            <span className="sr-only">Dashboard date range</span>
-            <select value={period} onChange={(event) => setPeriod(event.target.value)} aria-label="Dashboard date range" className="max-w-[125px] bg-transparent font-semibold text-[#354239] outline-none sm:max-w-[165px]">
-              {PERIODS.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
-            </select>
-          </label>
+        <div className="flex flex-wrap items-center justify-end gap-2">
+        {period === 'custom' && <>
+          <input type="date" aria-label="Start date" value={customFrom} onChange={(event) => setCustomFrom(event.target.value)} className="h-9 rounded-lg border border-[#dfe7dc] bg-white px-2 text-xs" />
+          <input type="date" aria-label="End date" value={customTo} onChange={(event) => setCustomTo(event.target.value)} className="h-9 rounded-lg border border-[#dfe7dc] bg-white px-2 text-xs" />
+        </>}
         </div>
-        {period === 'custom' && <div className="absolute bottom-3 right-4 z-20 flex gap-2">
-          <input type="date" aria-label="Start date" value={customFrom} onChange={(event) => setCustomFrom(event.target.value)} className="h-8 border border-[#dfe7dc] bg-white px-2 text-xs" />
-          <input type="date" aria-label="End date" value={customTo} onChange={(event) => setCustomTo(event.target.value)} className="h-8 border border-[#dfe7dc] bg-white px-2 text-xs" />
-        </div>}
       </section>
 
       {error && <div role="status" className="border border-[#efd7bd] bg-[#fff8ed] px-4 py-2 text-xs text-[#88602a]">{error}</div>}
       {rangeUnfinished && <div role="status" className="text-xs text-[#88602a]">Select a start and end date to load the custom range.</div>}
 
-      <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {stats.map(({ title, value, hint, icon: Icon, tone, surface, waveColor, percent }) => <MetricCard key={title} title={title} value={value} hint={hint} icon={Icon} tone={tone} surface={surface} waveColor={waveColor} percent={percent} />)}
+      <section className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        {stats.map(({ title, value, hint, icon: Icon, tone, accentColor, glowColor, percent }) => <MetricCard key={title} title={title} value={value} hint={hint} icon={Icon} tone={tone} accentColor={accentColor} glowColor={glowColor} percent={percent} />)}
       </section>
 
-      <section aria-label="Menu categories" className="grid grid-cols-1 gap-2 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-6">
-        {loading ? [0, 1, 2, 3, 4, 5].map((item) => <div key={item} className="h-[76px] animate-pulse border border-[#e5ece6] bg-white" />) : categoryTiles.length ? categoryTiles.map((category, index) => (
-          <button type="button" key={category.name} onClick={() => navigate('/admin/products')} className={`flex min-w-0 items-center gap-2.5 border p-2 text-left transition hover:-translate-y-0.5 hover:shadow-sm ${['bg-[#f0fbf1] border-[#e0f1df]', 'bg-[#fff8eb] border-[#f2eadb]', 'bg-[#edf7ff] border-[#dceaf5]', 'bg-[#fff2f0] border-[#f3e2df]', 'bg-[#effbf8] border-[#d8eee8]', 'bg-[#f5f1ff] border-[#e6ddf8]'][index % 6]}`}>
-            <span className="relative h-12 w-12 shrink-0 overflow-hidden rounded-lg bg-white/80"><UtensilsCrossed size={18} className="absolute inset-0 m-auto text-[#66816b]" /><img src={imageUrl(category.image)} alt="" className="relative z-10 h-full w-full object-cover" onError={(event) => { event.currentTarget.style.display = 'none'; }} /></span>
-            <span className="min-w-0 flex-1"><span className="block truncate text-[11px] font-bold text-[#304538]">{category.name}</span><span className="mt-1 block text-[9px] text-[#77847b]">{category.count} {category.count === 1 ? 'item' : 'items'}</span></span><ArrowRight size={13} className="shrink-0 rotate-[-45deg] text-[#718078]" />
-          </button>
-        )) : <div className="col-span-full border border-dashed border-[#dfe8e0] bg-white px-4 py-5 text-center text-xs text-[#7e8b82]">No visible food categories found.</div>}
-      </section>
-
-      <section className="grid gap-3 xl:grid-cols-[minmax(0,1.55fr)_minmax(260px,0.95fr)_minmax(260px,0.85fr)]">
-        <article className="min-w-0 border border-[#e1e5e2] bg-[#f5f5f5] p-4 sm:p-5">
-          <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
-            <div><h2 className="text-sm font-bold text-[#1c2c22] sm:text-base">Sales &amp; Orders Overview</h2><p className="mt-0.5 text-[11px] text-[#7d8981]">Delivered revenue · {dateLabel}</p></div>
-            <div className="flex gap-1.5 text-[10px]">
-              <span className="inline-flex items-center gap-1.5 border border-[#e5ebe6] px-2 py-1 text-[#506056]"><span className="h-2 w-2 rounded-full bg-[#20a342]" />Revenue (₹)</span>
-              <button type="button" aria-pressed={includeOrders} onClick={() => setIncludeOrders((value) => !value)} className={`inline-flex items-center gap-1.5 border px-2 py-1 ${includeOrders ? 'border-[#d9eadc] bg-[#f3faf4] text-[#506056]' : 'border-[#e5ebe6] text-[#879189]'}`}><span className={`h-2 w-2 rounded-full ${includeOrders ? 'bg-[#b8edc2]' : 'bg-[#cdd4cf]'}`} />Orders</button>
+      <section aria-label="Menu categories" className="grid grid-cols-2 gap-3.5 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
+        {loading ? [0, 1, 2, 3, 4, 5].map((item) => (
+          <div key={item} className="h-36 animate-pulse rounded-2xl border border-slate-200 bg-white shadow-sm" />
+        )) : categoryTiles.length ? categoryTiles.map((category) => (
+          <button
+            type="button"
+            key={category.name}
+            onClick={() => navigate('/admin/products')}
+            className="group relative flex flex-col items-center justify-between rounded-2xl border-2 border-slate-200/90 bg-white p-3.5 text-center shadow-md transition-all duration-300 hover:-translate-y-1.5 hover:border-orange-500 hover:shadow-xl"
+          >
+            {/* High-Contrast Category Image Frame */}
+            <div className="relative mb-2.5 h-16 w-16 shrink-0 overflow-hidden rounded-2xl border-2 border-orange-500/20 bg-slate-100 p-0.5 shadow-md transition-all duration-300 group-hover:scale-105 group-hover:border-orange-500 group-hover:shadow-orange-500/30">
+              <UtensilsCrossed size={22} className="absolute inset-0 m-auto text-slate-300" />
+              <img
+                src={imageUrl(category.image)}
+                alt={category.name}
+                className="relative z-10 h-full w-full rounded-xl object-cover"
+                onError={(event) => { event.currentTarget.style.display = 'none'; }}
+              />
             </div>
+
+            {/* High-Visibility Category Name & Bold Pill Badge */}
+            <div className="w-full min-w-0">
+              <h4 className="truncate text-xs font-black tracking-tight text-slate-900 group-hover:text-orange-600 transition-colors">
+                {category.name}
+              </h4>
+              <div className="mt-1.5 flex items-center justify-center">
+                <span className="inline-flex items-center gap-1 rounded-full bg-orange-50 px-2.5 py-0.5 text-[11px] font-bold text-orange-600 border border-orange-200/60 shadow-xs transition-colors group-hover:bg-orange-500 group-hover:text-white group-hover:border-orange-500">
+                  <span>{category.count}</span>
+                  <span className="text-[10px] font-medium opacity-90">{category.count === 1 ? 'item' : 'items'}</span>
+                </span>
+              </div>
+            </div>
+
+            {/* Corner Action Arrow */}
+            <div className="absolute top-2 right-2 flex h-5 w-5 items-center justify-center rounded-full bg-slate-100 text-slate-400 transition-all duration-300 group-hover:bg-orange-500 group-hover:text-white">
+              <ArrowRight size={11} className="rotate-[-45deg]" />
+            </div>
+          </button>
+        )) : (
+          <div className="col-span-full rounded-2xl border border-dashed border-slate-300 bg-white px-4 py-8 text-center text-xs font-medium text-slate-500">
+            No visible food categories found.
           </div>
-          <div className="h-[300px] sm:h-[340px]">
+        )}
+      </section>
+
+      <section className="grid gap-3 xl:grid-cols-2">
+        <article className="min-w-0 border border-slate-200/80 bg-white shadow-[0_2px_12px_-3px_rgba(0,0,0,0.04)] rounded-xl border-slate-200/90 p-4 sm:p-5">
+          <div className="mb-3 flex items-center justify-between gap-3">
+            <h2 className="text-sm font-bold text-slate-800 sm:text-base">Order Overview</h2>
+            <label className="flex h-8 items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2 text-[11px] font-semibold text-slate-700">
+              <CalendarDays size={13} className="text-slate-500" />
+              <span className="sr-only">Order overview date range</span>
+              <select value={period} onChange={(event) => setPeriod(event.target.value)} aria-label="Order overview date range" className="max-w-[115px] bg-transparent outline-none">
+                {PERIODS.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+              </select>
+            </label>
+          </div>
+          <div className="h-[210px] sm:h-[230px]">
             {reportLoading ? <div className="h-full animate-pulse bg-[#eceeed]" /> : chartData.length ? <ResponsiveContainer width="100%" height="100%">
-              <ComposedChart data={chartData} margin={{ top: 12, right: 12, left: 8, bottom: 14 }}>
-                <CartesianGrid stroke="#dfe3e1" vertical={false} />
-                <XAxis dataKey="label" tickLine={false} axisLine={false} tick={{ fontSize: 11, fontWeight: 600, fill: '#202824' }} label={{ value: period === 'year' ? 'Month' : 'Date', position: 'insideBottom', offset: -8, fontSize: 11, fontWeight: 600, fill: '#202824' }} />
-                <YAxis yAxisId="revenue" tickLine={false} axisLine={false} tick={{ fontSize: 10, fontWeight: 600, fill: '#202824' }} tickFormatter={(value) => money(value)} label={{ value: 'Delivered Revenue (₹)', angle: -90, position: 'insideLeft', fontSize: 11, fontWeight: 600, fill: '#202824' }} />
-                {includeOrders && <YAxis yAxisId="orders" orientation="right" hide domain={[0, 'dataMax + 4']} />}
-                <Tooltip formatter={(value, name) => [name === 'Revenue' ? money(value) : Number(value), name]} labelFormatter={(label) => label} />
-                <Bar yAxisId="revenue" dataKey="revenue" name="Revenue" fill="#159bd5" maxBarSize={68} radius={[4, 4, 0, 0]} />
-                {includeOrders && <Line yAxisId="orders" type="monotone" dataKey="orders" name="Orders" stroke="#83dfa0" strokeWidth={2} dot={{ r: 3, fill: '#83dfa0' }} activeDot={{ r: 5 }} />}
-              </ComposedChart>
-            </ResponsiveContainer> : <div className="grid h-full place-items-center text-xs text-[#819087]">No delivered revenue recorded in this range.</div>}
+              <BarChart data={chartData} margin={{ top: 8, right: 8, left: -18, bottom: 0 }}>
+                <CartesianGrid stroke="#edf0f2" vertical={false} />
+                <XAxis dataKey="label" tickLine={false} axisLine={false} tick={{ fontSize: 10, fill: '#64748b' }} />
+                <YAxis allowDecimals={false} tickLine={false} axisLine={false} tick={{ fontSize: 10, fill: '#64748b' }} />
+                <Tooltip formatter={(value) => [Number(value), 'Orders']} />
+                <Bar dataKey="orders" name="Orders" fill="#ff7a1a" maxBarSize={24} radius={[3, 3, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer> : <div className="grid h-full place-items-center text-xs text-[#819087]">No order data available for this range.</div>}
           </div>
         </article>
 
-        <article className="min-w-0 border border-[#e6ebe7] bg-white p-4 sm:p-5">
-          <div className="mb-1"><h2 className="text-sm font-bold text-[#1c2c22] sm:text-base">Order Status</h2><p className="mt-0.5 text-[11px] text-[#7d8981]">Orders in selected period</p></div>
+        <article className="min-w-0 border border-slate-200/80 bg-white shadow-[0_2px_12px_-3px_rgba(0,0,0,0.04)] rounded-xl border-slate-200/90 p-4 sm:p-5">
+          <div className="mb-3 flex items-center justify-between gap-3">
+            <h2 className="text-sm font-bold text-slate-800 sm:text-base">Revenue Overview</h2>
+            <label className="flex h-8 items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2 text-[11px] font-semibold text-slate-700">
+              <CalendarDays size={13} className="text-slate-500" />
+              <span className="sr-only">Revenue overview date range</span>
+              <select value={period} onChange={(event) => setPeriod(event.target.value)} aria-label="Revenue overview date range" className="max-w-[115px] bg-transparent outline-none">
+                {PERIODS.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+              </select>
+            </label>
+          </div>
+          <div className="h-[210px] sm:h-[230px]">
+            {reportLoading ? <div className="h-full animate-pulse bg-[#eceeed]" /> : chartData.length ? <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={chartData} margin={{ top: 8, right: 8, left: 4, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="revenueOverviewGradient" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#ff6b1a" stopOpacity={0.3} />
+                    <stop offset="100%" stopColor="#ff6b1a" stopOpacity={0.03} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid stroke="#edf0f2" vertical={false} />
+                <XAxis dataKey="label" tickLine={false} axisLine={false} tick={{ fontSize: 10, fill: '#64748b' }} />
+                <YAxis tickLine={false} axisLine={false} tick={{ fontSize: 10, fill: '#64748b' }} tickFormatter={(value) => value >= 1000 ? `${Math.round(value / 1000)}K` : value} />
+                <Tooltip formatter={(value) => [money(value), 'Revenue']} />
+                <Area type="monotone" dataKey="revenue" name="Revenue" stroke="#ff5a00" strokeWidth={2.5} fill="url(#revenueOverviewGradient)" dot={{ r: 3, fill: '#ff5a00', strokeWidth: 0 }} activeDot={{ r: 5 }} />
+              </AreaChart>
+            </ResponsiveContainer> : <div className="grid h-full place-items-center text-xs text-[#819087]">No revenue data available for this range.</div>}
+          </div>
+        </article>
+
+        <article className="min-w-0 border border-slate-200/80 bg-white shadow-[0_2px_12px_-3px_rgba(0,0,0,0.04)] rounded-xl border-slate-200/90 p-4 sm:p-5">
+          <div className="mb-1"><h2 className="text-sm font-bold text-slate-800 sm:text-base">Order Status</h2><p className="mt-0.5 text-[11px] text-slate-400">Orders in selected period</p></div>
           <div className="relative h-[230px] sm:h-[250px]">
             {reportLoading ? <div className="h-full animate-pulse bg-[#f1f5f1]" /> : statusData.length ? <>
               <ResponsiveContainer width="100%" height="100%"><PieChart><Pie data={statusData} dataKey="count" nameKey="status" cx="50%" cy="50%" innerRadius={66} outerRadius={95} paddingAngle={2} stroke="none">{statusData.map((entry) => <Cell key={entry.status} fill={entry.color} />)}</Pie><Tooltip /></PieChart></ResponsiveContainer>
@@ -457,27 +569,28 @@ const AdminDashboardOverview = () => {
           </ul>
         </article>
 
-        <article className="min-w-0 border border-[#e6ebe7] bg-white p-4 sm:p-5">
-          <div className="mb-3 flex items-center justify-between"><h2 className="text-sm font-bold text-[#1c2c22] sm:text-base">Quick Actions</h2><button type="button" onClick={() => navigate('/admin')} className="text-[10px] font-medium text-[#66756b] hover:text-[#178a36]">View All <ArrowRight size={11} className="ml-1 inline" /></button></div>
-          <div className="grid grid-cols-2 gap-2">
-            {quickActions.map(({ label, icon: Icon, path, tone, surface }) => <button type="button" key={label} onClick={() => navigate(path)} className={`flex min-h-[74px] flex-col items-center justify-center gap-2 rounded-md border px-2 py-2 text-center text-white transition hover:shadow-sm ${surface}`}>
-              <span className={`grid h-10 w-10 place-items-center rounded-full ${tone}`}><Icon size={20} /></span><span className="text-[10px] font-semibold text-white">{label}</span>
+        <article className="relative isolate min-w-0 overflow-hidden rounded-xl border border-orange-100/80 bg-gradient-to-br from-white via-white to-orange-50/70 p-4 shadow-[0_4px_18px_-8px_rgba(194,90,25,0.18)] sm:p-5">
+          <div className="pointer-events-none absolute -right-12 -top-14 -z-10 h-40 w-40 rounded-full bg-orange-100/50 blur-3xl" />
+          <div className="mb-3 flex items-center justify-between"><h2 className="text-sm font-bold text-slate-800 sm:text-base">Quick Actions</h2><button type="button" onClick={() => navigate('/admin')} className="inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-semibold text-[#66756b] transition hover:bg-white hover:text-[#178a36]">View All <ArrowRight size={12} className="ml-1" /></button></div>
+          <div className="grid grid-cols-2 gap-2.5">
+            {quickActions.map(({ label, icon: Icon, path, bg, iconBg }) => <button type="button" key={label} onClick={() => navigate(path)} className={`group flex min-h-[82px] flex-col items-center justify-center gap-2 rounded-xl border bg-gradient-to-br px-2 py-2.5 text-center transition duration-200 hover:-translate-y-0.5 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-400 focus-visible:ring-offset-2 ${bg}`}>
+              <span className={`grid h-10 w-10 place-items-center rounded-xl shadow-sm transition-transform group-hover:scale-105 ${iconBg}`}><Icon size={19} strokeWidth={2.2} /></span><span className="text-[11px] font-semibold text-slate-700">{label}</span>
             </button>)}
           </div>
         </article>
       </section>
 
       <section className="grid gap-3 xl:grid-cols-[minmax(0,2fr)_minmax(270px,0.85fr)]">
-        <article className="min-w-0 border border-[#e6ebe7] bg-white p-4 sm:p-5">
-          <div className="mb-3 flex items-center justify-between"><h2 className="text-sm font-bold text-[#1c2c22] sm:text-base">Recent Orders</h2><button type="button" onClick={() => navigate('/admin/orders')} className="border border-[#e4e9e5] px-2.5 py-1 text-[10px] font-medium text-[#5d6c62] hover:bg-[#f6f8f6]">View All</button></div>
-          <div className="overflow-hidden rounded-xl border border-[#e6ebe7]">
+        <article className="min-w-0 border border-slate-200/80 bg-white shadow-[0_2px_12px_-3px_rgba(0,0,0,0.04)] rounded-xl border-slate-200/90 p-4 sm:p-5">
+          <div className="mb-3 flex items-center justify-between"><h2 className="text-sm font-bold text-slate-800 sm:text-base">Recent Orders</h2><button type="button" onClick={() => navigate('/admin/orders')} className="border border-[#e4e9e5] px-2.5 py-1 text-[10px] font-medium text-[#5d6c62] hover:bg-[#f6f8f6]">View All</button></div>
+          <div className="overflow-hidden rounded-xl border border-slate-200/80">
             <div className="overflow-x-auto">
               <table className="w-full min-w-[760px] text-left text-[11px]">
               <thead className="bg-[#d4a843] text-xs font-bold uppercase tracking-wide text-white"><tr>{['S No', 'Order ID', 'Customer', 'Items', 'Type', 'Amount', 'Status', 'Time', ''].map((heading) => <th key={heading} className="whitespace-nowrap px-4 py-4">{heading}</th>)}</tr></thead>
               <tbody className="divide-y divide-[#edf1ed]">
                 {loading ? [0, 1, 2, 3].map((row) => <tr key={row}>{[0, 1, 2, 3, 4, 5, 6, 7, 8].map((cell) => <td key={cell} className="px-2.5 py-3"><span className="block h-3 animate-pulse bg-[#f0f3f0]" /></td>)}</tr>) : recentOrders.length ? recentOrders.map((order, index) => {
                   const tone = order.status === 'Delivered' ? 'bg-[#e6f8e9] text-[#259346]' : order.status === 'Cancelled' ? 'bg-[#fff0ee] text-[#db5549]' : order.status === 'Preparing' || order.status === 'Out for Delivery' ? 'bg-[#f1eaff] text-[#7652c6]' : order.status === 'Ready' ? 'bg-[#eaf2ff] text-[#3979d8]' : 'bg-[#fff5df] text-[#d58400]';
-                  return <tr key={`${order.id}-${index}`} className="hover:bg-[#fafcfa]"><td className="whitespace-nowrap px-2.5 py-3 font-semibold text-[#4f5f54]">{index + 1}</td><td className="whitespace-nowrap px-2.5 py-3 font-mono text-[#3d4b41]">{order.id || '—'}</td><td className="max-w-36 truncate px-2.5 py-3 text-[#3d4b41]">{order.customer}</td><td className="whitespace-nowrap px-2.5 py-3 text-[#68766d]">{order.items}</td><td className="whitespace-nowrap px-2.5 py-3 text-[#68766d]">{order.type}</td><td className="whitespace-nowrap px-2.5 py-3 font-semibold">{money(order.amount)}</td><td className="px-2.5 py-3"><span className={`whitespace-nowrap px-2 py-1 text-[10px] font-semibold ${tone}`}>{order.status}</span></td><td className="whitespace-nowrap px-2.5 py-3 text-[#7d8981]">{formatDateTime(order.time)}</td><td className="px-2.5 py-3"><button type="button" onClick={() => navigate(order.path)} aria-label={`Open ${order.id}`} className="text-[#718078] hover:text-[#1c7c39]">•••</button></td></tr>;
+                  return <tr key={`${order.id}-${index}`} className="hover:bg-[#fafcfa]"><td className="whitespace-nowrap px-2.5 py-3 font-semibold text-[#4f5f54]">{index + 1}</td><td className="whitespace-nowrap px-2.5 py-3 font-mono text-[#3d4b41]">{order.id || '—'}</td><td className="max-w-36 truncate px-2.5 py-3 text-[#3d4b41]">{order.customer}</td><td className="whitespace-nowrap px-2.5 py-3 text-[#68766d]">{order.items}</td><td className="whitespace-nowrap px-2.5 py-3 text-[#68766d]">{order.type}</td><td className="whitespace-nowrap px-2.5 py-3 font-semibold">{money(order.amount)}</td><td className="px-2.5 py-3"><span className={`whitespace-nowrap px-2 py-1 text-[10px] font-semibold ${tone}`}>{order.status}</span></td><td className="whitespace-nowrap px-2.5 py-3 text-slate-400">{formatDateTime(order.time)}</td><td className="px-2.5 py-3"><button type="button" onClick={() => navigate(order.path)} aria-label={`Open ${order.id}`} className="text-slate-500 hover:text-[#1c7c39]">•••</button></td></tr>;
                 }) : <tr><td colSpan="9" className="px-3 py-8 text-center text-xs text-[#819087]">No orders for this period.</td></tr>}
               </tbody>
               </table>
@@ -485,15 +598,46 @@ const AdminDashboardOverview = () => {
           </div>
         </article>
 
-        <article className="min-w-0 border border-[#e6ebe7] bg-white p-4 sm:p-5">
-          <div className="mb-3 flex items-center justify-between"><h2 className="text-sm font-bold text-[#1c2c22] sm:text-base">Top Selling Items</h2><button type="button" onClick={() => navigate('/admin/products')} className="border border-[#e4e9e5] px-2.5 py-1 text-[10px] font-medium text-[#5d6c62] hover:bg-[#f6f8f6]">View All</button></div>
-          <div className="divide-y divide-[#edf1ed]">
-            {loading ? [0, 1, 2, 3].map((row) => <div key={row} className="flex items-center gap-3 py-2.5"><div className="h-10 w-10 animate-pulse bg-[#f0f3f0]" /><div className="flex-1"><div className="h-3 w-28 animate-pulse bg-[#f0f3f0]" /><div className="mt-2 h-2 w-16 animate-pulse bg-[#f0f3f0]" /></div></div>) : topSellingItems.length ? topSellingItems.map((item, index) => <div key={item.id} className="flex items-center gap-2.5 py-2.5 first:pt-0 last:pb-0">
-              <span className={`grid h-5 w-5 shrink-0 place-items-center text-[10px] font-bold ${index === 0 ? 'rounded-full bg-[#f4a900] text-white' : 'rounded-full bg-[#f0f2f0] text-[#738077]'}`}>{index + 1}</span>
-              <div className="h-10 w-10 shrink-0 overflow-hidden bg-[#f1f4f0]"><img src={imageUrl(item.image)} alt="" className="h-full w-full object-cover" onError={(event) => { event.currentTarget.style.display = 'none'; }} /></div>
-              <div className="min-w-0 flex-1"><p className="truncate text-[11px] font-semibold text-[#344238]">{item.name}</p><p className="mt-0.5 text-[10px] text-[#818d84]">{item.quantity} sold</p></div>
-              <div className="text-right"><p className="whitespace-nowrap text-[11px] font-bold text-[#258742]">{money(item.revenue)}</p><p className="mt-0.5 text-[9px] text-[#55a467]">Completed</p></div>
-            </div>) : <div className="py-10 text-center text-xs text-[#819087]">No completed item sales in this period.</div>}
+        <article className="min-w-0 border border-slate-200/80 bg-white shadow-[0_2px_12px_-3px_rgba(0,0,0,0.04)] rounded-xl border-slate-200/90 p-4 sm:p-5">
+          <div className="mb-2 flex items-center justify-between">
+            <h2 className="text-sm font-bold text-slate-900 sm:text-base">Trending Food Items</h2>
+            <button type="button" onClick={() => navigate('/admin/products')} className="rounded-md px-2 py-1 text-[11px] font-semibold text-blue-600 transition-colors hover:bg-blue-50 hover:text-blue-700">View All</button>
+          </div>
+          <div>
+            {loading ? [0, 1, 2, 3, 4].map((row) => (
+              <div key={row} className="flex items-center gap-3 py-2">
+                <div className="h-7 w-7 shrink-0 animate-pulse rounded-full bg-slate-100" />
+                <div className="h-14 w-14 shrink-0 animate-pulse rounded-xl bg-slate-100" />
+                <div className="min-w-0 flex-1">
+                  <div className="h-3 w-32 max-w-full animate-pulse rounded bg-slate-100" />
+                  <div className="mt-2 h-2 w-full animate-pulse rounded-full bg-slate-100" />
+                </div>
+              </div>
+            )) : topSellingItems.length ? topSellingItems.map((item, index) => (
+              <div key={item.id} className="flex items-center gap-3 py-2">
+                <span className={`grid h-7 w-7 shrink-0 place-items-center rounded-full text-sm font-bold ${
+                  index === 0 ? 'bg-amber-100 text-amber-800'
+                    : index === 2 ? 'bg-orange-100 text-orange-800'
+                      : 'bg-slate-100 text-slate-700'
+                }`}>{index + 1}</span>
+                <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-xl bg-orange-50 shadow-sm ring-1 ring-black/5">
+                  <UtensilsCrossed size={20} className="absolute inset-0 m-auto text-orange-300" />
+                  {item.image && <img src={imageUrl(item.image)} alt={item.name} className="relative z-10 h-full w-full object-cover" onError={(event) => { event.currentTarget.style.display = 'none'; }} />}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="truncate text-xs font-semibold text-slate-900">{item.name}</p>
+                    <span className="inline-flex shrink-0 items-center gap-1 text-[10px] font-semibold text-red-600">
+                      <Flame size={14} fill="currentColor" /> Trending
+                    </span>
+                  </div>
+                  <p className="mt-0.5 text-[11px] text-slate-500">{item.orders.toLocaleString('en-IN')} orders</p>
+                  <div className="mt-1.5 h-2 overflow-hidden rounded-full bg-slate-100">
+                    <div className="h-full rounded-full bg-gradient-to-r from-orange-500 to-orange-400" style={{ width: `${Math.max(8, (item.orders / maxTopItemOrders) * 100)}%` }} />
+                  </div>
+                </div>
+              </div>
+            )) : <div className="py-10 text-center text-xs text-[#819087]">No completed item sales in this period.</div>}
           </div>
         </article>
       </section>
@@ -505,7 +649,7 @@ const AdminDashboardOverview = () => {
             value: loading ? '—' : snapshot.foods.length.toLocaleString('en-IN'),
             detail: 'Items in menu',
             icon: CookingPot,
-            bg: 'bg-[#22c55e]',
+            bg: 'bg-white shadow-[0_2px_12px_-3px_rgba(0,0,0,0.04)] rounded-xl border-slate-200/90 border-slate-200/80 text-[#17231b]',
             path: '/admin/products',
           },
           {
@@ -513,7 +657,7 @@ const AdminDashboardOverview = () => {
             value: loading ? '—' : Number(snapshot.inventory.lowStock || 0).toLocaleString('en-IN'),
             detail: 'Needs restocking',
             icon: AlertTriangle,
-            bg: Number(snapshot.inventory.lowStock || 0) > 0 ? 'bg-[#ef4444]' : 'bg-[#f59e0b]',
+            bg: 'bg-white shadow-[0_2px_12px_-3px_rgba(0,0,0,0.04)] rounded-xl border-slate-200/90 border-slate-200/80 text-[#17231b]',
             path: '/admin/inventory/products',
           },
           {
@@ -521,7 +665,7 @@ const AdminDashboardOverview = () => {
             value: loading ? '—' : openBillsCount.toLocaleString('en-IN'),
             detail: 'Awaiting settlement',
             icon: Table2,
-            bg: 'bg-[#3b82f6]',
+            bg: 'bg-white shadow-[0_2px_12px_-3px_rgba(0,0,0,0.04)] rounded-xl border-slate-200/90 border-slate-200/80 text-[#17231b]',
             path: '/admin/billing/history',
           },
           {
@@ -529,7 +673,7 @@ const AdminDashboardOverview = () => {
             value: loading ? '—' : pendingKitchenCount.toLocaleString('en-IN'),
             detail: 'Pending or approved',
             icon: ChefHat,
-            bg: 'bg-[#8b5cf6]',
+            bg: 'bg-white shadow-[0_2px_12px_-3px_rgba(0,0,0,0.04)] rounded-xl border-slate-200/90 border-slate-200/80 text-[#17231b]',
             path: '/admin/inventory/kitchen-requests',
           },
         ].map(({ title, value, detail, icon: Icon, bg, path }, index) => (
@@ -537,11 +681,11 @@ const AdminDashboardOverview = () => {
             type="button"
             key={title}
             onClick={() => navigate(path)}
-            className={`relative min-w-0 overflow-hidden rounded-xl border border-transparent p-4 sm:p-5 shadow-[0_2px_10px_rgba(20,56,34,0.08)] flex flex-col justify-between min-h-[140px] ${bg} text-white text-left transition hover:opacity-95 hover:scale-[1.01] active:scale-[0.99]`}
+            className={`relative min-w-0 overflow-hidden rounded-xl border p-4 sm:p-5 shadow-[0_2px_10px_rgba(20,56,34,0.08)] flex flex-col justify-between min-h-[140px] ${bg} text-left transition hover:scale-[1.01] active:scale-[0.99]`}
           >
             <div className="flex items-start gap-3 relative z-10">
-              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg shadow-sm bg-white/20">
-                <Icon size={24} strokeWidth={2.2} className="text-white" />
+              <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-lg shadow-sm ${title === 'Low Stock Items' ? 'bg-[#fff4df] text-[#d99000]' : 'bg-[#fff4e8] text-[#f36b2b]'}`}>
+                <Icon size={24} strokeWidth={2.2} />
               </div>
               <div className="flex-1 mt-0.5 min-w-0">
                 <h3 className="text-[12px] font-semibold opacity-90 mb-1 truncate">{title}</h3>
@@ -550,22 +694,22 @@ const AdminDashboardOverview = () => {
             </div>
 
             <div className="flex items-center gap-2 mt-5 relative z-10">
-              <span className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[11px] font-bold bg-white/25">
+              <span className="inline-flex items-center gap-1 rounded-md bg-[#e8f7ed] px-1.5 py-0.5 text-[11px] font-bold text-[#168745]">
                 Live
               </span>
-              <span className="text-[11px] font-medium opacity-75 truncate">{detail}</span>
+              <span className="text-[11px] font-medium text-slate-500 truncate">{detail}</span>
             </div>
 
-            <div className="absolute right-0 bottom-0 w-24 h-16 pointer-events-none opacity-50">
+            <div className="absolute right-0 bottom-0 w-24 h-16 pointer-events-none opacity-30">
               <svg viewBox="0 0 100 50" preserveAspectRatio="none" className="w-full h-full">
                 <defs>
                   <linearGradient id={`dash-bottom-grad-${index}`} x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#ffffff" stopOpacity="0.4" />
+                    <stop offset="0%" stopColor="#ff7a1a" stopOpacity="0.4" />
                     <stop offset="100%" stopColor="#ffffff" stopOpacity="0.0" />
                   </linearGradient>
                 </defs>
                 <path d="M0,50 L0,40 Q25,30 50,40 T100,20 L100,50 Z" fill={`url(#dash-bottom-grad-${index})`} />
-                <path d="M0,40 Q25,30 50,40 T100,20" fill="none" stroke="#ffffff" strokeWidth="2.5" />
+                <path d="M0,40 Q25,30 50,40 T100,20" fill="none" stroke="#ff7a1a" strokeWidth="2.5" />
               </svg>
             </div>
           </button>

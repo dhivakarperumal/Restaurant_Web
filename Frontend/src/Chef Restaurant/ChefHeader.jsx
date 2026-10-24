@@ -1,8 +1,8 @@
 import { useState, useRef, useEffect } from "react";
-import { useNavigate, Link, useLocation } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import {
-  Menu, Search, Bell, Settings, User, LogOut, ChevronDown,
-  ShoppingBag, Package, Clock, X, LayoutDashboard, MessageSquare,
+  Menu, Bell, Settings, User, LogOut, ChevronDown,
+  ShoppingBag, Package, Clock, LayoutDashboard, MessageSquare,
   Users, CreditCard, UserCheck, ClipboardList, Activity, UserRound,
   CalendarCheck, Receipt, ShoppingCart, BarChart3, Dumbbell, Send,
   Boxes, Plus, PhoneCall, HeartPulse, FolderKanban, CheckSquare,
@@ -107,16 +107,10 @@ const AlertDropdown = ({ title, items, icon, type, onClose, accent }) => {
 /* ══════════════════ MAIN HEADER ══════════════════ */
 const ChefHeader = ({ onMenuClick }) => {
   const [activeDropdown, setActiveDropdown] = useState(null);
-  const [showSearch, setShowSearch] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [alerts, setAlerts] = useState({ tasks: [], leaves: [], orders: [], lowStock: [] });
+  const [alerts, setAlerts] = useState({ tasks: [], leaves: [], lowStock: [] });
   const [currentTime, setCurrentTime] = useState(dayjs());
 
   const dropdownRef = useRef(null);
-  const searchRef   = useRef(null);
-  const inputRef    = useRef(null);
-
-  const navigate  = useNavigate();
   const location  = useLocation();
   const { profileName, role, email, logout } = useAuth();
 
@@ -134,7 +128,6 @@ const ChefHeader = ({ onMenuClick }) => {
   useEffect(() => {
     const fetchAlerts = async () => {
       let leaveAlerts = [];
-      let orderAlerts = [];
       let lowStockAlerts = [];
 
       // ── 1. Pending Leaves from employee_leaves table ──
@@ -148,19 +141,6 @@ const ChefHeader = ({ onMenuClick }) => {
         }));
       } catch (e) {
         console.error('[Header] Leave fetch error:', e?.response?.status, e.message);
-      }
-
-      try {
-        const { data } = await api.get('/orders');
-        orderAlerts = (data?.data || [])
-          .filter((order) => !['completed', 'delivered', 'cancelled'].includes(String(order.order_status || '').toLowerCase()))
-          .map((order) => ({
-            id: order.order_id,
-            customer: order.address?.customer_name || order.customer_id || 'Customer',
-            status: order.order_status || 'Pending',
-          }));
-      } catch (e) {
-        console.error('[Header] Order notification error:', e?.response?.status, e.message);
       }
 
       try {
@@ -200,43 +180,22 @@ const ChefHeader = ({ onMenuClick }) => {
         console.error('[Header] Low stock notification error:', e?.response?.status, e.message);
       }
 
-      setAlerts({ tasks: [], leaves: leaveAlerts, orders: orderAlerts, lowStock: lowStockAlerts });
+      setAlerts({ tasks: [], leaves: leaveAlerts, lowStock: lowStockAlerts });
     };
 
     fetchAlerts();
   }, []);
 
-  /* focus search */
-  useEffect(() => { if (showSearch) inputRef.current?.focus(); }, [showSearch]);
-
   /* click outside */
   useEffect(() => {
     const h = (e) => {
       if (activeDropdown && dropdownRef.current && !dropdownRef.current.contains(e.target)) setActiveDropdown(null);
-      if (showSearch && searchRef.current && !searchRef.current.contains(e.target)) setShowSearch(false);
     };
     document.addEventListener("mousedown", h);
     return () => document.removeEventListener("mousedown", h);
-  }, [activeDropdown, showSearch]);
+  }, [activeDropdown]);
 
   const toggle = (name) => setActiveDropdown(p => p === name ? null : name);
-  const handleSearch = (e) => {
-    e.preventDefault();
-    if (!searchQuery.trim()) return;
-    const query = searchQuery.trim().toLowerCase();
-    let target = "/admin/products";
-    if (query.includes("order")) target = "/admin/orders";
-    if (query.includes("bill")) target = "/admin/billing";
-    if (query.includes("customer") || query.includes("user")) target = "/admin/customers";
-    if (query.includes("stock")) target = "/admin/products/stock-details";
-    if (query.includes("categor")) target = "/admin/products/categories";
-    if (query.includes("frame")) target = "/admin/frames";
-    if (query.includes("album")) target = "/admin/albums";
-    if (query.includes("review")) target = "/admin/reviews";
-    navigate(`${target}?search=${encodeURIComponent(searchQuery)}`);
-    setShowSearch(false);
-    setSearchQuery("");
-  };
 
   const handleLogout = () => {
     logout();
@@ -298,29 +257,6 @@ const ChefHeader = ({ onMenuClick }) => {
             {/* Attendance clock in/out pill */}
             <AttendanceWidget variant="header" />
 
-            {/* Search */}
-            <button
-              onClick={() => setShowSearch(p => !p)}
-              className="flex items-center gap-2 px-3 h-9 rounded-xl bg-gray-50 hover:bg-gray-100 border border-gray-200 text-gray-600 transition text-xs"
-            >
-              <Search size={14} />
-              <span className="hidden md:block">Search...</span>
-              <span className="hidden md:block text-[10px] bg-gray-100 px-1.5 py-0.5 rounded-md">⌘K</span>
-            </button>
-
-            {/* Divider */}
-            <div className="w-px h-6 bg-gray-200 mx-1" />
-
-            {/* Order notifications */}
-            <div className="relative">
-              <IconBtn name="orders" badge={alerts.orders.length} badgeColor="bg-orange-500" title="Order Notifications">
-                <ShoppingCart size={18} />
-              </IconBtn>
-              {activeDropdown === "orders" && (
-                <AlertDropdown title="Order Notifications" items={alerts.orders} icon={<ShoppingCart size={13} className="text-orange-400" />} type="orders" onClose={() => setActiveDropdown(null)} accent="bg-orange-500/20 text-orange-400" />
-              )}
-            </div>
-
             {/* Low stock notifications */}
             <div className="relative">
               <IconBtn name="lowStock" badge={alerts.lowStock.length} badgeColor="bg-red-500" title="Low Stock Notifications">
@@ -338,24 +274,22 @@ const ChefHeader = ({ onMenuClick }) => {
             <div className="relative ml-1 sm:ml-2">
               <button
                 onClick={() => toggle("profile")}
-                className={`flex items-center gap-2.5 px-2.5 py-2 rounded-2xl transition-all duration-200 border
-                  ${activeDropdown === "profile"
-                    ? "bg-gray-100 border-gray-200 shadow-sm"
-                    : "bg-white border-transparent hover:bg-gray-50 hover:border-gray-200"
-                  }`}
+                className={`flex items-center gap-2.5 rounded-2xl border border-[#ff7a1a] bg-gradient-to-br from-[#FF7A1A] to-[#E94B00] px-2.5 py-2 text-white shadow-sm transition-all duration-200 hover:from-[#ff8730] hover:to-[#f05408] ${
+                  activeDropdown === "profile" ? "ring-2 ring-orange-200" : ""
+                }`}
               >
                 <div className="w-[34px] h-[34px] rounded-xl bg-gradient-to-br from-[#1a2e28] to-[#2c473f] border border-[#1a2e28] flex items-center justify-center text-white text-sm font-bold shadow-inner">
                   {userName.charAt(0).toUpperCase()}
                 </div>
                 <div className="hidden md:flex flex-col items-start pr-1">
-                  <span className="text-sm font-semibold text-gray-900 leading-tight">
+                  <span className="text-sm font-semibold leading-tight text-white">
                     {userName}
                   </span>
-                  <span className="text-[10px] text-gray-500 font-medium tracking-wide">
+                  <span className="text-[10px] font-medium tracking-wide text-white/80">
                     {userRole}
                   </span>
                 </div>
-                <ChevronDown size={14} className={`hidden md:block text-gray-400 transition-transform ${activeDropdown === "profile" ? "rotate-180" : ""}`} />
+                <ChevronDown size={14} className={`hidden md:block text-white/80 transition-transform ${activeDropdown === "profile" ? "rotate-180" : ""}`} />
               </button>
 
               {/* Profile dropdown */}
@@ -392,66 +326,6 @@ const ChefHeader = ({ onMenuClick }) => {
         </div>
       </header>
 
-      {showSearch && (
-        <div ref={searchRef} className="absolute right-4 top-20 z-50 w-[min(92vw,420px)] rounded-2xl border border-gray-200 bg-white text-gray-900 shadow-2xl">
-          <form onSubmit={handleSearch} className="p-3 border-b border-gray-100">
-            <div className="flex items-center gap-2 rounded-xl bg-gray-50 border border-gray-200 px-3 py-2">
-              <Search size={15} className="text-gray-400" />
-              <input
-                ref={inputRef}
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search products, orders, billing..."
-                className="w-full bg-transparent text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none"
-              />
-              {searchQuery && (
-                <button
-                  type="button"
-                  onClick={() => setSearchQuery("")}
-                  className="p-1 rounded-md hover:bg-gray-200"
-                  aria-label="Clear search"
-                >
-                  <X size={14} className="text-gray-500" />
-                </button>
-              )}
-            </div>
-          </form>
-
-          <div className="px-5 py-3">
-            <p className="text-[11px] text-gray-500 uppercase tracking-widest mb-2">Quick Links</p>
-            <div className="flex flex-wrap gap-2">
-              {[
-                { label: "Products", path: "/admin/products" },
-                { label: "Add Product", path: "/admin/products/add" },
-                { label: "Categories", path: "/admin/products/categories" },
-                { label: "Add Category", path: "/admin/products/categories/add" },
-                { label: "Stock", path: "/admin/products/stock-details" },
-                { label: "Orders", path: "/admin/orders" },
-                { label: "Billing", path: "/admin/billing" },
-                { label: "New Billing", path: "/admin/billing/new" },
-                    { label: "Frames", path: "/admin/frames" },
-                    { label: "Add Frame", path: "/admin/frames/add" },
-                { label: "Customers", path: "/admin/customers" },
-              ].map((l) => (
-                <Link
-                  key={l.path}
-                  to={l.path}
-                  onClick={() => setShowSearch(false)}
-                  className="px-3 py-1.5 rounded-lg bg-gray-50 hover:bg-primary/10 hover:text-primary text-gray-600 text-xs transition border border-gray-200"
-                >
-                  {l.label}
-                </Link>
-              ))}
-            </div>
-          </div>
-
-          <div className="px-5 py-2 text-[10px] text-gray-400 flex justify-between border-t border-gray-100">
-            <span>Press <kbd className="bg-gray-100 px-1 rounded">Enter</kbd> to search</span>
-            <span>Press <kbd className="bg-gray-100 px-1 rounded">Esc</kbd> to close</span>
-          </div>
-        </div>
-      )}
     </>
   );
 };

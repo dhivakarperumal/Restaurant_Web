@@ -28,7 +28,7 @@ const ServerLayout = () => {
 
 
   return (
-    <div className={`admin-root flex min-h-screen ${isPrintPage ? 'bg-gray-100 text-black' : 'bg-white text-gray-900'} print:bg-white print:text-black print:min-h-0 print:block`}>
+    <div className={`admin-root admin-theme flex min-h-screen ${isPrintPage ? 'bg-gray-100 text-black' : 'bg-white text-gray-900'} print:bg-white print:text-black print:min-h-0 print:block`}>
       
       {/* Sidebar */}
       {!isPrintPage && (

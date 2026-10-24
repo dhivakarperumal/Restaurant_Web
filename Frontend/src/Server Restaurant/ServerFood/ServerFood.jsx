@@ -415,43 +415,8 @@ export default function ServerFood() {
 
   return (
     <div className="space-y-6">
-      {/* Top Banner / Header */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-white p-5 rounded-2xl border border-gray-100 shadow-sm">
-        <div className="flex items-center gap-3">
-          <div className="p-3 rounded-2xl bg-[#1f3228] text-[#d4a843] shadow-inner">
-            <Utensils className="w-6 h-6" />
-          </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <h1 className="text-xl sm:text-2xl font-bold text-gray-900 font-serif">
-                Restaurant Food Menu
-              </h1>
-              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                <ShieldCheck className="w-3 h-3" />
-                {selectedTable ? "Dine-in Ordering" : "View Only"}
-              </span>
-            </div>
-            <p className="text-xs sm:text-sm text-gray-500 mt-0.5">
-              {selectedTable
-                ? "Select dishes and quantities to send this table's order to the kitchen."
-                : "Browse dining dishes and beverages configured by administrator."}
-            </p>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-2.5 w-full sm:w-auto">
-          <button
-            onClick={fetchFoodsAndCategories}
-            title="Refresh menu items"
-            className="flex items-center gap-2 px-3.5 py-2.5 rounded-xl border border-gray-200 text-gray-700 hover:bg-gray-50 transition cursor-pointer text-sm font-medium shadow-sm"
-          >
-            <RefreshCw
-              className={`w-4 h-4 ${loading ? "animate-spin text-[#d4a843]" : ""}`}
-            />
-            <span className="hidden sm:inline">Refresh Menu</span>
-          </button>
-        </div>
-      </div>
+     
+        
 
       {/* Active Dining Bill Banner for Table (Consolidating Rounds) */}
       {selectedTable && activeBill && (
@@ -477,7 +442,7 @@ export default function ServerFood() {
             <button
               type="button"
               onClick={() => setShowBillItems((prev) => !prev)}
-              className="self-start rounded-xl border border-white/20 bg-white/10 px-3.5 py-1.5 text-xs font-semibold text-white transition hover:bg-white/20 sm:self-auto cursor-pointer"
+              className="self-start rounded-xl bg-[#FF5A00] px-3.5 py-1.5 text-xs font-semibold text-white transition hover:bg-[#E94B00] sm:self-auto cursor-pointer"
             >
               {showBillItems ? "Hide Ordered Items ▲" : "View Ordered Items ▼"}
             </button>
@@ -512,61 +477,68 @@ export default function ServerFood() {
             value: stats.total,
             hint: "Configured by admin",
             icon: UtensilsCrossed,
-            bg: "bg-[#22c55e]",
+            tone: "bg-gradient-to-tr from-orange-500 to-amber-400 text-white shadow-orange-500/25",
+            accentColor: "#f97316",
+            glowColor: "#fb923c",
           },
           {
             title: "Available Today",
             value: stats.available,
             hint: "Ready to serve",
             icon: CheckCircle2,
-            bg: "bg-[#3b82f6]",
+            tone: "bg-gradient-to-tr from-emerald-600 to-teal-400 text-white shadow-emerald-500/25",
+            accentColor: "#10b981",
+            glowColor: "#34d399",
           },
           {
             title: "Pure Veg Items",
             value: stats.vegCount,
             hint: "Vegetarian selections",
             icon: Sparkles,
-            bg: "bg-[#10b981]",
+            tone: "bg-gradient-to-tr from-green-600 to-lime-400 text-white shadow-green-500/25",
+            accentColor: "#22c55e",
+            glowColor: "#4ade80",
           },
           {
             title: "Non-Veg Dishes",
             value: stats.nonVegCount,
             hint: "Meat & poultry specialties",
             icon: Flame,
-            bg: "bg-[#f43f5e]",
+            tone: "bg-gradient-to-tr from-rose-600 to-pink-400 text-white shadow-rose-500/25",
+            accentColor: "#f43f5e",
+            glowColor: "#fb7185",
           },
-        ].map(({ title, value, hint, icon: Icon, bg }, index) => (
+        ].map(({ title, value, hint, icon: Icon, tone, accentColor, glowColor }) => (
           <article
             key={title}
-            className={`relative min-w-0 overflow-hidden rounded-xl border border-transparent p-4 sm:p-5 shadow-[0_2px_10px_rgba(20,56,34,0.08)] flex flex-col justify-between min-h-[140px] ${bg} text-white`}
+            className="group relative flex min-h-[140px] min-w-0 flex-col justify-between overflow-hidden rounded-2xl border border-slate-200/90 bg-white p-4 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] transition-all duration-300 hover:-translate-y-1 hover:border-slate-300 hover:shadow-[0_12px_24px_-6px_rgba(0,0,0,0.1)] sm:p-5"
           >
-            <div className="flex items-start gap-3 relative z-10">
-              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg shadow-sm bg-white/20">
-                <Icon size={24} strokeWidth={2.2} className="text-white" />
+            <div
+              className="pointer-events-none absolute -right-6 -top-6 h-28 w-28 rounded-full opacity-20 blur-2xl transition-all duration-500 group-hover:scale-150 group-hover:opacity-35"
+              style={{ backgroundColor: glowColor }}
+            />
+            <div className="relative z-10 flex items-start justify-between gap-3">
+              <div className="min-w-0 flex-1">
+                <h3 className="truncate text-[11px] font-bold uppercase tracking-wider text-slate-500">{title}</h3>
+                <div className="mt-2.5 truncate text-[23px] font-black tracking-tight text-slate-800 sm:text-[27px]">{value}</div>
               </div>
-              <div className="flex-1 mt-0.5 min-w-0">
-                <h3 className="text-[12px] font-semibold opacity-90 mb-1 truncate">{title}</h3>
-                <div className="text-[26px] font-extrabold leading-none tracking-tight">{value}</div>
+              <div className={`relative flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl shadow-sm transition-transform duration-300 group-hover:scale-110 ${tone}`}>
+                <Icon size={24} strokeWidth={2.3} />
               </div>
             </div>
-            <div className="flex items-center gap-2 mt-5 relative z-10">
-              <span className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[11px] font-bold bg-white/25">
-                Live
-              </span>
-              <span className="text-[11px] font-medium opacity-75 truncate">{hint}</span>
+            <div className="relative z-10 mt-4 flex items-center justify-between border-t border-slate-100 pt-3 text-xs">
+              <div className="flex min-w-0 items-center gap-1.5">
+                <span className="inline-flex shrink-0 items-center rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-bold text-emerald-600 ring-1 ring-inset ring-emerald-500/20">
+                  Live
+                </span>
+                <span className="truncate font-medium text-slate-500">{hint}</span>
+              </div>
+              <span className="h-2 w-2 shrink-0 rounded-full shadow-sm" style={{ backgroundColor: accentColor }} />
             </div>
-            <div className="absolute right-0 bottom-0 w-24 h-16 pointer-events-none opacity-50">
-              <svg viewBox="0 0 100 50" preserveAspectRatio="none" className="w-full h-full">
-                <defs>
-                  <linearGradient id={`food-grad-${index}`} x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#ffffff" stopOpacity="0.4" />
-                    <stop offset="100%" stopColor="#ffffff" stopOpacity="0.0" />
-                  </linearGradient>
-                </defs>
-                <path d="M0,50 L0,40 Q25,30 50,40 T100,20 L100,50 Z" fill={`url(#food-grad-${index})`} />
-                <path d="M0,40 Q25,30 50,40 T100,20" fill="none" stroke="#ffffff" strokeWidth="2.5" />
-              </svg>
-            </div>
+            <div
+              className="absolute bottom-0 left-0 h-[3px] w-0 transition-all duration-300 group-hover:w-full"
+              style={{ backgroundColor: accentColor }}
+            />
           </article>
         ))}
       </div>
@@ -588,7 +560,7 @@ export default function ServerFood() {
           <button
             type="button"
             onClick={() => navigate("/server/tables")}
-            className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-[#dfe2e5] bg-[#faf9f8] px-4 py-2.5 text-sm font-semibold text-[#2d2d2d] transition hover:bg-white"
+            className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-xl bg-[#FF5A00] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#E94B00]"
           >
             Change Table
           </button>
@@ -606,7 +578,7 @@ export default function ServerFood() {
               placeholder="Search dishes by name, cuisine, category..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2.5 text-sm bg-gray-50 rounded-xl border border-gray-200 focus:outline-none focus:border-[#d4a843] focus:bg-white transition"
+              className="w-full pl-10 pr-4 py-2.5 text-sm bg-gray-50 rounded-xl border border-gray-200 focus:outline-none focus:border-[#FF5A00] focus:bg-white transition"
             />
             {searchQuery && (
               <button
@@ -630,7 +602,7 @@ export default function ServerFood() {
             <select
               value={selectedCategory}
               onChange={(e) => setSelectedCategory(e.target.value)}
-              className="px-3 py-2 text-xs sm:text-sm bg-gray-50 border border-gray-200 rounded-xl text-gray-700 outline-none focus:border-[#d4a843]"
+              className="px-3 py-2 text-xs sm:text-sm bg-gray-50 border border-gray-200 rounded-xl text-gray-700 outline-none focus:border-[#FF5A00]"
             >
               <option value="all">All Categories ({foods.length})</option>
               {categories.map((cat) => (
@@ -647,7 +619,7 @@ export default function ServerFood() {
             <select
               value={selectedType}
               onChange={(e) => setSelectedType(e.target.value)}
-              className="px-3 py-2 text-xs sm:text-sm bg-gray-50 border border-gray-200 rounded-xl text-gray-700 outline-none focus:border-[#d4a843]"
+              className="px-3 py-2 text-xs sm:text-sm bg-gray-50 border border-gray-200 rounded-xl text-gray-700 outline-none focus:border-[#FF5A00]"
             >
               <option value="all">All Types</option>
               <option value="veg">🟢 Veg Only ({stats.vegCount})</option>
@@ -658,7 +630,7 @@ export default function ServerFood() {
             <select
               value={selectedStatus}
               onChange={(e) => setSelectedStatus(e.target.value)}
-              className="px-3 py-2 text-xs sm:text-sm bg-gray-50 border border-gray-200 rounded-xl text-gray-700 outline-none focus:border-[#d4a843]"
+              className="px-3 py-2 text-xs sm:text-sm bg-gray-50 border border-gray-200 rounded-xl text-gray-700 outline-none focus:border-[#FF5A00]"
             >
               <option value="all">All Availability</option>
               <option value="available">Available ({stats.available})</option>
@@ -671,7 +643,7 @@ export default function ServerFood() {
             <select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value)}
-              className="px-3 py-2 text-xs sm:text-sm bg-gray-50 border border-gray-200 rounded-xl text-gray-700 outline-none focus:border-[#d4a843]"
+              className="px-3 py-2 text-xs sm:text-sm bg-gray-50 border border-gray-200 rounded-xl text-gray-700 outline-none focus:border-[#FF5A00]"
             >
               <option value="latest">Sort: Latest Added</option>
               <option value="price-low">Price: Low to High</option>
@@ -685,7 +657,7 @@ export default function ServerFood() {
               <button
                 type="button"
                 onClick={() => setViewMode("grid")}
-                className={`cursor-pointer rounded-lg p-1.5 text-xs transition ${viewMode === "grid" ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-900"}`}
+                className={`cursor-pointer rounded-lg p-1.5 text-xs transition ${viewMode === "grid" ? "bg-[#FF5A00] text-white shadow-sm" : "text-gray-500 hover:text-[#FF5A00]"}`}
                 title="Grid view"
               >
                 <LayoutGrid className="w-4 h-4" />
@@ -693,7 +665,7 @@ export default function ServerFood() {
               <button
                 type="button"
                 onClick={() => setViewMode("table")}
-                className={`cursor-pointer rounded-lg p-1.5 text-xs transition ${viewMode === "table" ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-900"}`}
+                className={`cursor-pointer rounded-lg p-1.5 text-xs transition ${viewMode === "table" ? "bg-[#FF5A00] text-white shadow-sm" : "text-gray-500 hover:text-[#FF5A00]"}`}
                 title="Table view"
               >
                 <Table2 className="w-4 h-4" />
@@ -703,7 +675,7 @@ export default function ServerFood() {
               <button
                 type="button"
                 onClick={clearFilters}
-                className="rounded-lg px-2.5 py-2 text-xs font-semibold text-[#1f3228] hover:bg-gray-100"
+                className="rounded-lg px-2.5 py-2 text-xs font-semibold text-[#FF5A00] hover:bg-orange-50"
               >
                 Clear filters
               </button>
@@ -738,7 +710,7 @@ export default function ServerFood() {
           {hasActiveFilters && (
             <button
               onClick={clearFilters}
-              className="inline-flex items-center gap-1.5 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl text-xs font-semibold transition"
+              className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#FF5A00] hover:bg-[#E94B00] text-white rounded-xl text-xs font-semibold transition"
             >
               Reset Filters
             </button>
@@ -878,11 +850,11 @@ export default function ServerFood() {
                     <div className="flex items-center justify-between rounded-xl bg-gray-50 p-2">
                       <span className="text-xs font-medium text-gray-600">Quantity</span>
                       <div className="flex items-center gap-2">
-                        <button type="button" onClick={() => adjustFoodQuantity(food, -1)} aria-label={`Decrease ${food.food_name} quantity`} disabled={!getFoodQuantity(food)} className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-700 disabled:cursor-not-allowed disabled:opacity-40">
+                        <button type="button" onClick={() => adjustFoodQuantity(food, -1)} aria-label={`Decrease ${food.food_name} quantity`} disabled={!getFoodQuantity(food)} className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg border border-orange-200 bg-white text-[#FF5A00] hover:bg-orange-50 disabled:cursor-not-allowed disabled:opacity-40">
                           <Minus className="h-4 w-4" />
                         </button>
                         <span className="w-5 text-center text-sm font-bold">{getFoodQuantity(food)}</span>
-                        <button type="button" onClick={() => adjustFoodQuantity(food, 1)} aria-label={`Increase ${food.food_name} quantity`} disabled={!isAvailable || getFoodQuantity(food) >= 99} className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-700 disabled:cursor-not-allowed disabled:opacity-40">
+                        <button type="button" onClick={() => adjustFoodQuantity(food, 1)} aria-label={`Increase ${food.food_name} quantity`} disabled={!isAvailable || getFoodQuantity(food) >= 99} className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg border border-orange-200 bg-white text-[#FF5A00] hover:bg-orange-50 disabled:cursor-not-allowed disabled:opacity-40">
                           <Plus className="h-4 w-4" />
                         </button>
                       </div>
@@ -891,7 +863,7 @@ export default function ServerFood() {
                   <button
                     type="button"
                     onClick={() => handleOpenDetails(food)}
-                    className="w-full flex items-center justify-center gap-2 py-2 px-3 bg-gray-50 hover:bg-[#1f3228] text-gray-700 hover:text-[#d4a843] rounded-xl text-xs font-semibold transition border border-gray-200 hover:border-[#1f3228] cursor-pointer"
+                    className="w-full flex items-center justify-center gap-2 py-2 px-3 bg-[#FF5A00] hover:bg-[#E94B00] text-white rounded-xl text-xs font-semibold transition border border-[#FF5A00] cursor-pointer"
                   >
                     <Eye className="w-3.5 h-3.5" />
                     <span>{selectedTable ? "Customize & Add" : "View Food Details"}</span>
@@ -1048,11 +1020,11 @@ export default function ServerFood() {
                         <div className="flex items-center justify-end gap-2">
                           {selectedTable && (
                             <div className="flex items-center gap-1.5">
-                              <button type="button" onClick={() => adjustFoodQuantity(food, -1)} aria-label={`Decrease ${food.food_name} quantity`} disabled={!getFoodQuantity(food)} className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg border border-gray-200 disabled:cursor-not-allowed disabled:opacity-40">
+                              <button type="button" onClick={() => adjustFoodQuantity(food, -1)} aria-label={`Decrease ${food.food_name} quantity`} disabled={!getFoodQuantity(food)} className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg border border-orange-200 text-[#FF5A00] hover:bg-orange-50 disabled:cursor-not-allowed disabled:opacity-40">
                                 <Minus className="h-3.5 w-3.5" />
                               </button>
                               <span className="w-5 text-center text-xs font-bold">{getFoodQuantity(food)}</span>
-                              <button type="button" onClick={() => adjustFoodQuantity(food, 1)} aria-label={`Increase ${food.food_name} quantity`} disabled={!isAvailable || getFoodQuantity(food) >= 99} className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg border border-gray-200 disabled:cursor-not-allowed disabled:opacity-40">
+                              <button type="button" onClick={() => adjustFoodQuantity(food, 1)} aria-label={`Increase ${food.food_name} quantity`} disabled={!isAvailable || getFoodQuantity(food) >= 99} className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg border border-orange-200 text-[#FF5A00] hover:bg-orange-50 disabled:cursor-not-allowed disabled:opacity-40">
                                 <Plus className="h-3.5 w-3.5" />
                               </button>
                             </div>
@@ -1060,7 +1032,7 @@ export default function ServerFood() {
                           <button
                             type="button"
                             onClick={() => handleOpenDetails(food)}
-                            className="inline-flex cursor-pointer items-center gap-1.5 rounded-xl border border-gray-200 px-3 py-1.5 text-xs font-semibold text-gray-700 transition hover:border-[#1f3228] hover:bg-[#1f3228] hover:text-[#d4a843]"
+                            className="inline-flex cursor-pointer items-center gap-1.5 rounded-xl bg-[#FF5A00] px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-[#E94B00]"
                           >
                             <Eye className="h-3.5 w-3.5" />
                             <span>{selectedTable ? "Customize & Add" : "View"}</span>
@@ -1137,11 +1109,11 @@ export default function ServerFood() {
                         <div className="mt-2 flex items-center justify-between gap-2">
                           <span className="text-[11px] text-gray-500">₹{item.unitPrice.toFixed(2)} each</span>
                           <div className="flex items-center gap-2">
-                            <button type="button" onClick={() => updateCartQuantity(item.food, item.quantity - 1, cartKey)} aria-label={`Decrease ${item.food.food_name} quantity`} className="flex h-7 w-7 cursor-pointer items-center justify-center rounded-lg border border-gray-200 text-gray-700 hover:bg-gray-50">
+                            <button type="button" onClick={() => updateCartQuantity(item.food, item.quantity - 1, cartKey)} aria-label={`Decrease ${item.food.food_name} quantity`} className="flex h-7 w-7 cursor-pointer items-center justify-center rounded-lg border border-orange-200 text-[#FF5A00] hover:bg-orange-50">
                               <Minus className="h-3.5 w-3.5" />
                             </button>
                             <span className="w-5 text-center text-xs font-bold text-gray-800">{item.quantity}</span>
-                            <button type="button" onClick={() => updateCartQuantity(item.food, item.quantity + 1, cartKey)} aria-label={`Increase ${item.food.food_name} quantity`} disabled={item.quantity >= 99} className="flex h-7 w-7 cursor-pointer items-center justify-center rounded-lg border border-gray-200 text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50">
+                            <button type="button" onClick={() => updateCartQuantity(item.food, item.quantity + 1, cartKey)} aria-label={`Increase ${item.food.food_name} quantity`} disabled={item.quantity >= 99} className="flex h-7 w-7 cursor-pointer items-center justify-center rounded-lg border border-orange-200 text-[#FF5A00] hover:bg-orange-50 disabled:cursor-not-allowed disabled:opacity-50">
                               <Plus className="h-3.5 w-3.5" />
                             </button>
                           </div>
@@ -1170,13 +1142,13 @@ export default function ServerFood() {
                   </p>
                 )}
               </div>
-              <p className="text-xl font-extrabold tabular-nums text-[#1a3c36]">₹{cartTotal.toFixed(2)}</p>
+              <p className="text-xl font-extrabold tabular-nums text-[#FF5A00]">₹{cartTotal.toFixed(2)}</p>
             </div>
             <button
               type="button"
               onClick={submitOrder}
               disabled={cartItems.length === 0 || submittingOrder}
-              className="inline-flex min-h-12 w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-[#1a3c36] px-4 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-[#214a42] disabled:cursor-not-allowed disabled:opacity-50"
+              className="inline-flex min-h-12 w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-[#FF5A00] px-4 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-[#E94B00] disabled:cursor-not-allowed disabled:opacity-50"
             >
               {submittingOrder ? <Loader2 className="h-4 w-4 animate-spin" /> : <ShoppingCart className="h-4 w-4" />}
               {submittingOrder
@@ -1263,7 +1235,7 @@ export default function ServerFood() {
                         onClick={() => setActiveImageIndex(idx)}
                         className={`w-14 h-14 rounded-lg overflow-hidden shrink-0 border-2 transition cursor-pointer ${
                           activeImageIndex === idx
-                            ? "border-[#1f3228] scale-105"
+                            ? "border-[#FF5A00] scale-105"
                             : "border-gray-200 opacity-60 hover:opacity-100"
                         }`}
                       >
@@ -1493,7 +1465,7 @@ export default function ServerFood() {
                     maxLength={500}
                     rows={2}
                     placeholder={"Type extra add-ons, one per line (e.g. Extra sauce)"}
-                    className="w-full resize-y rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-800 outline-none focus:border-[#1f3228]"
+                    className="w-full resize-y rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-800 outline-none focus:border-[#FF5A00]"
                   />
                   <span className="block text-right text-[11px] text-gray-400">{customAddonRequests.length}/500 · typed requests do not change the price</span>
                 </label>
@@ -1506,7 +1478,7 @@ export default function ServerFood() {
                     maxLength={500}
                     rows={2}
                     placeholder="Type a special customization (e.g. Make it less spicy)"
-                    className="w-full resize-y rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-800 outline-none focus:border-[#1f3228]"
+                    className="w-full resize-y rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-800 outline-none focus:border-[#FF5A00]"
                   />
                   <span className="block text-right text-[11px] text-gray-400">{customizationRequest.length}/500</span>
                 </label>
@@ -1515,9 +1487,9 @@ export default function ServerFood() {
                   <div>
                     <p className="text-xs font-semibold text-gray-700">Quantity</p>
                     <div className="mt-1 flex items-center gap-2">
-                      <button type="button" onClick={() => setCustomizeQuantity((quantity) => Math.max(1, quantity - 1))} aria-label="Decrease customized food quantity" className="flex h-8 w-8 items-center justify-center rounded-lg border border-gray-200 bg-white"><Minus className="h-4 w-4" /></button>
+                      <button type="button" onClick={() => setCustomizeQuantity((quantity) => Math.max(1, quantity - 1))} aria-label="Decrease customized food quantity" className="flex h-8 w-8 items-center justify-center rounded-lg border border-orange-200 bg-white text-[#FF5A00] hover:bg-orange-50"><Minus className="h-4 w-4" /></button>
                       <span className="w-6 text-center text-sm font-bold">{customizeQuantity}</span>
-                      <button type="button" onClick={() => setCustomizeQuantity((quantity) => Math.min(99, quantity + 1))} aria-label="Increase customized food quantity" disabled={customizeQuantity >= 99} className="flex h-8 w-8 items-center justify-center rounded-lg border border-gray-200 bg-white disabled:opacity-50"><Plus className="h-4 w-4" /></button>
+                      <button type="button" onClick={() => setCustomizeQuantity((quantity) => Math.min(99, quantity + 1))} aria-label="Increase customized food quantity" disabled={customizeQuantity >= 99} className="flex h-8 w-8 items-center justify-center rounded-lg border border-orange-200 bg-white text-[#FF5A00] hover:bg-orange-50 disabled:opacity-50"><Plus className="h-4 w-4" /></button>
                     </div>
                   </div>
                   <p className="text-sm font-bold text-gray-900">₹{getConfiguredUnitPrice().toFixed(2)} each</p>
@@ -1537,7 +1509,7 @@ export default function ServerFood() {
                 <button
                   type="button"
                   onClick={addConfiguredFood}
-                  className="inline-flex cursor-pointer items-center gap-2 rounded-xl bg-[#1f3228] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[#29483b]"
+                  className="inline-flex cursor-pointer items-center gap-2 rounded-xl bg-[#FF5A00] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[#E94B00]"
                 >
                   <ShoppingCart className="h-4 w-4" />
                   Add to order · ₹{(getConfiguredUnitPrice() * customizeQuantity).toFixed(2)}

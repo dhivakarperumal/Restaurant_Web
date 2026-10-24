@@ -130,7 +130,7 @@ const AdminReservations = () => {
             type="button"
             disabled={Boolean(updatingId)}
             onClick={() => handleStatusChange(reservation.reservation_id, "Confirmed")}
-            className="inline-flex items-center gap-1.5 rounded-lg bg-[#1a3c36] px-3 py-2 text-xs font-semibold text-white transition hover:bg-[#245048] disabled:opacity-50"
+            className="inline-flex items-center gap-1.5 rounded-lg bg-[#FF5A00] px-3 py-2 text-xs font-semibold text-white transition hover:bg-[#E94B00] disabled:opacity-50"
           >
             {isUpdating ? <LoaderCircle className="h-3.5 w-3.5 animate-spin" /> : <Check className="h-3.5 w-3.5" />}
             Confirm
@@ -173,7 +173,7 @@ const AdminReservations = () => {
 
         <section aria-label="Reservation status summaries" className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-5">
           {[
-            { status: "All", label: "All Reservations", caption: "Every reservation request", icon: CalendarDays, bg: "bg-[#1a3c36]" },
+            { status: "All", label: "All Reservations", caption: "Every reservation request", icon: CalendarDays, bg: "bg-[#FF5A00]" },
             { status: "Pending", label: "Pending Requests", caption: "Waiting for review", icon: Clock3, bg: "bg-[#f59e0b]" },
             { status: "Confirmed", label: "Confirmed", caption: "Tables booked", icon: CheckCircle2, bg: "bg-[#22c55e]" },
             { status: "Declined", label: "Declined", caption: "Requests declined", icon: CircleAlert, bg: "bg-[#ef4444]" },
@@ -215,7 +215,7 @@ const AdminReservations = () => {
               onChange={(event) => setSearchQuery(event.target.value)}
               placeholder="Search guest, table, phone, or reference..."
               aria-label="Search reservations"
-              className="h-[46px] w-full rounded-xl border border-[#dfe2e5] bg-[#faf9f8] pl-11 pr-3 text-sm text-[#2d3830] outline-none placeholder:text-[#89938c] focus:border-[#6d9a79]"
+              className="h-[46px] w-full rounded-xl border border-[#dfe2e5] bg-[#faf9f8] pl-11 pr-3 text-sm text-[#2d3830] outline-none placeholder:text-[#89938c] focus:border-[#FF5A00] focus:ring-1 focus:ring-[#FF5A00]"
             />
           </label>
           <div className="flex flex-wrap items-center gap-2 sm:justify-end">
@@ -224,7 +224,7 @@ const AdminReservations = () => {
               value={activeStatus}
               onChange={(event) => setActiveStatus(event.target.value)}
               aria-label="Filter reservations by status"
-              className="h-[46px] rounded-xl border border-[#dfe2e5] bg-white px-3 text-sm text-[#34443b] outline-none focus:border-[#6d9a79]"
+              className="h-[46px] rounded-xl border border-[#dfe2e5] bg-white px-3 text-sm text-[#34443b] outline-none focus:border-[#FF5A00] focus:ring-1 focus:ring-[#FF5A00]"
             >
               {statusOptions.map((status) => <option key={status} value={status}>{status} ({counts[status]})</option>)}
             </select>
@@ -232,14 +232,14 @@ const AdminReservations = () => {
               value={sortBy}
               onChange={(event) => setSortBy(event.target.value)}
               aria-label="Sort reservations"
-              className="h-[46px] rounded-xl border border-[#dfe2e5] bg-white px-3 text-sm text-[#34443b] outline-none focus:border-[#6d9a79]"
+              className="h-[46px] rounded-xl border border-[#dfe2e5] bg-white px-3 text-sm text-[#34443b] outline-none focus:border-[#FF5A00] focus:ring-1 focus:ring-[#FF5A00]"
             >
               <option value="soonest">Sort by: Soonest</option>
               <option value="latest">Sort by: Latest</option>
             </select>
             <div className="flex h-[46px] overflow-hidden rounded-xl border border-[#dfe2e5] bg-white" role="group" aria-label="Reservation view">
-              <button type="button" onClick={() => setViewMode("table")} aria-label="Table view" aria-pressed={viewMode === "table"} title="Table view" className={`grid w-11 place-items-center border-r border-[#dfe2e5] ${viewMode === "table" ? "bg-[#1a3c36] text-white" : "text-[#66736b] hover:bg-gray-50"}`}><List size={16} /></button>
-              <button type="button" onClick={() => setViewMode("card")} aria-label="Card view" aria-pressed={viewMode === "card"} title="Card view" className={`grid w-11 place-items-center ${viewMode === "card" ? "bg-[#1a3c36] text-white" : "text-[#66736b] hover:bg-gray-50"}`}><LayoutGrid size={16} /></button>
+              <button type="button" onClick={() => setViewMode("table")} aria-label="Table view" aria-pressed={viewMode === "table"} title="Table view" className={`grid w-11 place-items-center border-r border-[#dfe2e5] ${viewMode === "table" ? "bg-[#FF5A00] text-white" : "text-[#66736b] transition-colors hover:bg-orange-50 hover:text-[#FF5A00]"}`}><List size={16} /></button>
+              <button type="button" onClick={() => setViewMode("card")} aria-label="Card view" aria-pressed={viewMode === "card"} title="Card view" className={`grid w-11 place-items-center ${viewMode === "card" ? "bg-[#FF5A00] text-white" : "text-[#66736b] transition-colors hover:bg-orange-50 hover:text-[#FF5A00]"}`}><LayoutGrid size={16} /></button>
             </div>
           </div>
         </div>
@@ -267,7 +267,7 @@ const AdminReservations = () => {
         ) : viewMode === "table" ? (
           <div className="overflow-x-auto rounded-2xl border border-[#e7e0d8] bg-white shadow-sm">
             <table className="w-full min-w-[1050px] border-collapse text-left text-sm">
-              <thead className="sticky top-0 bg-[#d4a843] text-[11px] uppercase tracking-wide text-white">
+              <thead className="sticky top-0 bg-[#FF5A00] text-[11px] uppercase tracking-wide text-white">
                 <tr>
                   {["#", "Guest", "Date & Time", "Table / Guests", "Requests / Reference", "Status", "Actions"].map((heading) => (
                     <th key={heading} className="whitespace-nowrap px-4 py-4 font-bold">{heading}</th>

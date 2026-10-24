@@ -404,7 +404,7 @@ export default function AdminEventOrders() {
         {/* Top Summary Cards (matching AdminReservations) */}
         <section aria-label="Event order status summaries" className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-6">
           {[
-            { status: "All", label: "All Orders", caption: "Every catering booking", icon: PartyPopper, bg: "bg-[#1a3c36]" },
+            { status: "All", label: "All Orders", caption: "Every catering booking", icon: PartyPopper, bg: "bg-[#FF5A00]" },
             { status: "Pending", label: "Pending Review", caption: "Waiting for quotation", icon: Clock3, bg: "bg-[#f59e0b]" },
             { status: "Quotation Sent", label: "Quotation Sent", caption: "Awaiting customer approval", icon: Send, bg: "bg-[#0284c7]" },
             { status: "Confirmed", label: "Confirmed", caption: "Quote accepted & booked", icon: CheckCircle2, bg: "bg-[#22c55e]" },
@@ -450,7 +450,7 @@ export default function AdminEventOrders() {
               onChange={(event) => setSearchTerm(event.target.value)}
               placeholder="Search reference, customer, phone, event, venue..."
               aria-label="Search bulk orders"
-              className="h-[46px] w-full rounded-xl border border-[#dfe2e5] bg-[#faf9f8] pl-11 pr-3 text-sm text-[#2d3830] outline-none placeholder:text-[#89938c] focus:border-[#6d9a79]"
+              className="h-[46px] w-full rounded-xl border border-[#dfe2e5] bg-[#faf9f8] pl-11 pr-3 text-sm text-[#2d3830] outline-none placeholder:text-[#89938c] focus:border-[#FF5A00] focus:ring-1 focus:ring-[#FF5A00]"
             />
           </label>
           <div className="flex flex-wrap items-center gap-2 sm:justify-end">
@@ -461,7 +461,7 @@ export default function AdminEventOrders() {
               value={activeStatus}
               onChange={(event) => setActiveStatus(event.target.value)}
               aria-label="Filter orders by status"
-              className="h-[46px] rounded-xl border border-[#dfe2e5] bg-white px-3 text-sm text-[#34443b] outline-none focus:border-[#6d9a79]"
+              className="h-[46px] rounded-xl border border-[#dfe2e5] bg-white px-3 text-sm text-[#34443b] outline-none focus:border-[#FF5A00] focus:ring-1 focus:ring-[#FF5A00]"
             >
               {STATUS_OPTIONS.map((status) => (
                 <option key={status} value={status}>
@@ -473,7 +473,7 @@ export default function AdminEventOrders() {
               value={sortBy}
               onChange={(event) => setSortBy(event.target.value)}
               aria-label="Sort bulk orders"
-              className="h-[46px] rounded-xl border border-[#dfe2e5] bg-white px-3 text-sm text-[#34443b] outline-none focus:border-[#6d9a79]"
+              className="h-[46px] rounded-xl border border-[#dfe2e5] bg-white px-3 text-sm text-[#34443b] outline-none focus:border-[#FF5A00] focus:ring-1 focus:ring-[#FF5A00]"
             >
               <option value="latest">Sort by: Latest Created</option>
               <option value="soonest">Sort by: Event Date (Soonest)</option>
@@ -487,7 +487,7 @@ export default function AdminEventOrders() {
                 aria-pressed={viewMode === "table"}
                 title="Table view"
                 className={`grid w-11 place-items-center border-r border-[#dfe2e5] ${
-                  viewMode === "table" ? "bg-[#1a3c36] text-white" : "text-[#66736b] hover:bg-gray-50"
+                  viewMode === "table" ? "bg-[#FF5A00] text-white" : "text-[#66736b] hover:bg-orange-50 hover:text-[#FF5A00]"
                 }`}
               >
                 <List size={16} />
@@ -499,7 +499,7 @@ export default function AdminEventOrders() {
                 aria-pressed={viewMode === "card"}
                 title="Card view"
                 className={`grid w-11 place-items-center ${
-                  viewMode === "card" ? "bg-[#1a3c36] text-white" : "text-[#66736b] hover:bg-gray-50"
+                  viewMode === "card" ? "bg-[#FF5A00] text-white" : "text-[#66736b] hover:bg-orange-50 hover:text-[#FF5A00]"
                 }`}
               >
                 <LayoutGrid size={16} />
@@ -526,7 +526,7 @@ export default function AdminEventOrders() {
           /* Table View with Gold Header matching AdminReservations */
           <div className="overflow-x-auto rounded-2xl border border-[#e7e0d8] bg-white shadow-sm">
             <table className="w-full min-w-[1100px] border-collapse text-left text-sm">
-              <thead className="sticky top-0 bg-[#d4a843] text-[11px] uppercase tracking-wide text-white">
+              <thead className="sticky top-0 bg-[#FF5A00] text-[11px] uppercase tracking-wide text-white">
                 <tr>
                   {["#", "Order Ref", "Customer", "Event Details", "Date & Time", "Headcount & Items", "Quoted / Est. Amount", "Status", "Actions"].map((heading) => (
                     <th key={heading} className="whitespace-nowrap px-4 py-4 font-bold">{heading}</th>
@@ -589,7 +589,7 @@ export default function AdminEventOrders() {
                           onClick={() => handleViewDetails(order.id)}
                           className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-semibold transition ${
                             order.status === "Pending"
-                              ? "bg-[#1a3c36] text-white hover:bg-[#245048]"
+                              ? "bg-[#FF5A00] text-white hover:bg-[#E94B00]"
                               : "border border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
                           }`}
                           title={order.status === "Pending" ? "Review & Send Quotation" : "View Details"}
@@ -678,7 +678,7 @@ export default function AdminEventOrders() {
                     onClick={() => handleViewDetails(order.id)}
                     className={`inline-flex items-center gap-1.5 rounded-xl px-4 py-2 text-xs font-bold transition ${
                       order.status === "Pending"
-                        ? "bg-[#1a3c36] text-white shadow-xs hover:bg-[#245048]"
+                        ? "bg-[#FF5A00] text-white shadow-xs hover:bg-[#E94B00]"
                         : "border border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
                     }`}
                   >
@@ -894,7 +894,7 @@ export default function AdminEventOrders() {
                                     className={`w-full rounded-lg border py-1 pl-6 pr-2 text-right text-xs font-bold focus:outline-hidden ${
                                       isDiscounted
                                         ? "border-emerald-500 bg-emerald-50 text-emerald-800"
-                                        : "border-slate-300 bg-slate-50 text-slate-800 focus:bg-white"
+                                        : "border-slate-300 bg-slate-50 text-slate-800 focus:border-[#FF5A00] focus:bg-white focus:ring-1 focus:ring-[#FF5A00]"
                                     }`}
                                   />
                                 </div>
@@ -936,7 +936,7 @@ export default function AdminEventOrders() {
                           onClick={() => setQuoteDiscountType("fixed")}
                           className={`rounded-lg px-2.5 py-1 text-xs font-bold transition ${
                             quoteDiscountType === "fixed"
-                              ? "bg-[#1a3c36] text-white shadow-xs"
+                              ? "bg-[#FF5A00] text-white shadow-xs"
                               : "text-slate-600 hover:text-slate-900"
                           }`}
                         >
@@ -947,7 +947,7 @@ export default function AdminEventOrders() {
                           onClick={() => setQuoteDiscountType("percentage")}
                           className={`rounded-lg px-2.5 py-1 text-xs font-bold transition ${
                             quoteDiscountType === "percentage"
-                              ? "bg-[#1a3c36] text-white shadow-xs"
+                              ? "bg-[#FF5A00] text-white shadow-xs"
                               : "text-slate-600 hover:text-slate-900"
                           }`}
                         >
@@ -967,7 +967,7 @@ export default function AdminEventOrders() {
                           value={quoteDiscountValue}
                           onChange={(e) => setQuoteDiscountValue(e.target.value)}
                           placeholder={quoteDiscountType === "fixed" ? "e.g. 500" : "e.g. 10"}
-                          className="w-full rounded-xl border border-slate-300 bg-slate-50 pl-7 pr-3 py-1.5 text-xs font-bold text-slate-800 focus:bg-white focus:outline-hidden"
+                          className="w-full rounded-xl border border-slate-300 bg-slate-50 pl-7 pr-3 py-1.5 text-xs font-bold text-slate-800 focus:border-[#FF5A00] focus:bg-white focus:outline-hidden focus:ring-1 focus:ring-[#FF5A00]"
                         />
                       </div>
                     </div>
@@ -994,7 +994,7 @@ export default function AdminEventOrders() {
                         value={quoteDeliveryFee}
                         onChange={(e) => setQuoteDeliveryFee(e.target.value)}
                         placeholder="0.00"
-                        className="w-full rounded-xl border border-slate-300 bg-slate-50 pl-7 pr-3 py-1.5 text-xs font-bold text-slate-800 focus:bg-white focus:outline-hidden"
+                        className="w-full rounded-xl border border-slate-300 bg-slate-50 pl-7 pr-3 py-1.5 text-xs font-bold text-slate-800 focus:border-[#FF5A00] focus:bg-white focus:outline-hidden focus:ring-1 focus:ring-[#FF5A00]"
                       />
                     </div>
                     <p className="mt-1 text-[11px] text-slate-400">
@@ -1056,7 +1056,7 @@ export default function AdminEventOrders() {
                       type="button"
                       disabled={sendingQuote}
                       onClick={handleSendQuotation}
-                      className="w-full sm:w-auto inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-[#1a3c36] px-6 text-xs font-black uppercase tracking-wider text-white shadow-md transition hover:bg-[#255248] disabled:opacity-50"
+                      className="w-full sm:w-auto inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-[#FF5A00] px-6 text-xs font-black uppercase tracking-wider text-white shadow-md transition hover:bg-[#E94B00] disabled:opacity-50"
                     >
                       {sendingQuote ? (
                         <span className="inline-flex items-center gap-1.5">
@@ -1090,7 +1090,7 @@ export default function AdminEventOrders() {
                       onClick={() => handleUpdateStatus(selectedOrder.id, st)}
                       className={`rounded-xl px-3 py-1.5 text-xs font-bold transition ${
                         selectedOrder.status === st
-                          ? "bg-[#1a3c36] text-white shadow-xs"
+                          ? "bg-[#FF5A00] text-white shadow-xs"
                           : "border border-slate-200 bg-white text-slate-700 hover:bg-slate-100"
                       }`}
                     >
@@ -1108,14 +1108,14 @@ export default function AdminEventOrders() {
                     value={adminNotes}
                     onChange={(e) => setAdminNotes(e.target.value)}
                     placeholder="e.g. Spoke with customer, confirmed 50 pax, advance ₹5000 received via UPI."
-                    className="w-full rounded-xl border border-slate-200 bg-white p-2.5 text-xs text-slate-800 focus:outline-hidden"
+                    className="w-full rounded-xl border border-slate-200 bg-white p-2.5 text-xs text-slate-800 focus:border-[#FF5A00] focus:outline-hidden focus:ring-1 focus:ring-[#FF5A00]"
                   />
                   <div className="mt-2 flex justify-end">
                     <button
                       type="button"
                       onClick={() => handleUpdateStatus(selectedOrder.id, selectedOrder.status)}
                       disabled={updatingStatus}
-                      className="rounded-xl bg-[#1a3c36] px-4 py-1.5 text-xs font-bold text-white shadow-xs hover:bg-[#255248] transition"
+                      className="rounded-xl bg-[#FF5A00] px-4 py-1.5 text-xs font-bold text-white shadow-xs transition hover:bg-[#E94B00]"
                     >
                       Save Notes
                     </button>
