@@ -546,7 +546,7 @@ function CustomerOrdersPage({
           <div className="overflow-hidden rounded-2xl border border-[#e3e7e1] bg-white shadow-sm">
             <div className="overflow-x-auto">
               <table className="w-full min-w-[900px] text-left text-sm">
-                <thead className={`${isAdminOrdersOrangePage ? 'bg-[#FF5A00]' : 'bg-[#d4a843]'} text-xs uppercase tracking-wide text-white`}>
+                <thead className="bg-orange-50 text-xs uppercase tracking-wide text-orange-700 border-b border-orange-100">
                   <tr>{['Order', 'Customer', 'Items', 'Type', 'Status', ...(canAssignDelivery ? ['Delivery Partner'] : []), 'Payment', 'Total', 'Placed'].map((heading) => <th key={heading} className="whitespace-nowrap px-4 py-4 font-bold">{heading}</th>)}</tr>
                 </thead>
                 <tbody className="divide-y divide-[#edf0eb]">
