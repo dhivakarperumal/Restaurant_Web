@@ -306,7 +306,7 @@ const StockDetails = ({ readOnly = false }) => {
           ) : (
           <div className="w-full overflow-x-auto rounded-[16px] border border-[#e8e4df]">
             <table className="w-full min-w-[1200px] border-collapse bg-white text-left">
-              <thead className="bg-[#f0e6d2] text-left text-sm font-semibold text-[#3d3d3d]">
+              <thead className="bg-orange-50 text-left text-sm font-semibold text-orange-700 border-b border-orange-100">
                 <tr>
                   <th className="px-4 py-4">S No</th>
                   <th className="px-4 py-4">Product</th>

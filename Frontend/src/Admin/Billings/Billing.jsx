@@ -457,7 +457,7 @@ const Billing = () => {
             <div className="overflow-x-auto mt-8">
               <table className="min-w-full text-left text-[11px]">
                 <thead>
-                  <tr className="bg-[#fff4ed] font-semibold text-[#374151]">
+                  <tr className="bg-orange-50 border-b border-orange-100 font-semibold text-orange-700">
                     <th className="rounded-tl-md px-4 py-4">S.No</th>
                     <th className="px-4 py-4">Order ID</th>
                     <th className="px-4 py-4">Customer</th>
