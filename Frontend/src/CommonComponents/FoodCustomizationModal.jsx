@@ -126,22 +126,23 @@ function FoodCustomizationModal({ food, initialQuantity = 1, onClose, onAdd }) {
           >
             <X className="h-5 w-5" />
           </button>
-          {images.length > 1 && (
-            <div className="absolute bottom-3 left-3 flex gap-1.5 rounded-xl bg-black/40 p-1">
+        </div>
+        {images.length > 1 && (
+          <div className="flex shrink-0 gap-2 overflow-x-auto border-b border-slate-100 bg-slate-50 px-4 py-2.5 scrollbar-hide">
               {images.map((image, index) => (
                 <button
                   key={`${image}-${index}`}
                   type="button"
                   onClick={() => setImageIndex(index)}
                   aria-label={`View food image ${index + 1}`}
-                  className={`h-10 w-10 overflow-hidden rounded-lg border-2 ${imageIndex === index ? 'border-[#d4a843]' : 'border-transparent opacity-70'}`}
+                  aria-pressed={imageIndex === index}
+                  className={`h-11 w-11 shrink-0 overflow-hidden rounded-lg border-2 transition ${imageIndex === index ? 'border-[#d4a843]' : 'border-transparent opacity-70 hover:opacity-100'}`}
                 >
                   <img src={imageUrl(image)} alt="" className="h-full w-full object-cover" />
                 </button>
               ))}
-            </div>
-          )}
-        </div>
+          </div>
+        )}
 
         <div className="flex-1 space-y-5 overflow-y-auto p-5 sm:p-7">
           <div>
