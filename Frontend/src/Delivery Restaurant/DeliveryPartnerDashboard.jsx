@@ -16,7 +16,6 @@ import {
   RefreshCw,
   RotateCcw,
   Route,
-  Timer,
   UserCheck,
   X,
   XCircle,
@@ -274,213 +273,89 @@ const DeliveryPartnerDashboard = () => {
         </div>
       </header>
 
-      {/* Hero Attendance & Online Status Card */}
-      {isOnline ? (
-        <div className="relative overflow-hidden rounded-2xl border border-emerald-300 bg-gradient-to-br from-emerald-800 via-[#0e4835] to-[#072d20] p-5 sm:p-6 text-white shadow-xl">
-          <div className="pointer-events-none absolute -right-10 -top-10 h-52 w-52 rounded-full bg-emerald-400/10 blur-2xl" />
-          <div className="pointer-events-none absolute right-1/3 -bottom-10 h-40 w-40 rounded-full bg-teal-400/10 blur-xl" />
-
-          <div className="relative z-10 flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
-            <div className="flex items-start gap-4">
-              <div className="relative grid h-14 w-14 shrink-0 place-items-center rounded-2xl bg-white/10 border border-white/20 shadow-inner backdrop-blur-md">
-                <Bike size={28} className="text-emerald-300" />
-                <span className="absolute -top-1 -right-1 flex h-4 w-4">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-4 w-4 bg-emerald-500 border-2 border-[#0e4835]"></span>
+      {/* Attendance & availability banner */}
+      <section className="relative overflow-hidden rounded-2xl border border-slate-200/90 bg-gradient-to-r from-white via-white to-emerald-50/70 p-4 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] sm:p-5">
+        <div className="pointer-events-none absolute bottom-0 left-0 h-1 w-full bg-gradient-to-r from-emerald-500 via-teal-400 to-transparent" />
+        <div className="relative flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex min-w-0 items-start gap-4">
+            <div className="grid h-12 w-12 shrink-0 place-items-center rounded-xl border border-emerald-100 bg-emerald-50 text-emerald-600">
+              <Bike size={24} />
+            </div>
+            <div className="min-w-0">
+              <div className="flex flex-wrap items-center gap-2">
+                <p className="text-xs font-bold uppercase tracking-widest text-emerald-700">Today's Attendance</p>
+                <span className={`rounded-full px-2 py-0.5 text-[10px] font-extrabold uppercase ${
+                  isOnline ? "bg-emerald-100 text-emerald-800" : isCheckedIn ? "bg-amber-100 text-amber-800" : "bg-slate-100 text-slate-700"
+                }`}>
+                  {isOnline ? "Online" : isCheckedIn ? "Paused" : attendance?.check_out ? "Completed" : "Offline"}
                 </span>
               </div>
-              <div>
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-400/20 border border-emerald-400/40 px-3 py-0.5 text-xs font-extrabold uppercase tracking-wider text-emerald-300">
-                    <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
-                    Online & Ready for Deliveries
-                  </span>
-                  {attendance?.status && (
-                    <span className="rounded-full bg-white/15 px-2.5 py-0.5 text-[11px] font-bold text-white border border-white/20">
-                      {attendance.status}
-                    </span>
-                  )}
-                </div>
-                <h2 className="mt-1.5 text-xl font-bold sm:text-2xl text-white">
-                  You are Online & On Duty
-                </h2>
-                <p className="mt-1 text-xs sm:text-sm text-emerald-100/80">
-                  Attendance checked in at <strong className="text-white">{formatTime(attendance?.check_in)}</strong>. New delivery requests can be assigned to you.
-                </p>
-              </div>
+              <h2 className="mt-1 text-lg font-bold text-slate-900 sm:text-xl">
+                {isOnline ? "You're on duty and ready for deliveries" : isCheckedIn ? "You're checked in and temporarily offline" : attendance?.check_out ? "Shift completed for today" : "Ready to start your shift?"}
+              </h2>
+              <p className="mt-0.5 text-xs text-slate-500">
+                {isOnline
+                  ? `Checked in at ${formatTime(attendance?.check_in)} · On duty for ${formatDuration(liveSeconds)}`
+                  : isCheckedIn
+                  ? `Checked in at ${formatTime(attendance?.check_in)} · ${formatDuration(liveSeconds)} worked`
+                  : attendance?.check_out
+                  ? `Worked from ${formatTime(attendance.check_in)} to ${formatTime(attendance.check_out)} (${attendance.total_hours || 0} hrs total).`
+                  : "Go online to check in and start receiving delivery orders."}
+              </p>
             </div>
+          </div>
 
-            <div className="flex flex-wrap items-center gap-3">
-              <div className="flex items-center gap-3 rounded-xl border border-white/20 bg-white/10 px-4 py-2.5 backdrop-blur-md shadow-sm">
-                <Timer size={20} className="text-emerald-300 animate-spin" />
-                <div>
-                  <p className="text-[10px] uppercase font-bold tracking-wider text-emerald-200">Duty Duration</p>
-                  <p className="font-mono text-base font-extrabold text-white leading-none mt-0.5">{formatDuration(liveSeconds)}</p>
-                </div>
-              </div>
-
+          <div className="flex flex-wrap items-center gap-2.5 lg:justify-end">
+            {isOnline ? (
               <button
                 type="button"
                 onClick={() => toggleOnline(false)}
-                disabled={availabilityBusy}
-                className="inline-flex items-center gap-2 rounded-xl bg-amber-500/90 hover:bg-amber-600 px-4 py-2.5 text-xs sm:text-sm font-bold text-amber-950 transition shadow-md disabled:opacity-50"
+                disabled={availabilityBusy || loading}
+                className="inline-flex items-center gap-2 rounded-xl bg-amber-500 px-4 py-2.5 text-sm font-bold text-amber-950 shadow-sm transition hover:bg-amber-600 disabled:opacity-50"
               >
-                <Power size={15} />
-                Go Offline
+                <Power size={16} />
+                {availabilityBusy ? "Updating..." : "Go Offline"}
               </button>
-
+            ) : (
+              <button
+                type="button"
+                onClick={() => toggleOnline(true)}
+                disabled={availabilityBusy || loading}
+                className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-emerald-700 disabled:opacity-50"
+              >
+                {attendance?.check_out ? <RotateCcw size={16} /> : <Zap size={16} />}
+                {availabilityBusy ? "Updating..." : isCheckedIn ? "Resume Shift" : attendance?.check_out ? "Resume Shift" : "Go Online & Check In"}
+              </button>
+            )}
+            {isCheckedIn && (
               <button
                 type="button"
                 onClick={handleEndShift}
-                disabled={availabilityBusy}
-                className="inline-flex items-center gap-2 rounded-xl bg-rose-600/90 hover:bg-rose-700 px-4 py-2.5 text-xs sm:text-sm font-bold text-white transition shadow-md disabled:opacity-50"
+                disabled={availabilityBusy || loading}
+                className="inline-flex items-center gap-2 rounded-xl border border-rose-200 bg-white px-3.5 py-2.5 text-sm font-semibold text-rose-700 transition hover:bg-rose-50 disabled:opacity-50"
               >
                 <LogOut size={15} />
                 Clock Out
               </button>
-
-              <Link
-                to="/delivery/attendance"
-                className="inline-flex items-center gap-1.5 rounded-xl border border-white/20 bg-white/10 hover:bg-white/20 px-3 py-2.5 text-xs font-semibold text-white transition shadow-sm"
-              >
-                <CalendarCheck size={15} />
-                Attendance Page
-              </Link>
-
-              <button
-                type="button"
-                onClick={loadHistory}
-                className="inline-flex items-center gap-1.5 rounded-xl border border-white/20 bg-white/10 hover:bg-white/20 px-3 py-2.5 text-xs font-semibold text-white transition shadow-sm"
-              >
-                <History size={15} />
-                History
-              </button>
-            </div>
+            )}
+            <Link
+              to="/delivery/attendance"
+              className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-xs font-semibold text-slate-700 transition hover:border-emerald-200 hover:bg-emerald-50 hover:text-emerald-800"
+            >
+              <CalendarCheck size={14} />
+              Attendance Page
+            </Link>
+            <button
+              type="button"
+              onClick={loadHistory}
+              className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-xs font-semibold text-slate-700 transition hover:border-emerald-200 hover:bg-emerald-50 hover:text-emerald-800"
+            >
+              <History size={14} />
+              History
+            </button>
           </div>
         </div>
-      ) : isCheckedIn ? (
-        <div className="relative overflow-hidden rounded-2xl border border-amber-300 bg-gradient-to-br from-amber-900/90 via-stone-900 to-[#2c2012] p-5 sm:p-6 text-white shadow-xl">
-          <div className="relative z-10 flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
-            <div className="flex items-start gap-4">
-              <div className="relative grid h-14 w-14 shrink-0 place-items-center rounded-2xl bg-white/10 border border-white/20 shadow-inner backdrop-blur-md">
-                <Power size={26} className="text-amber-300" />
-              </div>
-              <div>
-                <div className="flex items-center gap-2">
-                  <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-400/20 border border-amber-400/40 px-3 py-0.5 text-xs font-extrabold uppercase tracking-wider text-amber-300">
-                    <span className="h-2 w-2 rounded-full bg-amber-400" />
-                    Paused • Currently Offline
-                  </span>
-                  <span className="text-xs text-amber-200">Checked in at {formatTime(attendance?.check_in)}</span>
-                </div>
-                <h2 className="mt-1.5 text-xl font-bold sm:text-2xl text-white">
-                  You are Temporarily Offline
-                </h2>
-                <p className="mt-1 text-xs sm:text-sm text-amber-100/80">
-                  You are paused from receiving new delivery orders. Click Go Online to resume duty.
-                </p>
-              </div>
-            </div>
-
-            <div className="flex flex-wrap items-center gap-3">
-              <button
-                type="button"
-                onClick={() => toggleOnline(true)}
-                disabled={availabilityBusy}
-                className="inline-flex items-center gap-2 rounded-xl bg-emerald-500 hover:bg-emerald-600 px-5 py-3 text-sm font-bold text-white shadow-lg transition active:scale-95 disabled:opacity-50"
-              >
-                <Zap size={16} />
-                Go Online Now
-              </button>
-
-              <button
-                type="button"
-                onClick={handleEndShift}
-                disabled={availabilityBusy}
-                className="inline-flex items-center gap-2 rounded-xl bg-rose-600/90 hover:bg-rose-700 px-4 py-2.5 text-xs sm:text-sm font-bold text-white transition shadow-md disabled:opacity-50"
-              >
-                <LogOut size={15} />
-                Clock Out
-              </button>
-
-              <Link
-                to="/delivery/attendance"
-                className="inline-flex items-center gap-1.5 rounded-xl border border-white/20 bg-white/10 hover:bg-white/20 px-3 py-2.5 text-xs font-semibold text-white transition"
-              >
-                <CalendarCheck size={15} />
-                Attendance Page
-              </Link>
-
-              <button
-                type="button"
-                onClick={loadHistory}
-                className="inline-flex items-center gap-1.5 rounded-xl border border-white/20 bg-white/10 hover:bg-white/20 px-3 py-2.5 text-xs font-semibold text-white transition"
-              >
-                <History size={15} />
-                History
-              </button>
-            </div>
-          </div>
-        </div>
-      ) : (
-        <div className="relative overflow-hidden rounded-2xl border border-gray-200 bg-gradient-to-br from-[#1a2e22] via-[#16271c] to-[#0d1711] p-5 sm:p-6 text-white shadow-xl">
-          <div className="relative z-10 flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
-            <div className="flex items-start gap-4">
-              <div className="grid h-14 w-14 shrink-0 place-items-center rounded-2xl bg-white/10 border border-white/20 shadow-inner backdrop-blur-md">
-                <Power size={26} className="text-gray-400" />
-              </div>
-              <div>
-                <div className="flex items-center gap-2">
-                  <span className="inline-flex items-center gap-1.5 rounded-full bg-gray-500/30 border border-gray-400/40 px-3 py-0.5 text-xs font-extrabold uppercase tracking-wider text-gray-300">
-                    <span className="h-2 w-2 rounded-full bg-gray-400" />
-                    Offline • Check-in Required
-                  </span>
-                  {attendance?.check_out && (
-                    <span className="text-xs text-gray-400">
-                      Shift completed ({attendance.total_hours} hrs worked)
-                    </span>
-                  )}
-                </div>
-                <h2 className="mt-1.5 text-xl font-bold sm:text-2xl text-white">
-                  {attendance?.check_out ? "Shift Completed for Today" : "You are Offline"}
-                </h2>
-                <p className="mt-1 text-xs sm:text-sm text-gray-300">
-                  Check in now to go online and start receiving customer delivery orders.
-                </p>
-              </div>
-            </div>
-
-            <div className="flex flex-wrap items-center gap-3">
-              <button
-                type="button"
-                onClick={() => toggleOnline(true)}
-                disabled={availabilityBusy}
-                className="group relative inline-flex items-center gap-2.5 overflow-hidden rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 px-6 py-3 text-sm font-extrabold text-white shadow-[0_4px_20px_rgba(16,185,129,0.35)] transition-all duration-200 hover:scale-[1.02] hover:shadow-[0_6px_25px_rgba(16,185,129,0.5)] active:scale-95 disabled:opacity-50"
-              >
-                <Zap size={18} className="text-yellow-300 animate-bounce" />
-                {attendance?.check_out ? "Resume Shift & Go Online" : "⚡ Go Online & Check In"}
-              </button>
-
-              <Link
-                to="/delivery/attendance"
-                className="inline-flex items-center gap-1.5 rounded-xl border border-white/20 bg-white/10 hover:bg-white/20 px-3.5 py-3 text-xs font-semibold text-white transition"
-              >
-                <CalendarCheck size={15} />
-                Attendance Page
-              </Link>
-
-              <button
-                type="button"
-                onClick={loadHistory}
-                className="inline-flex items-center gap-1.5 rounded-xl border border-white/20 bg-white/10 hover:bg-white/20 px-3.5 py-3 text-xs font-semibold text-white transition"
-              >
-                <History size={15} />
-                Attendance History
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      </section>
 
       {error && (
         <div role="alert" className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
