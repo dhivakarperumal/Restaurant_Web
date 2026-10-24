@@ -404,38 +404,42 @@ export default function AdminEventOrders() {
         {/* Top Summary Cards (matching AdminReservations) */}
         <section aria-label="Event order status summaries" className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-6">
           {[
-            { status: "All", label: "All Orders", caption: "Every catering booking", icon: PartyPopper, bg: "bg-[#FF5A00]" },
-            { status: "Pending", label: "Pending Review", caption: "Waiting for quotation", icon: Clock3, bg: "bg-[#f59e0b]" },
-            { status: "Quotation Sent", label: "Quotation Sent", caption: "Awaiting customer approval", icon: Send, bg: "bg-[#0284c7]" },
-            { status: "Confirmed", label: "Confirmed", caption: "Quote accepted & booked", icon: CheckCircle2, bg: "bg-[#22c55e]" },
-            { status: "Preparing", label: "In Kitchen", caption: "Cooking & preparation", icon: Utensils, bg: "bg-[#8b5cf6]" },
-            { status: "Completed", label: "Completed", caption: "Delivered & settled", icon: CheckCircle2, bg: "bg-[#0d9488]" },
-          ].map(({ status, label, caption, icon: Icon, bg }) => (
+            { status: "All", label: "All Orders", caption: "Every catering booking", icon: PartyPopper, accent: "#f97316", iconBg: "bg-orange-500" },
+            { status: "Pending", label: "Pending Review", caption: "Waiting for quotation", icon: Clock3, accent: "#10b981", iconBg: "bg-emerald-500" },
+            { status: "Quotation Sent", label: "Quotation Sent", caption: "Awaiting customer approval", icon: Send, accent: "#3b82f6", iconBg: "bg-blue-500" },
+            { status: "Confirmed", label: "Confirmed", caption: "Quote accepted & booked", icon: CheckCircle2, accent: "#ec4899", iconBg: "bg-pink-500" },
+            { status: "Preparing", label: "In Kitchen", caption: "Cooking & preparation", icon: Utensils, accent: "#8b5cf6", iconBg: "bg-violet-500" },
+            { status: "Completed", label: "Completed", caption: "Delivered & settled", icon: CheckCircle2, accent: "#06b6d4", iconBg: "bg-cyan-500" },
+          ].map(({ status, label, caption, icon: Icon, accent, iconBg }) => (
             <button
               key={status}
               type="button"
               aria-pressed={activeStatus === status}
               onClick={() => setActiveStatus(status === "All" || activeStatus === status ? "All" : status)}
-              className={`relative flex min-h-[140px] min-w-0 flex-col justify-between overflow-hidden rounded-xl border border-transparent p-4 text-left text-white shadow-[0_2px_10px_rgba(20,56,34,0.08)] transition hover:-translate-y-0.5 hover:shadow-lg sm:p-5 ${bg} ${
-                activeStatus === status ? "ring-4 ring-white/40" : ""
+              className={`group relative flex min-h-[174px] min-w-0 flex-col justify-between overflow-hidden rounded-[20px] border bg-white p-4 text-left shadow-[0_4px_16px_-5px_rgba(15,23,42,0.08)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_10px_22px_-7px_rgba(15,23,42,0.12)] sm:p-5 ${
+                activeStatus === status ? "border-slate-300 ring-2 ring-offset-2" : "border-slate-200/90"
               }`}
+              style={{
+                background: `linear-gradient(135deg, #ffffff 48%, ${accent}12 100%)`,
+                ...(activeStatus === status ? { '--tw-ring-color': accent } : {}),
+              }}
             >
-              <div className="relative z-10 flex items-start gap-3">
-                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-white/20 shadow-sm">
-                  <Icon size={24} strokeWidth={2.2} />
+              <div className="relative z-10 flex items-start justify-between gap-2.5">
+                <div className="min-w-0 flex-1 pt-1">
+                  <h2 className="mb-1 truncate text-[11px] font-bold uppercase tracking-[0.06em] text-slate-500">{label}</h2>
+                  <div className="text-[27px] font-black leading-none tracking-tight text-slate-900">{counts[status] || 0}</div>
                 </div>
-                <div className="mt-0.5 min-w-0 flex-1">
-                  <h2 className="mb-1 truncate text-xs font-semibold opacity-90">{label}</h2>
-                  <div className="text-[26px] font-extrabold leading-none tracking-tight">{counts[status] || 0}</div>
-                </div>
+                <span className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-[15px] text-white shadow-[0_5px_12px_-4px_rgba(15,23,42,0.25)] sm:h-[52px] sm:w-[52px] ${iconBg}`}>
+                  <Icon size={24} strokeWidth={2.3} />
+                </span>
               </div>
-              <div className="relative z-10 mt-5 text-[11px] font-medium opacity-75">{caption}</div>
-              <div className="pointer-events-none absolute bottom-0 right-0 h-16 w-24 opacity-40" aria-hidden="true">
-                <svg viewBox="0 0 100 50" preserveAspectRatio="none" className="h-full w-full">
-                  <path d="M0,50 L0,40 Q25,30 50,40 T100,20 L100,50 Z" fill="white" fillOpacity="0.4" />
-                  <path d="M0,40 Q25,30 50,40 T100,20" fill="none" stroke="white" strokeWidth="2.5" />
-                </svg>
+              <div className="relative z-10 mt-4 flex items-center gap-2 border-t border-slate-100/90 pt-3 text-[11px]">
+                <span className="inline-flex shrink-0 items-center rounded-full border border-emerald-200/80 bg-emerald-50/90 px-2 py-0.5 font-bold text-emerald-600">Live</span>
+                <span className="truncate font-medium text-slate-500">{caption}</span>
+                <span className="ml-auto h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: accent }} />
               </div>
+              <span aria-hidden="true" className="pointer-events-none absolute -right-6 -top-6 h-24 w-24 rounded-full opacity-20 blur-2xl" style={{ backgroundColor: accent }} />
+              <span aria-hidden="true" className="pointer-events-none absolute bottom-0 left-0 h-1 w-full origin-left scale-x-0 transition-transform duration-300 group-hover:scale-x-100" style={{ backgroundColor: accent }} />
             </button>
           ))}
         </section>

@@ -192,7 +192,7 @@ function CustomerOrdersPage({
 
   const isCustomer = audience === 'customer';
   const isAdminOrdersOrangePage = audience === 'admin' && ['all', 'pickup', 'delivery', 'delivered', 'cancelled'].includes(view);
-  const useLightOrderSummary = audience === 'admin' && ['pickup', 'delivery'].includes(view);
+  const useLightOrderSummary = audience === 'admin' && ['all', 'pickup', 'delivery', 'delivered', 'cancelled'].includes(view);
   const showChefDeliveryTable = audience === 'chef' && view === 'delivery';
   const canAssignDelivery = showChefDeliveryTable || (showOrderFilters && view === 'delivery');
   const showOrderSummary = audience === 'admin' || (audience === 'chef' && showOrderFilters);

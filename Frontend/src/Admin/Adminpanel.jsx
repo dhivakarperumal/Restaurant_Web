@@ -64,7 +64,7 @@ const AdminLayout = () => {
         )}
 
         {/* Page Content */}
-        <main className={`flex-1 ${isPosPage ? 'md:min-h-0 overflow-y-auto md:overflow-hidden' : ''} ${isPrintPage || isPosPage ? 'p-0' : 'p-4 sm:p-5 lg:p-6'} ${!isPosPage && !isPrintPage ? 'overflow-y-auto' : ''} bg-slate-100/75 print:p-0 print:m-0 print:overflow-visible`}>
+        <main className={`flex-1 ${isPosPage ? 'md:min-h-0 overflow-y-auto md:overflow-hidden' : ''} ${isPrintPage || isPosPage ? 'p-0' : 'p-4 sm:p-5 lg:p-6'} ${!isPosPage && !isPrintPage ? 'overflow-y-auto' : ''} bg-white print:p-0 print:m-0 print:overflow-visible`}>
           <div className={isPosPage ? 'md:h-full md:min-h-0' : isPrintPage ? '' : isDashboard || isProductsPage ? 'bg-transparent print:bg-transparent print:border-none print:p-0 print:m-0 print:shadow-none print:backdrop-filter-none' : 'glass-container bg-white print:bg-transparent print:border-none print:p-0 print:m-0 print:shadow-none print:backdrop-filter-none'}>
             <Suspense fallback={
               <div className="flex flex-col items-center justify-center min-h-[50vh] gap-4 print:hidden">
