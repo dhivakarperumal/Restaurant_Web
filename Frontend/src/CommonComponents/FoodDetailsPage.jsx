@@ -247,7 +247,7 @@ function FoodDetailsPage() {
   const hasDiscount = Number(food?.discount || 0) > 0 && mrp > price;
   const isAvailable = getFoodAvailability(food || {}, currentTime).available;
   const zoomAspect = 4 / 3;
-  const zoomScale = Math.max(2.5, (zoomAspect / imageAspect) * 2.5);
+  const zoomScale = Math.max(1.5, (zoomAspect / imageAspect) * 1.5);
   const zoomScaleY = zoomScale * imageAspect / zoomAspect;
   const isInWishlist = wishlist.some((item) => (
     String(item.food_id || item.id || item.product_id || item._id)
