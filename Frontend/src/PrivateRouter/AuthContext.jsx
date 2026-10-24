@@ -52,6 +52,7 @@ const clearStoredAuth = () => {
   localStorage.removeItem("token");
   sessionStorage.removeItem("user");
   sessionStorage.removeItem("token");
+  sessionStorage.removeItem("staff-attendance-marked");
 };
 
 const loadStoredUser = () => {
