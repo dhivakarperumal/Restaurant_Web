@@ -196,7 +196,7 @@ const AllEmployees = () => {
                 aria-label="Card view"
                 aria-pressed={viewMode === "card"}
                 title="Card view"
-                className={`flex h-[46px] w-[46px] cursor-pointer items-center justify-center transition ${viewMode === "card" ? "bg-[#FF5A00] text-white" : "text-[#4d4d4d] hover:bg-orange-50 hover:text-[#FF5A00]"}`}
+                className={`flex h-[46px] w-[46px] cursor-pointer items-center justify-center transition ${viewMode === "card" ? "admin-view-toggle-active" : "admin-view-toggle-inactive text-[#4d4d4d]"}`}
               >
                 <LayoutGrid className="h-4 w-4" />
               </button>
@@ -206,12 +206,12 @@ const AllEmployees = () => {
                 aria-label="Table view"
                 aria-pressed={viewMode === "table"}
                 title="Table view"
-                className={`flex h-[46px] w-[46px] cursor-pointer items-center justify-center border-l border-[#dfe2e5] transition ${viewMode === "table" ? "bg-[#FF5A00] text-white" : "text-[#4d4d4d] hover:bg-orange-50 hover:text-[#FF5A00]"}`}
+                className={`flex h-[46px] w-[46px] cursor-pointer items-center justify-center border-l border-[#dfe2e5] transition ${viewMode === "table" ? "admin-view-toggle-active" : "admin-view-toggle-inactive text-[#4d4d4d]"}`}
               >
                 <Table2 className="h-4 w-4" />
               </button>
             </div>
-             <Link to="/admin/employees/add" className="inline-flex h-[46px] items-center gap-2 rounded-xl bg-[#FF5A00] px-4 text-[15px] font-semibold text-white shadow-[0_6px_14px_rgba(255,90,0,0.18)] transition hover:bg-[#E94B00]">
+             <Link to="/admin/employees/add" className="admin-primary-button inline-flex h-[46px] items-center gap-2 rounded-xl px-4 text-[15px] font-semibold shadow-md transition">
           <UserRoundPlus className="h-4 w-4" /> Add Employee
         </Link>
           </div>
@@ -300,7 +300,7 @@ const AllEmployees = () => {
                             onClick={() => setAssignModalServer(employee)}
                             title="Assign Dining Tables"
                             aria-label={`Assign tables to ${employee.full_name}`}
-                            className="flex h-9 cursor-pointer items-center gap-1.5 rounded-lg border border-[#FF5A00] bg-[#FF5A00] px-2.5 text-xs font-semibold text-white shadow-sm transition hover:border-[#E94B00] hover:bg-[#E94B00]"
+                            className="admin-primary-button flex h-9 cursor-pointer items-center gap-1.5 rounded-lg border px-2.5 text-xs font-semibold shadow-sm transition"
                           >
                             <UtensilsCrossed className="h-3.5 w-3.5 text-[#d4a843]" />
                             <span>Assign Table</span>
@@ -397,7 +397,7 @@ const AllEmployees = () => {
                       onClick={() => setAssignModalServer(employee)}
                       title="Assign Dining Tables"
                       aria-label={`Assign tables to ${employee.full_name}`}
-                      className="flex h-9 cursor-pointer items-center gap-1.5 rounded-lg border border-[#FF5A00] bg-[#FF5A00] px-2.5 text-xs font-semibold text-white shadow-sm transition hover:border-[#E94B00] hover:bg-[#E94B00]"
+                      className="admin-primary-button flex h-9 cursor-pointer items-center gap-1.5 rounded-lg border px-2.5 text-xs font-semibold shadow-sm transition"
                     >
                       <UtensilsCrossed className="h-3.5 w-3.5 text-[#d4a843]" />
                       <span>Assign Table</span>
