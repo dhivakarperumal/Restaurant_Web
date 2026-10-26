@@ -95,10 +95,9 @@ const DeliverySidebar = ({ isOpen, onClose, collapsed, onToggleCollapse }) => {
 
       {/* ========== SIDEBAR ========== */}
       <aside
-        data-sidebar="admin-sidebar"
+        data-sidebar="delivery-sidebar"
         className={`
           fixed top-0 left-0 z-50 h-full flex flex-col
-          bg-[#1F3C8C]
           border-r border-white/25
           
           transition-all duration-300
