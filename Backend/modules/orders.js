@@ -63,6 +63,17 @@ const initializeOrderSchema = async () => {
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
   `);
 
+  const [orderStatusColumn] = await db.execute(
+    `SELECT COLUMN_TYPE FROM information_schema.COLUMNS
+     WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'orders'
+       AND COLUMN_NAME = 'order_status'`
+  );
+  if (orderStatusColumn[0]?.COLUMN_TYPE !== 'varchar(32)') {
+    await db.query(
+      "ALTER TABLE orders MODIFY COLUMN order_status VARCHAR(32) NOT NULL DEFAULT 'placed'"
+    );
+  }
+
   const [deliveryChargeColumn] = await db.execute(
     `SELECT COLUMN_NAME FROM information_schema.COLUMNS
      WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'orders'

@@ -112,10 +112,39 @@ const getOrderFilterGroup = (status) => {
   const normalized = String(status || "processing").trim().toLowerCase().replaceAll("_", " ");
   if (["cancelled", "returned", "payment failed"].includes(normalized)) return "Cancelled";
   if (["delivered", "completed"].includes(normalized)) return "Delivered";
-  if (["assigned", "out for delivery", "shipped"].includes(normalized)) return "Assigned";
+  if ([
+    "assigned",
+    "accepted",
+    "reached pickup",
+    "picked up",
+    "out for delivery",
+    "reached customer",
+    "shipped",
+  ].includes(normalized)) return "Assigned";
   if (normalized === "ready" || normalized === "ready to serve") return "Ready";
   if (normalized === "preparing") return "Preparing";
   return "Order Placed";
+};
+
+const getOrderStatusLabel = (status) => {
+  const normalized = String(status || "processing").trim().toLowerCase().replaceAll("_", " ");
+  const labels = {
+    placed: "Order Placed",
+    processing: "Preparing",
+    preparing: "Preparing",
+    ready: "Ready",
+    assigned: "Assigned",
+    accepted: "Accepted",
+    "reached pickup": "Reached pickup",
+    "picked up": "Picked up",
+    "out for delivery": "Out for delivery",
+    "reached customer": "Reached customer",
+    delivered: "Delivered",
+    completed: "Delivered",
+    cancelled: "Cancelled",
+    returned: "Returned",
+  };
+  return labels[normalized] || normalized.replace(/\b\w/g, (character) => character.toUpperCase());
 };
 
 const getOrderDateValue = (value) => {
@@ -931,7 +960,7 @@ const Account = () => {
                             : "";
                           const status = order.order_status || "Processing";
                           const statusGroup = getOrderFilterGroup(status);
-                          const displayStatus = statusGroup;
+                          const displayStatus = getOrderStatusLabel(status);
                           const StatusIcon = statusGroup === "Delivered" || statusGroup === "Ready"
                             ? CheckCircle2
                             : statusGroup === "Assigned"

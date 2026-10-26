@@ -9,6 +9,11 @@ const STATUS_OPTIONS = [
   { value: 'preparing', label: 'Preparing' },
   { value: 'ready', label: 'Ready' },
   { value: 'assigned', label: 'Assigned' },
+  { value: 'accepted', label: 'Accepted' },
+  { value: 'reached_pickup', label: 'Reached pickup' },
+  { value: 'picked_up', label: 'Picked up' },
+  { value: 'out_for_delivery', label: 'Out for delivery' },
+  { value: 'reached_customer', label: 'Reached customer' },
   { value: 'delivered', label: 'Delivered' },
   { value: 'cancelled', label: 'Cancelled' },
 ];
@@ -16,10 +21,22 @@ const STATUS_OPTIONS = [
 const formatStatus = (status) => {
   const normalized = String(status || 'placed').toLowerCase();
   if (normalized === 'completed') return 'Delivered';
-  return STATUS_OPTIONS.find((option) => option.value === normalized)?.label || normalized.replaceAll('_', ' ');
+  return STATUS_OPTIONS.find((option) => option.value === normalized)?.label
+    || normalized.replaceAll('_', ' ').replace(/\b\w/g, (character) => character.toUpperCase());
 };
 
-const STATUS_FLOW = ['placed', 'preparing', 'ready', 'assigned', 'delivered'];
+const HOME_DELIVERY_STATUS_FLOW = [
+  'placed',
+  'preparing',
+  'ready',
+  'assigned',
+  'accepted',
+  'reached_pickup',
+  'picked_up',
+  'out_for_delivery',
+  'reached_customer',
+  'delivered',
+];
 
 const getAvailableStatusOptions = (order) => {
   const current = String(order?.order_status || 'placed').toLowerCase();
@@ -36,7 +53,7 @@ const getAvailableStatusOptions = (order) => {
   const isPickup = order?.order_type === 'pickup';
   const flow = isPickup
     ? ['placed', 'preparing', 'ready', 'delivered']
-    : STATUS_FLOW;
+    : HOME_DELIVERY_STATUS_FLOW;
 
   const currentIndex = flow.indexOf(normalized);
 
@@ -47,7 +64,7 @@ const getAvailableStatusOptions = (order) => {
   // Hide previous order statuses so only the current and subsequent statuses are selectable
   return STATUS_OPTIONS.filter((option) => {
     if (option.value === 'cancelled') return true;
-    if (isPickup && option.value === 'assigned') return false;
+    if (!flow.includes(option.value)) return false;
     const optionIndex = flow.indexOf(option.value);
     return optionIndex >= currentIndex;
   });

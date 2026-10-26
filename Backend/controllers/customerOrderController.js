@@ -2,7 +2,20 @@ const db = require('../config/db');
 const { clockInEmployee, clockOutEmployee, getTodayAttendance } = require('../modules/attendance');
 const { notifyDeliveryPartner, notifyUser } = require('../utils/notificationSocket');
 
-const orderStatuses = ['placed', 'preparing', 'ready', 'assigned', 'completed', 'delivered', 'cancelled'];
+const orderStatuses = [
+  'placed',
+  'preparing',
+  'ready',
+  'assigned',
+  'accepted',
+  'reached_pickup',
+  'picked_up',
+  'out_for_delivery',
+  'reached_customer',
+  'completed',
+  'delivered',
+  'cancelled',
+];
 const deliveryPartnerNextStatus = {
   assigned: 'accepted',
   accepted: 'reached_pickup',

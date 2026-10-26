@@ -22,7 +22,18 @@ import toast from "react-hot-toast";
 import api, { API_URL } from "../../api";
 import { StoreContext } from "../../PrivateRouter/StoreContext";
 
-const trackingStatuses = ["Order Placed", "Preparing", "Ready", "Assigned", "Delivered"];
+const trackingStatuses = [
+  "Order Placed",
+  "Preparing",
+  "Ready",
+  "Assigned",
+  "Accepted",
+  "Reached pickup",
+  "Picked up",
+  "Out for delivery",
+  "Reached customer",
+  "Delivered",
+];
 
 const normalizeStatus = (status) => {
   const normalized = String(status || "").trim().toUpperCase().replace(/_/g, " ");
@@ -30,7 +41,7 @@ const normalizeStatus = (status) => {
     return "ORDER PLACED";
   }
   if (normalized === "READY TO SERVE") return "READY";
-  if (["OUT FOR DELIVERY", "SHIPPED"].includes(normalized)) return "ASSIGNED";
+  if (normalized === "SHIPPED") return "OUT FOR DELIVERY";
   if (["COMPLETED", "SERVED"].includes(normalized)) return "DELIVERED";
   return normalized;
 };
@@ -38,6 +49,11 @@ const normalizeStatus = (status) => {
 const statusColorMap = {
   DELIVERED: "bg-[#eaf4e4] text-[#396F0B] border-[#cfe3c4]",
   ASSIGNED: "bg-[#edf3fa] text-[#245b85] border-[#c9daee]",
+  ACCEPTED: "bg-[#edf3fa] text-[#245b85] border-[#c9daee]",
+  "REACHED PICKUP": "bg-[#edf3fa] text-[#245b85] border-[#c9daee]",
+  "PICKED UP": "bg-[#edf3fa] text-[#245b85] border-[#c9daee]",
+  "OUT FOR DELIVERY": "bg-[#edf3fa] text-[#245b85] border-[#c9daee]",
+  "REACHED CUSTOMER": "bg-[#edf3fa] text-[#245b85] border-[#c9daee]",
   READY: "bg-[#eaf4e4] text-[#396F0B] border-[#cfe3c4]",
   PROCESSING: "bg-[#fff6d8] text-[#795500] border-[#f1d889]",
   PACKING: "bg-[#fff6d8] text-[#795500] border-[#f1d889]",
