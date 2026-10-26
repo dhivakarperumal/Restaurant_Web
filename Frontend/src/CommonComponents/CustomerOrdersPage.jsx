@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ChevronLeft, ChevronRight, Clock3, LayoutGrid, List, MapPin, PackageCheck, RefreshCw, Search, UserRound, UtensilsCrossed } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Clock3, LayoutGrid, List, MapPin, PackageCheck, RefreshCw, Search, UserRound, UtensilsCrossed, X } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import api, { BACKEND_BASE_URL } from '../api';
 import PageHeader from './PageHeader';
@@ -67,6 +67,12 @@ const imageUrl = (image) => {
   if (/^https?:\/\//i.test(image)) return image;
   return `${BACKEND_BASE_URL}${image.startsWith('/') ? image : `/${image}`}`;
 };
+
+const isPartnerAvailable = (partner) => (
+  Boolean(partner.check_in && !partner.check_out)
+  && String(partner.available_for_delivery || 'Yes').toLowerCase() !== 'no'
+  && String(partner.current_status || 'Available').toLowerCase() === 'available'
+);
 
 const formatDate = (value) => {
   if (!value) return 'Date unavailable';
@@ -172,6 +178,12 @@ function CustomerOrdersPage({
   const [loadingDeliveryPartners, setLoadingDeliveryPartners] = useState(false);
   const [deliveryPartnersError, setDeliveryPartnersError] = useState('');
   const [assignmentDrafts, setAssignmentDrafts] = useState({});
+  const [assignmentModalOpen, setAssignmentModalOpen] = useState(false);
+  const [assignmentModalOrder, setAssignmentModalOrder] = useState(null);
+  const [assignmentOrderNumber, setAssignmentOrderNumber] = useState('');
+  const [partnerSearch, setPartnerSearch] = useState('');
+  const [selectedPartnerId, setSelectedPartnerId] = useState('');
+  const [assignmentError, setAssignmentError] = useState('');
   const [orderTypeFilter, setOrderTypeFilter] = useState(getInitialOrderType(view));
   const [statusFilter, setStatusFilter] = useState(getInitialStatus(view));
   const [searchTerm, setSearchTerm] = useState('');
@@ -197,6 +209,7 @@ function CustomerOrdersPage({
     || (audience === 'chef' && ['all', 'new', 'pickup', 'delivery', 'cancelled'].includes(view) && (showOrderFilters || showOrderSummaryCards));
   const showChefDeliveryTable = audience === 'chef' && view === 'delivery';
   const canAssignDelivery = showChefDeliveryTable || (showOrderFilters && view === 'delivery');
+  const isAdminHomeDeliveryOrders = audience === 'admin' && view === 'delivery' && todayOnly;
   const showOrderSummary = audience === 'admin' || (audience === 'chef' && (showOrderFilters || showOrderSummaryCards));
   const title = isCustomer
     ? 'My Orders'
@@ -247,6 +260,14 @@ function CustomerOrdersPage({
   const currentPage = Math.min(page, pageCount);
   const pageOffset = (currentPage - 1) * pageSize;
   const paginatedOrders = visibleOrders.slice(pageOffset, pageOffset + pageSize);
+  const assignableHomeDeliveryOrders = visibleOrders.filter((order) => (
+    !order.is_kitchen_order
+    && order.order_type === 'home_delivery'
+    && !['delivered', 'completed', 'cancelled'].includes(String(order.order_status || '').toLowerCase())
+  ));
+  const selectedAssignmentOrder = assignmentModalOrder
+    || assignableHomeDeliveryOrders.find((order) => order.order_number === assignmentOrderNumber)
+    || null;
   const statusCounts = useMemo(() => STATUS_OPTIONS.reduce((counts, status) => {
     counts[status.value] = orders.filter((order) => order.order_status === status.value).length;
     return counts;
@@ -280,7 +301,9 @@ function CustomerOrdersPage({
   const fetchDeliveryPartners = useCallback(async () => {
     if (!canAssignDelivery) return;
     try {
-      const { data } = await api.get('/delivery-partners');
+      const { data } = await api.get('/delivery-partners', {
+        params: isAdminHomeDeliveryOrders ? { all: 'true' } : undefined,
+      });
       setDeliveryPartners(Array.isArray(data?.data) ? data.data : []);
       setDeliveryPartnersError('');
     } catch (requestError) {
@@ -289,7 +312,7 @@ function CustomerOrdersPage({
     } finally {
       setLoadingDeliveryPartners(false);
     }
-  }, [canAssignDelivery]);
+  }, [canAssignDelivery, isAdminHomeDeliveryOrders]);
 
   useEffect(() => {
     if (!canAssignDelivery) return undefined;
@@ -358,7 +381,10 @@ function CustomerOrdersPage({
             order_status: status,
             ...(status === 'assigned' ? {
               assigned_delivery_partner_id: data.data?.assigned_delivery_partner_id,
-              assigned_partner_name: data.data?.assigned_partner_name,
+              assigned_partner_name: deliveryPartners.find((partner) => partner.employee_id === deliveryPartnerId)?.full_name
+                || data.data?.assigned_partner_name,
+              assigned_partner_phone: deliveryPartners.find((partner) => partner.employee_id === deliveryPartnerId)?.phone_number || '',
+              assigned_partner_profile_photo: deliveryPartners.find((partner) => partner.employee_id === deliveryPartnerId)?.profile_photo || '',
             } : {}),
           }
           : item
@@ -369,15 +395,64 @@ function CustomerOrdersPage({
         return next;
       });
       toast.success(status === 'assigned' ? 'Delivery partner assigned.' : 'Customer order updated.');
+      return true;
     } catch (requestError) {
-      toast.error(requestError.response?.data?.message || requestError.message || 'Order status could not be updated.');
+      const message = requestError.response?.data?.message || requestError.message || 'Order status could not be updated.';
+      if (status === 'assigned') setAssignmentError(message);
+      toast.error(message);
+      return false;
     } finally {
       setUpdatingOrder('');
     }
   };
 
+  const openAssignmentModal = (order) => {
+    setAssignmentModalOpen(true);
+    setAssignmentModalOrder(order);
+    setAssignmentOrderNumber(order?.order_number || '');
+    setPartnerSearch('');
+    setSelectedPartnerId(deliveryPartners.some((partner) => partner.employee_id === order?.assigned_delivery_partner_id && isPartnerAvailable(partner))
+      ? order.assigned_delivery_partner_id
+      : '');
+    setAssignmentError('');
+  };
+
+  const closeAssignmentModal = useCallback(() => {
+    if (updatingOrder) return;
+    setAssignmentModalOpen(false);
+    setAssignmentModalOrder(null);
+    setAssignmentOrderNumber('');
+    setAssignmentError('');
+  }, [updatingOrder]);
+
+  const assignSelectedPartner = async () => {
+    if (!selectedAssignmentOrder || !selectedPartnerId || updatingOrder) return;
+    const succeeded = await changeStatus(selectedAssignmentOrder, 'assigned', selectedPartnerId);
+    if (succeeded) {
+      setAssignmentModalOpen(false);
+      setAssignmentModalOrder(null);
+      setAssignmentOrderNumber('');
+      setAssignmentError('');
+    }
+  };
+
+  const selectAssignmentOrder = (orderNumber) => {
+    setAssignmentModalOrder(null);
+    setAssignmentOrderNumber(orderNumber);
+    setPartnerSearch('');
+    const order = assignableHomeDeliveryOrders.find((item) => item.order_number === orderNumber);
+    setSelectedPartnerId(deliveryPartners.some((partner) => partner.employee_id === order?.assigned_delivery_partner_id && isPartnerAvailable(partner))
+      ? order.assigned_delivery_partner_id
+      : '');
+    setAssignmentError('');
+  };
+
   const selectOrderStatus = (order, status) => {
     if (canAssignDelivery && order.order_type === 'home_delivery' && status === 'assigned') {
+      if (isAdminHomeDeliveryOrders) {
+        openAssignmentModal(order);
+        return;
+      }
       setAssignmentDrafts((current) => ({ ...current, [order.order_number]: '' }));
       return;
     }
@@ -390,6 +465,14 @@ function CustomerOrdersPage({
   };
 
   const renderPartnerAssignment = (order) => {
+    if (isAdminHomeDeliveryOrders && order.order_type === 'home_delivery') {
+      return (
+        <div className="min-w-40">
+          <p className="truncate font-semibold text-[#263830]">{order.assigned_partner_name || 'Not assigned'}</p>
+          {order.assigned_partner_phone && <p className="mt-0.5 text-[11px] text-[#68766e]">{order.assigned_partner_phone}</p>}
+        </div>
+      );
+    }
     const isSelectingPartner = Object.prototype.hasOwnProperty.call(assignmentDrafts, order.order_number);
     if (!canAssignDelivery || order.order_type !== 'home_delivery') return '—';
     if (!isSelectingPartner) return order.assigned_partner_name || 'Not assigned';
@@ -433,6 +516,21 @@ function CustomerOrdersPage({
       </div>
     );
   };
+
+  const matchingDeliveryPartners = deliveryPartners.filter((partner) => {
+    const query = partnerSearch.trim().toLowerCase();
+    if (!query) return true;
+    return `${partner.full_name || ''} ${partner.phone_number || ''}`.toLowerCase().includes(query);
+  });
+
+  useEffect(() => {
+    if (!assignmentModalOpen) return undefined;
+    const closeOnEscape = (event) => {
+      if (event.key === 'Escape' && !updatingOrder) closeAssignmentModal();
+    };
+    document.addEventListener('keydown', closeOnEscape);
+    return () => document.removeEventListener('keydown', closeOnEscape);
+  }, [assignmentModalOpen, closeAssignmentModal, updatingOrder]);
 
   return (
     <>
@@ -555,6 +653,16 @@ function CustomerOrdersPage({
                 <button type="button" onClick={() => setLayout('table')} aria-label="Table view" aria-pressed={layout === 'table'} title="Table view" className={`grid w-11 place-items-center border-r border-[#dfe2e5] ${layout === 'table' ? (isAdminOrdersOrangePage ? 'bg-[#FF5A00] text-white' : 'bg-[#1a3c36] text-white') : `text-[#66736b] ${isAdminOrdersOrangePage ? 'hover:bg-orange-50 hover:text-[#FF5A00]' : 'hover:bg-gray-50'}`}`}><List size={16} /></button>
                 <button type="button" onClick={() => setLayout('card')} aria-label="Card view" aria-pressed={layout === 'card'} title="Card view" className={`grid w-11 place-items-center ${layout === 'card' ? (isAdminOrdersOrangePage ? 'bg-[#FF5A00] text-white' : 'bg-[#1a3c36] text-white') : `text-[#66736b] ${isAdminOrdersOrangePage ? 'hover:bg-orange-50 hover:text-[#FF5A00]' : 'hover:bg-gray-50'}`}`}><LayoutGrid size={16} /></button>
               </div>
+              {isAdminHomeDeliveryOrders && (
+                <button
+                  type="button"
+                  onClick={() => openAssignmentModal(null)}
+                  disabled={!assignableHomeDeliveryOrders.length}
+                  className="h-[46px] rounded-xl bg-[#FF5A00] px-4 text-sm font-bold text-white transition hover:bg-[#E94B00] disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  Assign Delivery Partner
+                </button>
+              )}
             </div>
           </section>
         )}
@@ -626,14 +734,16 @@ function CustomerOrdersPage({
                       <Clock3 size={13} /> {formatDate(order.created_at)}
                     </p>
                   </div>
-                  <span className={`rounded-full px-3 py-1 text-xs font-bold ${
-                    ['cancelled'].includes(order.order_status) ? 'bg-rose-50 text-rose-700'
-                      : ['completed', 'delivered'].includes(order.order_status) ? 'bg-emerald-50 text-emerald-700'
-                        : ['assigned', 'ready'].includes(order.order_status) ? 'bg-blue-50 text-blue-700'
-                          : 'bg-amber-50 text-amber-800'
-                  }`}>
-                    {order.is_kitchen_order ? order.kitchen_status : formatStatus(order.order_status)}
-                  </span>
+                  <div className="flex shrink-0 flex-col items-end gap-2">
+                    <span className={`rounded-full px-3 py-1 text-xs font-bold ${
+                      ['cancelled'].includes(order.order_status) ? 'bg-rose-50 text-rose-700'
+                        : ['completed', 'delivered'].includes(order.order_status) ? 'bg-emerald-50 text-emerald-700'
+                          : ['assigned', 'ready'].includes(order.order_status) ? 'bg-blue-50 text-blue-700'
+                            : 'bg-amber-50 text-amber-800'
+                    }`}>
+                      {order.is_kitchen_order ? order.kitchen_status : formatStatus(order.order_status)}
+                    </span>
+                  </div>
                 </div>
 
                 <div className="grid gap-4 p-5 sm:grid-cols-2">
@@ -756,6 +866,175 @@ function CustomerOrdersPage({
         )}
       </div>
       </main>
+      {isAdminHomeDeliveryOrders && assignmentModalOpen && (
+        <div
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/55 p-3 backdrop-blur-[2px] sm:p-6"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget) closeAssignmentModal();
+          }}
+        >
+          <section
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="assign-delivery-partner-title"
+            className="flex max-h-[92vh] w-full max-w-xl flex-col overflow-hidden rounded-2xl bg-white shadow-[0_24px_80px_rgba(15,23,42,0.28)]"
+          >
+            <header className="flex items-start justify-between gap-4 border-b border-slate-100 px-5 py-4 sm:px-6">
+              <div>
+                <h2 id="assign-delivery-partner-title" className="text-lg font-extrabold text-slate-900 sm:text-xl">Assign Delivery Partner</h2>
+                <p className="mt-1 text-sm text-slate-500">
+                  {selectedAssignmentOrder
+                    ? <>Order <span className="font-mono font-bold text-slate-700">{selectedAssignmentOrder.order_number}</span></>
+                    : 'Choose an order and a delivery partner'}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={closeAssignmentModal}
+                disabled={Boolean(updatingOrder)}
+                aria-label="Close assignment dialog"
+                className="grid h-9 w-9 shrink-0 place-items-center rounded-full text-slate-500 transition hover:bg-slate-100 hover:text-slate-800 disabled:opacity-50"
+              >
+                <X size={19} />
+              </button>
+            </header>
+
+            <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4 sm:px-6">
+              <label className="mb-4 block text-xs font-bold text-slate-600">
+                Home Delivery Order
+                <select
+                  value={selectedAssignmentOrder?.order_number || ''}
+                  onChange={(event) => selectAssignmentOrder(event.target.value)}
+                  className="mt-1.5 h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-800 outline-none focus:border-[#FF5A00] focus:ring-2 focus:ring-orange-100"
+                >
+                  <option value="" disabled>Select an order</option>
+                  {assignableHomeDeliveryOrders.map((order) => (
+                    <option key={order.order_number} value={order.order_number}>
+                      {order.order_number} · {order.customer_name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              {selectedAssignmentOrder?.assigned_delivery_partner_id && (
+                <div className="mb-4 rounded-xl border border-orange-100 bg-orange-50/70 px-3.5 py-3">
+                  <p className="text-[11px] font-bold uppercase tracking-wide text-orange-700">Currently assigned</p>
+                  <p className="mt-1 font-semibold text-slate-800">{selectedAssignmentOrder.assigned_partner_name || 'Delivery partner'}</p>
+                  {selectedAssignmentOrder.assigned_partner_phone && <p className="mt-0.5 text-sm text-slate-600">{selectedAssignmentOrder.assigned_partner_phone}</p>}
+                </div>
+              )}
+
+              <label className="relative block">
+                <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                <input
+                  type="search"
+                  value={partnerSearch}
+                  onChange={(event) => setPartnerSearch(event.target.value)}
+                  placeholder="Search by name or phone number"
+                  aria-label="Search delivery partners"
+                  className="h-11 w-full rounded-xl border border-slate-200 bg-white pl-10 pr-3 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-[#FF5A00] focus:ring-2 focus:ring-orange-100"
+                />
+              </label>
+
+              {deliveryPartnersError && (
+                <div role="alert" className="mt-4 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+                  <p>{deliveryPartnersError}</p>
+                  <button type="button" onClick={() => { setLoadingDeliveryPartners(true); fetchDeliveryPartners(); }} className="mt-1 font-bold underline">Retry loading partners</button>
+                </div>
+              )}
+              {loadingDeliveryPartners && selectedAssignmentOrder ? (
+                <div className="flex items-center justify-center gap-2 py-12 text-sm font-medium text-slate-500">
+                  <RefreshCw size={17} className="animate-spin" /> Loading available delivery partners…
+                </div>
+              ) : !selectedAssignmentOrder ? (
+                <p className="py-8 text-center text-sm text-slate-500">Select a home delivery order to view partners.</p>
+              ) : !deliveryPartnersError && matchingDeliveryPartners.length === 0 ? (
+                <p className="py-12 text-center text-sm text-slate-500">
+                  {deliveryPartners.length ? 'No partners match your search.' : 'No active delivery partners found.'}
+                </p>
+              ) : (
+                <div className="mt-3 space-y-2">
+                  {matchingDeliveryPartners.map((partner) => {
+                    const isSelected = selectedPartnerId === partner.employee_id;
+                    const available = isPartnerAvailable(partner);
+                    const availability = available
+                      ? 'Available'
+                      : !partner.check_in || partner.check_out
+                        ? 'Off shift'
+                        : String(partner.available_for_delivery || 'Yes').toLowerCase() === 'no'
+                          ? 'Unavailable'
+                          : partner.current_status || 'Unavailable';
+                    return (
+                      <label
+                        key={partner.employee_id}
+                        className={`flex items-center gap-3 rounded-xl border p-3 transition ${
+                          available ? 'cursor-pointer' : 'cursor-not-allowed opacity-65'
+                        } ${
+                          isSelected ? 'border-[#FF5A00] bg-orange-50/70 ring-1 ring-[#FF5A00]/20' : 'border-slate-200'
+                        } ${
+                          available && !isSelected ? 'hover:border-orange-200 hover:bg-slate-50' : ''
+                        }`}
+                      >
+                        <input
+                          type="radio"
+                          name="delivery-partner"
+                          value={partner.employee_id}
+                          checked={isSelected}
+                          onChange={() => { setSelectedPartnerId(partner.employee_id); setAssignmentError(''); }}
+                          disabled={!available}
+                          className="h-4 w-4 accent-[#FF5A00]"
+                        />
+                        {partner.profile_photo ? (
+                          <img src={imageUrl(partner.profile_photo)} alt="" className="h-11 w-11 shrink-0 rounded-full object-cover" />
+                        ) : (
+                          <span className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-orange-100 text-sm font-bold text-orange-700">
+                            {(partner.full_name || 'D').charAt(0).toUpperCase()}
+                          </span>
+                        )}
+                        <span className="min-w-0 flex-1">
+                          <span className="block truncate text-sm font-bold text-slate-800">{partner.full_name}</span>
+                          <span className="mt-0.5 block text-xs text-slate-500">{partner.phone_number || 'Phone number unavailable'}</span>
+                        </span>
+                        <span className={`shrink-0 rounded-full px-2.5 py-1 text-[11px] font-bold capitalize ${
+                          available ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-600'
+                        }`}>
+                          {availability.replaceAll('_', ' ')}
+                        </span>
+                      </label>
+                    );
+                  })}
+                </div>
+              )}
+              {assignmentError && <p role="alert" className="mt-3 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{assignmentError}</p>}
+            </div>
+
+            <footer className="flex flex-col-reverse gap-2 border-t border-slate-100 bg-slate-50/70 px-5 py-4 sm:flex-row sm:justify-end sm:px-6">
+              <button
+                type="button"
+                onClick={closeAssignmentModal}
+                disabled={Boolean(updatingOrder)}
+                className="h-10 rounded-lg border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 transition hover:bg-slate-100 disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={assignSelectedPartner}
+                disabled={
+                  !selectedAssignmentOrder
+                  || !selectedPartnerId
+                  || !deliveryPartners.some((partner) => partner.employee_id === selectedPartnerId && isPartnerAvailable(partner))
+                  || loadingDeliveryPartners
+                  || Boolean(updatingOrder)
+                }
+                className="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-[#FF5A00] px-5 text-sm font-bold text-white transition hover:bg-[#E94B00] disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {updatingOrder === selectedAssignmentOrder?.order_number && <RefreshCw size={15} className="animate-spin" />}
+                {updatingOrder === selectedAssignmentOrder?.order_number ? 'Assigning…' : 'Assign Delivery Partner'}
+              </button>
+            </footer>
+          </section>
+        </div>
+      )}
     </>
   );
 }
