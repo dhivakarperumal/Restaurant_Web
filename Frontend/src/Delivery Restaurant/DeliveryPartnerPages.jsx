@@ -192,17 +192,47 @@ const EarningsPage = () => {
   const visible     = filtered.slice((displayPage-1)*PAGE_SIZE, displayPage*PAGE_SIZE);
 
   const earningsCards = [
-    { title: "Today's Earnings",   value: currency(summary.today_earnings  ?? summary.todayEarnings),   inc: "8.4%",  icon: <IndianRupee />, bg: "bg-[#22c55e]" },
-    { title: "This Week",          value: currency(summary.week_earnings   ?? summary.weekEarnings),    inc: "11.2%", icon: <TrendingUp />,  bg: "bg-[#3b82f6]" },
-    { title: "This Month",         value: currency(summary.month_earnings  ?? summary.monthEarnings),   inc: "15.3%", icon: <WalletCards />, bg: "bg-[#f59e0b]" },
-    { title: "Total Earnings",     value: currency(summary.total_earnings  ?? summary.totalEarnings),   inc: "20.7%", icon: <Wallet />,      bg: "bg-[#8b5cf6]" },
-    { title: "Deliveries Done",    value: String(summary.completed_deliveries ?? summary.completedDeliveries ?? 0), inc: "13.1%", icon: <CheckCheck />,  bg: "bg-[#ec4899]" },
-    { title: "Cash Collected",     value: currency(summary.cash_collected   ?? summary.cashCollected),  inc: "9.5%",  icon: <WalletCards />, bg: "bg-[#06b6d4]" },
+    { title: "Today's Earnings",   value: currency(summary.today_earnings  ?? summary.todayEarnings),                                        inc: "8.4%",  icon: <IndianRupee />, bg: "bg-[#22c55e]" },
+    { title: "This Week",          value: currency(summary.week_earnings   ?? summary.weekEarnings),                                         inc: "11.2%", icon: <TrendingUp />,  bg: "bg-[#3b82f6]" },
+    { title: "This Month",         value: currency(summary.month_earnings  ?? summary.monthEarnings),                                        inc: "15.3%", icon: <WalletCards />, bg: "bg-[#f59e0b]" },
+    { title: "Total Earnings",     value: currency(summary.total_earnings  ?? summary.totalEarnings),                                        inc: "20.7%", icon: <Wallet />,      bg: "bg-[#8b5cf6]" },
+    { title: "Deliveries Done",    value: String(summary.completed_deliveries ?? summary.completedDeliveries ?? 0),                          inc: "13.1%", icon: <CheckCheck />,  bg: "bg-[#ec4899]" },
+    { title: "Cash Collected",     value: currency(summary.cash_collected  ?? summary.cashCollected),                                        inc: "9.5%",  icon: <WalletCards />, bg: "bg-[#06b6d4]" },
   ];
 
   return (
     <div className="min-h-screen bg-gray-100 p-4 md:p-2">
-      <div className="mx-auto max-w-[1500px] space-y-6">
+      <div className="mx-auto max-w-[1500px]">
+
+        {/* ── PAGE HEADER ── */}
+        <div className="mb-6">
+          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[#39804f]">Payouts</p>
+          <div className="mt-0.5 flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <h1 className="text-2xl font-bold text-[#17231c]">Earnings</h1>
+              <p className="mt-0.5 text-sm text-gray-500">Delivery pay and payout history for your account.</p>
+            </div>
+            <button type="button" onClick={refresh} disabled={loading} aria-label="Refresh"
+              className="grid h-10 w-10 place-items-center rounded-lg border border-[#dce6de] bg-white text-gray-600 hover:bg-gray-50 disabled:opacity-50">
+              <RefreshCw size={16} className={loading ? "animate-spin" : ""} />
+            </button>
+          </div>
+        </div>
+
+        {/* ── STAT CARDS ── */}
+        <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6">
+          {earningsCards.map((s) => <StatCard key={s.title} {...s} loading={loading} />)}
+        </div>
+
+        {error && (
+          <div role="alert" className="mb-4 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+            <p className="font-semibold">Earnings unavailable</p>
+            <p className="mt-1">{error}</p>
+            <button type="button" onClick={refresh} className="mt-2 font-semibold underline">Try again</button>
+          </div>
+        )}
+
+        <div className="rounded-lg border border-[#e7e0d8] bg-gray-100 p-3 shadow-sm">
 
         <PageHeading eyebrow="Payouts" title="Earnings" description="Delivery pay and payout history for your account." onRefresh={refresh} loading={loading} />
 
