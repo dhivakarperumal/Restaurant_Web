@@ -92,6 +92,14 @@ const isOrderFromToday = (order) => {
     && createdAt.getDate() === today.getDate();
 };
 
+const getOrdersForPage = (orders, todayOnly, excludeClosedHomeDelivery) => orders.filter((order) => (
+  (!todayOnly || isOrderFromToday(order))
+  && (
+    !excludeClosedHomeDelivery
+    || !['delivered', 'completed', 'cancelled'].includes(String(order.order_status || '').toLowerCase())
+  )
+));
+
 const KITCHEN_STATUS_TO_ORDER_STATUS = {
   Pending: 'placed',
   Preparing: 'preparing',
@@ -285,10 +293,7 @@ function CustomerOrdersPage({
         ...(activeOrderType ? { order_type: activeOrderType } : {}),
       };
       const fetchedOrders = await fetchOrderLists({ isCustomer, params, includeKitchenOrders });
-      const visibleOrders = todayOnly
-        ? fetchedOrders.filter(isOrderFromToday)
-        : fetchedOrders;
-      setOrders(visibleOrders);
+      setOrders(getOrdersForPage(fetchedOrders, todayOnly, isAdminHomeDeliveryOrders));
       setError('');
     } catch (requestError) {
       const message = requestError.response?.data?.message || 'Customer orders could not be loaded.';
@@ -297,7 +302,7 @@ function CustomerOrdersPage({
       setLoading(false);
       setRefreshing(false);
     }
-  }, [filterStatus, filterOrderType, includeKitchenOrders, isCustomer, orderTypeFilter, showOrderFilters, todayOnly]);
+  }, [filterStatus, filterOrderType, includeKitchenOrders, isAdminHomeDeliveryOrders, isCustomer, orderTypeFilter, showOrderFilters, todayOnly]);
 
   const fetchDeliveryPartners = useCallback(async () => {
     if (!canAssignDelivery) return;
@@ -342,7 +347,7 @@ function CustomerOrdersPage({
         };
         const fetchedOrders = await fetchOrderLists({ isCustomer, params, includeKitchenOrders });
         if (isCancelled) return;
-        setOrders(todayOnly ? fetchedOrders.filter(isOrderFromToday) : fetchedOrders);
+        setOrders(getOrdersForPage(fetchedOrders, todayOnly, isAdminHomeDeliveryOrders));
         setError('');
         if (canAssignDelivery) {
           fetchDeliveryPartners();
@@ -365,7 +370,7 @@ function CustomerOrdersPage({
       isCancelled = true;
       window.clearInterval(intervalId);
     };
-  }, [canAssignDelivery, fetchDeliveryPartners, filterStatus, filterOrderType, includeKitchenOrders, isCustomer, orderTypeFilter, showOrderFilters, todayOnly]);
+  }, [canAssignDelivery, fetchDeliveryPartners, filterStatus, filterOrderType, includeKitchenOrders, isAdminHomeDeliveryOrders, isCustomer, orderTypeFilter, showOrderFilters, todayOnly]);
 
   const changeStatus = async (order, status, deliveryPartnerId = '') => {
     setUpdatingOrder(order.order_number);
@@ -644,7 +649,9 @@ function CustomerOrdersPage({
               </select>
               <select value={statusFilter} onChange={(event) => { setStatusFilter(event.target.value); setPage(1); }} aria-label="Filter orders by status" className={`h-[46px] rounded-xl border border-[#dfe2e5] bg-white px-3 text-sm text-[#263830] outline-none ${isAdminOrdersOrangePage ? 'focus:border-[#FF5A00] focus:ring-1 focus:ring-[#FF5A00]' : 'focus:border-[#6d9a79]'}`}>
                 <option value="all">All Status ({orders.length})</option>
-                {STATUS_OPTIONS.map((status) => <option key={status.value} value={status.value}>{status.label} ({statusCounts[status.value]})</option>)}
+                {STATUS_OPTIONS
+                  .filter((status) => !isAdminHomeDeliveryOrders || !['delivered', 'cancelled'].includes(status.value))
+                  .map((status) => <option key={status.value} value={status.value}>{status.label} ({statusCounts[status.value]})</option>)}
               </select>
               <select value={sortOrder} onChange={(event) => { setSortOrder(event.target.value); setPage(1); }} aria-label="Sort orders" className={`h-[46px] rounded-xl border border-[#dfe2e5] bg-white px-3 text-sm text-[#263830] outline-none ${isAdminOrdersOrangePage ? 'focus:border-[#FF5A00] focus:ring-1 focus:ring-[#FF5A00]' : 'focus:border-[#6d9a79]'}`}>
                 <option value="latest">Sort by: Latest</option>
