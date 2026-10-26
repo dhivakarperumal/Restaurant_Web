@@ -159,6 +159,17 @@
   color: var(--admin-color-primary);
 }
 
+.admin-theme button[aria-pressed="true"] {
+  background-color: var(--admin-color-primary) !important;
+  border-color: var(--admin-color-primary) !important;
+  color: #FFFFFF !important;
+}
+
+.admin-theme button[aria-pressed="false"]:hover {
+  background-color: var(--admin-color-primary-soft) !important;
+  color: var(--admin-color-primary) !important;
+}
+
 .admin-theme .admin-sidebar-link:not(.admin-sidebar-link-active):hover {
   background-color: var(--admin-sidebar-hover);
 }
