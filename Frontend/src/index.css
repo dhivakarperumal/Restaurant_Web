@@ -101,8 +101,8 @@
   );
   --admin-sidebar-text: #FFFFFF;
   --admin-sidebar-hover: rgba(255, 255, 255, 0.15);
-  --admin-sidebar-active-bg: #176448;
-  --admin-sidebar-active-text: #FFFFFF;
+  --admin-sidebar-active-bg: #FFFFFF;
+  --admin-sidebar-active-text: var(--admin-color-primary);
   --admin-table-header-bg: var(--admin-color-primary-soft);
   --admin-table-header-text: var(--admin-color-primary);
 
