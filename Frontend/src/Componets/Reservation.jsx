@@ -21,6 +21,7 @@ import PageContainer from "../CommonComponents/PageContainer";
 import PageHeader from "../CommonComponents/PageHeader";
 import api, { BACKEND_BASE_URL } from "../api";
 import { useAuth } from "../PrivateRouter/AuthContext";
+import { isAdminRole } from "../PrivateRouter/roleUtils";
 
 const minimumReservationDate = (() => {
   const today = new Date();
@@ -113,7 +114,8 @@ const Reservation = () => {
   const [errorMessage, setErrorMessage] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
   const [refreshKey, setRefreshKey] = useState(0);
-  const isCustomer = ["user", "customer"].includes(String(user?.role || "").trim().toLowerCase());
+  const canRequestReservation = ["user", "customer"].includes(String(user?.role || "").trim().toLowerCase())
+    || isAdminRole(user?.role);
 
   useEffect(() => {
     let active = true;
@@ -162,7 +164,7 @@ const Reservation = () => {
 
   useEffect(() => {
     let active = true;
-    if (!isCustomer) return () => { active = false; };
+    if (!canRequestReservation) return () => { active = false; };
     api.get("/reservations/mine")
       .then(({ data }) => {
         if (active) setReservations(data.reservations || []);
@@ -173,7 +175,7 @@ const Reservation = () => {
     return () => {
       active = false;
     };
-  }, [isCustomer, refreshKey]);
+  }, [canRequestReservation, refreshKey]);
 
   const handleFormChange = (event) => {
     setForm((current) => ({ ...current, [event.target.name]: event.target.value }));
@@ -202,7 +204,7 @@ const Reservation = () => {
     event.preventDefault();
     setErrorMessage("");
     setSuccessMessage("");
-    if (!isCustomer) {
+    if (!canRequestReservation) {
       navigate("/login", { state: { from: "/reservation" } });
       return;
     }
@@ -287,7 +289,7 @@ const Reservation = () => {
                 </label>
                 {errorMessage && <p role="alert" className="mt-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{errorMessage}</p>}
                 {successMessage && <p role="status" className="mt-4 rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-800">{successMessage}</p>}
-                {isCustomer ? (
+                {canRequestReservation ? (
                   <button type="submit" disabled={submitting || tablesLoading || !selectedTable} className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl bg-[#08713e] px-5 py-3.5 text-sm font-bold text-white shadow-sm transition hover:bg-[#075d34] focus:outline-none focus:ring-2 focus:ring-[#08713e] focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60">
                     <CalendarCheck2 className="h-4 w-4" /> {submitting ? "Sending request…" : "Request this table"}
                   </button>
@@ -383,7 +385,7 @@ const Reservation = () => {
 
           </form>
 
-          {isCustomer && (
+          {canRequestReservation && (
             <section className="mx-auto mt-8 max-w-[1500px] rounded-3xl border border-[#e8e8e1] bg-white p-5 shadow-[0_8px_30px_rgba(25,45,34,0.05)] sm:p-6">
               <div className="mb-4 flex items-center gap-4 border-b border-slate-100 pb-4">
                 <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#e9f3df] text-[#155c3b]">

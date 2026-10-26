@@ -272,8 +272,8 @@ router.use('/reservations', (req, res, next) => {
   if (req.path === '/mine' || req.method === 'POST' && req.path === '/') {
     return requireAuthenticatedUser(req, res, () => {
       const role = String(req.auth?.role || '').trim().toLowerCase();
-      if (!['user', 'customer'].includes(role)) {
-        return res.status(403).json({ success: false, message: 'Customer access is required to request a reservation.' });
+      if (!['user', 'customer', 'admin', 'super admin', 'superadmin'].includes(role)) {
+        return res.status(403).json({ success: false, message: 'Customer or administrator access is required to manage your reservations.' });
       }
       return next();
     });
