@@ -189,6 +189,7 @@ export default function StaffAttendancePage({
 
   const isWorking = Boolean(attendance?.check_in && !attendance?.check_out);
   const isCompleted = Boolean(attendance?.check_in && attendance?.check_out);
+  const isLightAttendance = isDeliveryPartner || role === "Chef";
 
   // Clock In
   const handleClockIn = async () => {
@@ -480,11 +481,11 @@ export default function StaffAttendancePage({
 
       {/* TODAY'S ATTENDANCE HERO BANNER */}
       <div className={`group relative overflow-hidden ${
-        isDeliveryPartner
+        isLightAttendance
           ? "rounded-2xl border border-slate-200/90 bg-gradient-to-r from-white via-white to-emerald-50/70 p-4 text-slate-900 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] sm:p-5"
           : "rounded-3xl border border-emerald-800/40 bg-gradient-to-br from-[#10382f] via-[#16483c] to-[#0a231d] p-6 text-white shadow-xl sm:p-7"
       }`}>
-        {isDeliveryPartner ? (
+        {isLightAttendance ? (
           <>
             <div className="pointer-events-none absolute -right-8 -top-12 h-40 w-40 rounded-full bg-emerald-400/15 blur-3xl transition-transform duration-500 group-hover:scale-125" />
             <div className="pointer-events-none absolute bottom-0 left-0 h-1 w-full bg-gradient-to-r from-emerald-500 via-teal-400 to-transparent" />
@@ -500,37 +501,37 @@ export default function StaffAttendancePage({
           {/* Left details */}
           <div className="flex items-start gap-4 sm:gap-5">
             <div className={`relative grid shrink-0 place-items-center rounded-2xl ${
-              isDeliveryPartner
+              isLightAttendance
                 ? "h-14 w-14 border border-emerald-100 bg-emerald-50 text-emerald-600"
                 : "h-16 w-16 border border-white/20 bg-white/10 text-emerald-300 shadow-inner backdrop-blur-md"
             }`}>
-              <UserCheck size={isDeliveryPartner ? 26 : 32} />
+              <UserCheck size={isLightAttendance ? 26 : 32} />
               {isWorking && (
                 <span className="absolute -top-1 -right-1 flex h-4 w-4">
-                  <span className={`absolute inline-flex h-full w-full animate-ping rounded-full opacity-75 ${isDeliveryPartner ? "bg-emerald-500" : "bg-emerald-400"}`}></span>
-                  <span className={`relative inline-flex h-4 w-4 rounded-full border-2 bg-emerald-500 ${isDeliveryPartner ? "border-white" : "border-[#10382f]"}`}></span>
+                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-500 opacity-75"></span>
+                  <span className={`relative inline-flex h-4 w-4 rounded-full border-2 border-white bg-emerald-500`}></span>
                 </span>
               )}
             </div>
 
             <div className="space-y-1.5">
               <div className="flex flex-wrap items-center gap-2">
-                <span className={`text-xs font-mono font-semibold uppercase tracking-wider ${isDeliveryPartner ? "text-emerald-700" : "text-emerald-300"}`}>
+                <span className={`text-xs font-mono font-semibold uppercase tracking-wider ${isLightAttendance ? "text-emerald-700" : "text-emerald-300"}`}>
                   {todayFormatted}
                 </span>
-                <span className={isDeliveryPartner ? "text-slate-300" : "text-white/40"}>•</span>
+                <span className={isLightAttendance ? "text-slate-300" : "text-white/40"}>•</span>
                 {isWorking ? (
-                  <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[11px] font-extrabold uppercase tracking-wide ${isDeliveryPartner ? "border border-emerald-200 bg-emerald-50 text-emerald-700" : "border border-emerald-400/40 bg-emerald-400/25 text-emerald-200"}`}>
+                  <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[11px] font-extrabold uppercase tracking-wide ${isLightAttendance ? "border border-emerald-200 bg-emerald-50 text-emerald-700" : "border border-emerald-400/40 bg-emerald-400/25 text-emerald-200"}`}>
                     <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
                     Active on Duty
                   </span>
                 ) : isCompleted ? (
-                  <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[11px] font-extrabold uppercase ${isDeliveryPartner ? "border border-blue-200 bg-blue-50 text-blue-700" : "border border-blue-400/40 bg-blue-400/25 text-blue-200"}`}>
+                  <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[11px] font-extrabold uppercase ${isLightAttendance ? "border border-blue-200 bg-blue-50 text-blue-700" : "border border-blue-400/40 bg-blue-400/25 text-blue-200"}`}>
                     <CheckCircle2 size={12} />
                     Shift Completed
                   </span>
                 ) : (
-                  <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[11px] font-extrabold uppercase ${isDeliveryPartner ? "border border-amber-200 bg-amber-50 text-amber-700" : "border border-amber-400/40 bg-amber-400/25 text-amber-200"}`}>
+                  <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[11px] font-extrabold uppercase ${isLightAttendance ? "border border-amber-200 bg-amber-50 text-amber-700" : "border border-amber-400/40 bg-amber-400/25 text-amber-200"}`}>
                     <Clock size={12} />
                     Shift Not Started
                   </span>
@@ -540,8 +541,8 @@ export default function StaffAttendancePage({
                   <span
                     className={`rounded-full px-2.5 py-0.5 text-[10px] font-black uppercase ${
                       attendance.status === "Late"
-                        ? isDeliveryPartner ? "bg-amber-100 text-amber-800" : "bg-amber-400 text-amber-950"
-                        : isDeliveryPartner ? "border border-emerald-200 bg-emerald-50 text-emerald-700" : "border border-emerald-400/40 bg-emerald-400/20 text-emerald-200"
+                        ? isLightAttendance ? "bg-amber-100 text-amber-800" : "bg-amber-400 text-amber-950"
+                        : isLightAttendance ? "border border-emerald-200 bg-emerald-50 text-emerald-700" : "border border-emerald-400/40 bg-emerald-400/20 text-emerald-200"
                     }`}
                   >
                     {attendance.status}
@@ -549,7 +550,7 @@ export default function StaffAttendancePage({
                 )}
               </div>
 
-              <h2 className={`text-xl font-extrabold sm:text-2xl ${isDeliveryPartner ? "text-slate-900" : "text-white"}`}>
+              <h2 className={`text-xl font-extrabold sm:text-2xl ${isLightAttendance ? "text-slate-900" : "text-white"}`}>
                 {isWorking
                   ? "You are currently clocked in & on duty"
                   : isCompleted
@@ -557,7 +558,7 @@ export default function StaffAttendancePage({
                   : "Ready to start your shift?"}
               </h2>
 
-              <p className={`max-w-xl text-xs sm:text-sm ${isDeliveryPartner ? "text-slate-500" : "text-emerald-100/80"}`}>
+              <p className={`max-w-xl text-xs sm:text-sm ${isLightAttendance ? "text-slate-500" : "text-emerald-100/80"}`}>
                 {isWorking
                   ? `Clocked in at ${formatTimeStr(attendance.check_in)}. Working time is being automatically recorded.`
                   : isCompleted
@@ -568,19 +569,19 @@ export default function StaffAttendancePage({
               </p>
 
               {/* Shift info pill */}
-              <div className={`flex flex-wrap items-center gap-3 pt-1 text-xs font-medium ${isDeliveryPartner ? "text-slate-600" : "text-emerald-200/90"}`}>
+              <div className={`flex flex-wrap items-center gap-3 pt-1 text-xs font-medium ${isLightAttendance ? "text-slate-600" : "text-emerald-200/90"}`}>
                 {shiftInfo?.start_time && (
-                  <span className={`rounded-lg border px-2.5 py-1 ${isDeliveryPartner ? "border-slate-200 bg-white text-slate-600" : "border-white/10 bg-white/10 backdrop-blur-sm"}`}>
+                  <span className={`rounded-lg border px-2.5 py-1 ${isLightAttendance ? "border-slate-200 bg-white text-slate-600" : "border-white/10 bg-white/10 backdrop-blur-sm"}`}>
                     Shift: {formatShiftTime(shiftInfo.start_time)} – {formatShiftTime(shiftInfo.end_time)}
                   </span>
                 )}
                 {attendance?.check_in && (
-                  <span className={`rounded-lg border px-2.5 py-1 ${isDeliveryPartner ? "border-slate-200 bg-white text-slate-600" : "border-white/10 bg-white/10 backdrop-blur-sm"}`}>
+                  <span className={`rounded-lg border px-2.5 py-1 ${isLightAttendance ? "border-slate-200 bg-white text-slate-600" : "border-white/10 bg-white/10 backdrop-blur-sm"}`}>
                     Clock In: <strong>{formatTimeStr(attendance.check_in)}</strong>
                   </span>
                 )}
                 {attendance?.check_out && (
-                  <span className={`rounded-lg border px-2.5 py-1 ${isDeliveryPartner ? "border-slate-200 bg-white text-slate-600" : "border-white/10 bg-white/10 backdrop-blur-sm"}`}>
+                  <span className={`rounded-lg border px-2.5 py-1 ${isLightAttendance ? "border-slate-200 bg-white text-slate-600" : "border-white/10 bg-white/10 backdrop-blur-sm"}`}>
                     Clock Out: <strong>{formatTimeStr(attendance.check_out)}</strong>
                   </span>
                 )}
@@ -593,16 +594,16 @@ export default function StaffAttendancePage({
             {/* Live Timer if on duty */}
             {isWorking && (
               <div className={`flex items-center gap-3 rounded-2xl border px-4 py-3 ${
-                isDeliveryPartner
+                isLightAttendance
                   ? "border-emerald-100 bg-emerald-50"
                   : "border-emerald-400/30 bg-emerald-950/60 shadow-inner backdrop-blur-md"
               }`}>
-                <Timer size={22} className={`animate-spin ${isDeliveryPartner ? "text-emerald-600" : "text-emerald-400"}`} />
+                <Timer size={22} className={`animate-spin ${isLightAttendance ? "text-emerald-600" : "text-emerald-400"}`} />
                 <div>
-                  <p className={`text-[10px] font-bold uppercase tracking-wider ${isDeliveryPartner ? "text-emerald-700" : "text-emerald-300"}`}>
+                  <p className={`text-[10px] font-bold uppercase tracking-wider ${isLightAttendance ? "text-emerald-700" : "text-emerald-300"}`}>
                     Duty Duration
                   </p>
-                  <p className={`font-mono text-xl font-extrabold leading-tight ${isDeliveryPartner ? "text-slate-900" : "text-white"}`}>
+                  <p className={`font-mono text-xl font-extrabold leading-tight ${isLightAttendance ? "text-slate-900" : "text-white"}`}>
                     {formatDuration(liveSeconds)}
                   </p>
                 </div>
@@ -642,7 +643,7 @@ export default function StaffAttendancePage({
                 type="button"
                 onClick={handleClockIn}
                 disabled={actionLoading}
-                className={`inline-flex items-center justify-center gap-2 rounded-xl px-5 py-3 text-sm font-extrabold text-white shadow-lg transition active:scale-95 disabled:opacity-50 ${isDeliveryPartner ? "bg-emerald-600 hover:bg-emerald-700" : "bg-emerald-500 hover:bg-emerald-600"}`}
+                className={`inline-flex items-center justify-center gap-2 rounded-xl px-5 py-3 text-sm font-extrabold text-white shadow-lg transition active:scale-95 disabled:opacity-50 ${isLightAttendance ? "bg-emerald-600 hover:bg-emerald-700" : "bg-emerald-500 hover:bg-emerald-600"}`}
               >
                 <RotateCcw size={16} />
                 {actionLoading ? "Resuming..." : "Resume Shift"}
@@ -652,7 +653,7 @@ export default function StaffAttendancePage({
                 type="button"
                 onClick={handleClockIn}
                 disabled={actionLoading}
-                className={`group relative inline-flex items-center justify-center gap-2.5 overflow-hidden rounded-xl px-6 py-3.5 text-sm font-extrabold text-white transition-all duration-200 hover:scale-[1.02] active:scale-95 disabled:opacity-50 ${isDeliveryPartner ? "bg-emerald-600 shadow-sm hover:bg-emerald-700" : "bg-gradient-to-r from-emerald-500 to-teal-500 shadow-[0_4px_20px_rgba(16,185,129,0.4)] hover:shadow-[0_6px_25px_rgba(16,185,129,0.5)]"}`}
+                className={`group relative inline-flex items-center justify-center gap-2.5 overflow-hidden rounded-xl px-6 py-3.5 text-sm font-extrabold text-white transition-all duration-200 hover:scale-[1.02] active:scale-95 disabled:opacity-50 ${isLightAttendance ? "bg-emerald-600 shadow-sm hover:bg-emerald-700" : "bg-gradient-to-r from-emerald-500 to-teal-500 shadow-[0_4px_20px_rgba(16,185,129,0.4)] hover:shadow-[0_6px_25px_rgba(16,185,129,0.5)]"}`}
               >
                 <Play size={17} className="fill-current text-white" />
                 {actionLoading ? "Clocking In..." : "Clock In Now"}
