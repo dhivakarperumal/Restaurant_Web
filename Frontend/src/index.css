@@ -170,6 +170,17 @@
   color: var(--admin-color-primary) !important;
 }
 
+.admin-theme button[aria-current="page"] {
+  background-color: var(--admin-color-primary) !important;
+  border-color: var(--admin-color-primary) !important;
+  color: #FFFFFF !important;
+}
+
+.admin-theme button[aria-current="page"]:hover {
+  background-color: var(--admin-color-primary-dark) !important;
+  border-color: var(--admin-color-primary-dark) !important;
+}
+
 .admin-theme .admin-sidebar-link:not(.admin-sidebar-link-active):hover {
   background-color: var(--admin-sidebar-hover);
 }
