@@ -90,12 +90,7 @@
   --admin-color-primary-dark: #E94B00;
   --admin-color-primary-light: #FF7A1A;
 
-  --admin-sidebar-bg: linear-gradient(
-      rgba(255, 90, 0, 0.82),
-      rgba(233, 75, 0, 0.78)
-    ),
-    url("/images/sidebar%20bg.png") center / cover no-repeat,
-    linear-gradient(180deg, #FF7A1A 0%, #FF5A00 55%, #E94B00 100%);
+  --admin-sidebar-bg: linear-gradient(to bottom, #0A4731 0%, #083B2A 55%, #062D22 100%);
   --admin-sidebar-text: #FFFFFF;
   --admin-sidebar-hover: rgba(255, 255, 255, 0.15);
   --admin-sidebar-active-bg: #FFFFFF;
@@ -124,7 +119,7 @@
 }
 
 .admin-theme [data-sidebar="delivery-sidebar"] {
-  background: linear-gradient(to bottom, #0A4731 0%, #083B2A 55%, #062D22 100%);
+  background: var(--admin-sidebar-bg);
   color: var(--admin-sidebar-text);
 }
 
