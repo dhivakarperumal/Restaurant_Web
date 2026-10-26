@@ -49,37 +49,57 @@ const usePartnerResource = (endpoint, params = {}) => {
   return { resource, loading, error, refresh: () => setRefreshKey((v) => v + 1) };
 };
 
-const PAGE_SIZE   = 8;
-const dateRanges  = ["today","yesterday","this-week","last-week","this-month","last-month","this-year","last-year","custom"];
-const rangeLabel  = (v) => ({ today:"Today", yesterday:"Yesterday", "this-week":"This Week", "last-week":"Last Week", "this-month":"This Month", "last-month":"Last Month", "this-year":"This Year", "last-year":"Last Year", custom:"Custom Date" }[v] || v);
+const ServiceNotice = ({ error, loading, refresh, noun }) => {
+  if (loading && !error) {
+    return <p role="status" className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-600">Loading {noun.toLowerCase()}...</p>;
+  }
 
-/* ─── Coloured stat card — identical to admin/products/categories style ─── */
-const StatCard = ({ title, value, inc, icon, bg, loading: cardLoading }) => (
-  <article className={`relative min-w-0 overflow-hidden rounded-xl border border-transparent p-4 sm:p-5 shadow-[0_2px_10px_rgba(20,56,34,0.04)] flex flex-col justify-between min-h-[140px] ${bg} text-white`}>
-    <div className="flex items-start gap-3 relative z-10">
-      <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg shadow-sm bg-white/20">
-        {React.cloneElement(icon, { size: 24, strokeWidth: 2.2, className: "text-white" })}
-      </div>
-      <div className="flex-1 mt-0.5 min-w-0">
-        <h3 className="text-[12px] font-semibold opacity-90 mb-1 truncate">{title}</h3>
-        {cardLoading
-          ? <div className="mt-1 h-7 w-20 animate-pulse rounded-lg bg-white/30" />
-          : <div className="text-[22px] sm:text-[25px] font-extrabold leading-none tracking-tight truncate">{value}</div>}
-      </div>
+  if (!error) return null;
+
+  return (
+    <div role="alert" className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800">
+      <span>{error}</span>
+      <button type="button" onClick={refresh} className="inline-flex items-center gap-2 rounded-lg border border-rose-300 bg-white px-3 py-2 font-semibold hover:bg-rose-100">
+        <RefreshCw size={15} />
+        Retry
+      </button>
     </div>
-    <div className="flex items-center gap-2 mt-5 relative z-10">
-      <span className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[11px] font-bold bg-white/25">↑ {inc}</span>
-      <span className="text-[11px] font-medium opacity-75 truncate">from last month</span>
-    </div>
-    <div className="absolute right-0 bottom-0 w-24 h-16 pointer-events-none opacity-50">
-      <svg viewBox="0 0 100 50" preserveAspectRatio="none" className="w-full h-full">
-        <defs><linearGradient id={`dpgrad-${title.replace(/\s+/g,"")}`} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#ffffff" stopOpacity="0.4" />
-          <stop offset="100%" stopColor="#ffffff" stopOpacity="0.0" />
-        </linearGradient></defs>
-        <path d="M0,50 L0,40 Q25,30 50,40 T100,20 L100,50 Z" fill={`url(#dpgrad-${title.replace(/\s+/g,"")})`} />
-        <path d="M0,40 Q25,30 50,40 T100,20" fill="none" stroke="#ffffff" strokeWidth="2.5" />
-      </svg>
+  );
+};
+
+const EarningsCard = ({ label, value, icon: Icon, tone, loading }) => {
+  const toneClasses = {
+    mint: "bg-emerald-50 text-emerald-700",
+    violet: "bg-violet-50 text-violet-700",
+    pink: "bg-pink-50 text-pink-700",
+    amber: "bg-amber-50 text-amber-700",
+    green: "bg-green-50 text-green-700",
+    forest: "bg-[#e8f2eb] text-[#21643a]",
+  };
+
+  return (
+    <article className="flex min-h-[120px] items-center gap-4 rounded-xl border border-[#e2e9e3] bg-white p-4 shadow-sm">
+      <span className={`grid h-12 w-12 shrink-0 place-items-center rounded-xl ${toneClasses[tone] || toneClasses.mint}`}>
+        <Icon size={22} />
+      </span>
+      <div className="min-w-0">
+        <p className="text-xs font-semibold text-gray-500">{label}</p>
+        {loading
+          ? <div className="mt-2 h-7 w-24 animate-pulse rounded bg-slate-100" />
+          : <p className="mt-1 truncate text-xl font-bold text-slate-800">{value}</p>}
+      </div>
+    </article>
+  );
+};
+
+const SummaryCard = ({ label, value, icon: Icon }) => (
+  <article className="flex min-w-0 items-center gap-3 rounded-xl border border-[#e2e9e3] bg-white p-4">
+    <span className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-[#e8f2eb] text-[#21643a]">
+      <Icon size={19} />
+    </span>
+    <div className="min-w-0">
+      <p className="text-xs font-semibold text-gray-500">{label}</p>
+      <p className="mt-1 truncate text-lg font-bold text-slate-800">{value}</p>
     </div>
   </article>
 );
