@@ -265,11 +265,11 @@
 
 .admin-theme .admin-sidebar-link-active,
 .admin-theme .admin-sidebar-link-active * {
-  color: var(--admin-sidebar-active-text);
+  color: var(--admin-sidebar-active-text) !important;
 }
 
 .admin-theme .admin-sidebar-link-active {
-  background-color: var(--admin-sidebar-active-bg);
+  background-color: var(--admin-sidebar-active-bg) !important;
 }
 
 .admin-theme .admin-sidebar-collapse {
