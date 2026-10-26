@@ -4,6 +4,7 @@ const {
   adminSaveAttendance,
   clockIn,
   clockOut,
+  getAdminEmployeeAttendanceHistory,
   getAdminAttendanceList,
   getAdminAttendanceSummary,
   getMyAttendanceHistory,
@@ -53,6 +54,7 @@ router.get('/my-history', requireAuthenticatedUser, getMyAttendanceHistory);
 
 // Admin management routes
 router.get('/admin/records', requireAdmin, getAdminAttendanceList);
+router.get('/admin/employees/:employeeId/history', requireAdmin, getAdminEmployeeAttendanceHistory);
 router.get('/admin/summary', requireAdmin, getAdminAttendanceSummary);
 router.post('/admin/mark', requireAdmin, adminSaveAttendance);
 router.put('/admin/:id', requireAdmin, adminSaveAttendance);
