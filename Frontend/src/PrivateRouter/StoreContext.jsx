@@ -225,7 +225,6 @@ export const StoreProvider = ({ children }) => {
             });
             await fetchCart();
             toast.success("Added to cart!");
-            openCart();
             return true;
         } catch (err) {
             console.error("Add to cart error:", err);
