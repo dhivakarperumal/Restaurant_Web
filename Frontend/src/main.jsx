@@ -159,7 +159,7 @@ const router = createHashRouter([
       {
         path: 'account',
         element: (
-          <PrivateRoute allowedRoles={["user", "customer"]}>
+          <PrivateRoute skipAttendanceCheck>
             <Account />
           </PrivateRoute>
         ),

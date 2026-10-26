@@ -72,7 +72,7 @@ const AttendanceCheckInGate = ({ children }) => {
   );
 };
 
-const PrivateRoute = ({ children, allowedRoles = [] }) => {
+const PrivateRoute = ({ children, allowedRoles = [], skipAttendanceCheck = false }) => {
   const auth = useContext(AuthContext);
   const user = auth?.user || null;
   const loading = auth?.loading || false;
@@ -100,7 +100,7 @@ const PrivateRoute = ({ children, allowedRoles = [] }) => {
   }
 
   const isStaff = staffRoles.has(userRole);
-  return isStaff ? <AttendanceCheckInGate>{children}</AttendanceCheckInGate> : children;
+  return isStaff && !skipAttendanceCheck ? <AttendanceCheckInGate>{children}</AttendanceCheckInGate> : children;
 };
 
 export default PrivateRoute;
