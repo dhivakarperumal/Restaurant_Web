@@ -263,6 +263,7 @@ function CustomerOrdersPage({
   const assignableHomeDeliveryOrders = visibleOrders.filter((order) => (
     !order.is_kitchen_order
     && order.order_type === 'home_delivery'
+    && !order.assigned_delivery_partner_id
     && !['delivered', 'completed', 'cancelled'].includes(String(order.order_status || '').toLowerCase())
   ));
   const selectedAssignmentOrder = assignmentModalOrder
@@ -450,7 +451,7 @@ function CustomerOrdersPage({
   const selectOrderStatus = (order, status) => {
     if (canAssignDelivery && order.order_type === 'home_delivery' && status === 'assigned') {
       if (isAdminHomeDeliveryOrders) {
-        openAssignmentModal(order);
+        openAssignmentModal(null);
         return;
       }
       setAssignmentDrafts((current) => ({ ...current, [order.order_number]: '' }));
@@ -946,7 +947,11 @@ function CustomerOrdersPage({
                   <RefreshCw size={17} className="animate-spin" /> Loading available delivery partners…
                 </div>
               ) : !selectedAssignmentOrder ? (
-                <p className="py-8 text-center text-sm text-slate-500">Select a home delivery order to view partners.</p>
+                <p className="py-8 text-center text-sm text-slate-500">
+                  {assignableHomeDeliveryOrders.length
+                    ? 'Select an unassigned home delivery order to view partners.'
+                    : 'There are no unassigned home delivery orders to assign.'}
+                </p>
               ) : !deliveryPartnersError && matchingDeliveryPartners.length === 0 ? (
                 <p className="py-12 text-center text-sm text-slate-500">
                   {deliveryPartners.length ? 'No partners match your search.' : 'No active delivery partners found.'}

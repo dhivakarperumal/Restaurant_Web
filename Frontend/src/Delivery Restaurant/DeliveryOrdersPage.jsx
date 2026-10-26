@@ -74,8 +74,8 @@ const DeliveryOrdersPage = ({ view = "all" }) => {
   useEffect(() => {
     let active = true;
 
-    const loadOrders = async () => {
-      setLoading(true);
+    const loadOrders = async (silent = false) => {
+      if (!silent) setLoading(true);
       setError("");
       try {
         const response = await api.get("/delivery-partner/orders");
@@ -85,15 +85,24 @@ const DeliveryOrdersPage = ({ view = "all" }) => {
       } catch (requestError) {
         if (!active) return;
         setError(requestError?.response?.data?.message || "Assigned orders are temporarily unavailable.");
-        setOrders([]);
+        if (!silent) setOrders([]);
       } finally {
-        if (active) setLoading(false);
+        if (active && !silent) setLoading(false);
       }
     };
 
     loadOrders();
+    const refreshInterval = window.setInterval(() => loadOrders(true), 15000);
+    const refreshWhenVisible = () => {
+      if (document.visibilityState === "visible") loadOrders(true);
+    };
+    window.addEventListener("focus", refreshWhenVisible);
+    document.addEventListener("visibilitychange", refreshWhenVisible);
     return () => {
       active = false;
+      window.clearInterval(refreshInterval);
+      window.removeEventListener("focus", refreshWhenVisible);
+      document.removeEventListener("visibilitychange", refreshWhenVisible);
     };
   }, []);
 
