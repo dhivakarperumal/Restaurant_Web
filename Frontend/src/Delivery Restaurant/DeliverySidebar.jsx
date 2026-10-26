@@ -39,8 +39,7 @@ const navItems = [
   { path: "/delivery/earnings", label: "Earnings", icon: IndianRupee },
   { path: "/delivery/history", label: "Delivery History", icon: History },
   { path: "/delivery/attendance", label: "Attendance", icon: CalendarCheck },
-  { path: "/delivery/profile", label: "Profile", icon: UserRound },
-  { path: "/delivery/support", label: "Support", icon: LifeBuoy },
+  
 ];
 
 /* ================= SIDEBAR ================= */
@@ -157,7 +156,7 @@ const DeliverySidebar = ({ isOpen, onClose, collapsed, onToggleCollapse }) => {
                       transition-all duration-200 group
                       ${isAnyChildActive
                         ? "bg-white text-[#FF5A00] border-l-2 border-white"
-                        : "text-white hover:text-white hover:bg-[#1f3228]/70"
+                        : "text-white hover:text-white hover:bg-white/10"
                       }
                     `}
                   >
@@ -197,11 +196,11 @@ const DeliverySidebar = ({ isOpen, onClose, collapsed, onToggleCollapse }) => {
                             end
                             onClick={() => isOpen && onClose()}
                             className={`
-                              flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-xs
+                              flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-xs font-bold
                               transition-all duration-200
                               ${isActive
-                                ? "bg-white text-[#FF5A00] font-semibold"
-                                : "text-white hover:text-white hover:bg-[#1f3228]"
+                                ? "bg-white text-[#FF5A00] font-bold"
+                                : "text-white hover:text-white hover:bg-white/10"
                               }
                             `}
                             title={collapsed && sub.badge ? `${sub.label} (${pendingCount})` : ''}
@@ -236,7 +235,7 @@ const DeliverySidebar = ({ isOpen, onClose, collapsed, onToggleCollapse }) => {
                   transition-all duration-200
                   ${isActive
                     ? "bg-white text-[#FF5A00] font-bold shadow-md"
-                    : "text-white hover:text-white hover:bg-[#1f3228]/70 font-semibold"
+                    : "text-white hover:text-white hover:bg-white/10 font-semibold"
                   }
                   ${collapsed ? "justify-center" : ""}
                 `}
@@ -252,17 +251,13 @@ const DeliverySidebar = ({ isOpen, onClose, collapsed, onToggleCollapse }) => {
           to="/"
           title={collapsed ? "Back Home" : ""}
           onClick={() => isOpen && onClose()}
-          className={`mx-3 mb-2 flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-semibold transition-all duration-200 ${isRouteActive("/") ? "bg-white text-[#FF5A00] shadow-md" : "text-white hover:bg-[#1f3228]/70"} ${collapsed ? "justify-center" : ""}`}
+          className={`mx-3 mb-2 flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-semibold transition-all duration-200 ${isRouteActive("/") ? "bg-white text-[#FF5A00] shadow-md" : "text-white hover:bg-white/10"} ${collapsed ? "justify-center" : ""}`}
         >
           <Home className={`h-[17px] w-[17px] shrink-0 ${isRouteActive("/") ? "text-[#FF5A00]" : "text-white"}`} />
           {!collapsed && <span className="truncate">Back Home</span>}
         </NavLink>
 
-        <button type="button" onClick={() => setShowLogoutConfirm(true)} title={collapsed ? "Sign out" : ""} className={`mx-3 mb-3 flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-semibold text-white transition hover:bg-white/15 ${collapsed ? "justify-center" : ""}`}>
-          <LogOut className="h-[17px] w-[17px] shrink-0" />
-          {!collapsed && <span>Sign out</span>}
-        </button>
-
+       
         {/* ========== COLLAPSE BUTTON ========== */}
         <button
           onClick={onToggleCollapse}

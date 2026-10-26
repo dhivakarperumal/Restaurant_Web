@@ -669,7 +669,8 @@ const ExpensesPage = () => {
             value: parseFloat(fund) < 0 ? `- â‚¹${Math.abs(parseFloat(fund)).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : `â‚¹${parseFloat(fund).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
             hint: "Current restaurant balance",
             icon: DollarSign,
-            bg: parseFloat(fund) < 0 ? "bg-[#ef4444]" : "bg-[#22c55e]",
+            accent: parseFloat(fund) < 0 ? "#ef4444" : "#f97316",
+            iconBg: parseFloat(fund) < 0 ? "bg-red-500" : "bg-orange-500",
             isFund: true,
           },
           {
@@ -677,50 +678,54 @@ const ExpensesPage = () => {
             value: `â‚¹${totalSpent.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
             hint: "Total outflow recorded",
             icon: Receipt,
-            bg: "bg-[#3b82f6]",
+            accent: "#10b981",
+            iconBg: "bg-emerald-500",
           },
           {
             title: "Transactions",
             value: filteredExpenses.length,
             hint: `${expenses.length} total entries`,
             icon: CheckCircle2,
-            bg: "bg-[#f59e0b]",
+            accent: "#3b82f6",
+            iconBg: "bg-blue-500",
           },
           {
             title: "Expense Categories",
             value: categoryBreakdown.length,
             hint: "Active spending types",
             icon: AlertCircle,
-            bg: "bg-[#8b5cf6]",
+            accent: "#ec4899",
+            iconBg: "bg-pink-500",
           },
-        ].map((stat, index) => {
+        ].map((stat) => {
           const Icon = stat.icon;
           return (
             <article
               key={stat.title}
-              className={`relative min-w-0 overflow-hidden rounded-xl border border-transparent p-4 sm:p-5 shadow-[0_2px_10px_rgba(20,56,34,0.08)] flex flex-col justify-between min-h-[140px] ${stat.bg} text-white`}
+              className="relative flex min-h-[194px] min-w-0 flex-col justify-between overflow-hidden rounded-[20px] border border-slate-200/90 bg-white p-5 shadow-[0_4px_16px_-5px_rgba(15,23,42,0.08)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_10px_22px_-7px_rgba(15,23,42,0.12)] sm:p-6"
+              style={{ background: `linear-gradient(135deg, #ffffff 48%, ${stat.accent}12 100%)` }}
             >
-              <div className="flex items-start gap-3 relative z-10">
-                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg shadow-sm bg-white/20">
-                  <Icon size={24} strokeWidth={2.2} className="text-white" />
-                </div>
-                <div className="flex-1 mt-0.5 min-w-0">
+              <div className="relative z-10 flex items-start justify-between gap-3">
+                <div className="min-w-0 flex-1 pt-1">
                   <div className="flex items-center justify-between gap-1">
-                    <h3 className="text-[12px] font-semibold opacity-90 truncate">{stat.title}</h3>
+                    <h3 className="truncate text-[12px] font-bold uppercase tracking-[0.08em] text-slate-500">{stat.title}</h3>
                     {stat.isFund && !showFundForm && (
                       <button
                         type="button"
                         onClick={() => setShowFundForm(true)}
-                        className="rounded bg-white/20 px-1.5 py-0.5 text-[10px] font-bold text-white hover:bg-white/30 transition shrink-0"
+                        className="shrink-0 rounded-lg bg-orange-50 px-2 py-1 text-[10px] font-bold text-orange-700 transition hover:bg-orange-100"
                       >
                         Edit
                       </button>
                     )}
                   </div>
-                  <div className="text-[22px] sm:text-[24px] font-extrabold leading-tight tracking-tight mt-1 truncate">
+                  <div className="mt-4 truncate text-[26px] font-black leading-tight tracking-tight text-slate-900 sm:text-[30px]">
                     {stat.value}
                   </div>
                 </div>
+                <span className={`flex h-[60px] w-[60px] shrink-0 items-center justify-center rounded-[18px] text-white shadow-[0_5px_12px_-4px_rgba(15,23,42,0.25)] ${stat.iconBg}`}>
+                  <Icon size={27} strokeWidth={2.2} />
+                </span>
               </div>
 
               {stat.isFund && showFundForm ? (
@@ -731,46 +736,36 @@ const ExpensesPage = () => {
                       step="0.01"
                       value={fundAmount}
                       onChange={(e) => setFundAmount(e.target.value)}
-                      className="w-full rounded-lg bg-white/20 px-2.5 py-1 text-xs text-white placeholder:text-white/60 focus:bg-white focus:text-[#1f3228] focus:outline-none"
+                      className="w-full min-w-0 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs text-slate-800 placeholder:text-slate-400 focus:border-orange-400 focus:outline-none"
                       placeholder="Amount"
                       required
                     />
                     <button
                       type="submit"
-                      className="rounded-lg bg-white px-2.5 py-1 text-xs font-bold text-[#1f3228] hover:bg-white/90 transition"
+                      className="rounded-lg bg-orange-500 px-2.5 py-1 text-xs font-bold text-white transition hover:bg-orange-600"
                     >
                       Save
                     </button>
                     <button
                       type="button"
                       onClick={() => setShowFundForm(false)}
-                      className="rounded-lg bg-white/20 px-2 py-1 text-xs text-white hover:bg-white/30 transition"
+                      className="rounded-lg bg-slate-100 px-2 py-1 text-xs text-slate-600 transition hover:bg-slate-200"
                     >
                       âœ•
                     </button>
                   </form>
                 </div>
               ) : (
-                <div className="flex items-center gap-2 mt-4 relative z-10">
-                  <span className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[11px] font-bold bg-white/25">
+                <div className="relative z-10 mt-5 flex items-center gap-2 border-t border-slate-100/90 pt-3.5 text-xs">
+                  <span className="inline-flex shrink-0 items-center rounded-full border border-emerald-200/80 bg-emerald-50/90 px-2 py-0.5 text-[11px] font-bold text-emerald-600">
                     Live
                   </span>
-                  <span className="text-[11px] font-medium opacity-75 truncate">{stat.hint}</span>
+                  <span className="truncate font-medium text-slate-500">{stat.hint}</span>
+                  <span className="ml-auto h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: stat.accent }} />
                 </div>
               )}
 
-              <div className="absolute right-0 bottom-0 w-24 h-16 pointer-events-none opacity-50">
-                <svg viewBox="0 0 100 50" preserveAspectRatio="none" className="w-full h-full">
-                  <defs>
-                    <linearGradient id={`exp-grad-${index}`} x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="#ffffff" stopOpacity="0.4" />
-                      <stop offset="100%" stopColor="#ffffff" stopOpacity="0.0" />
-                    </linearGradient>
-                  </defs>
-                  <path d="M0,50 L0,40 Q25,30 50,40 T100,20 L100,50 Z" fill={`url(#exp-grad-${index})`} />
-                  <path d="M0,40 Q25,30 50,40 T100,20" fill="none" stroke="#ffffff" strokeWidth="2.5" />
-                </svg>
-              </div>
+              <span aria-hidden="true" className="pointer-events-none absolute -right-6 -top-6 h-28 w-28 rounded-full opacity-20 blur-2xl" style={{ backgroundColor: stat.accent }} />
             </article>
           );
         })}

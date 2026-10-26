@@ -254,11 +254,13 @@ const Navbar = () => {
                 className="flex min-w-0 items-center gap-2.5 sm:gap-3"
                 aria-label="Buy Food home"
               >
-                <img
-                  src="/images/userlogo.png"
-                  alt="Buy Food"
-                  className="h-[58px] w-[87px] shrink-0 object-contain sm:h-[68px] sm:w-[102px]"
-                />
+                <div className="flex h-[52px] w-[52px] items-center justify-center overflow-hidden rounded-full border border-[#dfe9e0] bg-[#f7faf7] p-1.5 shadow-[0_10px_20px_rgba(18,75,36,0.10)] sm:h-[60px] sm:w-[60px]">
+                  <img
+                    src="/images/buy-food-navbar-logo.png"
+                    alt="Buy Food"
+                    className="h-full w-full rounded-full object-cover"
+                  />
+                </div>
               </Link>
 
               <nav className="hidden items-center gap-6 xl:flex">

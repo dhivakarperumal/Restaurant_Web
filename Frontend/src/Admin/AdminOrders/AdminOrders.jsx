@@ -712,32 +712,28 @@ const AdminOrders = ({ defaultStatus = "All", allowedStatuses = null, showNewOrd
       value: totalOrdersCount.toLocaleString(),
       change: "18.6%",
       icon: ShoppingCart,
-      color: "#22c55e",
-      wave: "#9be7b9",
+      color: "#f97316",
     },
     {
       title: "Total Revenue",
       value: `₹${totalRevenue.toLocaleString("en-IN")}`,
       change: "22.4%",
       icon: IndianRupee,
-      color: "#f59e0b",
-      wave: "#f9d99b",
+      color: "#10b981",
     },
     {
       title: "Pending Orders",
       value: pendingCount.toLocaleString(),
       change: "15.3%",
       icon: Clock,
-      color: "#06b6d4",
-      wave: "#93dce8",
+      color: "#3b82f6",
     },
     {
       title: "Delivered Orders",
       value: deliveredCount.toLocaleString(),
       change: "10.7%",
       icon: CheckCircle,
-      color: "#a855f7",
-      wave: "#d8b4f5",
+      color: "#ec4899",
     },
   ];
 
@@ -754,31 +750,30 @@ const AdminOrders = ({ defaultStatus = "All", allowedStatuses = null, showNewOrd
             return (
               <div
                 key={card.title}
-                className="relative flex min-h-[176px] flex-col overflow-hidden rounded-xl border border-[#e5e7eb] bg-white p-5 shadow-sm"
+                className="group relative flex min-h-[194px] min-w-0 flex-col justify-between overflow-hidden rounded-[20px] border border-slate-200/90 bg-white p-5 shadow-[0_4px_16px_-5px_rgba(15,23,42,0.08)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_10px_22px_-7px_rgba(15,23,42,0.12)] sm:p-6"
+                style={{ background: `linear-gradient(135deg, #ffffff 48%, ${card.color}12 100%)` }}
               >
-                <div className="flex flex-1 items-start gap-4">
+                <div className="relative z-10 flex items-start justify-between gap-3">
+                  <div className="min-w-0 flex-1 pt-1">
+                    <p className="truncate text-[12px] font-bold uppercase tracking-[0.08em] text-slate-500">{card.title}</p>
+                    <p className="mt-4 truncate text-[30px] font-black leading-none tracking-tight text-slate-900 sm:text-[34px]">
+                      {card.value}
+                    </p>
+                  </div>
                   <div
-                    className="flex h-[60px] w-[60px] shrink-0 items-center justify-center rounded-full text-white"
+                    className="flex h-[60px] w-[60px] shrink-0 items-center justify-center rounded-[18px] text-white shadow-[0_5px_12px_-4px_rgba(15,23,42,0.25)]"
                     style={{ backgroundColor: card.color }}
                   >
                     <Icon className="h-7 w-7" />
                   </div>
-                  <div className="min-w-0 pt-1">
-                    <p className="text-sm font-medium text-[#374151]">{card.title}</p>
-                    <p className="mt-2 truncate text-[1.75rem] font-bold leading-none text-[#111827]">
-                      {card.value}
-                    </p>
-                    <p className="mt-5 text-xs font-medium text-[#00a76f]">↗ {card.change}</p>
-                    <p className="mt-1 text-[11px] text-[#7c8798]">from last month</p>
-                  </div>
                 </div>
-                <div
-                  className="absolute bottom-0 left-0 h-6 w-full"
-                  style={{
-                    background: card.wave,
-                    clipPath: "ellipse(65% 75% at 55% 100%)",
-                  }}
-                />
+                <div className="relative z-10 mt-5 flex items-center gap-2 border-t border-slate-100/90 pt-3.5 text-xs">
+                  <span className="inline-flex shrink-0 items-center rounded-full border border-emerald-200/80 bg-emerald-50/90 px-2 py-0.5 text-[11px] font-bold text-emerald-600">↑ {card.change}</span>
+                  <span className="truncate text-xs font-medium text-slate-500">vs last week</span>
+                  <span className="ml-auto h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: card.color }} />
+                </div>
+                <div aria-hidden="true" className="pointer-events-none absolute -right-6 -top-6 h-28 w-28 rounded-full opacity-20 blur-2xl" style={{ backgroundColor: card.color }} />
+                <div aria-hidden="true" className="pointer-events-none absolute bottom-0 left-0 h-1 w-full origin-left scale-x-0 transition-transform duration-300 group-hover:scale-x-100" style={{ backgroundColor: card.color }} />
               </div>
             );
           })}
@@ -876,24 +871,37 @@ const AdminOrders = ({ defaultStatus = "All", allowedStatuses = null, showNewOrd
               {viewMode === "card" && (
                 <div className="grid gap-4 p-4 md:grid-cols-2 xl:grid-cols-3">
                   {paginatedOrders.map((order) => (
-                    <article key={order.id} className="rounded-2xl border border-[#e8dfd2] bg-[#fffdfa] p-4 shadow-xs">
-                      <div className="flex items-start justify-between gap-3">
-                        <div>
-                          <p className="font-mono text-xs font-bold text-[#1a3c36]">{order.order_id}</p>
-                          <p className="mt-1 text-[11px] text-[#777]">{order.created_at ? new Date(order.created_at).toLocaleDateString("en-IN") : "--"}</p>
+                    <article key={order.id} className="group relative flex min-w-0 flex-col overflow-hidden rounded-[20px] border border-slate-200 bg-white shadow-[0_4px_16px_-5px_rgba(15,23,42,0.08)] transition-all duration-300 hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-[0_10px_22px_-7px_rgba(15,23,42,0.12)]">
+                      <div className="flex items-start justify-between gap-3 border-b border-slate-100 bg-gradient-to-r from-slate-50 to-white px-5 py-4">
+                        <div className="min-w-0">
+                          <p className="truncate font-mono text-sm font-bold text-slate-800">{order.order_id}</p>
+                          <p className="mt-1 flex items-center gap-1 text-[11px] text-slate-500"><Calendar className="h-3 w-3" />{order.created_at ? new Date(order.created_at).toLocaleDateString("en-IN") : "--"}</p>
                         </div>
-                        <span className={`rounded-full border px-2.5 py-0.5 text-[11px] font-bold ${getStatusBadge(order.order_status)}`}>{statusName(order.order_status)}</span>
+                        <span className={`shrink-0 rounded-full border px-2.5 py-1 text-[11px] font-bold ${getStatusBadge(order.order_status)}`}>{statusName(order.order_status)}</span>
                       </div>
-                      <div className="mt-4 space-y-2 text-xs">
-                        <p className="font-bold text-[#1d2925]">{order.customer_name || "--"}</p>
-                        <p className="flex items-center gap-1 text-[#777]"><Phone className="h-3 w-3" /> {order.customer_phone || "--"}</p>
-                        <p className="text-[#555]"><span className="font-semibold">{order.item_count || 1} item{order.item_count !== 1 ? "s" : ""}</span> · {order.product_names || "Custom Frame"}</p>
-                        <p className="text-base font-black text-[#1a3c36]">₹{order.total_amount}</p>
-                        <p className="text-[#777]">{order.payment_method || "--"} · {order.payment_status || "--"}</p>
-                      </div>
-                      <div className="mt-4 flex justify-end gap-2 border-t border-[#f0e8dc] pt-3">
-                        <button type="button" onClick={() => handleViewOrder(order.order_id)} className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-[#d8cfc3] bg-white px-2.5 text-xs font-bold text-[#1a3c36] hover:bg-[#eef5f3]"><Eye className="h-3.5 w-3.5" /> View</button>
-                        <button type="button" onClick={() => handleDeleteOrder(order.order_id)} className="flex h-8 w-8 items-center justify-center rounded-lg border border-[#f2dada] bg-[#fff5f5] text-[#d04d4d] hover:bg-[#ffe5e5]" title="Delete Order"><Trash2 className="h-3.5 w-3.5" /></button>
+                      <div className="flex flex-1 flex-col p-5">
+                        <div className="flex items-center gap-3">
+                          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-orange-50 text-orange-600"><User className="h-5 w-5" /></span>
+                          <div className="min-w-0">
+                            <p className="truncate text-sm font-bold text-slate-900">{order.customer_name || "--"}</p>
+                            <p className="mt-0.5 flex items-center gap-1 truncate text-xs text-slate-500"><Phone className="h-3 w-3 shrink-0" />{order.customer_phone || "--"}</p>
+                          </div>
+                        </div>
+                        <div className="mt-4 rounded-xl bg-slate-50 px-3.5 py-3">
+                          <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">Order items</p>
+                          <p className="mt-1.5 text-xs leading-relaxed text-slate-700"><span className="font-bold text-slate-900">{order.item_count || 1} item{order.item_count !== 1 ? "s" : ""}</span> · {order.product_names || "Custom Frame"}</p>
+                        </div>
+                        <div className="mt-4 flex items-end justify-between gap-3">
+                          <div className="min-w-0">
+                            <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">Payment</p>
+                            <p className="mt-1 truncate text-xs font-medium text-slate-700">{order.payment_method || "--"} · {order.payment_status || "--"}</p>
+                          </div>
+                          <p className="shrink-0 text-lg font-black tracking-tight text-slate-900">₹{order.total_amount}</p>
+                        </div>
+                        <div className="mt-5 flex justify-end gap-2 border-t border-slate-100 pt-4">
+                          <button type="button" onClick={() => handleViewOrder(order.order_id)} className="inline-flex h-9 items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 text-xs font-bold text-slate-700 transition hover:border-emerald-200 hover:bg-emerald-50 hover:text-emerald-700"><Eye className="h-3.5 w-3.5" /> View order</button>
+                          <button type="button" onClick={() => handleDeleteOrder(order.order_id)} className="flex h-9 w-9 items-center justify-center rounded-xl border border-rose-100 bg-rose-50 text-rose-600 transition hover:bg-rose-100" title="Delete Order" aria-label={`Delete order ${order.order_id}`}><Trash2 className="h-3.5 w-3.5" /></button>
+                        </div>
                       </div>
                     </article>
                   ))}

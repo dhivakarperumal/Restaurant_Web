@@ -408,7 +408,7 @@ const router = createHashRouter([
           },
           {
             path: 'orders',
-            element: <ChefKitchenOrders />,
+            element: <ChefKitchenOrders lightSummaryCards />,
           },
           {
             path: 'event-orders',
@@ -452,11 +452,11 @@ const router = createHashRouter([
           },
           {
             path: 'customer-orders/dining',
-            element: <ChefKitchenOrders key="chef-orders-dining" defaultViewMode="table" orderTypeFilter="dine-in" />,
+            element: <ChefKitchenOrders key="chef-orders-dining" defaultViewMode="table" orderTypeFilter="dine-in" lightSummaryCards />,
           },
           {
             path: 'customer-orders/delivery',
-            element: <CustomerOrdersPage key="chef-orders-delivery" audience="chef" view="delivery" />,
+            element: <CustomerOrdersPage key="chef-orders-delivery" audience="chef" view="delivery" showOrderSummaryCards />,
           },
           {
             path: 'customer-orders/cancelled',

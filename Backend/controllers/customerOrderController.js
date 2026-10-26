@@ -62,6 +62,8 @@ const getOrders = async (req, res, customerOnly, orderNumber = null) => {
               o.delivery_charge, o.delivery_distance_km, o.total_amount,
               o.payment_method, o.payment_status, o.assigned_delivery_partner_id,
               assigned_partner.full_name AS assigned_partner_name,
+              assigned_partner.phone_number AS assigned_partner_phone,
+              assigned_partner.profile_photo AS assigned_partner_profile_photo,
               CASE WHEN o.order_status = 'completed' THEN 'delivered' ELSE o.order_status END AS order_status,
               o.created_at, o.updated_at,
               a.address_line, a.area_locality, a.city, a.state, a.pincode, a.landmark
@@ -173,9 +175,10 @@ const updateCustomerOrderStatus = async (req, res) => {
            AND a.check_in IS NOT NULL 
            AND a.check_out IS NULL
          WHERE e.employee_id = ? AND e.employee_type = 'Delivery Partner'
+           AND LOWER(TRIM(u.role)) IN ('delivery', 'delivery partner')
            AND e.status = 'Active' AND u.status = 'Active'
            AND COALESCE(e.available_for_delivery, 'Yes') != 'No'
-           AND COALESCE(e.current_status, 'Available') != 'Offline'
+           AND COALESCE(e.current_status, 'Available') = 'Available'
            AND a.id = (
              SELECT active_attendance.id
              FROM employee_attendance active_attendance
@@ -263,7 +266,7 @@ const listDeliveryPartners = async (req, res) => {
     const includeAll = String(req.query?.all || '').toLowerCase() === 'true';
 
     let query = `
-      SELECT e.employee_id, e.full_name, e.phone_number, e.current_status,
+      SELECT e.employee_id, e.full_name, e.phone_number, e.profile_photo, e.current_status,
              e.available_for_delivery,
              a.check_in, a.check_out, a.status AS attendance_status
       FROM employees e
@@ -281,6 +284,7 @@ const listDeliveryPartners = async (req, res) => {
           LIMIT 1
         )
         WHERE e.employee_type = 'Delivery Partner'
+          AND LOWER(TRIM(u.role)) IN ('delivery', 'delivery partner')
           AND e.status = 'Active' AND u.status = 'Active'
         ORDER BY e.full_name
       `;
@@ -301,10 +305,11 @@ const listDeliveryPartners = async (req, res) => {
             LIMIT 1
           )
         WHERE e.employee_type = 'Delivery Partner'
+          AND LOWER(TRIM(u.role)) IN ('delivery', 'delivery partner')
           AND e.status = 'Active' 
           AND u.status = 'Active'
           AND COALESCE(e.available_for_delivery, 'Yes') != 'No'
-          AND COALESCE(e.current_status, 'Available') != 'Offline'
+          AND COALESCE(e.current_status, 'Available') = 'Available'
         ORDER BY e.full_name
       `;
     }
@@ -688,6 +693,7 @@ module.exports = {
   getDeliveryPartnerHistory,
   getDeliveryPartnerDashboard,
   getDeliveryPartnerEarnings,
+  getDeliveryPartnerHistory,
   listCustomerOrders: (req, res) => getOrders(req, res, false),
   listMyOrders: (req, res) => getOrders(req, res, true),
   getMyOrder: (req, res) => getOrders(req, res, true, req.params.orderNumber),

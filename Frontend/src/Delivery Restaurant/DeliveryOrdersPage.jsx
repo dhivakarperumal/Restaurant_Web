@@ -1,23 +1,5 @@
-import React, { useEffect, useMemo, useState } from "react";
-import {
-  ArrowUpRight,
-  Bike,
-  CalendarDays,
-  Check,
-  CheckCircle2,
-  ChevronLeft,
-  ChevronRight,
-  Clock3,
-  LayoutGrid,
-  MapPin,
-  Phone,
-  RefreshCw,
-  Search,
-  ShoppingBag,
-  Table2,
-  X,
-  XCircle,
-} from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { ArrowUpRight, Bike, CalendarDays, Check, CheckCircle2, ChevronLeft, ChevronRight, Clock3, LayoutGrid, List, MapPin, Phone, Search, ShoppingBag, X, XCircle } from "lucide-react";
 import api from "../api";
 import toast from "react-hot-toast";
 
@@ -25,10 +7,10 @@ const normalizeStatus = (status) =>
   String(status || "").trim().toUpperCase().replace(/[\s-]+/g, "_");
 
 const orderViews = {
-  new:      { title: "New Orders",      statuses: ["NEW", "NEW_ORDER", "PENDING", "ORDER_PLACED"] },
-  all:      { title: "All Orders",      statuses: null },
-  delivery: { title: "Delivery Orders", statuses: ["ASSIGNED", "ACCEPTED", "REACHED_PICKUP", "PICKED_UP", "OUT_FOR_DELIVERY", "REACHED_CUSTOMER", "SHIPPED"] },
-  cancelled:{ title: "Cancelled Orders",statuses: ["CANCELLED"] },
+  new: { title: "New Orders", statuses: ["ASSIGNED"] },
+  all: { title: "All Orders", statuses: null },
+  delivery: { title: "Delivery Orders", statuses: ["ASSIGNED", "ACCEPTED", "REACHED_PICKUP", "PICKED_UP", "OUT_FOR_DELIVERY", "REACHED_CUSTOMER", "SHIPPED", "DELIVERED", "COMPLETED"] },
+  cancelled: { title: "Cancelled Orders", statuses: ["CANCELLED"] },
 };
 
 const statusFlow   = ["ASSIGNED","ACCEPTED","REACHED_PICKUP","PICKED_UP","OUT_FOR_DELIVERY","REACHED_CUSTOMER","DELIVERED"];
@@ -128,17 +110,16 @@ const Pagination = ({ page, pageCount, setPage }) => (
    MAIN COMPONENT
 ════════════════════════════════════════════════════════════════ */
 const DeliveryOrdersPage = ({ view = "all" }) => {
-  const [orders,        setOrders]        = useState([]);
-  const [search,        setSearch]        = useState("");
-  const [statusFilter,  setStatusFilter]  = useState("All Status");
-  const [sortBy,        setSortBy]        = useState("latest");
-  const [dateFrom,      setDateFrom]      = useState("");
-  const [dateTo,        setDateTo]        = useState("");
-  const [page,          setPage]          = useState(1);
-  const [viewMode,      setViewMode]      = useState("card");
-  const [loading,       setLoading]       = useState(true);
-  const [error,         setError]         = useState("");
-  const [refreshKey,    setRefreshKey]    = useState(0);
+  const [orders, setOrders] = useState([]);
+  const [search, setSearch] = useState("");
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [sortBy, setSortBy] = useState("latest");
+  const [viewMode, setViewMode] = useState("list");
+  const [page, setPage] = useState(1);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [pendingStatus, setPendingStatus] = useState("");
   const [updating,      setUpdating]      = useState(false);
@@ -149,8 +130,10 @@ const DeliveryOrdersPage = ({ view = "all" }) => {
   /* ── fetch ── */
   useEffect(() => {
     let active = true;
-    const load = async () => {
-      setLoading(true); setError("");
+
+    const loadOrders = async (silent = false) => {
+      if (!silent) setLoading(true);
+      setError("");
       try {
         const res = await api.get("/delivery-partner/orders");
         if (!active) return;
@@ -158,50 +141,77 @@ const DeliveryOrdersPage = ({ view = "all" }) => {
         setOrders(Array.isArray(result) ? result : []);
       } catch (err) {
         if (!active) return;
-        setError(err?.response?.data?.message || "Assigned orders are temporarily unavailable.");
-        setOrders([]);
-      } finally { if (active) setLoading(false); }
+        setError(requestError?.response?.data?.message || "Assigned orders are temporarily unavailable.");
+        if (!silent) setOrders([]);
+      } finally {
+        if (active && !silent) setLoading(false);
+      }
     };
-    load();
-    return () => { active = false; };
-  }, [refreshKey]);
 
-  /* ── counts for stat cards ── */
-  const countByStatuses = (statuses) =>
-    orders.filter((o) => statuses.includes(normalizeStatus(o.order_status))).length;
+    loadOrders();
+    const refreshInterval = window.setInterval(() => loadOrders(true), 15000);
+    const refreshWhenVisible = () => {
+      if (document.visibilityState === "visible") loadOrders(true);
+    };
+    window.addEventListener("focus", refreshWhenVisible);
+    document.addEventListener("visibilitychange", refreshWhenVisible);
+    return () => {
+      active = false;
+      window.clearInterval(refreshInterval);
+      window.removeEventListener("focus", refreshWhenVisible);
+      document.removeEventListener("visibilitychange", refreshWhenVisible);
+    };
+  }, []);
 
-  const statCards = [
-    { title: "New Orders",        value: countByStatuses(["NEW","NEW_ORDER","PENDING","ORDER_PLACED"]),                                                           inc: "8.2%",  icon: <Clock3 />,      bg: "bg-[#ec4899]" },
-    { title: "Active Deliveries", value: countByStatuses(["ASSIGNED","ACCEPTED","REACHED_PICKUP","PICKED_UP","OUT_FOR_DELIVERY","REACHED_CUSTOMER","SHIPPED"]),    inc: "12.4%", icon: <Bike />,        bg: "bg-[#3b82f6]" },
-    { title: "Delivered",         value: countByStatuses(["DELIVERED","COMPLETED"]),                                                                               inc: "15.3%", icon: <CheckCircle2 />,bg: "bg-[#8b5cf6]" },
-    { title: "Cancelled",         value: countByStatuses(["CANCELLED"]),                                                                                           inc: "3.1%",  icon: <XCircle />,     bg: "bg-[#f59e0b]" },
+  const scopedOrders = useMemo(() => {
+    return orders.filter((order) => {
+      const normalizedStatus = normalizeStatus(order.order_status);
+      const matchesView = !config.statuses || config.statuses.includes(normalizedStatus);
+      const date = new Date(order.order_date || order.created_at || "");
+      const dateKey = Number.isNaN(date.getTime()) ? "" : `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+      const today = new Date();
+      const todayKey = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
+      const matchesToday = view !== "new" || dateKey === todayKey;
+      return matchesView && matchesToday && (!dateFrom || dateKey >= dateFrom) && (!dateTo || dateKey <= dateTo);
+    });
+  }, [config.statuses, dateFrom, dateTo, orders, view]);
+
+  const statusCounts = useMemo(() => scopedOrders.reduce((counts, order) => {
+    const status = normalizeStatus(order.order_status) || "NEW";
+    counts[status] = (counts[status] || 0) + 1;
+    return counts;
+  }, {}), [scopedOrders]);
+
+  const matchingOrders = useMemo(() => {
+    const query = search.trim().toLowerCase();
+    return scopedOrders.filter((order) => {
+      const normalizedStatus = normalizeStatus(order.order_status);
+      const hasToolbar = ["new", "all", "delivery", "cancelled"].includes(view);
+      const matchesStatus = !hasToolbar || statusFilter === "all" || statusFilter === normalizedStatus;
+      const itemNames = getItems(order).flatMap((item) => [item.name, item.food_name, item.product_name]);
+      const matchesSearch = !query || [orderId(order), order.customer_name, order.customer?.name, ...itemNames]
+        .some((value) => String(value || "").toLowerCase().includes(query));
+      return matchesStatus && matchesSearch;
+    });
+  }, [scopedOrders, search, statusFilter, view]);
+
+  const sortedOrders = useMemo(() => [...matchingOrders].sort((a, b) => {
+    if (!["new", "all", "delivery", "cancelled"].includes(view)) return 0;
+    const aDate = new Date(a.order_date || a.created_at || "").getTime() || 0;
+    const bDate = new Date(b.order_date || b.created_at || "").getTime() || 0;
+    return sortBy === "latest" ? bDate - aDate : aDate - bDate;
+  }), [matchingOrders, sortBy, view]);
+
+  const pageCount = Math.max(1, Math.ceil(sortedOrders.length / pageSize));
+  const visibleOrders = sortedOrders.slice((page - 1) * pageSize, page * pageSize);
+  const countStatuses = (statuses) => orders.filter((order) => statuses.includes(normalizeStatus(order.order_status))).length;
+  const summaryCards = [
+    { label: "New Orders", value: countStatuses(["NEW", "NEW_ORDER", "PENDING", "ORDER_PLACED"]), icon: Clock3, accent: "#ec4899", iconStyle: "bg-pink-500 text-white", caption: "Awaiting action" },
+    { label: "Active Deliveries", value: countStatuses(["ASSIGNED", "ACCEPTED", "REACHED_PICKUP", "PICKED_UP", "OUT_FOR_DELIVERY", "REACHED_CUSTOMER", "SHIPPED"]), icon: Bike, accent: "#3b82f6", iconStyle: "bg-blue-500 text-white", caption: "Assigned to you" },
+    { label: "Delivered", value: countStatuses(["DELIVERED", "COMPLETED"]), icon: CheckCircle2, accent: "#8b5cf6", iconStyle: "bg-violet-500 text-white", caption: "Completed" },
+    { label: "Cancelled", value: countStatuses(["CANCELLED"]), icon: XCircle, accent: "#f59e0b", iconStyle: "bg-amber-500 text-white", caption: "Closed" },
   ];
 
-  /* ── filter & sort ── */
-  const filtered = useMemo(() => {
-    const q = search.trim().toLowerCase();
-    let list = orders.filter((o) => {
-      const ns = normalizeStatus(o.order_status);
-      const matchesView   = !config.statuses || config.statuses.includes(ns);
-      const date          = new Date(o.order_date || o.created_at || "");
-      const dk            = Number.isNaN(date.getTime()) ? "" : `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,"0")}-${String(date.getDate()).padStart(2,"0")}`;
-      const matchesDate   = (!dateFrom || dk >= dateFrom) && (!dateTo || dk <= dateTo);
-      const matchesSearch = !q || [orderId(o), o.customer_name, o.customer?.name].some((v) => String(v||"").toLowerCase().includes(q));
-      const matchesStatus = statusFilter === "All Status" || statusLabels[ns]?.toLowerCase() === statusFilter.toLowerCase();
-      return matchesView && matchesDate && matchesSearch && matchesStatus;
-    });
-    if (sortBy === "newest") list = [...list].sort((a,b) => new Date(b.order_date||b.created_at||0) - new Date(a.order_date||a.created_at||0));
-    if (sortBy === "oldest") list = [...list].sort((a,b) => new Date(a.order_date||a.created_at||0) - new Date(b.order_date||b.created_at||0));
-    if (sortBy === "amount-high") list = [...list].sort((a,b) => Number(b.total_amount||0) - Number(a.total_amount||0));
-    if (sortBy === "amount-low")  list = [...list].sort((a,b) => Number(a.total_amount||0) - Number(b.total_amount||0));
-    return list;
-  }, [config.statuses, dateFrom, dateTo, orders, search, statusFilter, sortBy]);
-
-  const pageCount    = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
-  const displayPage  = Math.min(page, pageCount);
-  const visibleOrders = filtered.slice((displayPage-1)*PAGE_SIZE, displayPage*PAGE_SIZE);
-
-  /* ── status update ── */
   const updateOrderStatus = async () => {
     if (!selectedOrder || !pendingStatus) return;
     setUpdating(true);
@@ -249,33 +259,15 @@ const DeliveryOrdersPage = ({ view = "all" }) => {
   );
 
   return (
-    <div className="min-h-screen bg-gray-100 p-4 md:p-2">
-      <div className="mx-auto max-w-[1500px]">
-
-        {/* ── STAT CARDS ── */}
-        <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          {statCards.map((s) => <StatCard key={s.title} {...s} value={String(s.value)} />)}
-        </div>
-
-        <div className="rounded-lg border border-[#e7e0d8] bg-gray-100 p-3 shadow-sm">
-
-          {/* ── HEADER ── */}
-          <div className="mb-3">
-            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[#39754a]">Deliveries</p>
-            <h1 className="mt-0.5 text-xl font-bold text-[#17231c]">{config.title}</h1>
-            <p className="mt-0.5 text-sm text-gray-500">Only orders assigned to your account appear here.</p>
-          </div>
-
-          {/* ── FILTERS ── */}
-          <div className="mb-4 flex flex-col gap-3 lg:flex-row lg:items-center">
-            <div className="flex flex-1 flex-wrap items-center gap-3">
-              {/* search */}
-              <div className="relative w-full max-w-[340px]">
-                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#7a7a7a]" />
-                <input type="text" value={search}
-                  onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-                  placeholder="Search order or customer…"
-                  className="h-[46px] w-full rounded-xl border border-[#dfe2e5] bg-[#faf9f8] pl-10 pr-3 text-[14px] text-[#2d2d2d] outline-none placeholder:text-[#8a8a8a] focus:border-[#FF5A00]" />
+    <section className="min-h-[60vh] text-gray-900">
+      <div className="mb-5 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        {summaryCards.map(({ label, value, icon: Icon, accent, iconStyle, caption }) => (
+          <article key={label} className="group relative flex min-h-[140px] min-w-0 flex-col justify-between overflow-hidden rounded-2xl border border-slate-200/90 bg-white p-4 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] transition-all duration-300 hover:-translate-y-1 hover:border-slate-300 hover:shadow-[0_12px_24px_-6px_rgba(0,0,0,0.1)] sm:p-5">
+            <div aria-hidden="true" className="pointer-events-none absolute -right-6 -top-6 h-28 w-28 rounded-full opacity-20 blur-2xl transition-all duration-500 group-hover:scale-150 group-hover:opacity-35" style={{ backgroundColor: accent }} />
+            <div className="relative z-10 flex items-start justify-between gap-3">
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-[11px] font-bold uppercase tracking-wider text-slate-500">{label}</p>
+                {loading ? <div className="mt-2.5 h-8 w-16 animate-pulse rounded-lg bg-slate-100" /> : <p className="mt-2.5 truncate text-[23px] font-black tracking-tight text-slate-800 sm:text-[27px]">{error ? "—" : value}</p>}
               </div>
 
               <div className="flex flex-wrap items-center gap-3 lg:ml-auto">
@@ -330,221 +322,146 @@ const DeliveryOrdersPage = ({ view = "all" }) => {
                   aria-label="Card view"><LayoutGrid className="h-4 w-4" /></button>
               </div>
 
-              {/* refresh */}
-              <button type="button" onClick={() => setRefreshKey((k) => k+1)} disabled={loading}
-                className="inline-flex h-[46px] items-center gap-2 rounded-xl border border-[#dfe2e5] bg-[#faf9f8] px-4 text-[14px] font-medium text-[#2d2d2d] transition hover:bg-white disabled:opacity-50">
-                <RefreshCw size={16} className={loading ? "animate-spin" : ""} /> Refresh
+      {["new", "all", "delivery", "cancelled"].includes(view) ? (
+        <div className="mb-4 flex flex-col gap-3 rounded-2xl border border-[#e5e1dc] bg-white p-3 sm:flex-row sm:items-center sm:gap-4 sm:p-4">
+          <label className="relative block min-w-0 flex-1">
+            <Search size={18} className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[#7f8983]" />
+            <input
+              type="search"
+              value={search}
+              onChange={(event) => { setSearch(event.target.value); setPage(1); }}
+              placeholder="Search table, ticket, food..."
+              aria-label="Search new orders"
+              className="h-[58px] w-full rounded-2xl border border-[#e2e2e2] bg-[#faf9f8] pl-14 pr-4 text-sm text-[#34443b] outline-none placeholder:text-[#89938c] focus:border-[#ff5a00]"
+            />
+          </label>
+          <div className="flex flex-wrap items-center justify-end gap-2 sm:gap-3">
+            <span className="whitespace-nowrap px-1 text-sm text-[#53616b]">{matchingOrders.length} of {scopedOrders.length}</span>
+            <select
+              value={statusFilter}
+              onChange={(event) => { setStatusFilter(event.target.value); setPage(1); }}
+              aria-label="Filter orders by status"
+              className="h-[58px] min-w-0 flex-1 rounded-2xl border border-[#e2e2e2] bg-white px-4 text-sm text-[#263238] outline-none focus:border-[#ff5a00] sm:min-w-[210px] sm:flex-none"
+            >
+              <option value="all">All Status ({scopedOrders.length})</option>
+              {Object.entries(statusCounts).map(([status, count]) => (
+                <option key={status} value={status}>{statusLabels[status] || status.replaceAll("_", " ")} ({count})</option>
+              ))}
+            </select>
+            <select
+              value={sortBy}
+              onChange={(event) => { setSortBy(event.target.value); setPage(1); }}
+              aria-label="Sort new orders"
+              className="h-[58px] min-w-0 flex-1 rounded-2xl border border-[#e2e2e2] bg-white px-4 text-sm text-[#263238] outline-none focus:border-[#ff5a00] sm:min-w-[170px] sm:flex-none"
+            >
+              <option value="latest">Sort by: Latest</option>
+              <option value="oldest">Sort by: Oldest</option>
+            </select>
+            <div className="flex h-[58px] overflow-hidden rounded-2xl border border-[#e2e2e2] bg-white" role="group" aria-label="Order display">
+              <button
+                type="button"
+                onClick={() => setViewMode("list")}
+                aria-label="List view"
+                aria-pressed={viewMode === "list"}
+                className={`grid w-[54px] place-items-center border-r border-[#e2e2e2] ${viewMode === "list" ? "bg-[#ff5a00] text-white" : "text-[#65746b] hover:bg-gray-50"}`}
+              >
+                <List size={19} />
+              </button>
+              <button
+                type="button"
+                onClick={() => setViewMode("grid")}
+                aria-label="Grid view"
+                aria-pressed={viewMode === "grid"}
+                className={`grid w-[54px] place-items-center ${viewMode === "grid" ? "bg-[#ff5a00] text-white" : "text-[#65746b] hover:bg-gray-50"}`}
+              >
+                <LayoutGrid size={19} />
               </button>
             </div>
           </div>
+        </div>
+      ) : (
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+        <label className="relative block w-full max-w-sm">
+          <Search size={16} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+          <input
+            type="search"
+            value={search}
+            onChange={(event) => { setSearch(event.target.value); setPage(1); }}
+            placeholder="Search order or customer"
+            className="w-full rounded-lg border border-gray-200 bg-white py-2 pl-9 pr-3 text-sm outline-none focus:border-emerald-600"
+          />
+        </label>
+        <div className="flex flex-wrap items-center gap-2">
+          <label className="flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs text-gray-500"><CalendarDays size={14} /><span>From</span><input aria-label="Date from" type="date" value={dateFrom} onChange={(event) => { setDateFrom(event.target.value); setPage(1); }} className="max-w-32 bg-transparent text-gray-700 outline-none" /></label>
+          <label className="flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs text-gray-500"><span>To</span><input aria-label="Date to" type="date" value={dateTo} onChange={(event) => { setDateTo(event.target.value); setPage(1); }} className="max-w-32 bg-transparent text-gray-700 outline-none" /></label>
+          <span className="px-1 text-sm text-gray-500">{matchingOrders.length} orders</span>
+        </div>
+        </div>
+      )}
 
-          {/* ── ERROR ── */}
-          {error && !loading && (
-            <div className="mb-4 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
-              <p className="font-semibold">Orders unavailable</p><p className="mt-1">{error}</p>
-            </div>
-          )}
-
-          {/* ── SKELETON ── */}
-          {loading && (
-            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-              {[0,1,2,3].map((i) => <div key={i} className="h-36 animate-pulse rounded-xl border border-gray-200 bg-white" />)}
-            </div>
-          )}
-
-          {/* ── EMPTY ── */}
-          {!loading && !error && filtered.length === 0 && (
-            <div className="rounded-2xl border border-dashed border-[#e7e0d8] bg-white p-10 text-center">
-              <ShoppingBag size={28} className="mx-auto mb-3 text-[#7a9b82]" />
-              <p className="font-semibold text-gray-800">No orders in this view</p>
-              <p className="mt-1 text-sm text-gray-500">New assignments will appear here when you are online.</p>
-            </div>
-          )}
-
-          {/* ── CARD VIEW ── */}
-          {!loading && !error && filtered.length > 0 && viewMode === "card" && (
-            <>
-              <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-                {visibleOrders.map(renderCard)}
-              </div>
-              <Pagination page={displayPage} pageCount={pageCount} setPage={setPage} />
-            </>
-          )}
-
-          {/* ── TABLE VIEW ── */}
-          {!loading && !error && filtered.length > 0 && viewMode === "table" && (
-            <>
-              <div className="mt-0 overflow-x-auto rounded-[16px] border border-[#e8e4df]">
-                <table className="w-full min-w-[900px] border-collapse bg-white text-left">
-                  <thead className="bg-orange-50 text-left text-sm font-semibold text-orange-700 border-b border-orange-100">
-                    <tr>
-                      <th className="px-4 py-4">S.No</th>
-                      <th className="px-4 py-4">Order</th>
-                      <th className="px-4 py-4">Customer</th>
-                      <th className="px-4 py-4">Pickup / Drop-off</th>
-                      <th className="px-4 py-4">Date</th>
-                      <th className="px-4 py-4">Amount</th>
-                      <th className="px-4 py-4">Status</th>
-                      <th className="px-4 py-4 text-right">Action</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {visibleOrders.map((order, idx) => (
-                      <tr key={orderId(order)} className="border-t border-[#efefef] text-[13px] text-[#444444] hover:bg-gray-50/70">
-                        <td className="px-4 py-4 font-medium text-[#2d2d2d]">{(displayPage-1)*PAGE_SIZE+idx+1}</td>
-                        <td className="whitespace-nowrap px-4 py-4 font-semibold text-gray-800">{orderId(order)}</td>
-                        <td className="px-4 py-4 text-gray-700">{order.customer_name || order.customer?.name || "Customer"}</td>
-                        <td className="max-w-64 px-4 py-4 text-xs text-gray-500">
-                          <p className="truncate">{order.restaurant_name || order.chef_name || order.pickup_address || "Pickup pending"}</p>
-                          <p className="mt-1 truncate">{order.delivery_address || order.dropoff_address || "Drop-off pending"}</p>
-                        </td>
-                        <td className="whitespace-nowrap px-4 py-4 text-gray-500">{formatDate(order.order_date || order.created_at)}</td>
-                        <td className="whitespace-nowrap px-4 py-4 font-medium text-gray-800">₹{Number(order.total_amount||0).toLocaleString("en-IN")}</td>
-                        <td className="px-4 py-4">
-                          <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-medium ${statusClass(order.order_status)}`}>
-                            <span className="mr-1.5 h-2 w-2 rounded-full" style={{ backgroundColor: "currentColor" }} />
-                            {statusLabels[normalizeStatus(order.order_status)] || order.order_status || "New"}
-                          </span>
-                        </td>
-                        <td className="px-4 py-4">
-                          <div className="flex items-center justify-end gap-2">
-                            <button type="button" onClick={() => setSelectedOrder(order)}
-                              className="rounded-lg border border-orange-200 bg-white px-3 py-1.5 text-xs font-semibold text-[#FF5A00] transition hover:bg-orange-50">
-                              View order
-                            </button>
-                            {canMarkDeliver(order) && (
-                              <button type="button" onClick={() => { setSelectedOrder(order); setPendingStatus("DELIVERED"); }}
-                                className="inline-flex items-center gap-1.5 rounded-lg bg-[#1f6a3b] px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-[#195a31]">
-                                <CheckCircle2 size={14} /> Mark delivered
-                              </button>
-                            )}
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-              <Pagination page={displayPage} pageCount={pageCount} setPage={setPage} />
-            </>
-          )}
+      {loading && <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">{[0, 1, 2].map((item) => <div key={item} className="h-36 animate-pulse rounded-xl border border-gray-200 bg-white" />)}</div>}
+      {error && !loading && <div className="rounded-xl border border-amber-200 bg-amber-50 p-5 text-sm text-amber-900"><p className="font-semibold">Assigned orders are unavailable</p><p className="mt-1">{error}</p><p className="mt-2 text-xs text-amber-800">This screen requires a partner-scoped delivery API. General store orders are intentionally not shown.</p></div>}
+      {!loading && !error && matchingOrders.length === 0 && <div className="rounded-xl border border-dashed border-[#cddbd0] bg-white px-5 py-14 text-center"><ShoppingBag size={25} className="mx-auto mb-3 text-[#7a9b82]" /><p className="font-semibold text-gray-800">No orders in this view</p><p className="mt-1 text-sm text-gray-500">New assignments will appear here when you are online.</p></div>}
+      {!loading && !error && matchingOrders.length > 0 && <>
+      {viewMode === "grid" ? (
+        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">{visibleOrders.map(renderOrderCard)}</div>
+      ) : (
+      <div className="overflow-hidden rounded-xl border border-gray-200 bg-white">
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[900px] text-left text-sm">
+            <thead className="bg-orange-50 text-xs uppercase text-orange-700 border-b border-orange-100">
+              <tr>
+                <th className="px-4 py-3 font-semibold">Order</th>
+                <th className="px-4 py-3 font-semibold">Customer</th>
+                <th className="px-4 py-3 font-semibold">Pickup / Drop-off</th>
+                <th className="px-4 py-3 font-semibold">Date</th>
+                <th className="px-4 py-3 font-semibold">Amount</th>
+                <th className="px-4 py-3 font-semibold">Status</th>
+                <th className="px-4 py-3 font-semibold">Action</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-100">
+              {visibleOrders.map((order) => <tr key={orderId(order)} className="hover:bg-gray-50/70">
+                <td className="whitespace-nowrap px-4 py-3 font-semibold text-gray-800">{orderId(order)}</td>
+                <td className="px-4 py-3 text-gray-700">{order.customer_name || order.customer?.name || "Customer"}</td>
+                <td className="max-w-64 px-4 py-3 text-xs text-gray-500"><p className="truncate">{order.restaurant_name || order.chef_name || order.pickup_address || "Pickup pending"}</p><p className="mt-1 truncate">{order.delivery_address || order.dropoff_address || "Drop-off pending"}</p></td>
+                <td className="whitespace-nowrap px-4 py-3 text-gray-500">{formatDate(order.order_date || order.created_at)}</td>
+                <td className="whitespace-nowrap px-4 py-3 font-medium text-gray-800">₹{Number(order.total_amount || 0).toLocaleString("en-IN")}</td>
+                <td className="px-4 py-3"><span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${statusClass(order.order_status)}`}>{statusLabels[normalizeStatus(order.order_status)] || order.order_status || "New"}</span></td>
+                <td className="px-4 py-3">
+                  <div className="flex items-center gap-2">
+                    <button type="button" onClick={() => setSelectedOrder(order)} className="rounded-lg px-3 py-1.5 text-xs font-semibold text-[#21643a] hover:bg-[#edf5ef]">View order</button>
+                    {canMarkDelivered(order) && (
+                      <button type="button" onClick={() => requestDeliveryCompletion(order)} className="inline-flex items-center gap-1.5 rounded-lg bg-[#1f6a3b] px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-[#195a31]">
+                        <CheckCircle2 size={14} /> Mark delivered
+                      </button>
+                    )}
+                  </div>
+                </td>
+              </tr>)}
+            </tbody>
+          </table>
         </div>
       </div>
-
-      {/* ── ORDER DETAIL MODAL ── */}
-      {selectedOrder && (
-        <div className="fixed inset-0 z-[70] flex items-end justify-center bg-black/45 sm:items-center sm:p-4" role="presentation"
-          onClick={(e) => e.target === e.currentTarget && !pendingStatus && setSelectedOrder(null)}>
-          <section role="dialog" aria-modal="true" aria-labelledby="delivery-order-title"
-            className="max-h-[92vh] w-full overflow-y-auto rounded-t-2xl bg-white p-5 shadow-2xl sm:max-w-2xl sm:rounded-2xl sm:p-6">
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-wider text-[#39754a]">Delivery details</p>
-                <h2 id="delivery-order-title" className="mt-1 text-xl font-bold">{orderId(selectedOrder)}</h2>
-              </div>
-              <button type="button" onClick={() => setSelectedOrder(null)} aria-label="Close"
-                className="grid h-9 w-9 place-items-center rounded-lg hover:bg-gray-100"><X size={18} /></button>
-            </div>
-            <div className="mt-4 flex items-center justify-between gap-3">
-              <span className={`rounded-full px-3 py-1.5 text-xs font-semibold ${statusClass(selectedOrder.order_status)}`}>
-                {statusLabels[normalizeStatus(selectedOrder.order_status)] || selectedOrder.order_status || "New"}
-              </span>
-              <span className="text-xs text-gray-500">{formatDate(selectedOrder.order_date || selectedOrder.created_at)}</span>
-            </div>
-            <div className="mt-6 grid gap-6 sm:grid-cols-2">
-              <div>
-                <h3 className="text-xs font-bold uppercase tracking-wide text-gray-500">Customer</h3>
-                <p className="mt-2 font-semibold">{selectedOrder.customer_name || selectedOrder.customer?.name || "Customer"}</p>
-                <p className="mt-1 text-sm text-gray-600">{selectedOrder.delivery_address || selectedOrder.dropoff_address || "Address unavailable"}</p>
-                {(selectedOrder.customer_phone || selectedOrder.phone || selectedOrder.customer?.phone) && (
-                  <a className="mt-2 inline-flex items-center gap-2 text-sm font-semibold text-[#21643a]"
-                    href={`tel:${selectedOrder.customer_phone || selectedOrder.phone || selectedOrder.customer?.phone}`}>
-                    <Phone size={15} />Call customer
-                  </a>
-                )}
-                <a className="mt-2 flex items-center gap-2 text-sm font-semibold text-[#21643a]" target="_blank" rel="noreferrer"
-                  href={getLocationUrl(selectedOrder.delivery_address || selectedOrder.dropoff_address, selectedOrder.delivery_latitude, selectedOrder.delivery_longitude)}>
-                  <MapPin size={15} />Open navigation<ArrowUpRight size={14} />
-                </a>
-              </div>
-              <div>
-                <h3 className="text-xs font-bold uppercase tracking-wide text-gray-500">Pickup</h3>
-                <p className="mt-2 font-semibold">{selectedOrder.restaurant_name || selectedOrder.chef_name || "Restaurant"}</p>
-                <p className="mt-1 text-sm text-gray-600">{selectedOrder.pickup_address || selectedOrder.restaurant_address || "Pickup address unavailable"}</p>
-                <a className="mt-2 flex items-center gap-2 text-sm font-semibold text-[#21643a]" target="_blank" rel="noreferrer"
-                  href={getLocationUrl(selectedOrder.pickup_address || selectedOrder.restaurant_address, selectedOrder.pickup_latitude, selectedOrder.pickup_longitude)}>
-                  <MapPin size={15} />Navigate to pickup<ArrowUpRight size={14} />
-                </a>
-              </div>
-            </div>
-            <div className="mt-6 rounded-xl bg-[#f5f8f5] p-4">
-              <h3 className="text-sm font-bold">Food items</h3>
-              <div className="mt-3 space-y-2">
-                {getItems(selectedOrder).length
-                  ? getItems(selectedOrder).map((item, i) => (
-                    <div key={item.id || item.food_id || i} className="flex justify-between gap-3 text-sm">
-                      <span>{item.food_name || item.name || item.product_name || "Food item"}</span>
-                      <span className="text-gray-500">× {Number(item.quantity || item.qty || 1)}</span>
-                    </div>))
-                  : <p className="text-sm text-gray-500">Item details unavailable</p>}
-              </div>
-              <div className="mt-4 border-t border-gray-200 pt-3 text-sm">
-                <div className="flex justify-between"><span className="text-gray-500">Payment</span><span>{selectedOrder.payment_type || selectedOrder.payment_method || "—"}</span></div>
-                <div className="mt-2 flex justify-between font-semibold"><span>Delivery charge</span><span>₹{Number(selectedOrder.delivery_charge||0).toLocaleString("en-IN")}</span></div>
-              </div>
-            </div>
-            {statusFlow.includes(normalizeStatus(selectedOrder.order_status)) && (
-              <div className="mt-6">
-                <h3 className="mb-3 text-xs font-bold uppercase tracking-wide text-gray-500">Delivery progress</h3>
-                <div className="flex items-start">
-                  {statusFlow.map((s, i) => {
-                    const currentIndex = statusFlow.indexOf(normalizeStatus(selectedOrder.order_status));
-                    const complete = i <= currentIndex;
-                    return (
-                      <div key={s} className="flex min-w-0 flex-1 flex-col items-center text-center">
-                        <div className={`grid h-7 w-7 place-items-center rounded-full ${complete ? "bg-[#287545] text-white" : "bg-gray-100 text-gray-400"}`}>
-                          {complete ? <Check size={14} /> : <span className="text-[10px]">{i+1}</span>}
-                        </div>
-                        <span className="mt-2 text-[9px] leading-tight text-gray-500 sm:text-[10px]">{statusLabels[s]}</span>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-            <div className="mt-6 flex flex-wrap justify-end gap-2 border-t border-gray-100 pt-4">
-              <button type="button" onClick={() => setSelectedOrder(null)}
-                className="rounded-lg border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-700">Close</button>
-              {nextStatus[normalizeStatus(selectedOrder.order_status)] && (
-                <button type="button" onClick={() => setPendingStatus(nextStatus[normalizeStatus(selectedOrder.order_status)])}
-                  className="rounded-lg bg-[#1f6a3b] px-4 py-2 text-sm font-semibold text-white hover:bg-[#195a31]">
-                  {statusLabels[nextStatus[normalizeStatus(selectedOrder.order_status)]]}
-                </button>
-              )}
-            </div>
-          </section>
-        </div>
       )}
+      <div className="mt-4 flex items-center justify-between gap-3 text-sm text-gray-500"><span>Page {page} of {pageCount}</span><div className="flex gap-2"><button type="button" disabled={page <= 1} onClick={() => setPage((current) => current - 1)} aria-label="Previous page" className="grid h-9 w-9 place-items-center rounded-lg border border-gray-200 bg-white disabled:opacity-40"><ChevronLeft size={17} /></button><button type="button" disabled={page >= pageCount} onClick={() => setPage((current) => current + 1)} aria-label="Next page" className="grid h-9 w-9 place-items-center rounded-lg border border-gray-200 bg-white disabled:opacity-40"><ChevronRight size={17} /></button></div></div>
+      </>}
 
-      {/* ── CONFIRM STATUS MODAL ── */}
-      {pendingStatus && (
-        <div className="fixed inset-0 z-[80] grid place-items-center bg-black/50 p-4">
-          <section role="alertdialog" aria-modal="true" aria-labelledby="confirm-title"
-            className="w-full max-w-sm rounded-xl bg-white p-5 shadow-2xl">
-            <h2 id="confirm-title" className="font-bold text-gray-900">Confirm status update</h2>
-            <p className="mt-2 text-sm text-gray-600">Mark {orderId(selectedOrder)} as {statusLabels[pendingStatus]}?</p>
-            <div className="mt-5 flex justify-end gap-2">
-              <button type="button" disabled={updating} onClick={() => setPendingStatus("")}
-                className="rounded-lg border border-gray-200 px-3 py-2 text-sm font-semibold text-gray-700">Cancel</button>
-              <button type="button" disabled={updating} onClick={updateOrderStatus}
-                className="rounded-lg bg-[#1f6a3b] px-3 py-2 text-sm font-semibold text-white disabled:opacity-60">
-                {updating ? "Updating…" : "Confirm"}
-              </button>
-            </div>
-          </section>
-        </div>
-      )}
-    </div>
+      {selectedOrder && <div className="fixed inset-0 z-[70] flex items-end justify-center bg-black/45 sm:items-center sm:p-4" role="presentation" onClick={(event) => event.target === event.currentTarget && setSelectedOrder(null)}>
+        <section role="dialog" aria-modal="true" aria-labelledby="delivery-order-title" className="max-h-[92vh] w-full overflow-y-auto rounded-t-2xl bg-white p-5 shadow-2xl sm:max-w-2xl sm:rounded-2xl sm:p-6">
+          <div className="flex items-start justify-between gap-4"><div><p className="text-xs font-semibold uppercase tracking-wider text-[#39754a]">Delivery details</p><h2 id="delivery-order-title" className="mt-1 text-xl font-bold">{orderId(selectedOrder)}</h2></div><button type="button" onClick={() => setSelectedOrder(null)} aria-label="Close order details" className="grid h-9 w-9 place-items-center rounded-lg hover:bg-gray-100"><X size={18} /></button></div>
+          <div className="mt-4 flex items-center justify-between gap-3"><span className={`rounded-full px-3 py-1.5 text-xs font-semibold ${statusClass(selectedOrder.order_status)}`}>{statusLabels[normalizeStatus(selectedOrder.order_status)] || selectedOrder.order_status || "New"}</span><span className="text-xs text-gray-500">{formatDate(selectedOrder.order_date || selectedOrder.created_at)}</span></div>
+          <div className="mt-6 grid gap-6 sm:grid-cols-2">
+            <div><h3 className="text-xs font-bold uppercase tracking-wide text-gray-500">Customer</h3><p className="mt-2 font-semibold">{selectedOrder.customer_name || selectedOrder.customer?.name || "Customer"}</p><p className="mt-1 text-sm text-gray-600">{selectedOrder.delivery_address || selectedOrder.dropoff_address || "Address unavailable"}</p>{(selectedOrder.customer_phone || selectedOrder.phone || selectedOrder.customer?.phone) && <a className="mt-2 inline-flex items-center gap-2 text-sm font-semibold text-[#21643a]" href={`tel:${selectedOrder.customer_phone || selectedOrder.phone || selectedOrder.customer?.phone}`}><Phone size={15} />Call customer</a>}<a className="mt-2 inline-flex items-center gap-2 text-sm font-semibold text-[#21643a]" target="_blank" rel="noreferrer" href={getLocationUrl(selectedOrder.delivery_address || selectedOrder.dropoff_address, selectedOrder.delivery_latitude, selectedOrder.delivery_longitude)}><MapPin size={15} />Open navigation<ArrowUpRight size={14} /></a></div>
+            <div><h3 className="text-xs font-bold uppercase tracking-wide text-gray-500">Pickup</h3><p className="mt-2 font-semibold">{selectedOrder.restaurant_name || selectedOrder.chef_name || "Restaurant"}</p><p className="mt-1 text-sm text-gray-600">{selectedOrder.pickup_address || selectedOrder.restaurant_address || "Pickup address unavailable"}</p><a className="mt-2 inline-flex items-center gap-2 text-sm font-semibold text-[#21643a]" target="_blank" rel="noreferrer" href={getLocationUrl(selectedOrder.pickup_address || selectedOrder.restaurant_address, selectedOrder.pickup_latitude, selectedOrder.pickup_longitude)}><MapPin size={15} />Navigate to pickup<ArrowUpRight size={14} /></a></div>
+          </div>
+          <div className="mt-6 rounded-xl bg-[#f5f8f5] p-4"><h3 className="text-sm font-bold">Food items</h3><div className="mt-3 space-y-2">{getItems(selectedOrder).length ? getItems(selectedOrder).map((item, index) => <div key={item.id || item.food_id || index} className="flex justify-between gap-3 text-sm"><span>{item.food_name || item.name || item.product_name || "Food item"}</span><span className="text-gray-500">× {Number(item.quantity || item.qty || 1)}</span></div>) : <p className="text-sm text-gray-500">Item details unavailable</p>}</div><div className="mt-4 border-t border-gray-200 pt-3 text-sm"><div className="flex justify-between"><span className="text-gray-500">Payment</span><span>{selectedOrder.payment_type || selectedOrder.payment_method || "—"}</span></div><div className="mt-2 flex justify-between font-semibold"><span>Delivery charge</span><span>₹{Number(selectedOrder.delivery_charge || 0).toLocaleString("en-IN")}</span></div></div></div>
+          {statusFlow.includes(normalizeStatus(selectedOrder.order_status)) && <div className="mt-6"><h3 className="mb-3 text-xs font-bold uppercase tracking-wide text-gray-500">Delivery progress</h3><div className="flex items-start">{statusFlow.map((status, index) => { const currentIndex = statusFlow.indexOf(normalizeStatus(selectedOrder.order_status)); const complete = index <= currentIndex; return <div key={status} className="flex min-w-0 flex-1 flex-col items-center text-center"><div className={`grid h-7 w-7 place-items-center rounded-full ${complete ? "bg-[#287545] text-white" : "bg-gray-100 text-gray-400"}`}>{complete ? <Check size={14} /> : <span className="text-[10px]">{index + 1}</span>}</div><span className="mt-2 text-[9px] leading-tight text-gray-500 sm:text-[10px]">{statusLabels[status]}</span></div>; })}</div></div>}
+          <div className="mt-6 flex flex-wrap justify-end gap-2 border-t border-gray-100 pt-4"><button type="button" onClick={() => setSelectedOrder(null)} className="rounded-lg border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-700">Close</button>{nextStatus[normalizeStatus(selectedOrder.order_status)] && <button type="button" onClick={() => setPendingStatus(nextStatus[normalizeStatus(selectedOrder.order_status)])} className="rounded-lg bg-[#1f6a3b] px-4 py-2 text-sm font-semibold text-white hover:bg-[#195a31]">{statusLabels[nextStatus[normalizeStatus(selectedOrder.order_status)]]}</button>}</div>
+        </section>
+      </div>}
+      {pendingStatus && <div className="fixed inset-0 z-[80] grid place-items-center bg-black/50 p-4"><section role="alertdialog" aria-modal="true" aria-labelledby="confirm-delivery-title" className="w-full max-w-sm rounded-xl bg-white p-5 shadow-2xl"><div className="flex items-start justify-between"><div><h2 id="confirm-delivery-title" className="font-bold text-gray-900">Confirm status update</h2><p className="mt-2 text-sm text-gray-600">Mark {orderId(selectedOrder)} as {statusLabels[pendingStatus]}?</p></div><Clock3 className="text-[#287545]" size={20} /></div><div className="mt-5 flex justify-end gap-2"><button type="button" disabled={updating} onClick={() => setPendingStatus("")} className="rounded-lg border border-gray-200 px-3 py-2 text-sm font-semibold text-gray-700">Cancel</button><button type="button" disabled={updating} onClick={updateOrderStatus} className="rounded-lg bg-[#1f6a3b] px-3 py-2 text-sm font-semibold text-white disabled:opacity-60">{updating ? "Updating…" : "Confirm"}</button></div></section></div>}
+    </section>
   );
 };
 

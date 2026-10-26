@@ -1347,13 +1347,13 @@ const AddEmployee = () => {
                       }}
                       className={`flex items-center gap-2.5 rounded-xl border p-3 text-left transition-all ${
                         isSelected
-                          ? "border-[#1a3c36] bg-[#1a3c36] text-white shadow-md ring-2 ring-[#1a3c36]/20 font-bold"
-                          : "border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50 font-medium"
+                          ? "border-orange-300 bg-orange-50 text-slate-900 shadow-sm ring-2 ring-orange-100 font-bold"
+                          : "border-slate-200 bg-white text-slate-700 hover:border-orange-200 hover:bg-orange-50/50 font-medium"
                       }`}
                     >
                       <div
                         className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${
-                          isSelected ? "bg-white/20 text-white" : "bg-slate-100 text-slate-600"
+                          isSelected ? "bg-orange-500 text-white" : "bg-slate-100 text-slate-600"
                         }`}
                       >
                         <Icon className="h-4 w-4" />

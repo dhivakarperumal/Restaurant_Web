@@ -26,6 +26,13 @@ const normalizeImageUrl = (value) => {
   return `${baseUrl}${relativePath}`;
 };
 
+const categoryCardTones = [
+  { accent: "#f97316", glow: "#fff0e5", iconBg: "bg-orange-500 text-white" },
+  { accent: "#10b981", glow: "#e5faf3", iconBg: "bg-emerald-500 text-white" },
+  { accent: "#3b82f6", glow: "#eaf4ff", iconBg: "bg-blue-500 text-white" },
+  { accent: "#ec4899", glow: "#fff0f6", iconBg: "bg-pink-500 text-white" },
+];
+
 const AdminCategories = () => {
   const [categories, setCategories] = useState([]);
   const [products, setProducts] = useState([]);
@@ -298,45 +305,36 @@ const AdminCategories = () => {
           const inactiveCount = listData.filter((item) => item.status !== 'Active').length;
           const subCategoryCount = listData.reduce((sum, item) => sum + (item.subCategories?.length || 0), 0);
           const statCards = [
-            { title: 'Total Categories', value: String(listData.length), inc: '18.6%', icon: <Layers />, bg: 'bg-[#22c55e]' },
-            { title: 'Active Categories', value: String(activeCount), inc: '12.4%', icon: <PackageCheck />, bg: 'bg-[#3b82f6]' },
-            { title: 'Total Products', value: String(productCount), inc: '15.3%', icon: <Package />, bg: 'bg-[#f59e0b]' },
-            { title: 'Subcategories', value: String(subCategoryCount), inc: '10.7%', icon: <TrendingUp />, bg: 'bg-[#8b5cf6]' },
+            { title: 'Total Categories', value: String(listData.length), inc: '18.6%', icon: <Layers />, accent: '#f97316', iconBg: 'bg-orange-500' },
+            { title: 'Active Categories', value: String(activeCount), inc: '12.4%', icon: <PackageCheck />, accent: '#10b981', iconBg: 'bg-emerald-500' },
+            { title: 'Total Products', value: String(productCount), inc: '15.3%', icon: <Package />, accent: '#3b82f6', iconBg: 'bg-blue-500' },
+            { title: 'Subcategories', value: String(subCategoryCount), inc: '10.7%', icon: <TrendingUp />, accent: '#ec4899', iconBg: 'bg-pink-500' },
           ];
           return (
             <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-              {statCards.map((stat, index) => (
+              {statCards.map((stat) => (
                 <article
-                  key={index}
-                  className={`relative min-w-0 overflow-hidden rounded-xl border border-transparent p-4 sm:p-5 shadow-[0_2px_10px_rgba(20,56,34,0.04)] flex flex-col justify-between min-h-[140px] ${stat.bg} text-white`}
+                  key={stat.title}
+                  className="relative flex min-h-[194px] min-w-0 flex-col justify-between overflow-hidden rounded-[20px] border border-slate-200/90 bg-white p-5 shadow-[0_4px_16px_-5px_rgba(15,23,42,0.08)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_10px_22px_-7px_rgba(15,23,42,0.12)] sm:p-6"
+                  style={{ background: `linear-gradient(135deg, #ffffff 48%, ${stat.accent}12 100%)` }}
                 >
-                  <div className="flex items-start gap-3 relative z-10">
-                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg shadow-sm bg-white/20">
-                      {React.cloneElement(stat.icon, { size: 24, strokeWidth: 2.2, className: 'text-white' })}
+                  <div className="relative z-10 flex items-start justify-between gap-3">
+                    <div className="min-w-0 flex-1 pt-1">
+                      <h3 className="truncate text-[12px] font-bold uppercase tracking-[0.08em] text-slate-500">{stat.title}</h3>
+                      <div className="mt-4 truncate text-[30px] font-black leading-none tracking-tight text-slate-900 sm:text-[34px]">{stat.value}</div>
                     </div>
-                    <div className="flex-1 mt-0.5 min-w-0">
-                      <h3 className="text-[12px] font-semibold opacity-90 mb-1 truncate">{stat.title}</h3>
-                      <div className="text-[22px] sm:text-[25px] font-extrabold leading-none tracking-tight truncate">{stat.value}</div>
+                    <div className={`flex h-[60px] w-[60px] shrink-0 items-center justify-center rounded-[18px] shadow-[0_5px_12px_-4px_rgba(15,23,42,0.25)] ${stat.iconBg}`}>
+                      {React.cloneElement(stat.icon, { size: 27, strokeWidth: 2.2, className: 'text-white' })}
                     </div>
                   </div>
-                  <div className="flex items-center gap-2 mt-5 relative z-10">
-                    <span className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[11px] font-bold bg-white/25">
+                  <div className="relative z-10 mt-5 flex items-center gap-2 border-t border-slate-100/90 pt-3.5 text-xs">
+                    <span className="inline-flex shrink-0 items-center rounded-full border border-emerald-200/80 bg-emerald-50/90 px-2 py-0.5 text-[11px] font-bold text-emerald-600">
                       ↑ {stat.inc}
                     </span>
-                    <span className="text-[11px] font-medium opacity-75 truncate">from last month</span>
+                    <span className="truncate text-xs font-medium text-slate-500">vs last week</span>
+                    <span className="ml-auto h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: stat.accent }} />
                   </div>
-                  <div className="absolute right-0 bottom-0 w-24 h-16 pointer-events-none opacity-50">
-                    <svg viewBox="0 0 100 50" preserveAspectRatio="none" className="w-full h-full">
-                      <defs>
-                        <linearGradient id={`catgrad-${index}`} x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="0%" stopColor="#ffffff" stopOpacity="0.4" />
-                          <stop offset="100%" stopColor="#ffffff" stopOpacity="0.0" />
-                        </linearGradient>
-                      </defs>
-                      <path d="M0,50 L0,40 Q25,30 50,40 T100,20 L100,50 Z" fill={`url(#catgrad-${index})`} />
-                      <path d="M0,40 Q25,30 50,40 T100,20" fill="none" stroke="#ffffff" strokeWidth="2.5" />
-                    </svg>
-                  </div>
+                  <div aria-hidden="true" className="pointer-events-none absolute -right-6 -top-6 h-28 w-28 rounded-full opacity-20 blur-2xl" style={{ backgroundColor: stat.accent }} />
                 </article>
               ))}
             </div>
@@ -440,17 +438,25 @@ const AdminCategories = () => {
               {viewMode === 'card' ? (
                 <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
                   {paginatedCategories.map((category, index) => (
-                    <div key={category.id} className="rounded-[18px] border border-[#e7e0d8] bg-gray-100 p-4 shadow-[0_1px_0_rgba(16,24,40,0.02)] transition hover:-translate-y-0.5 hover:shadow-md">
-                      <div className="mb-4 flex items-start justify-between gap-3">
-                        <div className={`flex h-[42px] w-[42px] items-center justify-center rounded-xl ${index % 2 === 0 ? 'bg-[#f4e4d1] text-[#a05c2a]' : 'bg-[#dfeaf8] text-[#3f7db8]'}`}>
+                    <div
+                      key={category.id}
+                      className="group relative flex min-h-[194px] flex-col justify-between overflow-hidden rounded-3xl border border-slate-200/90 p-5 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] transition-all duration-300 hover:-translate-y-1 hover:border-slate-300 hover:shadow-[0_12px_24px_-6px_rgba(0,0,0,0.1)] sm:p-6"
+                      style={{ background: `linear-gradient(135deg, #ffffff 48%, ${categoryCardTones[index % categoryCardTones.length].glow} 100%)` }}
+                    >
+                      <div
+                        className="pointer-events-none absolute -right-6 -top-6 h-28 w-28 rounded-full opacity-70 blur-2xl transition-all duration-500 group-hover:scale-150"
+                        style={{ backgroundColor: categoryCardTones[index % categoryCardTones.length].glow }}
+                      />
+                      <div className="relative z-10 flex items-start justify-between gap-3">
+                        <div className={`flex h-14 w-14 items-center justify-center overflow-hidden rounded-2xl shadow-sm transition-transform duration-300 group-hover:scale-110 ${categoryCardTones[index % categoryCardTones.length].iconBg}`}>
                           {category.image ? (
-                            <img src={category.image} alt={category.name} className="h-full w-full rounded-xl object-cover" />
+                            <img src={category.image} alt={category.name} className="h-full w-full object-cover" />
                           ) : (
-                            <ImageIcon className="h-5 w-5" />
+                            <ImageIcon className="h-6 w-6" />
                           )}
                         </div>
 
-                        <div className="flex items-center gap-2">
+                        <div className="relative z-10 flex items-center gap-2">
                           <button
                             type="button"
                             onClick={() => openEditCategory(category.id)}
@@ -472,21 +478,20 @@ const AdminCategories = () => {
                         </div>
                       </div>
 
-                      <div className="text-[16px] font-semibold text-[#1e1e1e]">{category.name}</div>
-                      <div className="mt-1 text-[13px] text-[#646464]">{category.products} Products</div>
-
-                      <div className="mt-3 flex items-center gap-2 text-[12px] text-[#2f7a4a]">
-                        <span className={`h-2 w-2 rounded-full ${category.status === 'Active' ? 'bg-[#2f7a4a]' : 'bg-[#b85c5c]'}`} />
-                        {category.status}
+                      <div className="relative z-10 mt-4 min-w-0">
+                        <div className="truncate text-[11px] font-bold uppercase tracking-wider text-slate-500">{category.name}</div>
+                        <div className="mt-1 truncate text-[28px] font-black tracking-tight text-slate-800">{category.products}</div>
+                        <div className="text-xs font-medium text-slate-500">Products</div>
                       </div>
 
-                      <div className="mt-3 flex flex-wrap gap-1.5">
-                        {category.subCategories.length ? category.subCategories.map((subCategory) => (
-                          <span key={subCategory} className="rounded-full bg-[#fff7e9] px-2 py-1 text-[11px] text-[#8b5f22]">
-                            {subCategory}
-                          </span>
-                        )) : <span className="text-[12px] text-[#888]">No subcategories</span>}
+                      <div className="relative z-10 mt-4 flex min-w-0 items-center justify-between gap-2 border-t border-slate-100 pt-3 text-xs">
+                        <span className="flex min-w-0 items-center gap-1.5">
+                          <span className={`h-2 w-2 shrink-0 rounded-full ${category.status === 'Active' ? 'bg-emerald-500' : 'bg-rose-500'}`} />
+                          <span className="truncate font-medium text-slate-600">{category.status}</span>
+                        </span>
+                        <span className="shrink-0 font-medium text-slate-500">{category.subCategories.length} subcategories</span>
                       </div>
+                      <div className="absolute bottom-0 left-0 h-[3px] w-0 transition-all duration-300 group-hover:w-full" style={{ backgroundColor: categoryCardTones[index % categoryCardTones.length].accent }} />
                     </div>
                   ))}
                 </div>

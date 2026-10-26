@@ -1,25 +1,5 @@
-import React, { useEffect, useMemo, useState } from "react";
-import {
-  CalendarDays,
-  CheckCheck,
-  ChevronLeft,
-  ChevronRight,
-  CircleHelp,
-  FileText,
-  IndianRupee,
-  LayoutGrid,
-  LockKeyhole,
-  MessageSquareText,
-  RefreshCw,
-  Search,
-  Send,
-  ShieldCheck,
-  Table2,
-  TrendingUp,
-  Wallet,
-  WalletCards,
-  X,
-} from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { CheckCheck, ChevronLeft, ChevronRight, CircleHelp, FileText, IndianRupee, LayoutGrid, List, LockKeyhole, MessageSquareText, RefreshCw, Search, Send, ShieldCheck, WalletCards } from "lucide-react";
 import api from "../api";
 import toast from "react-hot-toast";
 import { useAuth } from "../PrivateRouter/AuthContext";
@@ -104,500 +84,158 @@ const StatCard = ({ title, value, inc, icon, bg, loading: cardLoading }) => (
   </article>
 );
 
-/* ─── Numbered pagination — identical to admin/products/categories style ─── */
-const Pagination = ({ page, pageCount, setPage, total, label = "records" }) => (
-  <div className="mt-4 flex items-center justify-between text-[12px] text-[#666]">
-    <span>Showing {total === 0 ? 0 : Math.min((page-1)*PAGE_SIZE+1, total)}–{Math.min(page*PAGE_SIZE, total)} of {total} {label}</span>
-    <div className="flex items-center gap-2">
-      <button type="button" onClick={() => setPage((p) => Math.max(1, p-1))} disabled={page <= 1} aria-label="Previous page"
-        className="flex h-8 w-8 items-center justify-center rounded-lg border border-[#e7e0d8] bg-white text-[#666] disabled:cursor-not-allowed disabled:opacity-40">
-        <ChevronLeft size={15} />
-      </button>
-      {Array.from({ length: pageCount }, (_, i) => i+1).map((p) => (
-        <button key={p} type="button" onClick={() => setPage(p)} aria-current={page===p?"page":undefined} aria-label={`Page ${p}`}
-          className={`flex h-8 min-w-8 items-center justify-center rounded-lg px-2 ${page===p ? "bg-[#FF5A00] text-white" : "border border-[#e7e0d8] bg-white text-[#666] hover:border-orange-200 hover:text-[#FF5A00]"}`}>
-          {p}
-        </button>
-      ))}
-      <button type="button" onClick={() => setPage((p) => Math.min(pageCount, p+1))} disabled={page >= pageCount} aria-label="Next page"
-        className="flex h-8 w-8 items-center justify-center rounded-lg border border-[#e7e0d8] bg-white text-[#666] disabled:cursor-not-allowed disabled:opacity-40">
-        <ChevronRight size={15} />
-      </button>
-    </div>
-  </div>
-);
-
-/* ─── View-toggle button pair (Table | Card) ─── */
-const ViewToggle = ({ viewMode, setViewMode, setPage }) => (
-  <div className="flex overflow-hidden rounded-xl border border-[#dfe2e5] bg-[#faf9f8]">
-    <button type="button" onClick={() => { setViewMode("table"); setPage(1); }}
-      className={`flex h-[46px] w-[46px] items-center justify-center border-r border-[#dfe2e5] transition ${viewMode==="table" ? "bg-[#FF5A00] text-white" : "text-[#4d4d4d] hover:bg-orange-50 hover:text-[#FF5A00]"}`}
-      aria-label="Table view"><Table2 className="h-4 w-4" /></button>
-    <button type="button" onClick={() => { setViewMode("card"); setPage(1); }}
-      className={`flex h-[46px] w-[46px] items-center justify-center transition ${viewMode==="card" ? "bg-[#FF5A00] text-white" : "text-[#4d4d4d] hover:bg-orange-50 hover:text-[#FF5A00]"}`}
-      aria-label="Card view"><LayoutGrid className="h-4 w-4" /></button>
-  </div>
-);
-
-/* ─── Shared select filter ─── */
-const FilterSelect = ({ value, onChange, children, className = "" }) => (
-  <select value={value} onChange={onChange}
-    className={`h-[46px] rounded-xl border border-[#dfe2e5] bg-[#faf9f8] px-3 text-[14px] font-medium text-[#2d2d2d] outline-none focus:border-[#FF5A00] ${className}`}>
-    {children}
-  </select>
-);
-
-/* ═══════════════════════════════════════════════════════════════
-   EARNINGS PAGE
-═══════════════════════════════════════════════════════════════ */
 const EarningsPage = () => {
-  const [range,    setRange]    = useState("this-month");
-  const [from,     setFrom]     = useState("");
-  const [to,       setTo]       = useState("");
-  const [search,   setSearch]   = useState("");
-  const [sortBy,   setSortBy]   = useState("newest");
-  const [viewMode, setViewMode] = useState("table");
-  const [page,     setPage]     = useState(1);
-
-  const params = { range, ...(range === "custom" ? { from, to } : {}) };
+  const [search, setSearch] = useState("");
+  const [paymentFilter, setPaymentFilter] = useState("all");
+  const [sortBy, setSortBy] = useState("latest");
+  const [viewMode, setViewMode] = useState("list");
+  const params = { range: "this-month" };
   const { resource, loading, error, refresh } = usePartnerResource("/delivery-partner/earnings", params);
 
   const summary = resource?.summary || resource || {};
   const entries = rowsFrom(resource?.entries || resource?.history || resource?.rows || []);
+  const paymentStatuses = useMemo(() => [...new Set(entries.map((entry) => String(entry.payment_status || "").trim()).filter(Boolean))], [entries]);
+  const filteredEntries = useMemo(() => {
+    const query = search.trim().toLowerCase();
+    return entries
+      .filter((entry) => {
+        const matchesSearch = !query || [entry.order_id, entry.id, entry.customer_name, entry.restaurant_name]
+          .some((value) => String(value || "").toLowerCase().includes(query));
+        const matchesPayment = paymentFilter === "all" || String(entry.payment_status || "").toLowerCase() === paymentFilter;
+        return matchesSearch && matchesPayment;
+      })
+      .sort((a, b) => {
+        const aDate = new Date(a.date || a.created_at || "").getTime() || 0;
+        const bDate = new Date(b.date || b.created_at || "").getTime() || 0;
+        return sortBy === "latest" ? bDate - aDate : aDate - bDate;
+      });
+  }, [entries, paymentFilter, search, sortBy]);
 
-  const filtered = useMemo(() => {
-    const q = search.trim().toLowerCase();
-    let list = !q ? entries : entries.filter((e) =>
-      [e.order_id, e.id, e.payment_status].some((v) => String(v||"").toLowerCase().includes(q))
-    );
-    if (sortBy === "newest")    list = [...list].sort((a,b) => new Date(b.date||0) - new Date(a.date||0));
-    if (sortBy === "oldest")    list = [...list].sort((a,b) => new Date(a.date||0) - new Date(b.date||0));
-    if (sortBy === "earn-high") list = [...list].sort((a,b) => Number(b.total_earnings??b.total??0) - Number(a.total_earnings??a.total??0));
-    if (sortBy === "earn-low")  list = [...list].sort((a,b) => Number(a.total_earnings??a.total??0) - Number(b.total_earnings??b.total??0));
-    return list;
-  }, [entries, search, sortBy]);
-
-  const pageCount   = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
-  const displayPage = Math.min(page, pageCount);
-  const visible     = filtered.slice((displayPage-1)*PAGE_SIZE, displayPage*PAGE_SIZE);
-
-  const statCards = [
-    { title: "Today's Earnings",  value: currency(summary.today_earnings ?? summary.todayEarnings),                       inc: "8.4%",  icon: <IndianRupee />, bg: "bg-[#22c55e]" },
-    { title: "This Week",         value: currency(summary.week_earnings  ?? summary.weekEarnings),                        inc: "11.2%", icon: <TrendingUp />,  bg: "bg-[#3b82f6]" },
-    { title: "This Month",        value: currency(summary.month_earnings ?? summary.monthEarnings),                       inc: "15.3%", icon: <WalletCards />, bg: "bg-[#f59e0b]" },
-    { title: "Total Earnings",    value: currency(summary.total_earnings ?? summary.totalEarnings),                       inc: "20.7%", icon: <Wallet />,      bg: "bg-[#8b5cf6]" },
-    { title: "Deliveries Done",   value: String(summary.completed_deliveries ?? summary.completedDeliveries ?? 0),        inc: "13.1%", icon: <CheckCheck />,  bg: "bg-[#ec4899]" },
-    { title: "Cash Collected",    value: currency(summary.cash_collected  ?? summary.cashCollected),                      inc: "9.5%",  icon: <WalletCards />, bg: "bg-[#06b6d4]" },
-  ];
-
-  return (
-    <div className="min-h-screen bg-gray-100 p-4 md:p-2">
-      <div className="mx-auto max-w-[1500px]">
-
-        {/* ─── PAGE HEADER ─── */}
-        <div className="mb-6">
-          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[#39804f]">Payouts</p>
-          <div className="mt-0.5 flex flex-wrap items-center justify-between gap-3">
-            <div>
-              <h1 className="text-2xl font-bold text-[#17231c]">Earnings</h1>
-              <p className="mt-0.5 text-sm text-gray-500">Delivery pay and payout history for your account.</p>
-            </div>
-            <button type="button" onClick={refresh} disabled={loading} aria-label="Refresh"
-              className="grid h-10 w-10 place-items-center rounded-lg border border-[#dce6de] bg-white text-gray-600 hover:bg-gray-50 disabled:opacity-50">
-              <RefreshCw size={16} className={loading ? "animate-spin" : ""} />
-            </button>
+  return <section className="space-y-5">
+    <ServiceNotice error={error} loading={loading} refresh={refresh} noun="Earnings" />
+    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">{[
+      ["Today's earnings", summary.today_earnings ?? summary.todayEarnings, IndianRupee, "mint"], ["This week", summary.week_earnings ?? summary.weekEarnings, IndianRupee, "violet"], ["This month", summary.month_earnings ?? summary.monthEarnings, IndianRupee, "pink"], ["Total earnings", summary.total_earnings ?? summary.totalEarnings, WalletCards, "amber"], ["Completed deliveries", summary.completed_deliveries ?? summary.completedDeliveries, CheckCheck, "green"], ["Cash collected", summary.cash_collected ?? summary.cashCollected, WalletCards, "forest"],
+    ].map(([label, value, Icon, tone]) => <EarningsCard key={label} label={label} value={currency(value)} icon={Icon} tone={tone} loading={loading} />)}</div>
+    <div className="overflow-hidden rounded-xl border border-[#e2e9e3] bg-white">
+      <div className="border-b border-gray-100 px-4 py-4"><h2 className="font-bold">Earnings history</h2><p className="mt-1 text-xs text-gray-500">Per-delivery amounts and payment status</p></div>
+      <div className="flex flex-col gap-3 border-b border-gray-100 p-3 sm:flex-row sm:items-center sm:gap-4 sm:p-4">
+        <label className="relative block min-w-0 flex-1">
+          <Search size={18} className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[#7f8983]" />
+          <input type="search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search order, customer..." aria-label="Search earnings history" className="h-[50px] w-full rounded-xl border border-[#e2e2e2] bg-[#faf9f8] pl-12 pr-4 text-sm text-[#34443b] outline-none placeholder:text-[#89938c] focus:border-[#ff5a00]" />
+        </label>
+        <div className="flex flex-wrap items-center justify-end gap-2 sm:gap-3">
+          <span className="whitespace-nowrap px-1 text-sm text-[#53616b]">{filteredEntries.length} of {entries.length}</span>
+          <select value={paymentFilter} onChange={(event) => setPaymentFilter(event.target.value)} aria-label="Filter earnings by payment status" className="h-[50px] min-w-0 flex-1 rounded-xl border border-[#e2e2e2] bg-white px-3 text-sm text-[#263238] outline-none focus:border-[#ff5a00] sm:min-w-[160px] sm:flex-none">
+            <option value="all">All Status ({entries.length})</option>
+            {paymentStatuses.map((status) => <option key={status} value={status.toLowerCase()}>{status} ({entries.filter((entry) => String(entry.payment_status || "").trim() === status).length})</option>)}
+          </select>
+          <select value={sortBy} onChange={(event) => setSortBy(event.target.value)} aria-label="Sort earnings history" className="h-[50px] min-w-0 flex-1 rounded-xl border border-[#e2e2e2] bg-white px-3 text-sm text-[#263238] outline-none focus:border-[#ff5a00] sm:min-w-[150px] sm:flex-none">
+            <option value="latest">Sort by: Latest</option>
+            <option value="oldest">Sort by: Oldest</option>
+          </select>
+          <div className="flex h-[50px] overflow-hidden rounded-xl border border-[#e2e2e2] bg-white" role="group" aria-label="Earnings history display">
+            <button type="button" onClick={() => setViewMode("list")} aria-label="List view" aria-pressed={viewMode === "list"} className={`grid w-11 place-items-center border-r border-[#e2e2e2] ${viewMode === "list" ? "bg-[#ff5a00] text-white" : "text-[#65746b] hover:bg-gray-50"}`}><List size={18} /></button>
+            <button type="button" onClick={() => setViewMode("grid")} aria-label="Grid view" aria-pressed={viewMode === "grid"} className={`grid w-11 place-items-center ${viewMode === "grid" ? "bg-[#ff5a00] text-white" : "text-[#65746b] hover:bg-gray-50"}`}><LayoutGrid size={18} /></button>
           </div>
-        </div>
-
-        {/* ─── STAT CARDS ─── */}
-        <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6">
-          {statCards.map((s) => <StatCard key={s.title} {...s} loading={loading} />)}
-        </div>
-
-        {/* ─── ERROR ─── */}
-        {error && (
-          <div role="alert" className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[#f2d7d7] bg-[#fff5f5] px-4 py-3 text-sm text-[#a23939]">
-            {error}
-            <button type="button" onClick={refresh} disabled={loading} className="font-semibold text-[#FF5A00] underline disabled:opacity-50">Retry</button>
-          </div>
-        )}
-
-        {/* ─── FILTER + TABLE CARD ─── */}
-        <div className="rounded-lg border border-[#e7e0d8] bg-gray-100 p-3 shadow-sm">
-
-          {/* filters row */}
-          <div className="mb-4 flex flex-col gap-3 lg:flex-row lg:items-center">
-            <div className="flex flex-1 flex-wrap items-center gap-3">
-
-              {/* search */}
-              <div className="relative w-full max-w-[300px]">
-                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#7a7a7a]" />
-                <input type="text" value={search} onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-                  placeholder="Search by order ID…"
-                  className="h-[46px] w-full rounded-xl border border-[#dfe2e5] bg-[#faf9f8] pl-10 pr-3 text-[14px] text-[#2d2d2d] outline-none placeholder:text-[#8a8a8a] focus:border-[#FF5A00]" />
-              </div>
-
-              {/* date range */}
-              <label className="flex h-[46px] items-center gap-2 rounded-xl border border-[#dfe2e5] bg-[#faf9f8] px-3 text-sm">
-                <CalendarDays size={15} className="text-[#448052] shrink-0" />
-                <select value={range} onChange={(e) => { setRange(e.target.value); setPage(1); }}
-                  className="bg-transparent font-medium text-gray-700 outline-none">
-                  {dateRanges.map((o) => <option key={o} value={o}>{rangeLabel(o)}</option>)}
-                </select>
-              </label>
-
-              {range === "custom" && (
-                <>
-                  <input aria-label="From date" type="date" value={from} onChange={(e) => { setFrom(e.target.value); setPage(1); }}
-                    className="h-[46px] rounded-xl border border-[#dfe2e5] bg-[#faf9f8] px-3 text-sm" />
-                  <input aria-label="To date"   type="date" value={to}   onChange={(e) => { setTo(e.target.value);   setPage(1); }}
-                    className="h-[46px] rounded-xl border border-[#dfe2e5] bg-[#faf9f8] px-3 text-sm" />
-                </>
-              )}
-            </div>
-
-            <div className="flex items-center gap-3 lg:shrink-0">
-              {/* sort */}
-              <FilterSelect value={sortBy} onChange={(e) => { setSortBy(e.target.value); setPage(1); }}>
-                <option value="newest">Sort: Newest</option>
-                <option value="oldest">Oldest First</option>
-                <option value="earn-high">Earnings: High to Low</option>
-                <option value="earn-low">Earnings: Low to High</option>
-              </FilterSelect>
-              {/* view toggle */}
-              <ViewToggle viewMode={viewMode} setViewMode={setViewMode} setPage={setPage} />
-            </div>
-          </div>
-
-          {/* section label */}
-          <div className="mb-3 flex items-center justify-between border-b border-gray-100 pb-3">
-            <div>
-              <h2 className="font-bold text-[#17231c]">Earnings History</h2>
-              <p className="mt-0.5 text-xs text-gray-500">Per-delivery amounts and payment status</p>
-            </div>
-            <span className="text-[12px] text-[#666]">{filtered.length} entries</span>
-          </div>
-
-          {/* ─── LOADING SKELETON ─── */}
-          {loading && (
-            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-              {[0,1,2,3].map((i) => <div key={i} className="h-36 animate-pulse rounded-xl border border-gray-200 bg-white" />)}
-            </div>
-          )}
-
-          {/* ─── EMPTY ─── */}
-          {!loading && !error && filtered.length === 0 && (
-            <div className="rounded-2xl border border-dashed border-[#e7e0d8] bg-white p-10 text-center text-[#666]">
-              No earnings history for this period.
-            </div>
-          )}
-
-          {/* ─── CARD VIEW ─── */}
-          {!loading && !error && filtered.length > 0 && viewMode === "card" && (
-            <>
-              <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-                {visible.map((entry, i) => (
-                  <article key={entry.order_id || entry.id || i}
-                    className="rounded-[18px] border border-[#e7e0d8] bg-white p-4 shadow-[0_1px_0_rgba(16,24,40,0.02)] transition hover:-translate-y-0.5 hover:shadow-md">
-                    <div className="mb-3 flex items-start justify-between gap-3">
-                      <div className="flex h-[42px] w-[42px] items-center justify-center rounded-xl bg-[#f4e4d1] text-[#a05c2a]">
-                        <IndianRupee className="h-5 w-5" />
-                      </div>
-                      <span className={`rounded-full px-2.5 py-1 text-[11px] font-semibold ${(entry.payment_status||"").toLowerCase()==="paid" ? "bg-[#eaf7ef] text-[#2b7a4b]" : "bg-[#fff7e9] text-[#8b5f22]"}`}>
-                        {entry.payment_status || "Pending"}
-                      </span>
-                    </div>
-                    <div className="text-[15px] font-semibold text-[#1e1e1e]">{entry.order_id || entry.id || "—"}</div>
-                    <div className="mt-1 text-[13px] text-[#646464]">{entry.date ? new Date(entry.date).toLocaleDateString("en-IN") : "—"}</div>
-                    <div className="mt-3 grid grid-cols-2 gap-2 text-[12px]">
-                      <div><span className="text-gray-500">Base</span><div className="font-semibold">{currency(entry.base_charge)}</div></div>
-                      <div><span className="text-gray-500">Extra</span><div className="font-semibold">{currency(entry.extra_charge)}</div></div>
-                      <div><span className="text-gray-500">Incentive</span><div className="font-semibold">{currency(entry.incentive)}</div></div>
-                      <div><span className="text-gray-500">Distance</span><div className="font-semibold">{entry.distance_km ?? entry.distance ?? "—"} km</div></div>
-                    </div>
-                    <div className="mt-3 flex items-center justify-between border-t border-[#f0ebe4] pt-3">
-                      <span className="text-[12px] text-gray-500">Total</span>
-                      <span className="text-[16px] font-extrabold text-[#21643a]">{currency(entry.total_earnings ?? entry.total)}</span>
-                    </div>
-                  </article>
-                ))}
-              </div>
-              <Pagination page={displayPage} pageCount={pageCount} setPage={setPage} total={filtered.length} label="entries" />
-            </>
-          )}
-
-          {/* ─── TABLE VIEW ─── */}
-          {!loading && !error && filtered.length > 0 && viewMode === "table" && (
-            <>
-              <div className="overflow-x-auto rounded-[16px] border border-[#e8e4df]">
-                <table className="w-full min-w-[800px] border-collapse bg-white text-left">
-                  <thead className="border-b border-orange-100 bg-orange-50 text-left text-sm font-semibold text-orange-700">
-                    <tr>
-                      {["S.No","Order","Date","Distance","Base","Extra","Incentive","Total","Payment"].map((h) => (
-                        <th key={h} className="px-4 py-4">{h}</th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {visible.map((entry, i) => (
-                      <tr key={entry.order_id||entry.id||i} className="border-t border-[#efefef] text-[13px] text-[#444444] hover:bg-gray-50/60">
-                        <td className="px-4 py-4 font-medium text-[#2d2d2d]">{(displayPage-1)*PAGE_SIZE+i+1}</td>
-                        <td className="px-4 py-4 font-semibold">{entry.order_id || entry.id || "—"}</td>
-                        <td className="whitespace-nowrap px-4 py-4 text-gray-500">{entry.date ? new Date(entry.date).toLocaleDateString("en-IN") : "—"}</td>
-                        <td className="px-4 py-4">{entry.distance_km ?? entry.distance ?? "—"} km</td>
-                        <td className="px-4 py-4">{currency(entry.base_charge)}</td>
-                        <td className="px-4 py-4">{currency(entry.extra_charge)}</td>
-                        <td className="px-4 py-4">{currency(entry.incentive)}</td>
-                        <td className="px-4 py-4 font-bold text-[#21643a]">{currency(entry.total_earnings ?? entry.total)}</td>
-                        <td className="px-4 py-4">
-                          <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-medium ${(entry.payment_status||"").toLowerCase()==="paid" ? "bg-[#eaf7ef] text-[#2b7a4b]" : "bg-[#fff7e9] text-[#8b5f22]"}`}>
-                            <span className="mr-1.5 h-2 w-2 rounded-full bg-current" />{entry.payment_status || "Pending"}
-                          </span>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-              <Pagination page={displayPage} pageCount={pageCount} setPage={setPage} total={filtered.length} label="entries" />
-            </>
-          )}
         </div>
       </div>
+      {viewMode === "grid" ? (
+        <div className="grid gap-3 p-4 sm:grid-cols-2 xl:grid-cols-3">
+          {filteredEntries.map((entry, index) => <article key={entry.order_id || entry.id || index} className="rounded-xl border border-[#e2e9e3] bg-white p-4">
+            <div className="flex items-start justify-between gap-3"><div><p className="text-xs font-semibold text-gray-500">{entry.order_id || entry.id || "—"}</p><p className="mt-1 text-xs text-gray-500">{entry.date ? new Date(entry.date).toLocaleDateString("en-IN") : "—"}</p></div><span className="rounded-full bg-emerald-50 px-2 py-1 text-xs font-semibold text-emerald-700">{entry.payment_status || "—"}</span></div>
+            <div className="mt-4 grid grid-cols-2 gap-3 text-sm"><div><p className="text-xs text-gray-500">Distance</p><p className="mt-1 font-semibold">{entry.distance_km ?? entry.distance ?? "—"} km</p></div><div><p className="text-xs text-gray-500">Total</p><p className="mt-1 font-bold">{currency(entry.total_earnings ?? entry.total)}</p></div></div>
+            <div className="mt-3 border-t border-gray-100 pt-3 text-xs text-gray-500">Base {currency(entry.base_charge)} · Extra {currency(entry.extra_charge)} · Incentive {currency(entry.incentive)}</div>
+          </article>)}
+          {!loading && !error && filteredEntries.length === 0 && <p className="py-8 text-center text-sm text-gray-500 sm:col-span-2 xl:col-span-3">No earnings match these filters.</p>}
+        </div>
+      ) : (
+        <div className="overflow-x-auto"><table className="w-full min-w-[760px] text-left text-sm"><thead className="border-b border-orange-100 bg-orange-50 text-xs uppercase text-orange-700"><tr>{["Order", "Date", "Distance", "Base", "Extra", "Incentive", "Total", "Payment"].map((heading) => <th key={heading} className="px-4 py-3 font-semibold">{heading}</th>)}</tr></thead><tbody className="divide-y divide-gray-100">{filteredEntries.map((entry, index) => <tr key={entry.order_id || entry.id || index}><td className="px-4 py-3 font-semibold">{entry.order_id || entry.id || "—"}</td><td className="whitespace-nowrap px-4 py-3 text-gray-500">{entry.date ? new Date(entry.date).toLocaleDateString("en-IN") : "—"}</td><td className="px-4 py-3">{entry.distance_km ?? entry.distance ?? "—"} km</td><td className="px-4 py-3">{currency(entry.base_charge)}</td><td className="px-4 py-3">{currency(entry.extra_charge)}</td><td className="px-4 py-3">{currency(entry.incentive)}</td><td className="px-4 py-3 font-bold">{currency(entry.total_earnings ?? entry.total)}</td><td className="px-4 py-3"><span className="rounded-full bg-emerald-50 px-2 py-1 text-xs font-semibold text-emerald-700">{entry.payment_status || "—"}</span></td></tr>)}{!loading && !error && filteredEntries.length === 0 && <tr><td colSpan={8} className="px-4 py-12 text-center text-sm text-gray-500">{entries.length ? "No earnings match these filters." : "Earnings history will appear after completed deliveries."}</td></tr>}</tbody></table></div>
+      )}
     </div>
-  );
+  </section>;
 };
 
 /* ═══════════════════════════════════════════════════════════════
    DELIVERY HISTORY PAGE
 ═══════════════════════════════════════════════════════════════ */
 const DeliveryHistoryPage = () => {
-  const [search,   setSearch]   = useState("");
-  const [status,   setStatus]   = useState("All");
-  const [sortBy,   setSortBy]   = useState("newest");
-  const [from,     setFrom]     = useState("");
-  const [to,       setTo]       = useState("");
-  const [page,     setPage]     = useState(1);
-  const [viewMode, setViewMode] = useState("table");
-
+  const [search, setSearch] = useState("");
+  const [status, setStatus] = useState("All");
+  const [from, setFrom] = useState("");
+  const [to, setTo] = useState("");
+  const [page, setPage] = useState(1);
+  const [sortBy, setSortBy] = useState("latest");
+  const [viewMode, setViewMode] = useState("list");
   const { resource, loading, error, refresh } = usePartnerResource("/delivery-partner/history", { from, to });
   const entries = rowsFrom(resource?.deliveries || resource?.items || resource);
+  const filtered = useMemo(() => entries
+    .filter((entry) => {
+      const query = search.trim().toLowerCase();
+      const entryStatus = String(entry.status || entry.order_status || "").toLowerCase();
+      return (!query || [entry.order_id, entry.customer_name, entry.restaurant_name].some((value) => String(value || "").toLowerCase().includes(query)))
+        && (status === "All" || entryStatus === status.toLowerCase());
+    })
+    .sort((a, b) => {
+      const aDate = new Date(a.date || a.created_at || "").getTime() || 0;
+      const bDate = new Date(b.date || b.created_at || "").getTime() || 0;
+      return sortBy === "latest" ? bDate - aDate : aDate - bDate;
+    }), [entries, search, sortBy, status]);
+  const pageSize = 8;
+  const pages = Math.max(1, Math.ceil(filtered.length / pageSize));
+  const visible = filtered.slice((page - 1) * pageSize, page * pageSize);
   const summary = resource?.summary || {};
 
-  const filtered = useMemo(() => {
-    let list = entries.filter((entry) => {
-      const q           = search.trim().toLowerCase();
-      const entryStatus = String(entry.status || entry.order_status || "").toLowerCase();
-      const date        = String(entry.date || entry.created_at || "").slice(0, 10);
-      return (
-        (!q || [entry.order_id, entry.customer_name, entry.restaurant_name].some((v) => String(v||"").toLowerCase().includes(q))) &&
-        (status === "All" || entryStatus === status.toLowerCase()) &&
-        (!from || date >= from) && (!to || date <= to)
-      );
-    });
-    if (sortBy === "newest")    list = [...list].sort((a,b) => new Date(b.date||b.created_at||0) - new Date(a.date||a.created_at||0));
-    if (sortBy === "oldest")    list = [...list].sort((a,b) => new Date(a.date||a.created_at||0) - new Date(b.date||b.created_at||0));
-    if (sortBy === "earn-high") list = [...list].sort((a,b) => Number(b.earnings??b.delivery_charge??0) - Number(a.earnings??a.delivery_charge??0));
-    return list;
-  }, [entries, from, search, sortBy, status, to]);
-
-  const pageCount   = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
-  const displayPage = Math.min(page, pageCount);
-  const visible     = filtered.slice((displayPage-1)*PAGE_SIZE, displayPage*PAGE_SIZE);
-
-  const totalDelivered = summary.completed ?? entries.filter((r) => String(r.status||"").toLowerCase() === "delivered").length;
-  const totalCancelled = summary.cancelled ?? entries.filter((r) => String(r.status||"").toLowerCase() === "cancelled").length;
-  const totalFailed    = summary.failed    ?? entries.filter((r) => String(r.status||"").toLowerCase() === "failed").length;
-  const totalEarnings  = entries.reduce((s, r) => s + Number(r.earnings ?? r.delivery_charge ?? 0), 0);
-
-  const statCards = [
-    { title: "Completed",      value: String(totalDelivered), inc: "14.2%", icon: <CheckCheck />,  bg: "bg-[#22c55e]" },
-    { title: "Cancelled",      value: String(totalCancelled), inc: "3.1%",  icon: <FileText />,    bg: "bg-[#f59e0b]" },
-    { title: "Failed",         value: String(totalFailed),    inc: "1.4%",  icon: <CircleHelp />,  bg: "bg-[#ef4444]" },
-    { title: "Total Earnings", value: currency(totalEarnings),inc: "18.6%", icon: <WalletCards />, bg: "bg-[#8b5cf6]" },
-  ];
-
-  const statusBadge = (s) => {
-    const sl = String(s||"").toLowerCase();
-    if (sl === "delivered" || sl === "completed") return "bg-[#eaf7ef] text-[#2b7a4b]";
-    if (sl === "cancelled")                       return "bg-[#fdf1f1] text-[#b85c5c]";
-    if (sl === "failed")                          return "bg-rose-50 text-rose-700";
-    return "bg-gray-100 text-gray-700";
-  };
-
-  return (
-    <div className="min-h-screen bg-gray-100 p-4 md:p-2">
-      <div className="mx-auto max-w-[1500px]">
-
-        {/* ─── PAGE HEADER ─── */}
-        <div className="mb-6">
-          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[#39804f]">Completed Work</p>
-          <div className="mt-0.5 flex flex-wrap items-center justify-between gap-3">
-            <div>
-              <h1 className="text-2xl font-bold text-[#17231c]">Delivery History</h1>
-              <p className="mt-0.5 text-sm text-gray-500">Completed, cancelled, and failed deliveries assigned to you.</p>
-            </div>
-            <button type="button" onClick={refresh} disabled={loading} aria-label="Refresh"
-              className="grid h-10 w-10 place-items-center rounded-lg border border-[#dce6de] bg-white text-gray-600 hover:bg-gray-50 disabled:opacity-50">
-              <RefreshCw size={16} className={loading ? "animate-spin" : ""} />
-            </button>
+  return <section className="space-y-5"><ServiceNotice error={error} loading={loading} refresh={refresh} noun="History" />
+    <div className="grid grid-cols-3 gap-3"><SummaryCard label="Completed" value={summary.completed ?? entries.filter((row) => row.status === "Delivered").length} icon={CheckCheck} /><SummaryCard label="Cancelled" value={summary.cancelled ?? entries.filter((row) => row.status === "Cancelled").length} icon={FileText} /><SummaryCard label="Failed" value={summary.failed ?? entries.filter((row) => row.status === "Failed").length} icon={CircleHelp} /></div>
+    <div className="overflow-hidden rounded-2xl border border-[#e5e1dc] bg-white">
+      <div className="flex flex-col gap-3 border-b border-gray-100 p-3 sm:flex-row sm:items-center sm:gap-4 sm:p-4">
+        <label className="relative block min-w-0 flex-1">
+          <Search size={18} className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[#7f8983]" />
+          <input value={search} onChange={(event) => { setSearch(event.target.value); setPage(1); }} placeholder="Search order, customer, restaurant..." aria-label="Search delivery history" className="h-[58px] w-full rounded-2xl border border-[#e2e2e2] bg-[#faf9f8] pl-14 pr-4 text-sm text-[#34443b] outline-none placeholder:text-[#89938c] focus:border-[#ff5a00]" />
+        </label>
+        <div className="flex flex-wrap items-center justify-end gap-2 sm:gap-3">
+          <span className="whitespace-nowrap px-1 text-sm text-[#53616b]">{filtered.length} of {entries.length}</span>
+          <select value={status} onChange={(event) => { setStatus(event.target.value); setPage(1); }} aria-label="Filter history status" className="h-[58px] min-w-0 flex-1 rounded-2xl border border-[#e2e2e2] bg-white px-4 text-sm text-[#263238] outline-none focus:border-[#ff5a00] sm:min-w-[190px] sm:flex-none">
+            <option value="All">All Status ({entries.length})</option>
+            <option value="Delivered">Delivered ({entries.filter((entry) => String(entry.status || entry.order_status || "").toLowerCase() === "delivered").length})</option>
+            <option value="Cancelled">Cancelled ({entries.filter((entry) => String(entry.status || entry.order_status || "").toLowerCase() === "cancelled").length})</option>
+            <option value="Failed">Failed ({entries.filter((entry) => String(entry.status || entry.order_status || "").toLowerCase() === "failed").length})</option>
+          </select>
+          <select value={sortBy} onChange={(event) => { setSortBy(event.target.value); setPage(1); }} aria-label="Sort delivery history" className="h-[58px] min-w-0 flex-1 rounded-2xl border border-[#e2e2e2] bg-white px-4 text-sm text-[#263238] outline-none focus:border-[#ff5a00] sm:min-w-[170px] sm:flex-none">
+            <option value="latest">Sort by: Latest</option>
+            <option value="oldest">Sort by: Oldest</option>
+          </select>
+          <div className="flex h-[58px] overflow-hidden rounded-2xl border border-[#e2e2e2] bg-white" role="group" aria-label="Delivery history view">
+            <button type="button" onClick={() => setViewMode("list")} aria-label="List view" aria-pressed={viewMode === "list"} className={`grid w-[54px] place-items-center border-r border-[#e2e2e2] ${viewMode === "list" ? "bg-[#ff5a00] text-white" : "text-[#65746b] hover:bg-gray-50"}`}><List size={19} /></button>
+            <button type="button" onClick={() => setViewMode("grid")} aria-label="Grid view" aria-pressed={viewMode === "grid"} className={`grid w-[54px] place-items-center ${viewMode === "grid" ? "bg-[#ff5a00] text-white" : "text-[#65746b] hover:bg-gray-50"}`}><LayoutGrid size={19} /></button>
           </div>
-        </div>
-
-        {/* ─── STAT CARDS ─── */}
-        <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          {statCards.map((s) => <StatCard key={s.title} {...s} loading={loading} />)}
-        </div>
-
-        {error && (
-          <div role="alert" className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[#f2d7d7] bg-[#fff5f5] px-4 py-3 text-sm text-[#a23939]">
-            {error}
-            <button type="button" onClick={refresh} disabled={loading} className="font-semibold text-[#FF5A00] underline disabled:opacity-50">Retry</button>
-          </div>
-        )}
-
-        <div className="rounded-lg border border-[#e7e0d8] bg-gray-100 p-3 shadow-sm">
-
-          {/* filters row */}
-          <div className="mb-4 flex flex-col gap-3 lg:flex-row lg:items-center">
-            <div className="flex flex-1 flex-wrap items-center gap-3">
-
-              {/* search */}
-              <div className="relative w-full max-w-[340px]">
-                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#7a7a7a]" />
-                <input type="text" value={search} onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-                  placeholder="Search order, customer, restaurant…"
-                  className="h-[46px] w-full rounded-xl border border-[#dfe2e5] bg-[#faf9f8] pl-10 pr-3 text-[14px] text-[#2d2d2d] outline-none placeholder:text-[#8a8a8a] focus:border-[#FF5A00]" />
-              </div>
-
-              <div className="flex flex-wrap items-center gap-3 lg:ml-auto">
-                {/* status */}
-                <FilterSelect value={status} onChange={(e) => { setStatus(e.target.value); setPage(1); }}>
-                  <option>All</option>
-                  <option>Delivered</option>
-                  <option>Cancelled</option>
-                  <option>Failed</option>
-                </FilterSelect>
-
-                {/* date from */}
-                <label className="flex h-[46px] items-center gap-2 rounded-xl border border-[#dfe2e5] bg-[#faf9f8] px-3 text-xs text-gray-500">
-                  <CalendarDays size={14} /><span>From</span>
-                  <input aria-label="History from" type="date" value={from} onChange={(e) => { setFrom(e.target.value); setPage(1); }}
-                    className="max-w-32 bg-transparent text-gray-700 outline-none" />
-                </label>
-
-                {/* date to */}
-                <label className="flex h-[46px] items-center gap-2 rounded-xl border border-[#dfe2e5] bg-[#faf9f8] px-3 text-xs text-gray-500">
-                  <span>To</span>
-                  <input aria-label="History to" type="date" value={to} onChange={(e) => { setTo(e.target.value); setPage(1); }}
-                    className="max-w-32 bg-transparent text-gray-700 outline-none" />
-                </label>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-3 lg:shrink-0">
-              <FilterSelect value={sortBy} onChange={(e) => { setSortBy(e.target.value); setPage(1); }}>
-                <option value="newest">Sort: Newest</option>
-                <option value="oldest">Oldest First</option>
-                <option value="earn-high">Earnings: High to Low</option>
-              </FilterSelect>
-              <ViewToggle viewMode={viewMode} setViewMode={setViewMode} setPage={setPage} />
-            </div>
-          </div>
-
-          {/* section label */}
-          <div className="mb-3 flex items-center justify-between border-b border-gray-100 pb-3">
-            <div>
-              <h2 className="font-bold text-[#17231c]">Delivery Records</h2>
-              <p className="mt-0.5 text-xs text-gray-500">All past deliveries assigned to your account</p>
-            </div>
-            <span className="text-[12px] text-[#666]">{filtered.length} records</span>
-          </div>
-
-          {loading && (
-            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-              {[0,1,2,3].map((i) => <div key={i} className="h-36 animate-pulse rounded-xl border border-gray-200 bg-white" />)}
-            </div>
-          )}
-
-          {!loading && !error && filtered.length === 0 && (
-            <div className="rounded-2xl border border-dashed border-[#e7e0d8] bg-white p-10 text-center text-[#666]">
-              No delivery history for these filters.
-            </div>
-          )}
-
-          {/* ─── CARD VIEW ─── */}
-          {!loading && !error && filtered.length > 0 && viewMode === "card" && (
-            <>
-              <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-                {visible.map((entry, i) => (
-                  <article key={entry.order_id||entry.id||i}
-                    className="rounded-[18px] border border-[#e7e0d8] bg-white p-4 shadow-[0_1px_0_rgba(16,24,40,0.02)] transition hover:-translate-y-0.5 hover:shadow-md">
-                    <div className="mb-3 flex items-start justify-between gap-3">
-                      <div>
-                        <p className="text-xs font-semibold text-gray-500">{entry.order_id || entry.id || "—"}</p>
-                        <p className="mt-0.5 font-semibold text-gray-900">{entry.customer_name || "Customer"}</p>
-                      </div>
-                      <span className={`rounded-full px-2.5 py-1 text-[11px] font-semibold ${statusBadge(entry.status || entry.order_status)}`}>
-                        {entry.status || entry.order_status || "—"}
-                      </span>
-                    </div>
-                    <p className="truncate text-xs text-gray-600">{entry.restaurant_name || entry.chef_name || "Restaurant"}</p>
-                    <div className="mt-2 space-y-1 border-l border-[#d9e5db] pl-3 text-xs text-gray-500">
-                      <p>Pickup · {entry.pickup_address || "—"}</p>
-                      <p>Drop-off · {entry.delivery_address || "—"}</p>
-                    </div>
-                    <div className="mt-3 flex items-center justify-between text-xs">
-                      <span className="text-gray-500">{entry.date || entry.created_at ? new Date(entry.date||entry.created_at).toLocaleDateString("en-IN") : "—"}</span>
-                      <span className="font-bold text-[#21643a]">{currency(entry.earnings ?? entry.delivery_charge)}</span>
-                    </div>
-                  </article>
-                ))}
-              </div>
-              <Pagination page={displayPage} pageCount={pageCount} setPage={setPage} total={filtered.length} />
-            </>
-          )}
-
-          {/* ─── TABLE VIEW ─── */}
-          {!loading && !error && filtered.length > 0 && viewMode === "table" && (
-            <>
-              <div className="overflow-x-auto rounded-[16px] border border-[#e8e4df]">
-                <table className="w-full min-w-[850px] border-collapse bg-white text-left">
-                  <thead className="border-b border-orange-100 bg-orange-50 text-left text-sm font-semibold text-orange-700">
-                    <tr>
-                      {["S.No","Order","Customer","Restaurant","Pickup","Drop-off","Date","Status","Earnings"].map((h) => (
-                        <th key={h} className="px-4 py-4">{h}</th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {visible.map((entry, i) => (
-                      <tr key={entry.order_id||entry.id||i} className="border-t border-[#efefef] text-[13px] text-[#444444] hover:bg-gray-50/60">
-                        <td className="px-4 py-4 font-medium text-[#2d2d2d]">{(displayPage-1)*PAGE_SIZE+i+1}</td>
-                        <td className="px-4 py-4 font-semibold">{entry.order_id || entry.id || "—"}</td>
-                        <td className="px-4 py-4">{entry.customer_name || "—"}</td>
-                        <td className="px-4 py-4">{entry.restaurant_name || entry.chef_name || "—"}</td>
-                        <td className="max-w-40 truncate px-4 py-4 text-gray-500">{entry.pickup_address || "—"}</td>
-                        <td className="max-w-40 truncate px-4 py-4 text-gray-500">{entry.delivery_address || "—"}</td>
-                        <td className="whitespace-nowrap px-4 py-4 text-gray-500">{entry.date||entry.created_at ? new Date(entry.date||entry.created_at).toLocaleString("en-IN") : "—"}</td>
-                        <td className="px-4 py-4">
-                          <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-medium ${statusBadge(entry.status||entry.order_status)}`}>
-                            <span className="mr-1.5 h-2 w-2 rounded-full bg-current" />{entry.status || entry.order_status || "—"}
-                          </span>
-                        </td>
-                        <td className="px-4 py-4 font-semibold text-[#21643a]">{currency(entry.earnings ?? entry.delivery_charge)}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-              <Pagination page={displayPage} pageCount={pageCount} setPage={setPage} total={filtered.length} />
-            </>
-          )}
         </div>
       </div>
+      <div className="flex flex-wrap items-center gap-2 border-b border-gray-100 px-3 py-3 sm:px-4">
+        <span className="text-xs font-medium text-gray-500">Date range</span>
+        <input type="date" aria-label="History from" value={from} onChange={(event) => { setFrom(event.target.value); setPage(1); }} className="rounded-lg border border-[#dce6de] bg-white px-3 py-2 text-sm" />
+        <span className="text-xs text-gray-400">to</span>
+        <input type="date" aria-label="History to" value={to} onChange={(event) => { setTo(event.target.value); setPage(1); }} className="rounded-lg border border-[#dce6de] bg-white px-3 py-2 text-sm" />
+      </div>
+      {viewMode === "grid" ? (
+        <div className="grid gap-3 p-4 sm:grid-cols-2 xl:grid-cols-3">
+          {visible.map((entry, index) => <article key={entry.order_id || entry.id || index} className="rounded-xl border border-[#e2e9e3] bg-white p-4">
+            <div className="flex items-start justify-between gap-3"><div><p className="text-xs font-semibold text-gray-500">{entry.order_id || entry.id || "—"}</p><p className="mt-1 font-semibold text-gray-900">{entry.customer_name || "Customer"}</p></div><span className="rounded-full bg-gray-100 px-2.5 py-1 text-[10px] font-bold text-gray-700">{entry.status || entry.order_status || "—"}</span></div>
+            <p className="mt-3 text-xs text-gray-600">{entry.restaurant_name || entry.chef_name || "Restaurant"}</p>
+            <div className="mt-3 space-y-1 border-l border-[#d9e5db] pl-3 text-xs text-gray-500"><p>Pickup · {entry.pickup_address || "—"}</p><p>Drop-off · {entry.delivery_address || "—"}</p></div>
+            <div className="mt-3 flex justify-between gap-2 border-t border-gray-100 pt-3 text-xs"><span className="text-gray-500">{entry.date || entry.created_at ? new Date(entry.date || entry.created_at).toLocaleDateString("en-IN") : "—"}</span><span className="font-bold text-[#21643a]">{currency(entry.earnings ?? entry.delivery_charge)}</span></div>
+          </article>)}
+          {!loading && !error && visible.length === 0 && <div className="rounded-xl border border-dashed border-[#cddbd0] px-5 py-10 text-center text-sm text-gray-500 sm:col-span-2 xl:col-span-3">No delivery history for these filters.</div>}
+        </div>
+      ) : (
+        <>
+          <div className="grid gap-3 p-3 lg:hidden">{visible.map((entry, index) => <article key={entry.order_id || entry.id || index} className="rounded-xl border border-[#e2e9e3] bg-white p-4"><div className="flex items-start justify-between gap-3"><div><p className="text-xs font-semibold text-gray-500">{entry.order_id || entry.id || "—"}</p><p className="mt-1 font-semibold text-gray-900">{entry.customer_name || "Customer"}</p></div><span className="rounded-full bg-gray-100 px-2.5 py-1 text-[10px] font-bold text-gray-700">{entry.status || entry.order_status || "—"}</span></div><p className="mt-3 text-xs text-gray-600">{entry.restaurant_name || entry.chef_name || "Restaurant"}</p><div className="mt-3 space-y-1 border-l border-[#d9e5db] pl-3 text-xs text-gray-500"><p>Pickup · {entry.pickup_address || "—"}</p><p>Drop-off · {entry.delivery_address || "—"}</p></div><div className="mt-3 flex justify-between gap-2 text-xs"><span className="text-gray-500">{entry.date || entry.created_at ? new Date(entry.date || entry.created_at).toLocaleDateString("en-IN") : "—"}</span><span className="font-bold text-[#21643a]">{currency(entry.earnings ?? entry.delivery_charge)}</span></div></article>)}</div>
+          <div className="hidden overflow-hidden lg:block"><div className="overflow-x-auto"><table className="w-full min-w-[850px] text-left text-sm"><thead className="border-b border-orange-100 bg-orange-50 text-xs uppercase text-orange-700"><tr>{["Order", "Customer", "Restaurant", "Pickup", "Drop-off", "Date", "Status", "Earnings"].map((heading) => <th key={heading} className="px-4 py-3 font-semibold">{heading}</th>)}</tr></thead><tbody className="divide-y divide-gray-100">{visible.map((entry, index) => <tr key={entry.order_id || entry.id || index}><td className="px-4 py-3 font-semibold">{entry.order_id || entry.id || "—"}</td><td className="px-4 py-3">{entry.customer_name || "—"}</td><td className="px-4 py-3">{entry.restaurant_name || entry.chef_name || "—"}</td><td className="max-w-40 truncate px-4 py-3 text-gray-500">{entry.pickup_address || "—"}</td><td className="max-w-40 truncate px-4 py-3 text-gray-500">{entry.delivery_address || "—"}</td><td className="whitespace-nowrap px-4 py-3 text-gray-500">{entry.date || entry.created_at ? new Date(entry.date || entry.created_at).toLocaleString("en-IN") : "—"}</td><td className="px-4 py-3">{entry.status || entry.order_status || "—"}</td><td className="px-4 py-3 font-semibold text-[#21643a]">{currency(entry.earnings ?? entry.delivery_charge)}</td></tr>)}{!loading && !error && visible.length === 0 && <tr><td colSpan={8} className="px-4 py-12 text-center text-sm text-gray-500">No delivery history for these filters.</td></tr>}</tbody></table></div></div>
+        </>
+      )}
     </div>
-  );
+    <div className="flex items-center justify-between text-sm text-gray-500"><span>{filtered.length} records · page {page} of {pages}</span><div className="flex gap-2"><button type="button" onClick={() => setPage((value) => Math.max(1, value - 1))} disabled={page <= 1} aria-label="Previous page" className="rounded-lg border bg-white p-2 disabled:opacity-40"><ChevronLeft size={16} /></button><button type="button" onClick={() => setPage((value) => Math.min(pages, value + 1))} disabled={page >= pages} aria-label="Next page" className="rounded-lg border bg-white p-2 disabled:opacity-40"><ChevronRight size={16} /></button></div></div>
+  </section>;
 };
 
 /* ═══════════════════════════════════════════════════════════════

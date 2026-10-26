@@ -166,9 +166,9 @@ const VideoManagement = () => {
     const activeVideos = videos.filter((video) => video.active !== false).length;
     const inactiveVideos = videos.filter((video) => video.active === false).length;
     const videoStats = [
-        { title: "Total Videos", value: totalVideos, note: "All uploaded videos", icon: FiVideo, color: "#22c55e", wave: "#9be7b9" },
-        { title: "Active Videos", value: activeVideos, note: "Available in showcase", icon: FiCheck, color: "#06b6d4", wave: "#93dce8" },
-        { title: "Inactive Videos", value: inactiveVideos, note: "Currently hidden", icon: FiSlash, color: "#f97316", wave: "#ffc39e" },
+        { title: "Total Videos", value: totalVideos, note: "All uploaded videos", icon: FiVideo, color: "#f97316" },
+        { title: "Active Videos", value: activeVideos, note: "Available in showcase", icon: FiCheck, color: "#10b981" },
+        { title: "Inactive Videos", value: inactiveVideos, note: "Currently hidden", icon: FiSlash, color: "#3b82f6" },
     ];
 
     return (
@@ -177,19 +177,20 @@ const VideoManagement = () => {
                 {videoStats.map((stat) => {
                     const Icon = stat.icon;
                     return (
-                        <div key={stat.title} className="relative flex min-h-[176px] flex-col overflow-hidden rounded-xl border border-[#e5e7eb] bg-white p-5 shadow-sm">
-                            <div className="flex flex-1 items-start gap-4">
-                                <div className="flex h-[60px] w-[60px] shrink-0 items-center justify-center rounded-full text-white" style={{ backgroundColor: stat.color }}>
-                                    <Icon size={28} />
+                        <div key={stat.title} className="relative flex min-h-[194px] flex-col justify-between overflow-hidden rounded-[20px] border border-slate-200/90 bg-white p-5 shadow-[0_4px_16px_-5px_rgba(15,23,42,0.08)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_10px_22px_-7px_rgba(15,23,42,0.12)] sm:p-6" style={{ background: `linear-gradient(135deg, #ffffff 48%, ${stat.color}12 100%)` }}>
+                            <div className="relative z-10 flex items-start justify-between gap-3">
+                                <div className="min-w-0 flex-1 pt-1">
+                                    <p className="truncate text-[12px] font-bold uppercase tracking-[0.08em] text-slate-500">{stat.title}</p>
+                                    <p className="mt-4 truncate text-[30px] font-black leading-none tracking-tight text-slate-900">{stat.value.toLocaleString()}</p>
                                 </div>
-                                <div className="min-w-0 pt-1">
-                                    <p className="text-sm font-medium text-[#374151]">{stat.title}</p>
-                                    <p className="mt-2 truncate text-[1.75rem] font-bold leading-none text-[#111827]">{stat.value.toLocaleString()}</p>
-                                    <p className="mt-5 text-xs font-medium text-[#00a76f]">↗ {stat.note}</p>
-                                    <p className="mt-1 text-[11px] text-[#7c8798]">video overview</p>
-                                </div>
+                                <span className="flex h-[60px] w-[60px] shrink-0 items-center justify-center rounded-[18px] text-white shadow-[0_5px_12px_-4px_rgba(15,23,42,0.25)]" style={{ backgroundColor: stat.color }}><Icon size={27} /></span>
                             </div>
-                            <div className="absolute bottom-0 left-0 h-6 w-full" style={{ background: stat.wave, clipPath: "ellipse(65% 75% at 55% 100%)" }} />
+                            <div className="relative z-10 mt-5 flex items-center gap-2 border-t border-slate-100/90 pt-3.5 text-xs">
+                                <span className="inline-flex shrink-0 items-center rounded-full border border-emerald-200/80 bg-emerald-50/90 px-2 py-0.5 text-[11px] font-bold text-emerald-600">Live</span>
+                                <span className="truncate font-medium text-slate-500">{stat.note}</span>
+                                <span className="ml-auto h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: stat.color }} />
+                            </div>
+                            <span aria-hidden="true" className="pointer-events-none absolute -right-6 -top-6 h-28 w-28 rounded-full opacity-20 blur-2xl" style={{ backgroundColor: stat.color }} />
                         </div>
                     );
                 })}

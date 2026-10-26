@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ChevronLeft, ChevronRight, Clock3, LayoutGrid, List, MapPin, PackageCheck, RefreshCw, Search, UserRound, UtensilsCrossed } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Clock3, LayoutGrid, List, MapPin, PackageCheck, RefreshCw, Search, UserRound, UtensilsCrossed, X } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import api, { BACKEND_BASE_URL } from '../api';
 import PageHeader from './PageHeader';
@@ -67,6 +67,12 @@ const imageUrl = (image) => {
   if (/^https?:\/\//i.test(image)) return image;
   return `${BACKEND_BASE_URL}${image.startsWith('/') ? image : `/${image}`}`;
 };
+
+const isPartnerAvailable = (partner) => (
+  Boolean(partner.check_in && !partner.check_out)
+  && String(partner.available_for_delivery || 'Yes').toLowerCase() !== 'no'
+  && String(partner.current_status || 'Available').toLowerCase() === 'available'
+);
 
 const formatDate = (value) => {
   if (!value) return 'Date unavailable';
@@ -156,6 +162,7 @@ function CustomerOrdersPage({
   audience = 'admin',
   view = 'all',
   showOrderFilters = false,
+  showOrderSummaryCards = false,
   todayOnly = false,
   includeKitchenOrders = false,
 }) {
@@ -171,6 +178,12 @@ function CustomerOrdersPage({
   const [loadingDeliveryPartners, setLoadingDeliveryPartners] = useState(false);
   const [deliveryPartnersError, setDeliveryPartnersError] = useState('');
   const [assignmentDrafts, setAssignmentDrafts] = useState({});
+  const [assignmentModalOpen, setAssignmentModalOpen] = useState(false);
+  const [assignmentModalOrder, setAssignmentModalOrder] = useState(null);
+  const [assignmentOrderNumber, setAssignmentOrderNumber] = useState('');
+  const [partnerSearch, setPartnerSearch] = useState('');
+  const [selectedPartnerId, setSelectedPartnerId] = useState('');
+  const [assignmentError, setAssignmentError] = useState('');
   const [orderTypeFilter, setOrderTypeFilter] = useState(getInitialOrderType(view));
   const [statusFilter, setStatusFilter] = useState(getInitialStatus(view));
   const [searchTerm, setSearchTerm] = useState('');
@@ -192,9 +205,12 @@ function CustomerOrdersPage({
 
   const isCustomer = audience === 'customer';
   const isAdminOrdersOrangePage = audience === 'admin' && ['all', 'pickup', 'delivery', 'delivered', 'cancelled'].includes(view);
+  const useLightOrderSummary = (audience === 'admin' && ['all', 'pickup', 'delivery', 'delivered', 'cancelled'].includes(view))
+    || (audience === 'chef' && ['all', 'new', 'pickup', 'delivery', 'cancelled'].includes(view) && (showOrderFilters || showOrderSummaryCards));
   const showChefDeliveryTable = audience === 'chef' && view === 'delivery';
   const canAssignDelivery = showChefDeliveryTable || (showOrderFilters && view === 'delivery');
-  const showOrderSummary = audience === 'admin' || (audience === 'chef' && showOrderFilters);
+  const isAdminHomeDeliveryOrders = audience === 'admin' && view === 'delivery' && todayOnly;
+  const showOrderSummary = audience === 'admin' || (audience === 'chef' && (showOrderFilters || showOrderSummaryCards));
   const title = isCustomer
     ? 'My Orders'
     : audience === 'chef' && view === 'delivery' ? 'Home Delivery Orders'
@@ -244,6 +260,15 @@ function CustomerOrdersPage({
   const currentPage = Math.min(page, pageCount);
   const pageOffset = (currentPage - 1) * pageSize;
   const paginatedOrders = visibleOrders.slice(pageOffset, pageOffset + pageSize);
+  const assignableHomeDeliveryOrders = visibleOrders.filter((order) => (
+    !order.is_kitchen_order
+    && order.order_type === 'home_delivery'
+    && !order.assigned_delivery_partner_id
+    && !['delivered', 'completed', 'cancelled'].includes(String(order.order_status || '').toLowerCase())
+  ));
+  const selectedAssignmentOrder = assignmentModalOrder
+    || assignableHomeDeliveryOrders.find((order) => order.order_number === assignmentOrderNumber)
+    || null;
   const statusCounts = useMemo(() => STATUS_OPTIONS.reduce((counts, status) => {
     counts[status.value] = orders.filter((order) => order.order_status === status.value).length;
     return counts;
@@ -277,7 +302,9 @@ function CustomerOrdersPage({
   const fetchDeliveryPartners = useCallback(async () => {
     if (!canAssignDelivery) return;
     try {
-      const { data } = await api.get('/delivery-partners');
+      const { data } = await api.get('/delivery-partners', {
+        params: isAdminHomeDeliveryOrders ? { all: 'true' } : undefined,
+      });
       setDeliveryPartners(Array.isArray(data?.data) ? data.data : []);
       setDeliveryPartnersError('');
     } catch (requestError) {
@@ -286,7 +313,7 @@ function CustomerOrdersPage({
     } finally {
       setLoadingDeliveryPartners(false);
     }
-  }, [canAssignDelivery]);
+  }, [canAssignDelivery, isAdminHomeDeliveryOrders]);
 
   useEffect(() => {
     if (!canAssignDelivery) return undefined;
@@ -355,7 +382,10 @@ function CustomerOrdersPage({
             order_status: status,
             ...(status === 'assigned' ? {
               assigned_delivery_partner_id: data.data?.assigned_delivery_partner_id,
-              assigned_partner_name: data.data?.assigned_partner_name,
+              assigned_partner_name: deliveryPartners.find((partner) => partner.employee_id === deliveryPartnerId)?.full_name
+                || data.data?.assigned_partner_name,
+              assigned_partner_phone: deliveryPartners.find((partner) => partner.employee_id === deliveryPartnerId)?.phone_number || '',
+              assigned_partner_profile_photo: deliveryPartners.find((partner) => partner.employee_id === deliveryPartnerId)?.profile_photo || '',
             } : {}),
           }
           : item
@@ -366,15 +396,64 @@ function CustomerOrdersPage({
         return next;
       });
       toast.success(status === 'assigned' ? 'Delivery partner assigned.' : 'Customer order updated.');
+      return true;
     } catch (requestError) {
-      toast.error(requestError.response?.data?.message || requestError.message || 'Order status could not be updated.');
+      const message = requestError.response?.data?.message || requestError.message || 'Order status could not be updated.';
+      if (status === 'assigned') setAssignmentError(message);
+      toast.error(message);
+      return false;
     } finally {
       setUpdatingOrder('');
     }
   };
 
+  const openAssignmentModal = (order) => {
+    setAssignmentModalOpen(true);
+    setAssignmentModalOrder(order);
+    setAssignmentOrderNumber(order?.order_number || '');
+    setPartnerSearch('');
+    setSelectedPartnerId(deliveryPartners.some((partner) => partner.employee_id === order?.assigned_delivery_partner_id && isPartnerAvailable(partner))
+      ? order.assigned_delivery_partner_id
+      : '');
+    setAssignmentError('');
+  };
+
+  const closeAssignmentModal = useCallback(() => {
+    if (updatingOrder) return;
+    setAssignmentModalOpen(false);
+    setAssignmentModalOrder(null);
+    setAssignmentOrderNumber('');
+    setAssignmentError('');
+  }, [updatingOrder]);
+
+  const assignSelectedPartner = async () => {
+    if (!selectedAssignmentOrder || !selectedPartnerId || updatingOrder) return;
+    const succeeded = await changeStatus(selectedAssignmentOrder, 'assigned', selectedPartnerId);
+    if (succeeded) {
+      setAssignmentModalOpen(false);
+      setAssignmentModalOrder(null);
+      setAssignmentOrderNumber('');
+      setAssignmentError('');
+    }
+  };
+
+  const selectAssignmentOrder = (orderNumber) => {
+    setAssignmentModalOrder(null);
+    setAssignmentOrderNumber(orderNumber);
+    setPartnerSearch('');
+    const order = assignableHomeDeliveryOrders.find((item) => item.order_number === orderNumber);
+    setSelectedPartnerId(deliveryPartners.some((partner) => partner.employee_id === order?.assigned_delivery_partner_id && isPartnerAvailable(partner))
+      ? order.assigned_delivery_partner_id
+      : '');
+    setAssignmentError('');
+  };
+
   const selectOrderStatus = (order, status) => {
     if (canAssignDelivery && order.order_type === 'home_delivery' && status === 'assigned') {
+      if (isAdminHomeDeliveryOrders) {
+        openAssignmentModal(null);
+        return;
+      }
       setAssignmentDrafts((current) => ({ ...current, [order.order_number]: '' }));
       return;
     }
@@ -387,6 +466,14 @@ function CustomerOrdersPage({
   };
 
   const renderPartnerAssignment = (order) => {
+    if (isAdminHomeDeliveryOrders && order.order_type === 'home_delivery') {
+      return (
+        <div className="min-w-40">
+          <p className="truncate font-semibold text-[#263830]">{order.assigned_partner_name || 'Not assigned'}</p>
+          {order.assigned_partner_phone && <p className="mt-0.5 text-[11px] text-[#68766e]">{order.assigned_partner_phone}</p>}
+        </div>
+      );
+    }
     const isSelectingPartner = Object.prototype.hasOwnProperty.call(assignmentDrafts, order.order_number);
     if (!canAssignDelivery || order.order_type !== 'home_delivery') return '—';
     if (!isSelectingPartner) return order.assigned_partner_name || 'Not assigned';
@@ -431,6 +518,21 @@ function CustomerOrdersPage({
     );
   };
 
+  const matchingDeliveryPartners = deliveryPartners.filter((partner) => {
+    const query = partnerSearch.trim().toLowerCase();
+    if (!query) return true;
+    return `${partner.full_name || ''} ${partner.phone_number || ''}`.toLowerCase().includes(query);
+  });
+
+  useEffect(() => {
+    if (!assignmentModalOpen) return undefined;
+    const closeOnEscape = (event) => {
+      if (event.key === 'Escape' && !updatingOrder) closeAssignmentModal();
+    };
+    document.addEventListener('keydown', closeOnEscape);
+    return () => document.removeEventListener('keydown', closeOnEscape);
+  }, [assignmentModalOpen, closeAssignmentModal, updatingOrder]);
+
   return (
     <>
       {isCustomer && <PageHeader title={title} />}
@@ -441,37 +543,66 @@ function CustomerOrdersPage({
         {!isCustomer && showOrderSummary && (
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
             {[
-              { title: 'Total Orders', value: orders.length, icon: UtensilsCrossed, bg: 'bg-[#22c55e]', hint: 'All orders in view' },
-              { title: 'Pending / Active', value: (statusCounts['placed'] || 0) + (statusCounts['preparing'] || 0), icon: Clock3, bg: 'bg-[#f59e0b]', hint: 'Placed & preparing' },
-              { title: 'Completed', value: (statusCounts['completed'] || 0) + (statusCounts['delivered'] || 0), icon: PackageCheck, bg: 'bg-[#3b82f6]', hint: 'Delivered or done' },
-              { title: 'Cancelled', value: statusCounts['cancelled'] || 0, icon: MapPin, bg: (statusCounts['cancelled'] || 0) > 0 ? 'bg-[#ef4444]' : 'bg-[#8b5cf6]', hint: 'Cancelled orders' },
-            ].map(({ title: cardTitle, value, icon: Icon, bg, hint }, index) => (
-              <article key={cardTitle} className={`relative min-w-0 overflow-hidden rounded-xl border border-transparent p-4 sm:p-5 shadow-[0_2px_10px_rgba(20,56,34,0.08)] flex flex-col justify-between min-h-[140px] ${bg} text-white`}>
-                <div className="flex items-start gap-3 relative z-10">
-                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg shadow-sm bg-white/20">
-                    <Icon size={24} strokeWidth={2.2} className="text-white" />
-                  </div>
-                  <div className="flex-1 mt-0.5 min-w-0">
-                    <h3 className="text-[12px] font-semibold opacity-90 mb-1 truncate">{cardTitle}</h3>
-                    <div className="text-[26px] font-extrabold leading-none tracking-tight">{value}</div>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2 mt-5 relative z-10">
-                  <span className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[11px] font-bold bg-white/25">↑ Live</span>
-                  <span className="text-[11px] font-medium opacity-75 truncate">{hint}</span>
-                </div>
-                <div className="absolute right-0 bottom-0 w-24 h-16 pointer-events-none opacity-50">
-                  <svg viewBox="0 0 100 50" preserveAspectRatio="none" className="w-full h-full">
-                    <defs>
-                      <linearGradient id={`ordgrad-${index}`} x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor="#ffffff" stopOpacity="0.4" />
-                        <stop offset="100%" stopColor="#ffffff" stopOpacity="0.0" />
-                      </linearGradient>
-                    </defs>
-                    <path d="M0,50 L0,40 Q25,30 50,40 T100,20 L100,50 Z" fill={`url(#ordgrad-${index})`} />
-                    <path d="M0,40 Q25,30 50,40 T100,20" fill="none" stroke="#ffffff" strokeWidth="2.5" />
-                  </svg>
-                </div>
+              { title: 'Total Orders', value: orders.length, icon: UtensilsCrossed, bg: 'bg-[#22c55e]', accent: '#f97316', iconBg: 'bg-orange-500', hint: 'All orders in view' },
+              { title: 'Pending / Active', value: (statusCounts['placed'] || 0) + (statusCounts['preparing'] || 0), icon: Clock3, bg: 'bg-[#f59e0b]', accent: '#10b981', iconBg: 'bg-emerald-500', hint: 'Placed & preparing' },
+              { title: 'Completed', value: (statusCounts['completed'] || 0) + (statusCounts['delivered'] || 0), icon: PackageCheck, bg: 'bg-[#3b82f6]', accent: '#3b82f6', iconBg: 'bg-blue-500', hint: 'Delivered or done' },
+              { title: 'Cancelled', value: statusCounts['cancelled'] || 0, icon: MapPin, bg: (statusCounts['cancelled'] || 0) > 0 ? 'bg-[#ef4444]' : 'bg-[#8b5cf6]', accent: '#ec4899', iconBg: 'bg-pink-500', hint: 'Cancelled orders' },
+            ].map(({ title: cardTitle, value, icon: Icon, bg, accent, iconBg, hint }, index) => (
+              <article
+                key={cardTitle}
+                className={useLightOrderSummary
+                  ? "group relative flex min-h-[194px] min-w-0 flex-col justify-between overflow-hidden rounded-[20px] border border-slate-200/90 bg-white p-5 shadow-[0_4px_16px_-5px_rgba(15,23,42,0.08)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_10px_22px_-7px_rgba(15,23,42,0.12)] sm:p-6"
+                  : `relative flex min-h-[140px] min-w-0 flex-col justify-between overflow-hidden rounded-xl border border-transparent p-4 text-white shadow-[0_2px_10px_rgba(20,56,34,0.08)] sm:p-5 ${bg}`}
+                style={useLightOrderSummary ? { background: `linear-gradient(135deg, #ffffff 48%, ${accent}12 100%)` } : undefined}
+              >
+                {useLightOrderSummary ? (
+                  <>
+                    <div className="relative z-10 flex items-start justify-between gap-3">
+                      <div className="min-w-0 flex-1 pt-1">
+                        <h3 className="truncate text-[12px] font-bold uppercase tracking-[0.08em] text-slate-500">{cardTitle}</h3>
+                        <div className="mt-4 truncate text-[30px] font-black leading-none tracking-tight text-slate-900 sm:text-[34px]">{value}</div>
+                      </div>
+                      <span className={`flex h-[60px] w-[60px] shrink-0 items-center justify-center rounded-[18px] text-white shadow-[0_5px_12px_-4px_rgba(15,23,42,0.25)] ${iconBg}`}>
+                        <Icon size={27} strokeWidth={2.3} />
+                      </span>
+                    </div>
+                    <div className="relative z-10 mt-5 flex items-center gap-2 border-t border-slate-100/90 pt-3.5 text-xs">
+                      <span className="inline-flex shrink-0 items-center rounded-full border border-emerald-200/80 bg-emerald-50/90 px-2 py-0.5 text-[11px] font-bold text-emerald-600">Live</span>
+                      <span className="truncate text-xs font-medium text-slate-500">{hint}</span>
+                      <span className="ml-auto h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: accent }} />
+                    </div>
+                    <span aria-hidden="true" className="pointer-events-none absolute -right-6 -top-6 h-28 w-28 rounded-full opacity-20 blur-2xl" style={{ backgroundColor: accent }} />
+                    <span aria-hidden="true" className="pointer-events-none absolute bottom-0 left-0 h-1 w-full origin-left scale-x-0 transition-transform duration-300 group-hover:scale-x-100" style={{ backgroundColor: accent }} />
+                  </>
+                ) : (
+                  <>
+                    <div className="relative z-10 flex items-start gap-3">
+                      <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-white/20 shadow-sm">
+                        <Icon size={24} strokeWidth={2.2} className="text-white" />
+                      </div>
+                      <div className="mt-0.5 min-w-0 flex-1">
+                        <h3 className="mb-1 truncate text-[12px] font-semibold opacity-90">{cardTitle}</h3>
+                        <div className="text-[26px] font-extrabold leading-none tracking-tight">{value}</div>
+                      </div>
+                    </div>
+                    <div className="relative z-10 mt-5 flex items-center gap-2">
+                      <span className="inline-flex items-center gap-1 rounded-md bg-white/25 px-1.5 py-0.5 text-[11px] font-bold">↑ Live</span>
+                      <span className="truncate text-[11px] font-medium opacity-75">{hint}</span>
+                    </div>
+                    <div className="pointer-events-none absolute bottom-0 right-0 h-16 w-24 opacity-50">
+                      <svg viewBox="0 0 100 50" preserveAspectRatio="none" className="h-full w-full">
+                        <defs>
+                          <linearGradient id={`ordgrad-${index}`} x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stopColor="#ffffff" stopOpacity="0.4" />
+                            <stop offset="100%" stopColor="#ffffff" stopOpacity="0" />
+                          </linearGradient>
+                        </defs>
+                        <path d="M0,50 L0,40 Q25,30 50,40 T100,20 L100,50 Z" fill={`url(#ordgrad-${index})`} />
+                        <path d="M0,40 Q25,30 50,40 T100,20" fill="none" stroke="#ffffff" strokeWidth="2.5" />
+                      </svg>
+                    </div>
+                  </>
+                )}
               </article>
             ))}
           </div>
@@ -523,6 +654,16 @@ function CustomerOrdersPage({
                 <button type="button" onClick={() => setLayout('table')} aria-label="Table view" aria-pressed={layout === 'table'} title="Table view" className={`grid w-11 place-items-center border-r border-[#dfe2e5] ${layout === 'table' ? (isAdminOrdersOrangePage ? 'bg-[#FF5A00] text-white' : 'bg-[#1a3c36] text-white') : `text-[#66736b] ${isAdminOrdersOrangePage ? 'hover:bg-orange-50 hover:text-[#FF5A00]' : 'hover:bg-gray-50'}`}`}><List size={16} /></button>
                 <button type="button" onClick={() => setLayout('card')} aria-label="Card view" aria-pressed={layout === 'card'} title="Card view" className={`grid w-11 place-items-center ${layout === 'card' ? (isAdminOrdersOrangePage ? 'bg-[#FF5A00] text-white' : 'bg-[#1a3c36] text-white') : `text-[#66736b] ${isAdminOrdersOrangePage ? 'hover:bg-orange-50 hover:text-[#FF5A00]' : 'hover:bg-gray-50'}`}`}><LayoutGrid size={16} /></button>
               </div>
+              {isAdminHomeDeliveryOrders && (
+                <button
+                  type="button"
+                  onClick={() => openAssignmentModal(null)}
+                  disabled={!assignableHomeDeliveryOrders.length}
+                  className="h-[46px] rounded-xl bg-[#FF5A00] px-4 text-sm font-bold text-white transition hover:bg-[#E94B00] disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  Assign Delivery Partner
+                </button>
+              )}
             </div>
           </section>
         )}
@@ -594,14 +735,16 @@ function CustomerOrdersPage({
                       <Clock3 size={13} /> {formatDate(order.created_at)}
                     </p>
                   </div>
-                  <span className={`rounded-full px-3 py-1 text-xs font-bold ${
-                    ['cancelled'].includes(order.order_status) ? 'bg-rose-50 text-rose-700'
-                      : ['completed', 'delivered'].includes(order.order_status) ? 'bg-emerald-50 text-emerald-700'
-                        : ['assigned', 'ready'].includes(order.order_status) ? 'bg-blue-50 text-blue-700'
-                          : 'bg-amber-50 text-amber-800'
-                  }`}>
-                    {order.is_kitchen_order ? order.kitchen_status : formatStatus(order.order_status)}
-                  </span>
+                  <div className="flex shrink-0 flex-col items-end gap-2">
+                    <span className={`rounded-full px-3 py-1 text-xs font-bold ${
+                      ['cancelled'].includes(order.order_status) ? 'bg-rose-50 text-rose-700'
+                        : ['completed', 'delivered'].includes(order.order_status) ? 'bg-emerald-50 text-emerald-700'
+                          : ['assigned', 'ready'].includes(order.order_status) ? 'bg-blue-50 text-blue-700'
+                            : 'bg-amber-50 text-amber-800'
+                    }`}>
+                      {order.is_kitchen_order ? order.kitchen_status : formatStatus(order.order_status)}
+                    </span>
+                  </div>
                 </div>
 
                 <div className="grid gap-4 p-5 sm:grid-cols-2">
@@ -724,6 +867,179 @@ function CustomerOrdersPage({
         )}
       </div>
       </main>
+      {isAdminHomeDeliveryOrders && assignmentModalOpen && (
+        <div
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/55 p-3 backdrop-blur-[2px] sm:p-6"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget) closeAssignmentModal();
+          }}
+        >
+          <section
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="assign-delivery-partner-title"
+            className="flex max-h-[92vh] w-full max-w-xl flex-col overflow-hidden rounded-2xl bg-white shadow-[0_24px_80px_rgba(15,23,42,0.28)]"
+          >
+            <header className="flex items-start justify-between gap-4 border-b border-slate-100 px-5 py-4 sm:px-6">
+              <div>
+                <h2 id="assign-delivery-partner-title" className="text-lg font-extrabold text-slate-900 sm:text-xl">Assign Delivery Partner</h2>
+                <p className="mt-1 text-sm text-slate-500">
+                  {selectedAssignmentOrder
+                    ? <>Order <span className="font-mono font-bold text-slate-700">{selectedAssignmentOrder.order_number}</span></>
+                    : 'Choose an order and a delivery partner'}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={closeAssignmentModal}
+                disabled={Boolean(updatingOrder)}
+                aria-label="Close assignment dialog"
+                className="grid h-9 w-9 shrink-0 place-items-center rounded-full text-slate-500 transition hover:bg-slate-100 hover:text-slate-800 disabled:opacity-50"
+              >
+                <X size={19} />
+              </button>
+            </header>
+
+            <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4 sm:px-6">
+              <label className="mb-4 block text-xs font-bold text-slate-600">
+                Home Delivery Order
+                <select
+                  value={selectedAssignmentOrder?.order_number || ''}
+                  onChange={(event) => selectAssignmentOrder(event.target.value)}
+                  className="mt-1.5 h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-800 outline-none focus:border-[#FF5A00] focus:ring-2 focus:ring-orange-100"
+                >
+                  <option value="" disabled>Select an order</option>
+                  {assignableHomeDeliveryOrders.map((order) => (
+                    <option key={order.order_number} value={order.order_number}>
+                      {order.order_number} · {order.customer_name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              {selectedAssignmentOrder?.assigned_delivery_partner_id && (
+                <div className="mb-4 rounded-xl border border-orange-100 bg-orange-50/70 px-3.5 py-3">
+                  <p className="text-[11px] font-bold uppercase tracking-wide text-orange-700">Currently assigned</p>
+                  <p className="mt-1 font-semibold text-slate-800">{selectedAssignmentOrder.assigned_partner_name || 'Delivery partner'}</p>
+                  {selectedAssignmentOrder.assigned_partner_phone && <p className="mt-0.5 text-sm text-slate-600">{selectedAssignmentOrder.assigned_partner_phone}</p>}
+                </div>
+              )}
+
+              <label className="relative block">
+                <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                <input
+                  type="search"
+                  value={partnerSearch}
+                  onChange={(event) => setPartnerSearch(event.target.value)}
+                  placeholder="Search by name or phone number"
+                  aria-label="Search delivery partners"
+                  className="h-11 w-full rounded-xl border border-slate-200 bg-white pl-10 pr-3 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-[#FF5A00] focus:ring-2 focus:ring-orange-100"
+                />
+              </label>
+
+              {deliveryPartnersError && (
+                <div role="alert" className="mt-4 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+                  <p>{deliveryPartnersError}</p>
+                  <button type="button" onClick={() => { setLoadingDeliveryPartners(true); fetchDeliveryPartners(); }} className="mt-1 font-bold underline">Retry loading partners</button>
+                </div>
+              )}
+              {loadingDeliveryPartners && selectedAssignmentOrder ? (
+                <div className="flex items-center justify-center gap-2 py-12 text-sm font-medium text-slate-500">
+                  <RefreshCw size={17} className="animate-spin" /> Loading available delivery partners…
+                </div>
+              ) : !selectedAssignmentOrder ? (
+                <p className="py-8 text-center text-sm text-slate-500">
+                  {assignableHomeDeliveryOrders.length
+                    ? 'Select an unassigned home delivery order to view partners.'
+                    : 'There are no unassigned home delivery orders to assign.'}
+                </p>
+              ) : !deliveryPartnersError && matchingDeliveryPartners.length === 0 ? (
+                <p className="py-12 text-center text-sm text-slate-500">
+                  {deliveryPartners.length ? 'No partners match your search.' : 'No active delivery partners found.'}
+                </p>
+              ) : (
+                <div className="mt-3 space-y-2">
+                  {matchingDeliveryPartners.map((partner) => {
+                    const isSelected = selectedPartnerId === partner.employee_id;
+                    const available = isPartnerAvailable(partner);
+                    const availability = available
+                      ? 'Available'
+                      : !partner.check_in || partner.check_out
+                        ? 'Off shift'
+                        : String(partner.available_for_delivery || 'Yes').toLowerCase() === 'no'
+                          ? 'Unavailable'
+                          : partner.current_status || 'Unavailable';
+                    return (
+                      <label
+                        key={partner.employee_id}
+                        className={`flex items-center gap-3 rounded-xl border p-3 transition ${
+                          available ? 'cursor-pointer' : 'cursor-not-allowed opacity-65'
+                        } ${
+                          isSelected ? 'border-[#FF5A00] bg-orange-50/70 ring-1 ring-[#FF5A00]/20' : 'border-slate-200'
+                        } ${
+                          available && !isSelected ? 'hover:border-orange-200 hover:bg-slate-50' : ''
+                        }`}
+                      >
+                        <input
+                          type="radio"
+                          name="delivery-partner"
+                          value={partner.employee_id}
+                          checked={isSelected}
+                          onChange={() => { setSelectedPartnerId(partner.employee_id); setAssignmentError(''); }}
+                          disabled={!available}
+                          className="h-4 w-4 accent-[#FF5A00]"
+                        />
+                        {partner.profile_photo ? (
+                          <img src={imageUrl(partner.profile_photo)} alt="" className="h-11 w-11 shrink-0 rounded-full object-cover" />
+                        ) : (
+                          <span className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-orange-100 text-sm font-bold text-orange-700">
+                            {(partner.full_name || 'D').charAt(0).toUpperCase()}
+                          </span>
+                        )}
+                        <span className="min-w-0 flex-1">
+                          <span className="block truncate text-sm font-bold text-slate-800">{partner.full_name}</span>
+                          <span className="mt-0.5 block text-xs text-slate-500">{partner.phone_number || 'Phone number unavailable'}</span>
+                        </span>
+                        <span className={`shrink-0 rounded-full px-2.5 py-1 text-[11px] font-bold capitalize ${
+                          available ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-600'
+                        }`}>
+                          {availability.replaceAll('_', ' ')}
+                        </span>
+                      </label>
+                    );
+                  })}
+                </div>
+              )}
+              {assignmentError && <p role="alert" className="mt-3 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{assignmentError}</p>}
+            </div>
+
+            <footer className="flex flex-col-reverse gap-2 border-t border-slate-100 bg-slate-50/70 px-5 py-4 sm:flex-row sm:justify-end sm:px-6">
+              <button
+                type="button"
+                onClick={closeAssignmentModal}
+                disabled={Boolean(updatingOrder)}
+                className="h-10 rounded-lg border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 transition hover:bg-slate-100 disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={assignSelectedPartner}
+                disabled={
+                  !selectedAssignmentOrder
+                  || !selectedPartnerId
+                  || !deliveryPartners.some((partner) => partner.employee_id === selectedPartnerId && isPartnerAvailable(partner))
+                  || loadingDeliveryPartners
+                  || Boolean(updatingOrder)
+                }
+                className="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-[#FF5A00] px-5 text-sm font-bold text-white transition hover:bg-[#E94B00] disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {updatingOrder === selectedAssignmentOrder?.order_number && <RefreshCw size={15} className="animate-spin" />}
+                {updatingOrder === selectedAssignmentOrder?.order_number ? 'Assigning…' : 'Assign Delivery Partner'}
+              </button>
+            </footer>
+          </section>
+        </div>
+      )}
     </>
   );
 }

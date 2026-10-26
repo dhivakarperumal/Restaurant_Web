@@ -204,18 +204,20 @@ const Cuisines = () => {
                 return (
                   <article
                     key={index}
-                    className="group relative flex flex-col justify-between overflow-hidden rounded-2xl border border-slate-200/90 bg-white p-5 shadow-xs transition-all duration-300 hover:-translate-y-1 hover:border-slate-300 hover:shadow-lg"
+                    className="group relative flex min-h-[194px] flex-col justify-between overflow-hidden rounded-3xl border border-slate-200/90 p-5 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] transition-all duration-300 hover:-translate-y-1 hover:border-slate-300 hover:shadow-[0_12px_24px_-6px_rgba(0,0,0,0.1)] sm:p-6"
+                    style={{ background: `linear-gradient(135deg, #ffffff 48%, ${stat.accent}18 100%)` }}
                   >
-                    <div className="flex items-start justify-between gap-3 relative z-10">
+                    <div className="pointer-events-none absolute -right-6 -top-6 h-28 w-28 rounded-full opacity-25 blur-2xl transition-all duration-500 group-hover:scale-150" style={{ backgroundColor: stat.accent }} />
+                    <div className="relative z-10 flex items-start justify-between gap-3">
                       <div className="min-w-0 flex-1">
                         <p className="truncate text-xs font-semibold text-slate-500 tracking-wider uppercase">{stat.title}</p>
-                        <div className="mt-2 text-2xl font-black tracking-tight text-slate-800 sm:text-3xl">{stat.value}</div>
+                        <div className="mt-3 text-[28px] font-black tracking-tight text-slate-800 sm:text-[34px]">{stat.value}</div>
                       </div>
-                      <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl shadow-md transition-transform duration-300 group-hover:scale-110 ${stat.tone}`}>
+                      <div className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl shadow-md transition-transform duration-300 group-hover:scale-110 sm:h-[60px] sm:w-[60px] ${stat.tone}`}>
                         <Icon size={24} strokeWidth={2.3} />
                       </div>
                     </div>
-                    <div className="mt-4 flex items-center justify-between border-t border-slate-100 pt-3 relative z-10">
+                    <div className="relative z-10 mt-4 flex items-center justify-between border-t border-slate-100 pt-3">
                       <div className="flex items-center gap-1.5 min-w-0">
                         {stat.inc !== '—' && (
                           <span className="inline-flex shrink-0 items-center rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-bold text-emerald-600 ring-1 ring-inset ring-emerald-500/20">
@@ -272,23 +274,31 @@ const Cuisines = () => {
           ) : viewMode === 'card' ? (
             <div className="grid gap-4 p-4 sm:grid-cols-2 xl:grid-cols-4">
               {visibleCuisines.map((cuisine) => (
-                <article key={cuisine.cuisine_id} className="rounded-xl border border-[#e7e0d8] bg-gray-100 p-4 transition">
-                  <div className="mb-3 flex items-start justify-between gap-3">
+                <article
+                  key={cuisine.cuisine_id}
+                  className="group relative flex min-h-[220px] flex-col justify-between overflow-hidden rounded-3xl border border-slate-200/90 p-5 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] transition-all duration-300 hover:-translate-y-1 hover:border-slate-300 hover:shadow-[0_12px_24px_-6px_rgba(0,0,0,0.1)]"
+                  style={{ background: `linear-gradient(135deg, #ffffff 48%, ${cuisine.featured ? '#fff4dc' : '#edf7f0'} 100%)` }}
+                >
+                  <div className="pointer-events-none absolute -right-6 -top-6 h-28 w-28 rounded-full bg-emerald-100/80 opacity-70 blur-2xl transition-all duration-500 group-hover:scale-150" />
+                  <div className="relative z-10 flex items-start justify-between gap-3">
                     {cuisine.image
-                      ? <img src={imageUrl(cuisine.image)} alt="" className="h-12 w-12 rounded-lg object-cover" />
-                      : <span className="flex h-12 w-12 items-center justify-center rounded-lg bg-emerald-50 text-emerald-800"><Utensils className="h-5 w-5" /></span>}
-                    <div className="flex gap-2">
+                      ? <img src={imageUrl(cuisine.image)} alt={cuisine.cuisine_name} className="h-14 w-14 rounded-2xl object-cover shadow-sm transition-transform duration-300 group-hover:scale-110" />
+                      : <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-500 text-white shadow-sm transition-transform duration-300 group-hover:scale-110"><Utensils className="h-6 w-6" /></span>}
+                    <div className="relative z-10 flex gap-2">
                       <button type="button" onClick={() => openEdit(cuisine.cuisine_id)} className="rounded-md border border-orange-200 p-2 text-[#FF5A00] transition hover:bg-orange-50" aria-label={`Edit ${cuisine.cuisine_name}`}><Pencil className="h-4 w-4" /></button>
                       <button type="button" onClick={() => handleDelete(cuisine.cuisine_id)} className="rounded-md border border-red-200 p-2 text-red-700 hover:bg-red-50" aria-label={`Delete ${cuisine.cuisine_name}`}><Trash2 className="h-4 w-4" /></button>
                     </div>
                   </div>
-                  <h3 className="font-semibold text-gray-900">{cuisine.cuisine_name}</h3>
-                  <p className="mt-0.5 text-xs text-gray-500">{cuisine.cuisine_id}</p>
-                  <p className="mt-3 min-h-10 text-sm text-gray-600">{cuisine.description || 'No description'}</p>
-                  <div className="mt-3 flex items-center justify-between">
-                    <span className={`inline-flex rounded-full px-2 py-1 text-xs font-medium ${cuisine.status === 'Active' ? 'bg-emerald-50 text-emerald-800' : 'bg-gray-100 text-gray-600'}`}>{cuisine.status}</span>
-                    {cuisine.featured && <span className="inline-flex items-center gap-1 text-xs font-medium text-amber-700"><Star className="h-3.5 w-3.5 fill-amber-400 text-amber-500" /> Featured</span>}
+                  <div className="relative z-10 mt-4 min-w-0">
+                    <p className="truncate text-[11px] font-bold uppercase tracking-wider text-slate-500">{cuisine.cuisine_id}</p>
+                    <h3 className="mt-1 truncate text-xl font-black tracking-tight text-slate-800">{cuisine.cuisine_name}</h3>
+                    <p className="mt-1 line-clamp-2 min-h-10 text-sm text-slate-600">{cuisine.description || 'No description'}</p>
                   </div>
+                  <div className="relative z-10 mt-4 flex items-center justify-between gap-2 border-t border-slate-100 pt-3">
+                    <span className={`inline-flex items-center gap-1.5 text-xs font-semibold ${cuisine.status === 'Active' ? 'text-emerald-700' : 'text-slate-500'}`}><span className={`h-2 w-2 rounded-full ${cuisine.status === 'Active' ? 'bg-emerald-500' : 'bg-slate-400'}`} />{cuisine.status}</span>
+                    {cuisine.featured && <span className="inline-flex items-center gap-1 text-xs font-semibold text-amber-700"><Star className="h-3.5 w-3.5 fill-amber-400 text-amber-500" /> Featured</span>}
+                  </div>
+                  <div className={`absolute bottom-0 left-0 h-[3px] w-0 transition-all duration-300 group-hover:w-full ${cuisine.featured ? 'bg-amber-500' : 'bg-emerald-500'}`} />
                 </article>
               ))}
             </div>
