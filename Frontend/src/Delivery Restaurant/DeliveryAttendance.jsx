@@ -1,6 +1,5 @@
-import React from "react";
-import StaffAttendancePage from "../CommonComponents/StaffAttendancePage";
+import DeliveryAttendancePage from "./DeliveryAttendancePage";
 
 export default function DeliveryAttendance() {
-  return <StaffAttendancePage role="Delivery Partner" roleRoute="/delivery" />;
+  return <DeliveryAttendancePage />;
 }
