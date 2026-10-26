@@ -124,7 +124,7 @@
 }
 
 .admin-theme [data-sidebar="delivery-sidebar"] {
-  background: #0A4731;
+  background: linear-gradient(to bottom, #0A4731 0%, #083B2A 55%, #062D22 100%);
   color: var(--admin-sidebar-text);
 }
 
