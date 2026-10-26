@@ -3,6 +3,7 @@ const {
   adminSaveAttendance: saveAttendanceRecord,
   clockInEmployee,
   clockOutEmployee,
+  getAdminEmployeeAttendanceHistory: fetchAdminEmployeeAttendanceHistory,
   getAdminAttendanceList: fetchAdminAttendanceList,
   getAdminAttendanceSummary: fetchAdminAttendanceSummary,
   getStaffAttendanceHistory: fetchStaffAttendanceHistory,
@@ -99,6 +100,21 @@ async function getAdminAttendanceList(req, res) {
   }
 }
 
+async function getAdminEmployeeAttendanceHistory(req, res) {
+  try {
+    const { employeeId } = req.params;
+    if (!employeeId) {
+      return res.status(400).json({ success: false, message: 'Employee ID is required.' });
+    }
+
+    const records = await fetchAdminEmployeeAttendanceHistory(employeeId);
+    return res.json({ success: true, data: records });
+  } catch (error) {
+    console.error('Failed to fetch employee attendance history:', error);
+    return res.status(500).json({ success: false, message: 'Unable to retrieve employee attendance history.' });
+  }
+}
+
 async function getAdminAttendanceSummary(req, res) {
   try {
     const { date } = req.query;
@@ -153,6 +169,7 @@ module.exports = {
   clockIn,
   clockOut,
   getAdminAttendanceList,
+  getAdminEmployeeAttendanceHistory,
   getAdminAttendanceSummary,
   getMyAttendanceHistory,
   getTodayAttendance,

@@ -38,6 +38,10 @@ export default function AdminAttendance() {
   const [summary, setSummary] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [historyEmployee, setHistoryEmployee] = useState(null);
+  const [historyRecords, setHistoryRecords] = useState([]);
+  const [historyLoading, setHistoryLoading] = useState(false);
+  const [historyError, setHistoryError] = useState("");
 
   // Edit / Add modal state
   const [modalOpen, setModalOpen] = useState(false);
@@ -140,6 +144,34 @@ export default function AdminAttendance() {
       notes: record.notes || "",
     });
     setModalOpen(true);
+  };
+
+  const handleViewHistory = async (employee) => {
+    setHistoryEmployee(employee);
+    setHistoryRecords([]);
+    setHistoryError("");
+    setHistoryLoading(true);
+    try {
+      const response = await api.get(
+        `/attendance/admin/employees/${encodeURIComponent(employee.employee_id)}/history`,
+      );
+      if (!response.data?.success) {
+        throw new Error(response.data?.message || "Unable to retrieve attendance history.");
+      }
+      if (!Array.isArray(response.data.data)) {
+        throw new Error("The attendance history response was invalid.");
+      }
+      setHistoryRecords(response.data.data);
+    } catch (historyRequestError) {
+      console.error("Failed to load employee attendance history:", historyRequestError);
+      setHistoryError(
+        historyRequestError.response?.data?.message
+          || historyRequestError.message
+          || "Unable to retrieve attendance history.",
+      );
+    } finally {
+      setHistoryLoading(false);
+    }
   };
 
   const handleSaveModal = async (e) => {
@@ -622,6 +654,14 @@ export default function AdminAttendance() {
                         <td className="px-4 py-3.5 text-right">
                           <div className="inline-flex items-center gap-1">
                             <button
+                              onClick={() => handleViewHistory(r)}
+                              title={`View attendance history for ${r.full_name}`}
+                              aria-label={`View attendance history for ${r.full_name}`}
+                              className="grid h-7 w-7 place-items-center rounded-lg border border-gray-200 bg-white text-[#1f4e42] transition hover:bg-emerald-50"
+                            >
+                              <Eye size={13} />
+                            </button>
+                            <button
                               onClick={() => handleEditClick(r)}
                               title="Edit Attendance"
                               className="grid h-7 w-7 place-items-center rounded-lg border border-gray-200 bg-white text-gray-600 transition hover:bg-gray-100 hover:text-gray-900"
@@ -774,6 +814,108 @@ export default function AdminAttendance() {
                 </div>
               </form>
             </div>
+          </div>
+        )}
+
+        {historyEmployee && (
+          <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
+            <section
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="attendance-history-title"
+              className="relative flex max-h-[90vh] w-full max-w-5xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl"
+            >
+              <div className="flex items-center justify-between border-b border-gray-100 bg-gray-50 px-5 py-4 sm:px-6">
+                <div className="flex items-center gap-3">
+                  <CalendarCheck size={18} className="text-[#1f4e42]" />
+                  <div>
+                    <h2 id="attendance-history-title" className="font-bold text-gray-900">
+                      Attendance History
+                    </h2>
+                    <p className="mt-0.5 text-xs text-gray-500">
+                      {historyEmployee.full_name} · {historyEmployee.employee_id}
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setHistoryEmployee(null)}
+                  aria-label="Close attendance history"
+                  className="grid h-8 w-8 place-items-center rounded-lg text-gray-400 hover:bg-gray-200 hover:text-gray-700"
+                >
+                  <X size={18} />
+                </button>
+              </div>
+
+              <div className="overflow-auto p-4 sm:p-6">
+                {historyLoading ? (
+                  <div className="flex items-center justify-center gap-2 py-14 text-sm text-gray-500">
+                    <RefreshCw size={18} className="animate-spin text-[#1f4e42]" />
+                    Loading full attendance history...
+                  </div>
+                ) : historyError ? (
+                  <div role="alert" className="rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">
+                    {historyError}
+                  </div>
+                ) : historyRecords.length === 0 ? (
+                  <div className="py-14 text-center text-sm text-gray-500">
+                    No attendance history found for this employee.
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto rounded-xl border border-gray-200">
+                    <table className="w-full min-w-[700px] text-left text-xs">
+                      <thead className="border-b border-gray-200 bg-gray-50 text-[10px] font-bold uppercase tracking-wider text-gray-500">
+                        <tr>
+                          <th className="px-4 py-3">Date</th>
+                          <th className="px-4 py-3">Clock In</th>
+                          <th className="px-4 py-3">Clock Out</th>
+                          <th className="px-4 py-3">Duration</th>
+                          <th className="px-4 py-3">Status</th>
+                          <th className="px-4 py-3">Notes</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-100">
+                        {historyRecords.map((record) => {
+                          const recordDate = String(record.attendance_date || record.date || "").slice(0, 10);
+                          const displayDate = recordDate
+                            ? new Date(`${recordDate}T00:00:00`).toLocaleDateString()
+                            : "--";
+                          const isAbsent = record.status === "Absent" || !record.check_in;
+                          return (
+                            <tr key={record.id || record.attendance_id} className="hover:bg-gray-50/70">
+                              <td className="whitespace-nowrap px-4 py-3 font-semibold text-gray-800">{displayDate}</td>
+                              <td className="whitespace-nowrap px-4 py-3 text-gray-700">{formatTimeStr(record.check_in)}</td>
+                              <td className="whitespace-nowrap px-4 py-3 text-gray-700">
+                                {record.check_out ? formatTimeStr(record.check_out) : record.check_in ? "Working" : "--:--"}
+                              </td>
+                              <td className="whitespace-nowrap px-4 py-3 font-mono text-gray-700">
+                                {record.total_hours
+                                  ? `${record.total_hours} hrs`
+                                  : record.duration_seconds
+                                    ? formatDuration(record.duration_seconds)
+                                    : "--"}
+                              </td>
+                              <td className="whitespace-nowrap px-4 py-3">
+                                <span className={`rounded-full px-2 py-1 text-[10px] font-bold ${
+                                  isAbsent
+                                    ? "bg-rose-100 text-rose-800"
+                                    : record.status === "Late"
+                                      ? "bg-amber-100 text-amber-800"
+                                      : "bg-emerald-100 text-emerald-800"
+                                }`}>
+                                  {isAbsent ? "Absent" : record.status || "Present"}
+                                </span>
+                              </td>
+                              <td className="max-w-xs px-4 py-3 text-gray-500">{record.notes || "—"}</td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+            </section>
           </div>
         )}
       </div>

@@ -5,8 +5,6 @@ import { Autoplay } from 'swiper/modules';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import api from '../../api';
 import FoodProductCard from '../../CommonComponents/FoodProductCard';
-import FoodCustomizationModal from '../../CommonComponents/FoodCustomizationModal';
-import { getActiveMenu, getFoodAvailability, useFoodAvailabilityClock } from '../../CommonComponents/foodAvailability';
 import PageContainer from '../../CommonComponents/PageContainer';
 import ShopPromoBanner from '../../CommonComponents/ShopPromoBanner';
 import { StoreContext } from '../../PrivateRouter/StoreContext';
@@ -18,8 +16,8 @@ function HomeProductSwiper({
   error,
   onRetry,
   onSelectFood,
-  onCustomize,
   onAdd,
+  onBuyNow,
   wishlist,
   toggleWishlist,
 }) {
@@ -105,8 +103,8 @@ function HomeProductSwiper({
                   className="h-full w-full"
                   onSelect={() => onSelectFood(food)}
                   onImageClick={() => onSelectFood(food)}
-                  onCustomize={onCustomize}
                   onAdd={() => onAdd(food)}
+                  onBuyNow={() => onBuyNow(food)}
                   isInWishlist={wishlist.some((item) => (
                     String(item.food_id || item.id || item.product_id || item._id)
                       === String(food.food_id || food.id)
@@ -136,10 +134,8 @@ function HomeProductSwiper({
 function HomeProducts() {
   const navigate = useNavigate();
   const [foods, setFoods] = useState([]);
-  const [selectedFood, setSelectedFood] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const currentTime = useFoodAvailabilityClock();
   const store = useContext(StoreContext) || {};
   const { wishlist = [], toggleWishlist, addToCart } = store;
   const activeMenu = getActiveMenu(currentTime);
@@ -186,29 +182,6 @@ function HomeProducts() {
     ];
   }, [activeMenu, currentTime, foods]);
 
-  const addSelectedFoodToCart = async ({ quantity, selectedAddons, selectedCustomizations, unitPrice }) => {
-    if (!selectedFood || !addToCart) return false;
-    return addToCart({
-      ...selectedFood,
-      id: selectedFood.food_id || selectedFood.id,
-      food_id: selectedFood.food_id || selectedFood.id,
-      product_id: selectedFood.food_id || selectedFood.id,
-      product_name: selectedFood.food_name,
-      name: selectedFood.food_name,
-      price: unitPrice,
-      portion_size: selectedFood.portion_size || 'Standard',
-      product_image: selectedFood.food_images?.[0] || '',
-      image: selectedFood.food_images?.[0] || '',
-      quantity,
-    }, {
-      size: selectedFood.portion_size || 'Standard',
-      price: unitPrice,
-      quantity,
-      selectedAddons,
-      selectedCustomizations,
-    });
-  };
-
   const addFoodToCart = (food) => {
     const price = Number(food.final_price || food.mrp || 0);
     const size = food.portion_size || 'Standard';
@@ -232,6 +205,25 @@ function HomeProducts() {
     });
   };
 
+  const buyFoodNow = (food) => {
+    navigate('/checkout', {
+      state: {
+        buyNowItem: {
+          food_id: String(food.food_id || food.id),
+          food_name: food.food_name,
+          product_name: food.food_name,
+          food_images: food.food_images || [],
+          product_image: food.food_images?.[0] || '',
+          portion_size: food.portion_size || 'Standard',
+          price: Number(food.final_price || food.mrp || 0),
+          quantity: 1,
+          selected_addons: [],
+          selected_customizations: {},
+        },
+      },
+    });
+  };
+
   return (
     <>
       {productSections.map((section, index) => (
@@ -242,8 +234,8 @@ function HomeProducts() {
             error={error}
             onRetry={fetchFoods}
             onSelectFood={(food) => navigate(`/food/${encodeURIComponent(food.food_id || food.id)}`, { state: { food } })}
-            onCustomize={setSelectedFood}
             onAdd={addFoodToCart}
+            onBuyNow={buyFoodNow}
             wishlist={wishlist}
             toggleWishlist={toggleWishlist}
           />
@@ -254,29 +246,6 @@ function HomeProducts() {
           </section>
         </div>
       ))}
-      {selectedFood && (
-        <FoodCustomizationModal
-          food={selectedFood}
-          onClose={() => setSelectedFood(null)}
-          onAdd={addSelectedFoodToCart}
-          onBuyNow={({ quantity, selectedAddons, selectedCustomizations, unitPrice }) => navigate('/checkout', {
-            state: {
-              buyNowItem: {
-                food_id: String(selectedFood.food_id || selectedFood.id),
-                food_name: selectedFood.food_name,
-                product_name: selectedFood.food_name,
-                food_images: selectedFood.food_images || [],
-                product_image: selectedFood.food_images?.[0] || '',
-                portion_size: selectedFood.portion_size || 'Standard',
-                price: unitPrice,
-                quantity,
-                selected_addons: selectedAddons,
-                selected_customizations: selectedCustomizations,
-              },
-            },
-          })}
-        />
-      )}
     </>
   );
 }

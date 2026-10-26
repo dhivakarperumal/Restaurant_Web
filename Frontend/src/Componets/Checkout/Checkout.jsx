@@ -211,7 +211,7 @@ function Checkout() {
   );
   const navigate = useNavigate();
   const [fulfillmentType, setFulfillmentType] = useState('home_delivery');
-  const [paymentMethod, setPaymentMethod] = useState('cod');
+  const [paymentMethod, setPaymentMethod] = useState('online');
   const [customer, setCustomer] = useState({
     name: user?.name || user?.username || '',
     phone: user?.mobile_number || user?.phone || '',
@@ -857,8 +857,8 @@ function Checkout() {
               </div>
               <div className="grid gap-3 sm:grid-cols-2">
                 {[
+                   { value: 'online', label: 'Online payment', detail: 'Secure checkout powered by Razorpay.' },
                   { value: 'cod', label: 'Cash on delivery', detail: 'Pay when your order arrives.' },
-                  { value: 'online', label: 'Online payment', detail: 'Secure checkout powered by Razorpay.' },
                 ].map((method) => (
                   <label key={method.value} className={`flex cursor-pointer gap-3 rounded-2xl border p-4 transition-all focus-within:ring-2 focus-within:ring-[#a34f32]/20 ${paymentMethod === method.value ? 'border-[#a34f32] bg-[#fbf6f1] shadow-sm' : 'border-[#e8e0d6] hover:border-[#cbb9a5] hover:bg-[#fffdfa]'}`}>
                     <input type="radio" name="payment_method" value={method.value} checked={paymentMethod === method.value} onChange={(event) => setPaymentMethod(event.target.value)} className="mt-1 accent-[#a34f32]" />

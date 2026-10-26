@@ -187,7 +187,7 @@ export default function Shop({ offersOnly = false }) {
     return true;
   };
 
-  // Add a food's base option directly; customization remains an explicit action.
+  // Add a food's base option directly.
   const handleQuickAdd = async (food) => {
     if (!addToCart) {
       toast.error("Unable to add this item to your cart.");
@@ -211,6 +211,25 @@ export default function Shop({ offersOnly = false }) {
       size,
       price,
       quantity: 1,
+    });
+  };
+
+  const handleQuickBuy = (food) => {
+    navigate('/checkout', {
+      state: {
+        buyNowItem: {
+          food_id: String(food.food_id || food.id),
+          food_name: food.food_name,
+          product_name: food.food_name,
+          food_images: food.food_images || [],
+          product_image: food.food_images?.[0] || '',
+          portion_size: food.portion_size || 'Standard',
+          price: Number(food.final_price || food.mrp || 0),
+          quantity: 1,
+          selected_addons: [],
+          selected_customizations: {},
+        },
+      },
     });
   };
 
@@ -765,8 +784,8 @@ export default function Shop({ offersOnly = false }) {
                   food={food}
                   onSelect={() => navigate(`/food/${encodeURIComponent(food.food_id || food.id)}`, { state: { food } })}
                   onImageClick={() => navigate(`/food/${encodeURIComponent(food.food_id || food.id)}`, { state: { food } })}
-                  onCustomize={openCustomizer}
                   onAdd={handleQuickAdd}
+                  onBuyNow={handleQuickBuy}
                   cartQuantity={getItemCartQty(food.food_id || food.id)}
                   isInWishlist={isItemInWishlist(food.food_id || food.id)}
                   onToggleWishlist={toggleWishlist}
@@ -783,9 +802,6 @@ export default function Shop({ offersOnly = false }) {
                 const mrp = Number(food.mrp || 0);
                 const hasDiscount = discount > 0 && mrp > finalPrice;
                 const isAvailable = food.is_available !== false;
-                const hasOptions = (food.addons || []).some(
-                  (addon) => String(addon.status || "Active").toLowerCase() === "active",
-                ) || (food.customizations || []).length > 0;
                 const primaryImage =
                   Array.isArray(food.food_images) && food.food_images.length > 0
                     ? resolveImageUrl(food.food_images[0])
@@ -864,19 +880,31 @@ export default function Shop({ offersOnly = false }) {
                         )}
                       </div>
 
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          if (hasOptions) openCustomizer(food);
-                          else handleQuickAdd(food);
-                        }}
-                        disabled={!isAvailable}
-                        className="inline-flex items-center gap-1.5 rounded-xl bg-[#1a3c36] px-4 py-2 text-xs font-bold text-white shadow-2xs hover:bg-[#245048] transition disabled:opacity-50"
-                      >
-                        <Plus className="h-3.5 w-3.5 text-emerald-300" />
-                        <span>{hasOptions ? "Customize" : "Add"}</span>
-                      </button>
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleQuickAdd(food);
+                          }}
+                          disabled={!isAvailable}
+                          className="inline-flex items-center gap-1.5 rounded-xl bg-[#1a3c36] px-4 py-2 text-xs font-bold text-white shadow-2xs hover:bg-[#245048] transition disabled:opacity-50"
+                        >
+                          <Plus className="h-3.5 w-3.5 text-emerald-300" />
+                          Add
+                        </button>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleQuickBuy(food);
+                          }}
+                          disabled={!isAvailable}
+                          className="rounded-xl border border-[#1a3c36] px-4 py-2 text-xs font-bold text-[#1a3c36] transition hover:bg-emerald-50 disabled:opacity-50"
+                        >
+                          Buy Now
+                        </button>
+                      </div>
                     </div>
                   </article>
                 );

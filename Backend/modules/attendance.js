@@ -239,6 +239,26 @@ async function getStaffAttendanceHistory(employeeId, limit = 60) {
   return rows;
 }
 
+async function getAdminEmployeeAttendanceHistory(employeeId) {
+  if (!employeeId) throw new Error('Employee ID is required');
+
+  const [rows] = await db.execute(
+    `SELECT a.*,
+            a.date AS attendance_date,
+            TIMESTAMPDIFF(SECOND, a.check_in, COALESCE(a.check_out, NOW())) AS duration_seconds,
+            e.full_name,
+            e.employee_type,
+            e.start_time,
+            e.end_time
+     FROM employee_attendance a
+     INNER JOIN employees e ON a.employee_id = e.employee_id
+     WHERE a.employee_id = ?
+     ORDER BY a.date DESC, a.check_in DESC, a.id DESC`,
+    [employeeId]
+  );
+  return rows;
+}
+
 async function getAdminAttendanceList({ date, employeeType, status, search }) {
   const targetDate = date ? String(date).slice(0, 10) : null;
   const params = [];
@@ -413,6 +433,7 @@ async function adminDeleteAttendance(recordId) {
 module.exports = {
   adminDeleteAttendance,
   adminSaveAttendance,
+  getAdminEmployeeAttendanceHistory,
   clockInEmployee,
   clockOutEmployee,
   getAdminAttendanceList,

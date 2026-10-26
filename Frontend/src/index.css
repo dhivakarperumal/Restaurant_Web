@@ -123,6 +123,11 @@
   color: var(--admin-sidebar-text) !important;
 }
 
+.admin-theme [data-sidebar="delivery-sidebar"] {
+  background: linear-gradient(to bottom, #0A4731 0%, #083B2A 55%, #062D22 100%);
+  color: var(--admin-sidebar-text);
+}
+
 .admin-theme .admin-sidebar-link:not(.admin-sidebar-link-active):hover {
   background-color: var(--admin-sidebar-hover);
 }

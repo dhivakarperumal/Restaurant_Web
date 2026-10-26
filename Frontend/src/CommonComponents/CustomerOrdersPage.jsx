@@ -229,12 +229,14 @@ function CustomerOrdersPage({
   }
 
   const isCustomer = audience === 'customer';
-  const isAdminOrdersOrangePage = audience === 'admin' && ['all', 'pickup', 'delivery', 'delivered', 'cancelled'].includes(view);
+  const isAdminOrdersOrangePage = (audience === 'admin' && ['all', 'pickup', 'delivery', 'delivered', 'cancelled'].includes(view))
+    || (audience === 'chef' && view === 'delivery');
   const useLightOrderSummary = (audience === 'admin' && ['all', 'pickup', 'delivery', 'delivered', 'cancelled'].includes(view))
     || (audience === 'chef' && ['all', 'new', 'pickup', 'delivery', 'cancelled'].includes(view) && (showOrderFilters || showOrderSummaryCards));
   const showChefDeliveryTable = audience === 'chef' && view === 'delivery';
   const canAssignDelivery = showChefDeliveryTable || (showOrderFilters && view === 'delivery');
   const isAdminHomeDeliveryOrders = audience === 'admin' && view === 'delivery' && todayOnly;
+  const showDeliveryAssignmentModal = isAdminHomeDeliveryOrders || showChefDeliveryTable;
   const showOrderSummary = audience === 'admin' || (audience === 'chef' && (showOrderFilters || showOrderSummaryCards));
   const title = isCustomer
     ? 'My Orders'
@@ -294,6 +296,10 @@ function CustomerOrdersPage({
   const selectedAssignmentOrder = assignmentModalOrder
     || assignableHomeDeliveryOrders.find((order) => order.order_number === assignmentOrderNumber)
     || null;
+  const assignmentOrders = selectedAssignmentOrder
+    && !assignableHomeDeliveryOrders.some((order) => order.order_number === selectedAssignmentOrder.order_number)
+    ? [selectedAssignmentOrder, ...assignableHomeDeliveryOrders]
+    : assignableHomeDeliveryOrders;
   const statusCounts = useMemo(() => STATUS_OPTIONS.reduce((counts, status) => {
     counts[status.value] = orders.filter((order) => order.order_status === status.value).length;
     return counts;
@@ -472,8 +478,8 @@ function CustomerOrdersPage({
 
   const selectOrderStatus = (order, status) => {
     if (canAssignDelivery && order.order_type === 'home_delivery' && status === 'assigned') {
-      if (isAdminHomeDeliveryOrders) {
-        openAssignmentModal(null);
+      if (showDeliveryAssignmentModal) {
+        openAssignmentModal(isAdminHomeDeliveryOrders ? null : order);
         return;
       }
       setAssignmentDrafts((current) => ({ ...current, [order.order_number]: '' }));
@@ -488,7 +494,7 @@ function CustomerOrdersPage({
   };
 
   const renderPartnerAssignment = (order) => {
-    if (isAdminHomeDeliveryOrders && order.order_type === 'home_delivery') {
+    if (showDeliveryAssignmentModal && order.order_type === 'home_delivery') {
       return (
         <div className="min-w-40">
           <p className="truncate font-semibold text-[#263830]">{order.assigned_partner_name || 'Not assigned'}</p>
@@ -678,7 +684,7 @@ function CustomerOrdersPage({
                 <button type="button" onClick={() => setLayout('table')} aria-label="Table view" aria-pressed={layout === 'table'} title="Table view" className={`grid w-11 place-items-center border-r border-[#dfe2e5] ${layout === 'table' ? (isAdminOrdersOrangePage ? 'bg-[#FF5A00] text-white' : 'bg-[#1a3c36] text-white') : `text-[#66736b] ${isAdminOrdersOrangePage ? 'hover:bg-orange-50 hover:text-[#FF5A00]' : 'hover:bg-gray-50'}`}`}><List size={16} /></button>
                 <button type="button" onClick={() => setLayout('card')} aria-label="Card view" aria-pressed={layout === 'card'} title="Card view" className={`grid w-11 place-items-center ${layout === 'card' ? (isAdminOrdersOrangePage ? 'bg-[#FF5A00] text-white' : 'bg-[#1a3c36] text-white') : `text-[#66736b] ${isAdminOrdersOrangePage ? 'hover:bg-orange-50 hover:text-[#FF5A00]' : 'hover:bg-gray-50'}`}`}><LayoutGrid size={16} /></button>
               </div>
-              {isAdminHomeDeliveryOrders && (
+              {showDeliveryAssignmentModal && (
                 <button
                   type="button"
                   onClick={() => openAssignmentModal(null)}
@@ -891,7 +897,7 @@ function CustomerOrdersPage({
         )}
       </div>
       </main>
-      {isAdminHomeDeliveryOrders && assignmentModalOpen && (
+      {showDeliveryAssignmentModal && assignmentModalOpen && (
         <div
           className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/55 p-3 backdrop-blur-[2px] sm:p-6"
           onMouseDown={(event) => {
@@ -933,7 +939,7 @@ function CustomerOrdersPage({
                   className="mt-1.5 h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-800 outline-none focus:border-[#FF5A00] focus:ring-2 focus:ring-orange-100"
                 >
                   <option value="" disabled>Select an order</option>
-                  {assignableHomeDeliveryOrders.map((order) => (
+                  {assignmentOrders.map((order) => (
                     <option key={order.order_number} value={order.order_number}>
                       {order.order_number} · {order.customer_name}
                     </option>
