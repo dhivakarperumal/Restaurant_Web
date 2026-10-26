@@ -101,8 +101,8 @@
   );
   --admin-sidebar-text: #FFFFFF;
   --admin-sidebar-hover: rgba(255, 255, 255, 0.15);
-  --admin-sidebar-active-bg: #FFFFFF;
-  --admin-sidebar-active-text: var(--admin-color-primary);
+  --admin-sidebar-active-bg: #176448;
+  --admin-sidebar-active-text: #FFFFFF;
   --admin-table-header-bg: var(--admin-color-primary-soft);
   --admin-table-header-text: var(--admin-color-primary);
 
@@ -270,6 +270,7 @@
 
 .admin-theme .admin-sidebar-link-active {
   background-color: var(--admin-sidebar-active-bg) !important;
+  box-shadow: inset 3px 0 0 #A7D9BC, 0 4px 12px rgba(0, 0, 0, 0.12);
 }
 
 .admin-theme .admin-sidebar-collapse {
