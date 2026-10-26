@@ -98,7 +98,7 @@ const DeliverySidebar = ({ isOpen, onClose, collapsed, onToggleCollapse }) => {
         data-sidebar="admin-sidebar"
         className={`
           fixed top-0 left-0 z-50 h-full flex flex-col
-          bg-brand-bg
+          bg-[#1F3C8C]
           border-r border-white/25
           
           transition-all duration-300
