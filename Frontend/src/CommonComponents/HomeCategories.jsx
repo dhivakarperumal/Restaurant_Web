@@ -5,6 +5,7 @@ import { Autoplay } from 'swiper/modules';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import api, { BACKEND_BASE_URL } from '../api';
 import PageContainer from './PageContainer';
+import { getFoodAvailability, useFoodAvailabilityClock } from './foodAvailability';
 import 'swiper/css';
 
 const resolveImageUrl = (image) => {
@@ -16,27 +17,44 @@ const resolveImageUrl = (image) => {
 function HomeCategories() {
   const swiperRef = useRef(null);
   const [categories, setCategories] = useState([]);
+  const [foods, setFoods] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const currentTime = useFoodAvailabilityClock();
+  const activeCategories = useMemo(() => {
+    const availableCategoryIds = new Set(foods
+      .filter((food) => getFoodAvailability(food, currentTime).available)
+      .map((food) => String(food.category_id || '')));
+    return categories.filter((category) => (
+      availableCategoryIds.has(String(category.category_id || category.id || ''))
+    ));
+  }, [categories, currentTime, foods]);
   const carouselCategories = useMemo(() => (
-    categories.length
+    activeCategories.length
       ? Array.from(
-        { length: Math.max(8, categories.length) },
-        (_, index) => categories[index % categories.length],
+        { length: Math.max(8, activeCategories.length) },
+        (_, index) => activeCategories[index % activeCategories.length],
       )
       : []
-  ), [categories]);
+  ), [activeCategories]);
 
   const fetchCategories = useCallback(async () => {
     setLoading(true);
     setError('');
     try {
-      const response = await api.get('/categories');
-      const data = response.data?.data ?? response.data;
-      if (!Array.isArray(data)) throw new Error('The categories response was invalid.');
-      setCategories(data.filter((category) => (
+      const [categoryResponse, foodsResponse] = await Promise.all([
+        api.get('/categories'),
+        api.get('/foods', { params: { include_unavailable: true } }),
+      ]);
+      const categoryData = categoryResponse.data?.data ?? categoryResponse.data;
+      const foodData = foodsResponse.data?.data ?? foodsResponse.data;
+      if (!Array.isArray(categoryData) || !Array.isArray(foodData)) {
+        throw new Error('The menu categories response was invalid.');
+      }
+      setCategories(categoryData.filter((category) => (
         String(category.status || 'Active').toLowerCase() === 'active'
       )));
+      setFoods(foodData);
     } catch (requestError) {
       console.error('Failed to load home categories:', requestError);
       setError(requestError.response?.data?.message || 'We could not load categories right now.');
@@ -77,7 +95,7 @@ function HomeCategories() {
               Try again
             </button>
           </div>
-        ) : categories.length ? (
+        ) : activeCategories.length ? (
           <div className="relative">
             <button
               type="button"
@@ -90,8 +108,8 @@ function HomeCategories() {
             <Swiper
               onSwiper={(swiper) => { swiperRef.current = swiper; }}
               modules={[Autoplay]}
-              loop={categories.length > 1}
-              autoplay={categories.length > 1
+              loop={activeCategories.length > 1}
+              autoplay={activeCategories.length > 1
                 && !window.matchMedia('(prefers-reduced-motion: reduce)').matches
                 ? { delay: 3600, disableOnInteraction: false, pauseOnMouseEnter: true }
                 : false}
@@ -152,7 +170,7 @@ function HomeCategories() {
             </button>
           </div>
         ) : (
-          <p className="py-5 text-center text-sm text-slate-500">Categories will appear here soon.</p>
+          <p className="py-5 text-center text-sm text-slate-500">No food items available right now.</p>
         )}
       </PageContainer>
     </section>

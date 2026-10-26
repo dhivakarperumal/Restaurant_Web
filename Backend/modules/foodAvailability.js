@@ -1,4 +1,4 @@
-const MEAL_TYPES = Object.freeze(['Breakfast', 'Lunch', 'Dinner', 'All Day']);
+const MEAL_TYPES = Object.freeze(['Breakfast', 'Lunch', 'Evening Snacks', 'Dinner']);
 
 const getLocalMinutes = (request) => {
   const rawMinutes = request?.get?.('x-local-time-minutes');
@@ -10,20 +10,19 @@ const getLocalMinutes = (request) => {
   return now.getHours() * 60 + now.getMinutes();
 };
 
+const getActiveMealType = (minutes) => {
+  if (!Number.isInteger(minutes) || minutes < 0 || minutes >= 24 * 60) return null;
+  if (minutes >= 6 * 60 && minutes < 11 * 60) return 'Breakfast';
+  if (minutes >= 11 * 60 && minutes < 15 * 60) return 'Lunch';
+  if (minutes >= 15 * 60 && minutes < 18 * 60) return 'Evening Snacks';
+  if (minutes >= 18 * 60 && minutes < 23 * 60) return 'Dinner';
+  return 'Evening Snacks';
+};
+
 const isFoodScheduledNow = (mealType, minutes) => {
-  if (!Number.isInteger(minutes) || minutes < 0 || minutes >= 24 * 60) return false;
-  switch (String(mealType || '').trim().toLowerCase()) {
-    case 'breakfast':
-      return minutes >= 6 * 60 && minutes < 12 * 60;
-    case 'lunch':
-      return minutes >= 12 * 60 && minutes < 16 * 60;
-    case 'dinner':
-      return minutes >= 18 * 60 && minutes < 24 * 60;
-    case 'all day':
-      return true;
-    default:
-      return false;
-  }
+  const activeMealType = getActiveMealType(minutes);
+  return Boolean(activeMealType)
+    && String(mealType || '').trim().toLowerCase() === activeMealType.toLowerCase();
 };
 
 const getFoodAvailability = (food, minutes) => {
@@ -31,6 +30,7 @@ const getFoodAvailability = (food, minutes) => {
   const scheduledAvailable = isFoodScheduledNow(mealType, minutes);
   const manuallyEnabled = Boolean(food.is_available)
     && Boolean(food.is_menu_visible)
+    && Number(food.stock_quantity || 0) > 0
     && String(food.status || '').toLowerCase() === 'active';
   const available = scheduledAvailable && manuallyEnabled;
   return {
@@ -40,4 +40,4 @@ const getFoodAvailability = (food, minutes) => {
   };
 };
 
-module.exports = { MEAL_TYPES, getFoodAvailability, getLocalMinutes, isFoodScheduledNow };
+module.exports = { MEAL_TYPES, getActiveMealType, getFoodAvailability, getLocalMinutes, isFoodScheduledNow };

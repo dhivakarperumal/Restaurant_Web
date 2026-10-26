@@ -112,13 +112,15 @@ const addItemToCart = async (itemData) => {
   const userId = String(itemData.user_id || '').trim();
   const foodId = String(itemData.food_id || itemData.product_id || '').trim();
   const productName = String(itemData.product_name || itemData.name || '').trim();
+  const quantity = Number(itemData.quantity || 1);
 
   if (!userId) throw new Error('user_id is required to add an item to the cart');
   if (!foodId) throw new Error('food_id or product_id is required');
   if (!productName) throw new Error('product_name is required');
+  if (!Number.isInteger(quantity) || quantity < 1) throw new Error('Enter a valid quantity.');
 
   const [foodRows] = await db.execute(
-    'SELECT food_name, meal_type, is_available, is_menu_visible, status FROM foods WHERE food_id = ? LIMIT 1',
+    'SELECT food_name, meal_type, stock_quantity, is_available, is_menu_visible, status FROM foods WHERE food_id = ? LIMIT 1',
     [foodId]
   );
   const food = foodRows[0];
@@ -126,6 +128,9 @@ const addItemToCart = async (itemData) => {
     || String(food.status || '').toLowerCase() !== 'active'
     || !isFoodScheduledNow(food.meal_type, itemData.local_minutes)) {
     throw new Error(`${food?.food_name || productName} is not available at this time.`);
+  }
+  if (quantity > Number(food.stock_quantity || 0)) {
+    throw new Error(`Only ${Number(food.stock_quantity || 0)} ${food.food_name} available in stock.`);
   }
 
   // Lookup user details from DB if not passed
@@ -151,7 +156,6 @@ const addItemToCart = async (itemData) => {
   const mrp = Number(itemData.mrp || itemData.price || 0);
   const discount = Number(itemData.discount || 0);
   const price = Number(itemData.price || itemData.final_price || mrp || 0);
-  const quantity = Math.max(1, parseInt(itemData.quantity || 1, 10));
   const totalPrice = Number((price * quantity).toFixed(2));
 
   const selectedAddonsStr = stringifyJson(itemData.selected_addons || itemData.selectedAddons || []);
@@ -173,6 +177,9 @@ const addItemToCart = async (itemData) => {
   if (existingRows.length > 0) {
     const existing = existingRows[0];
     const newQty = existing.quantity + quantity;
+    if (newQty > Number(food.stock_quantity || 0)) {
+      throw new Error(`Only ${Number(food.stock_quantity || 0)} ${food.food_name} available in stock.`);
+    }
     const newTotalPrice = Number((newQty * price).toFixed(2));
 
     await db.execute(
@@ -254,6 +261,12 @@ const updateCartItemQuantity = async (cartItemId, quantity, priceOverride = null
 
   const current = rows[0];
   const qty = Math.max(1, parseInt(quantity, 10));
+  if (!Number.isInteger(qty)) throw new Error('Enter a valid quantity.');
+  const [foodRows] = await db.execute('SELECT food_name, stock_quantity FROM foods WHERE food_id = ? LIMIT 1', [current.food_id]);
+  const stockQuantity = Number(foodRows[0]?.stock_quantity || 0);
+  if (!foodRows.length || qty > stockQuantity) {
+    throw new Error(`Only ${stockQuantity} ${foodRows[0]?.food_name || current.product_name} available in stock.`);
+  }
   const unitPrice = priceOverride !== null ? Number(priceOverride) : Number(current.price);
   const totalPrice = Number((qty * unitPrice).toFixed(2));
 

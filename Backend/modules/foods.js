@@ -12,7 +12,7 @@ const initializeFoodSchema = async () => {
       category_id VARCHAR(32) NOT NULL,
       category_name VARCHAR(150) NOT NULL,
       subcategory_name VARCHAR(150) NOT NULL,
-      meal_type VARCHAR(20) NOT NULL DEFAULT 'All Day',
+      meal_type VARCHAR(20) NOT NULL DEFAULT 'Evening Snacks',
       description TEXT NULL,
       food_images LONGTEXT NOT NULL,
       mrp DECIMAL(10,2) NOT NULL DEFAULT 0,
@@ -67,7 +67,9 @@ const initializeFoodSchema = async () => {
 
   const [mealTypeColumns] = await db.query("SHOW COLUMNS FROM foods LIKE 'meal_type'");
   if (!mealTypeColumns.length) {
-    await db.query("ALTER TABLE foods ADD COLUMN meal_type VARCHAR(20) NOT NULL DEFAULT 'All Day' AFTER category_name");
+    await db.query("ALTER TABLE foods ADD COLUMN meal_type VARCHAR(20) NOT NULL DEFAULT 'Evening Snacks' AFTER category_name");
+  } else if (mealTypeColumns[0].Default !== 'Evening Snacks') {
+    await db.query("ALTER TABLE foods MODIFY COLUMN meal_type VARCHAR(20) NOT NULL DEFAULT 'Evening Snacks'");
   }
 };
 

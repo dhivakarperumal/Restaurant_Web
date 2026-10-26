@@ -25,7 +25,7 @@ import PageContainer from "../../CommonComponents/PageContainer";
 import PageHeader from "../../CommonComponents/PageHeader";
 import FoodProductCard from "../../CommonComponents/FoodProductCard";
 import FoodCustomizationModal from "../../CommonComponents/FoodCustomizationModal";
-import { getFoodAvailability, useFoodAvailabilityClock } from "../../CommonComponents/foodAvailability";
+import { getActiveMenu, getFoodAvailability, useFoodAvailabilityClock } from "../../CommonComponents/foodAvailability";
 
 const resolveImageUrl = (img) => {
   if (!img || typeof img !== "string") return "";
@@ -52,6 +52,7 @@ export default function Shop({ offersOnly = false }) {
   // Data states
   const [foods, setFoods] = useState([]);
   const currentTime = useFoodAvailabilityClock();
+  const activeMenu = getActiveMenu(currentTime);
   const [categories, setCategories] = useState([]);
   const [cuisines, setCuisines] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -344,7 +345,10 @@ export default function Shop({ offersOnly = false }) {
     <div className="min-h-screen bg-[#fcfbf9] text-[#203129] pb-20">
       <PageHeader title={offersOnly ? "Offers" : "Shop"} />
       <PageContainer>
-        <div className="flex flex-col gap-4 pt-6 sm:flex-row sm:items-center sm:justify-between">
+      <div className="pt-6">
+        <h1 className="text-2xl font-extrabold text-[#203129] sm:text-3xl">{activeMenu.heading}</h1>
+      </div>
+      <div className="flex flex-col gap-4 pt-6 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex flex-wrap items-center gap-3 text-xs">
             <span className="flex items-center gap-1.5 rounded-lg bg-white px-3 py-2 font-semibold text-[#1a3c36] shadow-sm">
               <Utensils className="h-3.5 w-3.5 text-[#d4a843]" />
@@ -738,7 +742,7 @@ export default function Shop({ offersOnly = false }) {
               <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-50 text-[#1a3c36]">
                 <UtensilsCrossed className="h-7 w-7" />
               </div>
-              <h3 className="font-serif text-xl font-bold text-slate-800">No dishes found</h3>
+              <h3 className="font-serif text-xl font-bold text-slate-800">No food items available right now.</h3>
               <p className="mt-1.5 text-xs text-slate-500 leading-relaxed">
                 We couldn't find any menu items matching your selected criteria or search term.
                 Try adjusting your search or filters.

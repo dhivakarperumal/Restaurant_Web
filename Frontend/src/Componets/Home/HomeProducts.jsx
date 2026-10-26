@@ -6,7 +6,7 @@ import { Swiper, SwiperSlide } from 'swiper/react';
 import api from '../../api';
 import FoodProductCard from '../../CommonComponents/FoodProductCard';
 import FoodCustomizationModal from '../../CommonComponents/FoodCustomizationModal';
-import { getFoodAvailability, useFoodAvailabilityClock } from '../../CommonComponents/foodAvailability';
+import { getActiveMenu, getFoodAvailability, useFoodAvailabilityClock } from '../../CommonComponents/foodAvailability';
 import PageContainer from '../../CommonComponents/PageContainer';
 import ShopPromoBanner from '../../CommonComponents/ShopPromoBanner';
 import { StoreContext } from '../../PrivateRouter/StoreContext';
@@ -119,7 +119,7 @@ function HomeProductSwiper({
         ) : (
           <div className="rounded-2xl border border-dashed border-slate-300 bg-white px-6 py-12 text-center">
             <UtensilsCrossed className="mx-auto h-9 w-9 text-slate-300" />
-            <p className="mt-3 text-sm font-semibold text-slate-700">Menu items will appear here.</p>
+            <p className="mt-3 text-sm font-semibold text-slate-700">No food items available right now.</p>
           </div>
         )}
 
@@ -142,6 +142,7 @@ function HomeProducts() {
   const currentTime = useFoodAvailabilityClock();
   const store = useContext(StoreContext) || {};
   const { wishlist = [], toggleWishlist, addToCart } = store;
+  const activeMenu = getActiveMenu(currentTime);
 
   const fetchFoods = useCallback(async () => {
     setLoading(true);
@@ -154,6 +155,7 @@ function HomeProducts() {
         food.is_menu_visible !== false
         && food.is_available !== false
         && String(food.status || 'Active').toLowerCase() === 'active'
+        && Number(food.stock_quantity || 0) > 0
       )));
     } catch (requestError) {
       console.error('Failed to load home menu:', requestError);
@@ -168,43 +170,21 @@ function HomeProducts() {
   }, [fetchFoods]);
 
   const productSections = useMemo(() => {
-    const byFeaturedAndRating = [...foods].sort((first, second) => (
+    const activeFoods = foods.filter((food) => getFoodAvailability(food, currentTime).available);
+    const byFeaturedAndRating = [...activeFoods].sort((first, second) => (
       Number(Boolean(second.featured)) - Number(Boolean(first.featured))
       || Number(second.rating || 0) - Number(first.rating || 0)
     ));
-    const byRating = [...foods].sort((first, second) => (
-      Number(second.rating || 0) - Number(first.rating || 0)
-    ));
-    const byNewest = [...foods].sort((first, second) => {
-      const firstDate = new Date(first.created_at || first.updated_at || 0).getTime();
-      const secondDate = new Date(second.created_at || second.updated_at || 0).getTime();
-      return (Number.isFinite(secondDate) ? secondDate : 0) - (Number.isFinite(firstDate) ? firstDate : 0);
-    });
-
     return [
       {
-        id: 'guest-favorites',
-        eyebrow: 'A taste of what we make',
-        title: 'Guest favorites',
-        description: 'Fresh picks from our menu, ready for your next meal.',
+        id: activeMenu.mealType.toLowerCase().replaceAll(' ', '-'),
+        eyebrow: 'Available now',
+        title: activeMenu.heading,
+        description: 'Fresh food available during this time.',
         foods: byFeaturedAndRating.slice(0, 10),
       },
-      {
-        id: 'top-picks',
-        eyebrow: 'Handpicked for you',
-        title: 'Top Picks',
-        description: 'Discover more dishes our team thinks you will love.',
-        foods: byRating.slice(0, 10),
-      },
-      {
-        id: 'recently-added',
-        eyebrow: 'Something new to try',
-        title: 'Recently Added',
-        description: 'Explore the latest additions to our menu.',
-        foods: byNewest.slice(0, 10),
-      },
     ];
-  }, [foods]);
+  }, [activeMenu, currentTime, foods]);
 
   const addSelectedFoodToCart = async ({ quantity, selectedAddons, selectedCustomizations, unitPrice }) => {
     if (!selectedFood || !addToCart) return false;

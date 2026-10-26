@@ -14,7 +14,7 @@ const blankFood = (foodId = '', actor = '') => ({
   cuisineId: '',
   categoryId: '',
   subcategoryName: '',
-  mealType: 'All Day',
+  mealType: '',
   description: '',
   mrp: '',
   discount: '0',
@@ -506,11 +506,15 @@ const AddFood = ({ drawer = false, onClose, onSaved }) => {
           <Section number="04" title="Availability" description="Control service channels and menu visibility." columns={3}>
             <label className="block text-sm font-medium text-gray-700">Meal time
               <select value={MEAL_TYPES.includes(form.mealType) ? form.mealType : ''} onChange={(event) => setValue('mealType', event.target.value)} className={`mt-1.5 h-10 w-full rounded-md border bg-white px-3 ${errors.mealType ? 'border-red-500' : 'border-gray-300'}`}>
-                {!MEAL_TYPES.includes(form.mealType) && <option value="">Choose a meal time</option>}
-                <option value="Breakfast">Breakfast (6:00 AM – 12:00 PM)</option>
-                <option value="Lunch">Lunch (12:00 PM – 4:00 PM)</option>
-                <option value="Dinner">Dinner (6:00 PM – 12:00 AM)</option>
-                <option value="All Day">All Day (24 hours)</option>
+                {!MEAL_TYPES.includes(form.mealType) && (
+                  <option value="">
+                    {form.mealType ? `Choose a meal time (current: ${form.mealType})` : 'Choose a meal time'}
+                  </option>
+                )}
+                <option value="Breakfast">Breakfast (6:00 AM – 11:00 AM)</option>
+                <option value="Lunch">Lunch (11:00 AM – 3:00 PM)</option>
+                <option value="Evening Snacks">Evening Snacks (3:00 PM – 6:00 AM)</option>
+                <option value="Dinner">Dinner (6:00 PM – 11:00 PM)</option>
               </select>
               <span className="mt-1 block text-xs font-normal text-gray-500">Choose when this food is scheduled to be offered.</span>
               {errors.mealType && <span className="mt-1 block text-xs text-red-700">{errors.mealType}</span>}

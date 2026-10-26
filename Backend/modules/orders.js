@@ -345,7 +345,7 @@ const createOrderFromCart = async ({
     const foodIds = [...new Set(cartRows.map((row) => String(row.food_id)))];
     const [foodRows] = await connection.execute(
       `SELECT food_id, food_name, food_images, final_price, mrp, portion_size, addons, customizations,
-              is_available, is_menu_visible, meal_type, status, delivery_available, takeaway_available
+              stock_quantity, is_available, is_menu_visible, meal_type, status, delivery_available, takeaway_available
        FROM foods WHERE food_id IN (${foodIds.map(() => '?').join(', ')}) FOR UPDATE`,
       foodIds
     );
@@ -358,6 +358,9 @@ const createOrderFromCart = async ({
         || String(food.status).toLowerCase() !== 'active'
         || !isFoodScheduledNow(food.meal_type, localMinutes)) {
         throw invalidCartError(`${row.product_name || 'An item'} is no longer available.`);
+      }
+      if (quantity > Number(food.stock_quantity || 0)) {
+        throw invalidCartError(`Only ${Number(food.stock_quantity || 0)} ${food.food_name} available in stock.`);
       }
       if (fulfillmentType === 'delivery' && !food.delivery_available) {
         throw invalidCartError(`${food.food_name} is not available for delivery.`);
