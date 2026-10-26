@@ -11,8 +11,8 @@ function FoodProductCard({
   food,
   onSelect,
   onImageClick,
-  onCustomize,
   onAdd,
+  onBuyNow,
   cartQuantity = 0,
   isInWishlist = false,
   onToggleWishlist,
@@ -145,17 +145,6 @@ function FoodProductCard({
               type="button"
               onClick={(event) => {
                 event.stopPropagation();
-                onCustomize?.(food);
-              }}
-              disabled={!isAvailable}
-              className="inline-flex min-w-0 flex-1 items-center justify-center whitespace-nowrap rounded-xl border border-[#1a3c36] px-2 py-2 text-[11px] font-bold text-[#1a3c36] transition hover:bg-emerald-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 focus-visible:ring-offset-2 active:scale-95 disabled:cursor-not-allowed disabled:border-slate-200 disabled:text-slate-400"
-            >
-              Customize
-            </button>
-            <button
-              type="button"
-              onClick={(event) => {
-                event.stopPropagation();
                 onAdd?.(food);
               }}
               disabled={!isAvailable}
@@ -163,6 +152,17 @@ function FoodProductCard({
             >
               {isAvailable && <Plus className="h-3.5 w-3.5 text-emerald-300" />}
               {isAvailable ? (cartQuantity > 0 ? `Add (${cartQuantity})` : 'Add') : 'Unavailable'}
+            </button>
+            <button
+              type="button"
+              onClick={(event) => {
+                event.stopPropagation();
+                onBuyNow?.(food);
+              }}
+              disabled={!isAvailable}
+              className="inline-flex min-w-0 flex-1 items-center justify-center whitespace-nowrap rounded-xl border border-[#1a3c36] px-2 py-2 text-[11px] font-bold text-[#1a3c36] transition hover:bg-emerald-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 focus-visible:ring-offset-2 active:scale-95 disabled:cursor-not-allowed disabled:border-slate-200 disabled:text-slate-400"
+            >
+              Buy Now
             </button>
           </div>
         </div>

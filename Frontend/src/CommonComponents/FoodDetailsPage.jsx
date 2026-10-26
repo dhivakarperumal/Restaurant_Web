@@ -42,7 +42,6 @@ function FoodDetailsPage() {
   const [relatedFoods, setRelatedFoods] = useState([]);
   const [relatedFoodsLoading, setRelatedFoodsLoading] = useState(false);
   const [relatedFoodsError, setRelatedFoodsError] = useState('');
-  const [relatedFoodToCustomize, setRelatedFoodToCustomize] = useState(null);
   const [cuisineSwiper, setCuisineSwiper] = useState(null);
   const [categorySwiper, setCategorySwiper] = useState(null);
 
@@ -153,38 +152,6 @@ function FoodDetailsPage() {
       size,
       price,
       quantity,
-    });
-  };
-
-  const addRelatedFoodToCart = async ({
-    quantity,
-    selectedAddons,
-    selectedCustomizations,
-    unitPrice,
-  }) => {
-    if (!relatedFoodToCustomize || !addToCart) {
-      toast.error('Unable to add this item to your cart.');
-      return false;
-    }
-    const selectedFood = relatedFoodToCustomize;
-    return addToCart({
-      ...selectedFood,
-      id: selectedFood.food_id || selectedFood.id,
-      food_id: selectedFood.food_id || selectedFood.id,
-      product_id: selectedFood.food_id || selectedFood.id,
-      product_name: selectedFood.food_name,
-      name: selectedFood.food_name,
-      price: unitPrice,
-      portion_size: selectedFood.portion_size || 'Standard',
-      product_image: selectedFood.food_images?.[0] || '',
-      image: selectedFood.food_images?.[0] || '',
-      quantity,
-    }, {
-      size: selectedFood.portion_size || 'Standard',
-      price: unitPrice,
-      quantity,
-      selectedAddons,
-      selectedCustomizations,
     });
   };
 
@@ -329,8 +296,8 @@ function FoodDetailsPage() {
                   className="h-full w-full"
                   onSelect={openRelatedFood}
                   onImageClick={openRelatedFood}
-                  onCustomize={setRelatedFoodToCustomize}
                   onAdd={addRelatedFoodDirectly}
+                  onBuyNow={() => goToCheckoutWithFood(relatedFood)}
                   isInWishlist={isRelatedFoodInWishlist}
                   onToggleWishlist={toggleWishlist}
                 />
@@ -810,15 +777,6 @@ function FoodDetailsPage() {
           onClose={() => setCustomizing(false)}
           onAdd={addSelectedFoodToCart}
           onBuyNow={(options) => goToCheckoutWithFood(food, options)}
-        />
-      )}
-      {relatedFoodToCustomize && (
-        <FoodCustomizationModal
-          key={`related-${relatedFoodToCustomize.food_id || relatedFoodToCustomize.id}`}
-          food={relatedFoodToCustomize}
-          onClose={() => setRelatedFoodToCustomize(null)}
-          onAdd={addRelatedFoodToCart}
-          onBuyNow={(options) => goToCheckoutWithFood(relatedFoodToCustomize, options)}
         />
       )}
     </>
