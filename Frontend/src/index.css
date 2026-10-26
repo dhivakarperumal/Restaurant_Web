@@ -90,6 +90,8 @@
   --admin-color-primary-dark: #062D22;
   --admin-color-primary-light: #083B2A;
   --admin-color-primary-soft: #E8F2ED;
+  --color-primary: var(--admin-color-primary);
+  --color-primary-strong: var(--admin-color-primary-dark);
 
   --admin-sidebar-bg: linear-gradient(
     to bottom,
@@ -131,7 +133,9 @@
   color: var(--admin-sidebar-text);
 }
 
-.admin-theme table thead tr {
+.admin-theme table thead,
+.admin-theme table thead tr,
+.admin-theme table thead th {
   background-color: var(--admin-table-header-bg);
   border-color: var(--admin-color-primary-dark);
   color: var(--admin-table-header-text);
@@ -179,6 +183,80 @@
 .admin-theme button[aria-current="page"]:hover {
   background-color: var(--admin-color-primary-dark) !important;
   border-color: var(--admin-color-primary-dark) !important;
+}
+
+.admin-theme :is(button, a)[class*="bg-[#FF5A00]"],
+.admin-theme :is(button, a)[class*="bg-[#ff5a00]"],
+.admin-theme :is(button, a)[class*="bg-[#E94B00]"],
+.admin-theme :is(button, a)[class*="bg-[#1a3c36]"],
+.admin-theme :is(button, a)[class*="bg-orange-"] {
+  background-color: var(--admin-color-primary) !important;
+  border-color: var(--admin-color-primary) !important;
+  color: #FFFFFF !important;
+}
+
+.admin-theme :is(button, a)[class*="bg-orange-50"],
+.admin-theme :is(button, a)[class*="bg-orange-100"] {
+  background-color: var(--admin-color-primary-soft) !important;
+  border-color: var(--admin-color-primary-soft) !important;
+  color: var(--admin-color-primary) !important;
+}
+
+.admin-theme :is(button, a):hover[class*="hover:bg-[#E94B00]"],
+.admin-theme :is(button, a):hover[class*="hover:bg-[#25524a]"],
+.admin-theme :is(button, a):hover[class*="hover:bg-orange-"] {
+  background-color: var(--admin-color-primary-dark) !important;
+  border-color: var(--admin-color-primary-dark) !important;
+}
+
+.admin-theme :is(button, a)[class*="hover:text-[#FF5A00]"]:hover,
+.admin-theme :is(button, a)[class*="text-[#FF5A00]"],
+.admin-theme :is(button, a)[class*="text-[#ff5a00]"],
+.admin-theme :is(button, a)[class*="text-[#1a3c36]"],
+.admin-theme :is(button, a)[class*="text-orange-"] {
+  color: var(--admin-color-primary) !important;
+}
+
+.admin-theme :is(button, a) [class*="text-[#FF5A00]"],
+.admin-theme :is(button, a) [class*="text-[#ff5a00]"],
+.admin-theme :is(button, a) [class*="text-[#1a3c36]"],
+.admin-theme :is(button, a) [class*="text-orange-"] {
+  color: var(--admin-color-primary) !important;
+}
+
+.admin-theme header button[class*="from-[#FF7A1A]"],
+.admin-theme header button[class*="from-[#ff7a1a]"],
+.admin-theme header [class*="to-orange-"] {
+  background-image: linear-gradient(
+    135deg,
+    var(--admin-color-primary),
+    var(--admin-color-primary-dark)
+  ) !important;
+  border-color: var(--admin-color-primary) !important;
+}
+
+.admin-theme :is(button, a)[class*="border-orange-"],
+.admin-theme :is(button, a)[class*="border-[#FF5A00]"],
+.admin-theme :is(button, a)[class*="border-[#ff5a00]"] {
+  border-color: var(--admin-color-primary) !important;
+}
+
+.admin-theme :is(input, select, textarea)[class*="focus:border-[#FF5A00]"]:focus,
+.admin-theme :is(input, select, textarea)[class*="focus:border-[#ff5a00]"]:focus {
+  border-color: var(--admin-color-primary) !important;
+  --tw-ring-color: var(--admin-color-primary) !important;
+}
+
+.admin-theme :is(button, a)[aria-pressed="true"],
+.admin-theme :is(button, a)[aria-current="page"] {
+  background-color: var(--admin-color-primary) !important;
+  border-color: var(--admin-color-primary) !important;
+  color: #FFFFFF !important;
+}
+
+.admin-theme :is(button, a)[aria-pressed="true"] *,
+.admin-theme :is(button, a)[aria-current="page"] * {
+  color: #FFFFFF !important;
 }
 
 .admin-theme .admin-sidebar-link:not(.admin-sidebar-link-active):hover {
