@@ -141,7 +141,7 @@ const DeliveryOrdersPage = ({ view = "all" }) => {
         setOrders(Array.isArray(result) ? result : []);
       } catch (err) {
         if (!active) return;
-        setError(requestError?.response?.data?.message || "Assigned orders are temporarily unavailable.");
+        setError(err?.response?.data?.message || "Assigned orders are temporarily unavailable.");
         if (!silent) setOrders([]);
       } finally {
         if (active && !silent) setLoading(false);
@@ -202,8 +202,8 @@ const DeliveryOrdersPage = ({ view = "all" }) => {
     return sortBy === "latest" ? bDate - aDate : aDate - bDate;
   }), [matchingOrders, sortBy, view]);
 
-  const pageCount = Math.max(1, Math.ceil(sortedOrders.length / pageSize));
-  const visibleOrders = sortedOrders.slice((page - 1) * pageSize, page * pageSize);
+  const pageCount = Math.max(1, Math.ceil(sortedOrders.length / PAGE_SIZE));
+  const visibleOrders = sortedOrders.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
   const countStatuses = (statuses) => orders.filter((order) => statuses.includes(normalizeStatus(order.order_status))).length;
   const summaryCards = [
     { label: "New Orders", value: countStatuses(["NEW", "NEW_ORDER", "PENDING", "ORDER_PLACED"]), icon: Clock3, accent: "#ec4899", iconStyle: "bg-pink-500 text-white", caption: "Awaiting action" },
@@ -269,58 +269,14 @@ const DeliveryOrdersPage = ({ view = "all" }) => {
                 <p className="truncate text-[11px] font-bold uppercase tracking-wider text-slate-500">{label}</p>
                 {loading ? <div className="mt-2.5 h-8 w-16 animate-pulse rounded-lg bg-slate-100" /> : <p className="mt-2.5 truncate text-[23px] font-black tracking-tight text-slate-800 sm:text-[27px]">{error ? "—" : value}</p>}
               </div>
-
-              <div className="flex flex-wrap items-center gap-3 lg:ml-auto">
-                {/* status */}
-                <select value={statusFilter} onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
-                  className="h-[46px] rounded-xl border border-[#dfe2e5] bg-[#faf9f8] px-3 text-[14px] font-medium text-[#2d2d2d] outline-none focus:border-[#FF5A00]">
-                  <option>All Status</option>
-                  <option>New</option>
-                  <option>Assigned</option>
-                  <option>Accepted</option>
-                  <option>Picked up</option>
-                  <option>Out for delivery</option>
-                  <option>Delivered</option>
-                  <option>Cancelled</option>
-                </select>
-
-                {/* date from */}
-                <label className="flex h-[46px] items-center gap-2 rounded-xl border border-[#dfe2e5] bg-[#faf9f8] px-3 text-xs text-gray-500">
-                  <CalendarDays size={14} /><span>From</span>
-                  <input aria-label="Date from" type="date" value={dateFrom}
-                    onChange={(e) => { setDateFrom(e.target.value); setPage(1); }}
-                    className="max-w-32 bg-transparent text-gray-700 outline-none" />
-                </label>
-
-                {/* date to */}
-                <label className="flex h-[46px] items-center gap-2 rounded-xl border border-[#dfe2e5] bg-[#faf9f8] px-3 text-xs text-gray-500">
-                  <span>To</span>
-                  <input aria-label="Date to" type="date" value={dateTo}
-                    onChange={(e) => { setDateTo(e.target.value); setPage(1); }}
-                    className="max-w-32 bg-transparent text-gray-700 outline-none" />
-                </label>
-              </div>
             </div>
-
-            <div className="flex items-center gap-3 lg:shrink-0">
-              {/* sort */}
-              <select value={sortBy} onChange={(e) => { setSortBy(e.target.value); setPage(1); }}
-                className="h-[46px] rounded-xl border border-[#dfe2e5] bg-[#faf9f8] px-3 text-[14px] font-medium text-[#2d2d2d] outline-none focus:border-[#FF5A00]">
-                <option value="latest">Sort by: Latest</option>
-                <option value="oldest">Oldest First</option>
-                <option value="amount-high">Amount: High to Low</option>
-                <option value="amount-low">Amount: Low to High</option>
-              </select>
-
-              {/* view toggle */}
-              <div className="flex overflow-hidden rounded-xl border border-[#dfe2e5] bg-[#faf9f8]">
-                <button type="button" onClick={() => { setViewMode("table"); setPage(1); }}
-                  className={`flex h-[46px] w-[46px] items-center justify-center border-r border-[#dfe2e5] transition ${viewMode==="table" ? "bg-[#FF5A00] text-white" : "text-[#4d4d4d] hover:bg-orange-50 hover:text-[#FF5A00]"}`}
-                  aria-label="Table view"><Table2 className="h-4 w-4" /></button>
-                <button type="button" onClick={() => { setViewMode("card"); setPage(1); }}
-                  className={`flex h-[46px] w-[46px] items-center justify-center transition ${viewMode==="card" ? "bg-[#FF5A00] text-white" : "text-[#4d4d4d] hover:bg-orange-50 hover:text-[#FF5A00]"}`}
-                  aria-label="Card view"><LayoutGrid className="h-4 w-4" /></button>
-              </div>
+            <div className={`relative z-10 grid h-11 w-11 place-items-center rounded-xl ${iconStyle}`}>
+              <Icon size={21} />
+            </div>
+            <p className="relative z-10 mt-4 text-xs text-slate-500">{caption}</p>
+          </article>
+        ))}
+      </div>
 
       {["new", "all", "delivery", "cancelled"].includes(view) ? (
         <div className="mb-4 flex flex-col gap-3 rounded-2xl border border-[#e5e1dc] bg-white p-3 sm:flex-row sm:items-center sm:gap-4 sm:p-4">
@@ -404,7 +360,7 @@ const DeliveryOrdersPage = ({ view = "all" }) => {
       {!loading && !error && matchingOrders.length === 0 && <div className="rounded-xl border border-dashed border-[#cddbd0] bg-white px-5 py-14 text-center"><ShoppingBag size={25} className="mx-auto mb-3 text-[#7a9b82]" /><p className="font-semibold text-gray-800">No orders in this view</p><p className="mt-1 text-sm text-gray-500">New assignments will appear here when you are online.</p></div>}
       {!loading && !error && matchingOrders.length > 0 && <>
       {viewMode === "grid" ? (
-        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">{visibleOrders.map(renderOrderCard)}</div>
+        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">{visibleOrders.map(renderCard)}</div>
       ) : (
       <div className="overflow-hidden rounded-xl border border-gray-200 bg-white">
         <div className="overflow-x-auto">
@@ -431,8 +387,8 @@ const DeliveryOrdersPage = ({ view = "all" }) => {
                 <td className="px-4 py-3">
                   <div className="flex items-center gap-2">
                     <button type="button" onClick={() => setSelectedOrder(order)} className="rounded-lg px-3 py-1.5 text-xs font-semibold text-[#21643a] hover:bg-[#edf5ef]">View order</button>
-                    {canMarkDelivered(order) && (
-                      <button type="button" onClick={() => requestDeliveryCompletion(order)} className="inline-flex items-center gap-1.5 rounded-lg bg-[#1f6a3b] px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-[#195a31]">
+                    {canMarkDeliver(order) && (
+                      <button type="button" onClick={() => { setSelectedOrder(order); setPendingStatus("DELIVERED"); }} className="inline-flex items-center gap-1.5 rounded-lg bg-[#1f6a3b] px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-[#195a31]">
                         <CheckCircle2 size={14} /> Mark delivered
                       </button>
                     )}
