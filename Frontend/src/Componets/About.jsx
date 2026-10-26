@@ -143,13 +143,13 @@ function About() {
               Bringing Homemade Food{" "}
               <span className="text-[#e07b3c]">Closer to You</span>
             </h2>
-            <p className="mt-5 text-sm leading-7 text-slate-600">
+            <p className="mt-5 text-justify text-sm leading-7 text-slate-600">
               Our restaurant was born from a simple idea — to bring the authentic
               taste of homemade food to everyone. We connect passionate home
               chefs with food lovers who crave healthy, tasty and hygienic meals,
               just like at home.
             </p>
-            <p className="mt-4 text-sm leading-7 text-slate-600">
+            <p className="mt-4 text-justify text-sm leading-7 text-slate-600">
               Our mission is to support home chefs, promote traditional recipes
               and make home-style food accessible to every household.
             </p>
@@ -192,7 +192,7 @@ function About() {
           <h2 className="mt-3 text-3xl font-black sm:text-4xl">
             More Than <span className="text-[#e07b3c]">Just Food</span>
           </h2>
-          <p className="mx-auto mt-3 max-w-lg text-sm text-slate-500">
+          <p className="mx-auto mt-3 max-w-lg text-justify text-sm text-slate-500">
             We bring together taste, health and trust to give you a better food
             experience.
           </p>
@@ -209,7 +209,7 @@ function About() {
                   <Icon className="h-5 w-5" />
                 </span>
                 <h3 className="mt-4 font-bold text-[#1a3c2e]">{title}</h3>
-                <p className="mt-2 text-xs leading-5 text-slate-500">
+                <p className="mt-2 text-justify text-xs leading-5 text-slate-500">
                   {description}
                 </p>
               </div>
@@ -237,7 +237,7 @@ function About() {
               From Home Chefs to{" "}
               <span className="text-[#e07b3c]">Your Table</span>
             </h2>
-            <p className="mt-2 text-sm text-slate-500">
+            <p className="mt-2 text-justify text-sm text-slate-500">
               Enjoy homemade food in just a few simple steps.
             </p>
           </div>
@@ -255,7 +255,9 @@ function About() {
                   )}
                 </div>
                 <h3 className="mt-4 text-sm font-bold text-[#1a3c2e]">{step}</h3>
-                <p className="mt-1 text-xs leading-5 text-slate-500">{desc}</p>
+                <p className="mt-1 text-justify text-xs leading-5 text-slate-500">
+                  {desc}
+                </p>
               </div>
             ))}
           </div>
@@ -284,7 +286,7 @@ function About() {
                 <br />
                 <span className="text-[#a3c741]">Driven by People</span>
               </h2>
-              <p className="mt-5 text-sm leading-7 text-white/75">
+              <p className="mt-5 text-justify text-sm leading-7 text-white/75">
                 We believe good food brings people closer. Our values are built
                 on trust, quality, tradition and community. We work with local
                 home chefs to preserve traditional recipes and create
@@ -331,7 +333,7 @@ function About() {
             <span className="text-[#1a3c2e]">Food </span>
             <span className="text-[#e07b3c]">Family</span>
           </h2>
-          <p className="mx-auto mt-3 max-w-md text-sm text-slate-500">
+          <p className="mx-auto mt-3 max-w-md text-justify text-sm text-slate-500">
             Whether you are a food lover or a home chef, join us in our journey
             to spread the joy of homemade food.
           </p>
