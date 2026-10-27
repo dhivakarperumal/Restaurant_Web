@@ -316,6 +316,7 @@ const AdminProducts = () => {
                 <button
                   type="button"
                   onClick={() => setViewMode('table')}
+                  aria-pressed={viewMode === 'table'}
                   className={`flex h-[46px] w-[46px] items-center justify-center border-r border-[#dfe2e5] transition-colors xl:h-[42px] xl:w-[40px] ${viewMode === 'table' ? 'bg-[#FF5A00] text-white' : 'text-[#4d4d4d] hover:bg-orange-50 hover:text-[#FF5A00]'}`}
                   aria-label="Table view"
                   title="Table view"
@@ -325,6 +326,7 @@ const AdminProducts = () => {
                 <button
                   type="button"
                   onClick={() => setViewMode('card')}
+                  aria-pressed={viewMode === 'card'}
                   className={`flex h-[46px] w-[46px] items-center justify-center transition-colors xl:h-[42px] xl:w-[40px] ${viewMode === 'card' ? 'bg-[#FF5A00] text-white' : 'text-[#4d4d4d] hover:bg-orange-50 hover:text-[#FF5A00]'}`}
                   aria-label="Card view"
                   title="Card view"
@@ -335,7 +337,7 @@ const AdminProducts = () => {
               <button
                   type="button"
                   onClick={() => setAddFoodOpen(true)}
-                  className="inline-flex h-[46px] shrink-0 items-center gap-2 rounded-xl bg-[#FF5A00] px-4 text-[15px] font-semibold text-white shadow-[0_6px_14px_rgba(255,90,0,0.18)] transition hover:bg-[#E94B00] xl:h-[42px] xl:gap-1.5 xl:px-2.5 xl:text-xs"
+                  className="admin-primary-button inline-flex h-[46px] shrink-0 items-center gap-2 rounded-xl px-4 text-[15px] font-semibold text-white shadow-md transition xl:h-[42px] xl:gap-1.5 xl:px-2.5 xl:text-xs"
                 >
                   <Plus className="h-4 w-4" />
                   Add Food

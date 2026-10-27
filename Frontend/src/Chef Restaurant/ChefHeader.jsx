@@ -274,29 +274,31 @@ const ChefHeader = ({ onMenuClick }) => {
             <div className="relative ml-1 sm:ml-2">
               <button
                 onClick={() => toggle("profile")}
-                className={`flex items-center gap-2.5 rounded-2xl border border-[#ff7a1a] bg-gradient-to-br from-[#FF7A1A] to-[#E94B00] px-2.5 py-2 text-white shadow-sm transition-all duration-200 hover:from-[#ff8730] hover:to-[#f05408] ${
-                  activeDropdown === "profile" ? "ring-2 ring-orange-200" : ""
+                className={`flex items-center gap-2.5 rounded-2xl border px-2.5 py-2 transition-all duration-200 ${
+                  activeDropdown === "profile"
+                    ? "border-gray-200 bg-gray-100 shadow-sm"
+                    : "border-transparent bg-white hover:border-gray-200 hover:bg-gray-50"
                 }`}
               >
                 <div className="w-[34px] h-[34px] rounded-xl bg-gradient-to-br from-[#1a2e28] to-[#2c473f] border border-[#1a2e28] flex items-center justify-center text-white text-sm font-bold shadow-inner">
                   {userName.charAt(0).toUpperCase()}
                 </div>
                 <div className="hidden md:flex flex-col items-start pr-1">
-                  <span className="text-sm font-semibold leading-tight text-white">
+                  <span className="text-sm font-semibold leading-tight text-gray-900">
                     {userName}
                   </span>
-                  <span className="text-[10px] font-medium tracking-wide text-white/80">
+                  <span className="text-[10px] font-medium tracking-wide text-gray-500">
                     {userRole}
                   </span>
                 </div>
-                <ChevronDown size={14} className={`hidden md:block text-white/80 transition-transform ${activeDropdown === "profile" ? "rotate-180" : ""}`} />
+                <ChevronDown size={14} className={`hidden md:block text-gray-400 transition-transform ${activeDropdown === "profile" ? "rotate-180" : ""}`} />
               </button>
 
               {/* Profile dropdown */}
               {activeDropdown === "profile" && (
                 <div className="absolute right-0 top-full mt-3 w-56 bg-white border border-gray-100 rounded-2xl shadow-2xl z-50 overflow-hidden">
                   <div className="flex items-center gap-3 px-4 py-4 border-b border-gray-100 bg-gray-50">
-                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-orange-600 flex items-center justify-center text-white text-base font-bold shrink-0">
+                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#1a2e28] to-[#2c473f] flex items-center justify-center text-white text-base font-bold shrink-0">
                       {userName.charAt(0).toUpperCase()}
                     </div>
                     <div className="overflow-hidden">

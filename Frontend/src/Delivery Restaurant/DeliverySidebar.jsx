@@ -154,7 +154,7 @@ const DeliverySidebar = ({ isOpen, onClose, collapsed, onToggleCollapse }) => {
                       w-full flex items-center gap-3 px-3 py-3 rounded-xl text-sm
                       transition-all duration-200 group
                       ${isAnyChildActive
-                        ? "bg-white text-[#FF5A00] border-l-2 border-white"
+                        ? "admin-sidebar-link-active bg-white text-[#FF5A00] border-l-2 border-white"
                         : "text-white hover:text-white hover:bg-white/10"
                       }
                     `}
@@ -198,7 +198,7 @@ const DeliverySidebar = ({ isOpen, onClose, collapsed, onToggleCollapse }) => {
                               flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-xs font-bold
                               transition-all duration-200
                               ${isActive
-                                ? "bg-white text-[#FF5A00] font-bold"
+                                ? "admin-sidebar-link-active bg-white text-[#FF5A00] font-bold"
                                 : "text-white hover:text-white hover:bg-white/10"
                               }
                             `}
@@ -233,7 +233,7 @@ const DeliverySidebar = ({ isOpen, onClose, collapsed, onToggleCollapse }) => {
                   flex items-center gap-3 px-3 py-3 rounded-xl text-sm
                   transition-all duration-200
                   ${isActive
-                    ? "bg-white text-[#FF5A00] font-bold shadow-md"
+                    ? "admin-sidebar-link-active bg-white text-[#FF5A00] font-bold shadow-md"
                     : "text-white hover:text-white hover:bg-white/10 font-semibold"
                   }
                   ${collapsed ? "justify-center" : ""}
@@ -250,7 +250,7 @@ const DeliverySidebar = ({ isOpen, onClose, collapsed, onToggleCollapse }) => {
           to="/"
           title={collapsed ? "Back Home" : ""}
           onClick={() => isOpen && onClose()}
-          className={`mx-3 mb-2 flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-semibold transition-all duration-200 ${isRouteActive("/") ? "bg-white text-[#FF5A00] shadow-md" : "text-white hover:bg-white/10"} ${collapsed ? "justify-center" : ""}`}
+          className={`admin-sidebar-link mx-3 mb-2 flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-semibold transition-all duration-200 ${isRouteActive("/") ? "admin-sidebar-link-active bg-white text-[#FF5A00] shadow-md" : "text-white hover:bg-white/10"} ${collapsed ? "justify-center" : ""}`}
         >
           <Home className={`h-[17px] w-[17px] shrink-0 ${isRouteActive("/") ? "text-[#FF5A00]" : "text-white"}`} />
           {!collapsed && <span className="truncate">Back Home</span>}
