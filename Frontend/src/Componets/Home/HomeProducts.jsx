@@ -7,6 +7,7 @@ import api from '../../api';
 import FoodProductCard from '../../CommonComponents/FoodProductCard';
 import PageContainer from '../../CommonComponents/PageContainer';
 import ShopPromoBanner from '../../CommonComponents/ShopPromoBanner';
+import { getActiveMenu, getFoodAvailability, useFoodAvailabilityClock } from '../../CommonComponents/foodAvailability';
 import { StoreContext } from '../../PrivateRouter/StoreContext';
 import 'swiper/css';
 
@@ -138,6 +139,7 @@ function HomeProducts() {
   const [error, setError] = useState('');
   const store = useContext(StoreContext) || {};
   const { wishlist = [], toggleWishlist, addToCart } = store;
+  const currentTime = useFoodAvailabilityClock();
   const activeMenu = getActiveMenu(currentTime);
 
   const fetchFoods = useCallback(async () => {
