@@ -6,10 +6,33 @@ const { getLocalMinutes } = require('../modules/foodAvailability');
 const ALLOWED_STATUSES = ['Pending', 'Preparing', 'Ready to Serve', 'Served', 'Cancelled'];
 
 async function submitKitchenOrder(req, res) {
+  const orderType = String(req.body?.order_type || 'dine-in').trim().toLowerCase();
   const tableId = String(req.body?.table_id || '').trim();
+  const customer = {
+    name: String(req.body?.customer?.name || '').trim(),
+    phone: String(req.body?.customer?.phone || '').trim(),
+    address: String(req.body?.customer?.address || '').trim(),
+  };
   const rawItems = req.body?.items;
-  if (!tableId) {
+  const idempotencyKey = String(req.get('Idempotency-Key') || '').trim();
+  if (!['dine-in', 'home_delivery', 'pickup'].includes(orderType)) {
+    return res.status(400).json({ success: false, message: 'Choose dine-in, home delivery, or pickup.' });
+  }
+  if (orderType === 'dine-in' && !tableId) {
     return res.status(400).json({ success: false, message: 'Select a table before sending an order.' });
+  }
+  if (orderType !== 'dine-in' && (!customer.name || customer.name.length > 150
+    || !/^[+()\d\s-]{7,32}$/.test(customer.phone)
+    || (orderType === 'home_delivery' && (!customer.address || customer.address.length > 1000)))) {
+    return res.status(400).json({
+      success: false,
+      message: orderType === 'home_delivery'
+        ? 'Enter a valid customer name, phone number, and delivery address.'
+        : 'Enter a valid customer name and phone number.',
+    });
+  }
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(idempotencyKey)) {
+    return res.status(400).json({ success: false, message: 'A valid order request key is required.' });
   }
   if (!Array.isArray(rawItems) || rawItems.length === 0 || rawItems.length > 50) {
     return res.status(400).json({ success: false, message: 'Choose between 1 and 50 menu items.' });
@@ -37,18 +60,28 @@ async function submitKitchenOrder(req, res) {
 
   try {
     const order = await createKitchenOrder({
+      orderType,
       tableId,
+      customer,
       userId: req.auth.user_id,
+      isAdmin: ['admin', 'super admin', 'superadmin'].includes(String(req.auth.role || '').trim().toLowerCase()),
+      idempotencyKey,
       items,
       localMinutes: getLocalMinutes(req),
     });
-    notifyChefs({
-      type: 'kitchen',
-      title: 'New dining order',
-      message: `Table ${order.table_number} sent a new order to the kitchen.`,
-      link: '/chef/orders',
-      data: { order_id: order.order_id, table_number: order.table_number },
-    });
+    if (!order.existing) {
+      const isDineIn = orderType === 'dine-in';
+      const label = orderType === 'home_delivery' ? 'home delivery' : orderType;
+      notifyChefs({
+        type: 'kitchen',
+        title: isDineIn ? 'New dining order' : `New ${label} order`,
+        message: isDineIn
+          ? `Table ${order.table_number} sent a new order to the kitchen.`
+          : `A ${label} order${customer.name ? ` for ${customer.name}` : ''} is ready for the kitchen.`,
+        link: '/chef/orders',
+        data: { order_id: order.order_id, order_type: orderType, table_number: order.table_number },
+      });
+    }
     return res.status(201).json({ success: true, order });
   } catch (error) {
     if (error.statusCode) {
@@ -106,12 +139,15 @@ async function changeKitchenOrderStatus(req, res) {
 
     if (matchedStatus === 'Ready to Serve' && previousOrders[0]?.status !== matchedStatus) {
       if (updatedOrder.user_id) {
+        const orderLabel = updatedOrder.order_type === 'dine-in'
+          ? `Table ${updatedOrder.table_number}`
+          : `${updatedOrder.order_type === 'pickup' ? 'pickup' : 'home delivery'} order${updatedOrder.customer_name ? ` for ${updatedOrder.customer_name}` : ''}`;
         notifyServer(updatedOrder.user_id, {
           type: 'kitchen',
-          title: 'Dining order ready',
-          message: `Order for Table ${updatedOrder.table_number} is ready for pickup.`,
+          title: 'Order ready',
+          message: `${orderLabel} is ready.`,
           link: '/server/tables',
-          data: { order_id: updatedOrder.order_id, table_number: updatedOrder.table_number },
+          data: { order_id: updatedOrder.order_id, order_type: updatedOrder.order_type, table_number: updatedOrder.table_number },
         });
       }
     }

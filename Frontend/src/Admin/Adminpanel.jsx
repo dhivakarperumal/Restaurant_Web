@@ -31,10 +31,10 @@ const AdminLayout = () => {
 
 
   return (
-    <div className={`admin-root admin-theme flex min-h-screen ${isPosPage ? 'md:h-screen md:overflow-hidden' : ''} ${isPrintPage ? 'bg-slate-100 text-slate-900' : 'bg-slate-100/75 text-slate-800'} print:bg-white print:text-black print:min-h-0 print:block`}>
+    <div className={`admin-root admin-theme flex min-h-screen ${isPrintPage ? 'bg-slate-100 text-slate-900' : 'bg-slate-100/75 text-slate-800'} print:bg-white print:text-black print:min-h-0 print:block`}>
       
       {/* Sidebar */}
-      {!isPrintPage && !isPosPage && (
+      {!isPrintPage && (
         <div className="print:hidden">
           <Sidebar
             isOpen={sidebarOpen}
@@ -49,23 +49,22 @@ const AdminLayout = () => {
       <div
         className={`
           flex flex-col flex-1 min-w-0 min-h-screen
-          ${isPosPage ? "md:h-screen md:min-h-0" : ""}
           transition-all duration-300 ease-in-out
           bg-slate-100/75
-          ${!isPrintPage && !isPosPage && isLargeScreen ? (sidebarCollapsed ? "lg:ml-[80px]" : "lg:ml-72") : ""}
+          ${!isPrintPage && isLargeScreen ? (sidebarCollapsed ? "lg:ml-[80px]" : "lg:ml-72") : ""}
           print:ml-0 print:min-h-0 print:block print:w-full
         `}
       >
         {/* Header */}
-        {!isPrintPage && !isPosPage && (
+        {!isPrintPage && (
           <div className="print:hidden sticky top-0 z-40">
             <Header onMenuClick={() => setSidebarOpen(true)} />
           </div>
         )}
 
         {/* Page Content */}
-        <main className={`flex-1 ${isPosPage ? 'md:min-h-0 overflow-y-auto md:overflow-hidden' : ''} ${isPrintPage || isPosPage ? 'p-0' : 'p-4 sm:p-5 lg:p-6'} ${!isPosPage && !isPrintPage ? 'overflow-y-auto' : ''} bg-white print:p-0 print:m-0 print:overflow-visible`}>
-          <div className={isPosPage ? 'md:h-full md:min-h-0' : isPrintPage ? '' : isDashboard || isProductsPage ? 'bg-transparent print:bg-transparent print:border-none print:p-0 print:m-0 print:shadow-none print:backdrop-filter-none' : 'glass-container bg-white print:bg-transparent print:border-none print:p-0 print:m-0 print:shadow-none print:backdrop-filter-none'}>
+        <main className={`flex-1 ${isPrintPage || isPosPage ? 'p-0' : 'p-4 sm:p-5 lg:p-6'} ${!isPrintPage ? 'overflow-y-auto' : ''} bg-white print:p-0 print:m-0 print:overflow-visible`}>
+          <div className={isPrintPage ? '' : isDashboard || isProductsPage || isPosPage ? 'bg-transparent print:bg-transparent print:border-none print:p-0 print:m-0 print:shadow-none print:backdrop-filter-none' : 'glass-container bg-white print:bg-transparent print:border-none print:p-0 print:m-0 print:shadow-none print:backdrop-filter-none'}>
             <Suspense fallback={
               <div className="flex flex-col items-center justify-center min-h-[50vh] gap-4 print:hidden">
                 <PacmanLoader color="#ef4444" size={20} />
@@ -78,7 +77,7 @@ const AdminLayout = () => {
         </main>
 
         {/* Footer */}
-      {!isPrintPage && !isPosPage && (
+      {!isPrintPage && (
          <footer className="border-t border-slate-200/80 bg-white/80 text-center py-3.5 text-xs text-slate-500 backdrop-blur-sm print:hidden">
            © {new Date().getFullYear()} Q-Techx Solutions. All rights reserved.
          </footer>

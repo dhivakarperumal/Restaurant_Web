@@ -7,6 +7,12 @@ import { useAuth } from '../../PrivateRouter/AuthContext';
 import { MEAL_TYPES } from '../../CommonComponents/foodAvailability';
 
 const makeId = () => globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+const MEAL_AVAILABLE_TIMES = {
+  Breakfast: '6:00 AM - 11:00 AM',
+  Lunch: '11:00 AM - 3:00 PM',
+  'Evening Snacks': '3:00 PM - 6:00 PM',
+  Dinner: '6:00 PM - 11:00 PM',
+};
 
 const blankFood = (foodId = '', actor = '') => ({
   foodId,
@@ -226,6 +232,15 @@ const AddFood = ({ drawer = false, onClose, onSaved }) => {
   const setValue = (key, value) => {
     setForm((current) => ({ ...current, [key]: value }));
     setErrors((current) => ({ ...current, [key]: '' }));
+  };
+
+  const setMealType = (mealType) => {
+    setForm((current) => ({
+      ...current,
+      mealType,
+      availableTime: MEAL_AVAILABLE_TIMES[mealType] || current.availableTime,
+    }));
+    setErrors((current) => ({ ...current, mealType: '' }));
   };
 
   const addImageFiles = async (fileList) => {
@@ -505,7 +520,7 @@ const AddFood = ({ drawer = false, onClose, onSaved }) => {
 
           <Section number="04" title="Availability" description="Control service channels and menu visibility." columns={3}>
             <label className="block text-sm font-medium text-gray-700">Meal time
-              <select value={MEAL_TYPES.includes(form.mealType) ? form.mealType : ''} onChange={(event) => setValue('mealType', event.target.value)} className={`mt-1.5 h-10 w-full rounded-md border bg-white px-3 ${errors.mealType ? 'border-red-500' : 'border-gray-300'}`}>
+              <select value={MEAL_TYPES.includes(form.mealType) ? form.mealType : ''} onChange={(event) => setMealType(event.target.value)} className={`mt-1.5 h-10 w-full rounded-md border bg-white px-3 ${errors.mealType ? 'border-red-500' : 'border-gray-300'}`}>
                 {!MEAL_TYPES.includes(form.mealType) && (
                   <option value="">
                     {form.mealType ? `Choose a meal time (current: ${form.mealType})` : 'Choose a meal time'}
@@ -513,7 +528,7 @@ const AddFood = ({ drawer = false, onClose, onSaved }) => {
                 )}
                 <option value="Breakfast">Breakfast (6:00 AM – 11:00 AM)</option>
                 <option value="Lunch">Lunch (11:00 AM – 3:00 PM)</option>
-                <option value="Evening Snacks">Evening Snacks (3:00 PM – 6:00 AM)</option>
+                <option value="Evening Snacks">Evening Snacks (3:00 PM – 6:00 PM)</option>
                 <option value="Dinner">Dinner (6:00 PM – 11:00 PM)</option>
               </select>
               <span className="mt-1 block text-xs font-normal text-gray-500">Choose when this food is scheduled to be offered.</span>
@@ -521,7 +536,7 @@ const AddFood = ({ drawer = false, onClose, onSaved }) => {
             </label>
             <label className="block text-sm font-medium text-gray-700">Available time
               <input type="text" value={form.availableTime} onChange={(event) => setValue('availableTime', event.target.value)} maxLength={100} placeholder="e.g. 10:00 AM - 1:00 PM" className="mt-1.5 h-10 w-full rounded-md border border-gray-300 px-3 outline-none focus:border-[#FF5A00]" />
-              <span className="mt-1 block text-xs font-normal text-gray-500">Default: 10:00 AM - 1:00 PM</span>
+              <span className="mt-1 block text-xs font-normal text-gray-500">Automatically set from the selected meal time; you can adjust it.</span>
             </label>
             <Toggle label="Available" checked={form.isAvailable} onChange={(value) => setValue('isAvailable', value)} />
             <Toggle label="Dining available" checked={form.diningAvailable} onChange={(value) => setValue('diningAvailable', value)} />

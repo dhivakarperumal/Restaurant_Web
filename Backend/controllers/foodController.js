@@ -4,6 +4,7 @@ const {
   findFoodById,
   getNextFoodId,
   listFoods,
+  setFoodAvailability,
   setFoodMenuVisibility,
   updateFood,
 } = require('../modules/foods');
@@ -176,6 +177,42 @@ const updateMenuVisibility = async (req, res) => {
   }
 };
 
+
+const updateFoodAvailability = async (req, res) => {
+  const isAvailable = req.body?.is_available;
+  const mealType = req.body?.meal_type;
+  const stockQuantity = req.body?.stock_quantity;
+
+  if (isAvailable === undefined && mealType === undefined && stockQuantity === undefined) {
+    return res.status(400).json({ success: false, message: 'Provide is_available, meal_type, or stock_quantity.' });
+  }
+
+  if (isAvailable !== undefined && typeof isAvailable !== 'boolean') {
+    return res.status(400).json({ success: false, message: 'is_available must be true or false.' });
+  }
+
+  if (mealType !== undefined && !MEAL_TYPES.includes(String(mealType).trim())) {
+    return res.status(400).json({ success: false, message: 'Invalid meal_type. Allowed: Breakfast, Lunch, Evening Snacks, Dinner.' });
+  }
+
+  try {
+    const food = await setFoodAvailability(
+      req.params.foodId,
+      {
+        is_available: isAvailable,
+        meal_type: mealType ? String(mealType).trim() : undefined,
+        stock_quantity: typeof stockQuantity === 'number' ? Math.floor(stockQuantity) : undefined,
+      },
+      req.auth?.username || req.auth?.name || 'Chef'
+    );
+    if (!food) return res.status(404).json({ success: false, message: 'Food not found.' });
+    return res.json({ success: true, data: food });
+  } catch (error) {
+    console.error('Failed to update food availability:', error.message);
+    return res.status(500).json({ success: false, message: 'Unable to update food availability.' });
+  }
+};
+
 const remove = async (req, res) => {
   try {
     if (!await deleteFood(req.params.foodId)) return res.status(404).json({ success: false, message: 'Food not found.' });
@@ -186,4 +223,4 @@ const remove = async (req, res) => {
   }
 };
 
-module.exports = { create, getById, getNextId, list, remove, update, updateMenuVisibility };
+module.exports = { create, getById, getNextId, list, remove, update, updateFoodAvailability, updateMenuVisibility };

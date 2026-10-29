@@ -167,6 +167,7 @@ export default function ServerDashboard() {
   const startOrderForTable = (table) => {
     navigate("/server/foods", {
       state: {
+        returnPath: "/server",
         selectedTable: {
           id: table.id ?? null,
           table_id: table.table_id || null,

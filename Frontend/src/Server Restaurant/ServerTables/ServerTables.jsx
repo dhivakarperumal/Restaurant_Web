@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import {
   Armchair,
@@ -83,6 +83,7 @@ export default function ServerTables() {
   const [viewingBill, setViewingBill] = useState(null);
   const [loadingBillDetails, setLoadingBillDetails] = useState(false);
   const [settlingBill, setSettlingBill] = useState(false);
+  const settleLock = useRef(false);
   const [paymentMethod, setPaymentMethod] = useState("Cash");
   const [settleDiscount, setSettleDiscount] = useState(0);
   const billItems = useMemo(() => {
@@ -413,7 +414,8 @@ export default function ServerTables() {
   };
 
   const handleSettleBill = async () => {
-    if (!viewingBill) return;
+    if (!viewingBill || settleLock.current) return;
+    settleLock.current = true;
     try {
       setSettlingBill(true);
       const res = await api.post(`/table-bills/${viewingBill.bill_id}/settle`, {
@@ -430,6 +432,7 @@ export default function ServerTables() {
     } catch (err) {
       toast.error(err.response?.data?.message || "Failed to settle bill");
     } finally {
+      settleLock.current = false;
       setSettlingBill(false);
     }
   };
@@ -450,12 +453,14 @@ export default function ServerTables() {
   };
 
   const selectTableForOrder = (table) => {
-    if (String(table.status || "").trim().toLowerCase() !== "occupied") {
-      toast.error("Mark the table as Occupied before starting an order.");
+    const tableStatus = getDisplayStatus(table);
+    if (!["Available", "Occupied"].includes(tableStatus)) {
+      toast.error(`Table ${table.table_number} is ${tableStatus.toLowerCase()} and cannot be selected.`);
       return;
     }
     navigate("/server/foods", {
       state: {
+        returnPath: isAdminTablesPage ? "/admin/billing" : "/server",
         selectedTable: {
           id: table.id ?? null,
           table_id: table.table_id || null,

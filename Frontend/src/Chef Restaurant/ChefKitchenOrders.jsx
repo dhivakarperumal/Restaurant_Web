@@ -90,6 +90,12 @@ const formatKotNumber = (order) => {
   return `KOT-${ticketId.slice(0, 8)}`;
 };
 
+const getOrderTypeLabel = (orderType) => ({
+  "dine-in": "Dine-In",
+  home_delivery: "Home Delivery",
+  pickup: "Pick Up",
+}[orderType] || "Dine-In");
+
 const ChefKitchenOrders = ({ defaultViewMode = "table", orderTypeFilter = "", todayOnly = false, adminTheme = false, lightSummaryCards = false }) => {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -99,13 +105,14 @@ const ChefKitchenOrders = ({ defaultViewMode = "table", orderTypeFilter = "", to
   const [viewMode, setViewMode] = useState(defaultViewMode);
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState("latest");
+  const [selectedOrderType, setSelectedOrderType] = useState(orderTypeFilter || "all");
   const [page, setPage] = useState(1);
 
   const fetchOrders = useCallback(async (showLoading = false) => {
     if (showLoading) setLoading(true);
     try {
       const response = await api.get("/kitchen-orders", {
-        params: orderTypeFilter ? { order_type: orderTypeFilter } : undefined,
+        params: selectedOrderType !== "all" ? { order_type: selectedOrderType } : undefined,
       });
       const list = Array.isArray(response.data?.orders) ? response.data.orders : [];
       const visibleOrders = todayOnly
@@ -121,7 +128,7 @@ const ChefKitchenOrders = ({ defaultViewMode = "table", orderTypeFilter = "", to
     } finally {
       setLoading(false);
     }
-  }, [orderTypeFilter, todayOnly]);
+  }, [selectedOrderType, todayOnly]);
 
   useEffect(() => {
     fetchOrders(true);
@@ -167,6 +174,9 @@ const ChefKitchenOrders = ({ defaultViewMode = "table", orderTypeFilter = "", to
       const searchableText = [
         order.order_id,
         order.table_number,
+        order.customer_name,
+        order.customer_phone,
+        order.delivery_address,
         order.bill_number,
         ...(order.items || []).map((item) => item.food_name),
       ].join(" ").toLowerCase();
@@ -266,6 +276,14 @@ const ChefKitchenOrders = ({ defaultViewMode = "table", orderTypeFilter = "", to
           </label>
           <div className="flex flex-wrap items-center gap-2 sm:justify-end">
             <span className="mr-1 text-xs text-gray-500">{filteredOrders.length} of {orders.length}</span>
+            {!orderTypeFilter && (
+              <select value={selectedOrderType} onChange={(event) => { setSelectedOrderType(event.target.value); setPage(1); }} aria-label="Filter kitchen orders by order type" className={`h-[46px] rounded-xl border border-[#dfe2e5] bg-white px-3 text-sm text-[#34443b] outline-none ${adminTheme ? "focus:border-[#FF5A00] focus:ring-1 focus:ring-[#FF5A00]" : "focus:border-[#6d9a79]"}`}>
+                <option value="all">All Order Types</option>
+                <option value="dine-in">Dine-In / Table</option>
+                <option value="home_delivery">Home Delivery</option>
+                <option value="pickup">Pick Up</option>
+              </select>
+            )}
             <select value={activeTab} onChange={(event) => { setActiveTab(event.target.value); setPage(1); }} aria-label="Filter kitchen orders by status" className={`h-[46px] rounded-xl border border-[#dfe2e5] bg-white px-3 text-sm text-[#34443b] outline-none ${adminTheme ? "focus:border-[#FF5A00] focus:ring-1 focus:ring-[#FF5A00]" : "focus:border-[#6d9a79]"}`}>
               <option value="all">All Status ({counts.all})</option>
               <option value="Pending">Pending ({counts.Pending})</option>
@@ -303,16 +321,14 @@ const ChefKitchenOrders = ({ defaultViewMode = "table", orderTypeFilter = "", to
             <h2 className="mt-3 text-base font-bold text-[#333]">
               {activeTab === "all" ? "No kitchen orders yet" : `No orders currently in ${activeTab}`}
             </h2>
-            <p className="mt-1 text-xs text-[#888]">
-              Orders sent by servers from their dining tables will appear here live.
-            </p>
+            <p className="mt-1 text-xs text-[#888]">Dine-in, home delivery, and pickup kitchen orders appear here as they are submitted.</p>
           </div>
         ) : viewMode === "table" ? (
           <div className="overflow-x-auto rounded-2xl border border-[#e7e0d8] bg-white shadow-sm">
             <table className="w-full min-w-[940px] border-collapse text-left text-sm">
               <thead className="sticky top-0 bg-orange-50 text-[11px] uppercase tracking-wide text-orange-700 border-b border-orange-100">
                 <tr>
-                  {['S No', 'Kitchen Order', 'Table / Bill', 'Round', 'Items', 'Amount', 'Status', 'Placed', 'Action'].map((heading) => <th key={heading} className="whitespace-nowrap px-4 py-4 font-bold">{heading}</th>)}
+                  {['S No', 'Kitchen Order', 'Order Type / Customer', 'Round', 'Items', 'Amount', 'Status', 'Placed', 'Action'].map((heading) => <th key={heading} className="whitespace-nowrap px-4 py-4 font-bold">{heading}</th>)}
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#edf0eb]">
@@ -322,10 +338,13 @@ const ChefKitchenOrders = ({ defaultViewMode = "table", orderTypeFilter = "", to
                   const isUpdating = updatingOrderId === order.order_id;
                   const totalItems = order.items.reduce((sum, item) => sum + Number(item.quantity || 1), 0);
                   const orderTotal = order.items.reduce((sum, item) => sum + Number(item.unit_price || 0) * Number(item.quantity || 1), 0);
+                  const orderLabel = order.order_type === "dine-in"
+                    ? `Table ${order.table_number}`
+                    : `${getOrderTypeLabel(order.order_type)}${order.customer_name ? ` · ${order.customer_name}` : ""}`;
                   return <tr key={order.order_id} className="align-middle hover:bg-[#fbfcfa]">
                     <td className="whitespace-nowrap px-4 py-3 font-medium text-[#66736b]">{pageOffset + index + 1}</td>
                     <td className="whitespace-nowrap px-4 py-3"><span className="font-mono text-xs font-semibold text-[#244b35]" title={order.order_id}>{formatKotNumber(order)}</span><span className="mt-1 block text-[10px] text-[#89938c]">{totalItems} item{totalItems === 1 ? '' : 's'}</span></td>
-                    <td className="whitespace-nowrap px-4 py-3"><span className="font-semibold text-[#34443b]">Table {order.table_number}</span>{order.bill_number && <span className="mt-1 block text-[10px] text-[#7c8980]">{order.bill_number}</span>}</td>
+                    <td className="whitespace-nowrap px-4 py-3"><span className="font-semibold text-[#34443b]">{orderLabel}</span>{order.customer_phone && <span className="mt-1 block text-[10px] text-[#7c8980]">{order.customer_phone}</span>}{order.delivery_address && <span className="mt-1 block max-w-48 truncate text-[10px] text-[#7c8980]" title={order.delivery_address}>{order.delivery_address}</span>}{order.bill_number && <span className="mt-1 block text-[10px] text-[#7c8980]">{order.bill_number}</span>}</td>
                     <td className="whitespace-nowrap px-4 py-3 text-xs text-[#66736b]">{order.round_number > 1 ? `Round ${order.round_number} · Add-on` : 'Round 1'}</td>
                     <td className="max-w-[280px] px-4 py-3"><div className="space-y-1">{order.items.map((item) => <p key={`${order.order_id}-${item.food_id}`} className="truncate text-xs text-[#46554b]" title={`${item.quantity}× ${item.food_name}`}><strong className="text-[#276a3e]">{item.quantity}×</strong> {item.food_name}</p>)}</div></td>
                     <td className="whitespace-nowrap px-4 py-3 font-semibold text-[#283c2f]">₹{orderTotal.toFixed(2)}</td>
@@ -366,8 +385,9 @@ const ChefKitchenOrders = ({ defaultViewMode = "table", orderTypeFilter = "", to
                       <div>
                         <div className="flex items-center gap-2 flex-wrap">
                           <span className={`rounded-lg px-2.5 py-1 font-serif text-sm font-bold text-white ${adminTheme ? "bg-[#FF5A00]" : "bg-[#1a3c36]"}`}>
-                            Table {order.table_number}
+                            {order.order_type === "dine-in" ? `Table ${order.table_number}` : getOrderTypeLabel(order.order_type)}
                           </span>
+                          {order.customer_name && <span className="text-xs font-semibold text-slate-700">{order.customer_name}</span>}
                           <span
                             className={`px-2 py-0.5 rounded-md text-[11px] font-bold ${
                               order.round_number > 1
@@ -387,6 +407,8 @@ const ChefKitchenOrders = ({ defaultViewMode = "table", orderTypeFilter = "", to
                           <Clock3 className="h-3 w-3" />
                           <span>Placed {formatTimeAgo(order.created_at)}</span>
                         </p>
+                        {order.customer_phone && <p className="mt-1 text-xs text-slate-600">{order.customer_phone}</p>}
+                        {order.delivery_address && <p className="mt-1 max-w-sm truncate text-xs text-slate-500" title={order.delivery_address}>{order.delivery_address}</p>}
                       </div>
 
                       {/* Status Badge */}

@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import {
   AlertCircle,
@@ -29,7 +29,6 @@ import {
 } from "lucide-react";
 import toast from "react-hot-toast";
 import api from "../../api";
-import { useAuth } from "../../PrivateRouter/AuthContext";
 import { getFoodAvailability, useFoodAvailabilityClock } from "../../CommonComponents/foodAvailability";
 
 const resolveImageUrl = (img) => {
@@ -56,15 +55,24 @@ const isEnabled = (value, fallback = false) => {
   return fallback;
 };
 
-const isFoodAvailable = (food, hasSelectedTable = false, currentTime) =>
-  getFoodAvailability(food, currentTime).available &&
-  (!hasSelectedTable || isEnabled(food.dining_available, true));
+const isFoodAvailable = (food, orderType = "", currentTime) => {
+  const availabilityField = orderType === "dine-in"
+    ? "dining_available"
+    : orderType === "pickup"
+      ? "takeaway_available"
+      : orderType === "home_delivery"
+        ? "delivery_available"
+        : null;
+  return getFoodAvailability(food, currentTime).available
+    && (!availabilityField || isEnabled(food[availabilityField], true));
+};
 
 export default function ServerFood() {
-  const { userProfile } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
   const selectedTable = location.state?.selectedTable;
+  const orderType = selectedTable ? "dine-in" : location.state?.orderType || "";
+  const orderReturnPath = location.state?.returnPath || "/server";
   const currentTime = useFoodAvailabilityClock();
   const [foods, setFoods] = useState([]);
   const [categories, setCategories] = useState([]);
@@ -81,6 +89,9 @@ export default function ServerFood() {
   const [submittingOrder, setSubmittingOrder] = useState(false);
   const [activeBill, setActiveBill] = useState(null);
   const [showBillItems, setShowBillItems] = useState(false);
+  const [customer, setCustomer] = useState({ name: "", phone: "", address: "" });
+  const submissionLock = useRef(false);
+  const submissionRequest = useRef(null);
 
   // View Details Modal
   const [viewingFood, setViewingFood] = useState(null);
@@ -90,7 +101,7 @@ export default function ServerFood() {
   const [customAddonRequests, setCustomAddonRequests] = useState("");
   const [customizationRequest, setCustomizationRequest] = useState("");
   const [customizeQuantity, setCustomizeQuantity] = useState(1);
-  const hasSelectedTable = Boolean(selectedTable);
+  const hasOrderContext = Boolean(orderType);
 
   const fetchActiveBill = async () => {
     if (!selectedTable?.table_id) return;
@@ -99,8 +110,8 @@ export default function ServerFood() {
       if (res.data?.success) {
         setActiveBill(res.data.bill || null);
       }
-    } catch {
-      // non-blocking
+    } catch (error) {
+      toast.error(error.response?.data?.message || "The active table bill could not be verified. Sending a new order is still protected by the server.");
     }
   };
 
@@ -180,7 +191,7 @@ export default function ServerFood() {
           (selectedType === "non-veg" &&
             String(food.food_type || "").trim().toLowerCase().includes("non"));
 
-        const isAvailable = isFoodAvailable(food, hasSelectedTable, currentTime);
+        const isAvailable = isFoodAvailable(food, orderType, currentTime);
 
         const statusMatch =
           selectedStatus === "all" ||
@@ -221,7 +232,7 @@ export default function ServerFood() {
     selectedType,
     selectedStatus,
     sortBy,
-    hasSelectedTable,
+    orderType,
     currentTime,
   ]);
 
@@ -229,7 +240,7 @@ export default function ServerFood() {
   const stats = useMemo(() => {
     const total = foods.length;
     const available = foods.filter((food) =>
-      isFoodAvailable(food, hasSelectedTable)
+      isFoodAvailable(food, orderType, currentTime)
     ).length;
     const vegCount = foods.filter(
       (f) => String(f.food_type || "").trim().toLowerCase() === "veg"
@@ -243,7 +254,7 @@ export default function ServerFood() {
     ).size;
 
     return { total, available, vegCount, nonVegCount, uniqueCategories };
-  }, [foods, hasSelectedTable]);
+  }, [foods, orderType, currentTime]);
 
   const hasActiveFilters =
     searchQuery.trim() !== "" ||
@@ -259,6 +270,7 @@ export default function ServerFood() {
   };
 
   const handleOpenDetails = (food) => {
+    if (submissionLock.current) return;
     setViewingFood(food);
     setActiveImageIndex(0);
     setSelectedAddons([]);
@@ -278,6 +290,7 @@ export default function ServerFood() {
   };
 
   const updateCartQuantity = (food, quantity, cartKey = getDefaultCartKey(food)) => {
+    if (submissionLock.current) return;
     const foodId = String(food.food_id || food.id);
     setCart((currentCart) => {
       const nextCart = { ...currentCart };
@@ -331,7 +344,7 @@ export default function ServerFood() {
   };
 
   const addConfiguredFood = () => {
-    if (!viewingFood) return;
+    if (!viewingFood || submissionLock.current) return;
     const customAddons = customAddonRequests.split(/\r?\n/).map((name) => name.trim()).filter(Boolean);
     if (customAddons.length > 50 || customAddons.some((name) => name.length > 180)) {
       toast.error("Enter up to 50 add-on requests, with no more than 180 characters each.");
@@ -384,31 +397,75 @@ export default function ServerFood() {
   );
 
   const submitOrder = async () => {
-    if (!selectedTable?.table_id || cartItems.length === 0) return;
+    if (submissionLock.current || cartItems.length === 0) return;
+    if (orderType === "dine-in" && !selectedTable?.table_id) {
+      toast.error("Choose a table before sending a dine-in order.");
+      return;
+    }
+    if (orderType !== "dine-in") {
+      if (!customer.name.trim() || !/^[+()\d\s-]{7,32}$/.test(customer.phone.trim())) {
+        toast.error("Enter a valid customer name and phone number.");
+        return;
+      }
+      if (orderType === "home_delivery" && !customer.address.trim()) {
+        toast.error("Enter the delivery address before sending this order.");
+        return;
+      }
+    }
+    if (cartItems.some(([, item]) => (
+      !Number.isInteger(item.quantity) || item.quantity < 1 || item.quantity > 99
+      || !Number.isFinite(item.unitPrice) || item.unitPrice < 0
+    ))) {
+      toast.error("Check the item quantities and prices before submitting.");
+      return;
+    }
+    const requestBody = {
+      order_type: orderType,
+      ...(selectedTable ? { table_id: selectedTable.table_id } : {}),
+      ...(orderType === "dine-in" ? {} : { customer }),
+      items: cartItems.map(([, item]) => ({
+        food_id: item.foodId,
+        quantity: item.quantity,
+        selected_addons: item.selected_addons,
+        selected_customizations: item.selected_customizations,
+      })),
+    };
+    const requestFingerprint = JSON.stringify(requestBody);
+    if (!submissionRequest.current || submissionRequest.current.fingerprint !== requestFingerprint) {
+      submissionRequest.current = {
+        key: window.crypto.randomUUID(),
+        fingerprint: requestFingerprint,
+      };
+    }
+    submissionLock.current = true;
     try {
       setSubmittingOrder(true);
-      const response = await api.post("/kitchen-orders", {
-        table_id: selectedTable.table_id,
-        items: cartItems.map(([, item]) => ({
-          food_id: item.foodId,
-          quantity: item.quantity,
-          selected_addons: item.selected_addons,
-          selected_customizations: item.selected_customizations,
-        })),
+      const response = await api.post("/kitchen-orders", requestBody, {
+        headers: { "Idempotency-Key": submissionRequest.current.key },
       });
+      if (!response.data?.success || !response.data?.order) {
+        throw new Error(response.data?.message || "The order response was invalid.");
+      }
       setCart({});
+      submissionRequest.current = null;
       const kotNumber = response.data?.order?.kot_number;
       const roundNum = response.data?.order?.round_number || (activeBill ? (activeBill.rounds?.length || 1) + 1 : 1);
       const billNum = response.data?.order?.bill_number || activeBill?.bill_number;
-      if (roundNum > 1) {
+      if (orderType !== "dine-in") {
+        toast.success(`${kotNumber ? `${kotNumber} · ` : ""}${orderType === "pickup" ? "Pickup" : "Home delivery"} order sent to kitchen.`);
+      } else if (roundNum > 1) {
         toast.success(`${kotNumber ? `${kotNumber} · ` : ''}Round ${roundNum} (Add-on) sent to kitchen for Table ${selectedTable.table_number}! Bill ${billNum ? `#${billNum}` : ''}.`);
       } else {
         toast.success(`${kotNumber ? `${kotNumber} · ` : ''}Order sent to kitchen for Table ${selectedTable.table_number}! Bill ${billNum ? `#${billNum}` : ''} opened.`);
       }
-      fetchActiveBill();
+      if (orderType === "dine-in") fetchActiveBill();
     } catch (error) {
-      toast.error(error.response?.data?.message || "Could not send this order to the kitchen.");
+      if (error.response?.status && error.response.status < 500) {
+        submissionRequest.current = null;
+      }
+      toast.error(error.response?.data?.message || error.message || "Could not send this order to the kitchen. Retry the same order to avoid duplicates.");
     } finally {
+      submissionLock.current = false;
       setSubmittingOrder(false);
     }
   };
@@ -559,12 +616,43 @@ export default function ServerFood() {
           </div>
           <button
             type="button"
-            onClick={() => navigate("/server/tables")}
+            onClick={() => navigate(orderReturnPath === "/admin/billing" ? "/admin/tables" : "/server/tables", { state: { returnPath: orderReturnPath } })}
             className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-xl bg-[#FF5A00] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#E94B00]"
           >
             Change Table
           </button>
         </div>
+      )}
+
+      {hasOrderContext && !selectedTable && (
+        <section className="rounded-2xl border border-orange-200 bg-white p-4 shadow-sm">
+          <div className="mb-4 flex items-center justify-between gap-3">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-wide text-orange-700">New {orderType === "pickup" ? "Pick Up" : "Home Delivery"} order</p>
+              <h2 className="mt-1 text-lg font-bold text-slate-900">Customer details</h2>
+            </div>
+            <button type="button" onClick={() => navigate(orderReturnPath)} className="rounded-lg border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-50">
+              Cancel order
+            </button>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <label className="text-xs font-semibold text-slate-700">
+              Customer name *
+              <input value={customer.name} onChange={(event) => setCustomer((current) => ({ ...current, name: event.target.value }))} disabled={submittingOrder} maxLength={150} autoComplete="name" className="mt-1 h-11 w-full rounded-xl border border-slate-200 px-3 text-sm outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-100 disabled:bg-slate-100" />
+            </label>
+            <label className="text-xs font-semibold text-slate-700">
+              Phone number *
+              <input value={customer.phone} onChange={(event) => setCustomer((current) => ({ ...current, phone: event.target.value }))} disabled={submittingOrder} maxLength={32} inputMode="tel" autoComplete="tel" className="mt-1 h-11 w-full rounded-xl border border-slate-200 px-3 text-sm outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-100 disabled:bg-slate-100" />
+            </label>
+            {orderType === "home_delivery" && (
+              <label className="text-xs font-semibold text-slate-700 sm:col-span-2">
+                Delivery address *
+                <textarea value={customer.address} onChange={(event) => setCustomer((current) => ({ ...current, address: event.target.value }))} disabled={submittingOrder} maxLength={1000} rows={2} autoComplete="street-address" className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-100 disabled:bg-slate-100" />
+              </label>
+            )}
+          </div>
+          <p className="mt-3 text-xs text-slate-500">The order will be sent to the kitchen as a {orderType === "pickup" ? "pickup" : "home delivery"} order.</p>
+        </section>
       )}
 
       {/* Search and Filters Bar */}
@@ -684,8 +772,8 @@ export default function ServerFood() {
         </div>
       </div>
 
-      <div className={selectedTable ? "grid items-start gap-5 xl:grid-cols-[minmax(0,1fr)_380px]" : ""}>
-      <div className={selectedTable ? "min-w-0 xl:max-h-[calc(100vh-12rem)] xl:overflow-y-auto xl:overscroll-contain xl:pr-2 scrollbar-hide" : "min-w-0"}>
+      <div className={hasOrderContext ? "grid items-start gap-5 xl:grid-cols-[minmax(0,1fr)_380px]" : ""}>
+      <div className={hasOrderContext ? "min-w-0 xl:max-h-[calc(100vh-12rem)] xl:overflow-y-auto xl:overscroll-contain xl:pr-2 scrollbar-hide" : "min-w-0"}>
       {/* Main Content Area */}
       {loading ? (
         <div className="bg-white p-14 rounded-2xl border border-gray-100 flex flex-col items-center justify-center gap-3">
@@ -718,11 +806,11 @@ export default function ServerFood() {
         </div>
       ) : viewMode === "grid" ? (
         /* GRID (CARD) VIEW */
-        <div className={`grid gap-5 ${selectedTable ? "grid-cols-1 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3" : "grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4"}`}>
+        <div className={`grid gap-5 ${hasOrderContext ? "grid-cols-1 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3" : "grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4"}`}>
           {filteredFoods.map((food) => {
             const isVeg =
               String(food.food_type || "").trim().toLowerCase() === "veg";
-            const isAvailable = isFoodAvailable(food, hasSelectedTable);
+            const isAvailable = isFoodAvailable(food, orderType, currentTime);
             const primaryImage =
               Array.isArray(food.food_images) && food.food_images.length > 0
                 ? food.food_images[0]
@@ -846,7 +934,7 @@ export default function ServerFood() {
 
                 {/* Card Footer: View Details Action */}
                 <div className="space-y-2 p-3 pt-0">
-                  {selectedTable && (
+                  {hasOrderContext && (
                     <div className="flex items-center justify-between rounded-xl bg-gray-50 p-2">
                       <span className="text-xs font-medium text-gray-600">Quantity</span>
                       <div className="flex items-center gap-2">
@@ -866,7 +954,7 @@ export default function ServerFood() {
                     className="w-full flex items-center justify-center gap-2 py-2 px-3 bg-[#FF5A00] hover:bg-[#E94B00] text-white rounded-xl text-xs font-semibold transition border border-[#FF5A00] cursor-pointer"
                   >
                     <Eye className="w-3.5 h-3.5" />
-                    <span>{selectedTable ? "Customize & Add" : "View Food Details"}</span>
+                    <span>{hasOrderContext ? "Customize & Add" : "View Food Details"}</span>
                   </button>
                 </div>
               </div>
@@ -886,14 +974,14 @@ export default function ServerFood() {
                   <th className="py-3.5 px-4">Prep Time</th>
                   <th className="py-3.5 px-4">Price / MRP</th>
                   <th className="py-3.5 px-4">Availability</th>
-                  <th className="py-3.5 px-4 text-right">{selectedTable ? "Order / Details" : "Details"}</th>
+                  <th className="py-3.5 px-4 text-right">{hasOrderContext ? "Order / Details" : "Details"}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
                 {filteredFoods.map((food) => {
                   const isVeg =
                     String(food.food_type || "").toLowerCase() === "veg";
-                  const isAvailable = isFoodAvailable(food, hasSelectedTable);
+                  const isAvailable = isFoodAvailable(food, orderType, currentTime);
                   const primaryImage =
                     Array.isArray(food.food_images) &&
                     food.food_images.length > 0
@@ -1018,7 +1106,7 @@ export default function ServerFood() {
                       {/* Action */}
                       <td className="py-3 px-4 text-right">
                         <div className="flex items-center justify-end gap-2">
-                          {selectedTable && (
+                          {hasOrderContext && (
                             <div className="flex items-center gap-1.5">
                               <button type="button" onClick={() => adjustFoodQuantity(food, -1)} aria-label={`Decrease ${food.food_name} quantity`} disabled={!getFoodQuantity(food)} className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg border border-orange-200 text-[#FF5A00] hover:bg-orange-50 disabled:cursor-not-allowed disabled:opacity-40">
                                 <Minus className="h-3.5 w-3.5" />
@@ -1035,7 +1123,7 @@ export default function ServerFood() {
                             className="inline-flex cursor-pointer items-center gap-1.5 rounded-xl bg-[#FF5A00] px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-[#E94B00]"
                           >
                             <Eye className="h-3.5 w-3.5" />
-                            <span>{selectedTable ? "Customize & Add" : "View"}</span>
+                            <span>{hasOrderContext ? "Customize & Add" : "View"}</span>
                           </button>
                         </div>
                       </td>
@@ -1049,8 +1137,8 @@ export default function ServerFood() {
       )}
       </div>
 
-      {selectedTable && (
-        <section aria-label="Current table order" className="flex max-h-[70vh] flex-col overflow-hidden rounded-2xl border border-[#b8cbbd] bg-white shadow-[0_8px_28px_rgba(16,40,24,0.12)] xl:sticky xl:top-4 xl:h-[calc(100vh-12rem)] xl:max-h-none">
+      {hasOrderContext && (
+        <section aria-label="Current order" className="flex max-h-[70vh] flex-col overflow-hidden rounded-2xl border border-[#b8cbbd] bg-white shadow-[0_8px_28px_rgba(16,40,24,0.12)] xl:sticky xl:top-4 xl:h-[calc(100vh-12rem)] xl:max-h-none">
           <header className="shrink-0 border-b border-[#e8eee9] bg-gradient-to-br from-[#f7faf7] to-white p-4 sm:p-5">
             <div className="flex items-start gap-3">
               <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#1a3c36] text-white shadow-sm">
@@ -1058,7 +1146,7 @@ export default function ServerFood() {
               </div>
               <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-center gap-2">
-                  <h2 className="text-lg font-bold text-gray-900">Table {selectedTable.table_number}</h2>
+                  <h2 className="text-lg font-bold text-gray-900">{selectedTable ? `Table ${selectedTable.table_number}` : orderType === "pickup" ? "Pick Up" : "Home Delivery"}</h2>
                   {activeBill && (
                     <span className="rounded-full border border-purple-200 bg-purple-50 px-2.5 py-1 text-[10px] font-bold text-purple-800">
                       Bill #{activeBill.bill_number} · Round {(activeBill.rounds?.length || 1) + 1}
@@ -1135,7 +1223,7 @@ export default function ServerFood() {
           <footer className="shrink-0 border-t border-[#e8eee9] bg-white p-4 sm:p-5">
             <div className="mb-3 flex items-end justify-between gap-3">
               <div>
-                <p className="text-xs text-gray-500">This round</p>
+                <p className="text-xs text-gray-500">{orderType === "dine-in" ? "This round" : "Order subtotal"}</p>
                 {activeBill && (
                   <p className="mt-1 text-[10px] text-gray-500">
                     Est. total: ₹{(Number(activeBill.grand_total || 0) + cartTotal * 1.05).toFixed(2)}
@@ -1278,19 +1366,19 @@ export default function ServerFood() {
               <div className="flex items-center gap-2">
                 <span
                   className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold ${
-                    isFoodAvailable(viewingFood, hasSelectedTable)
+                    isFoodAvailable(viewingFood, orderType, currentTime)
                       ? "bg-emerald-50 text-emerald-800 border border-emerald-200"
                       : "bg-gray-200 text-gray-700"
                   }`}
                 >
                   <span
                     className={`w-2 h-2 rounded-full ${
-                      isFoodAvailable(viewingFood, hasSelectedTable)
+                      isFoodAvailable(viewingFood, orderType, currentTime)
                         ? "bg-emerald-500"
                         : "bg-gray-400"
                     }`}
                   />
-                  {isFoodAvailable(viewingFood, hasSelectedTable)
+                  {isFoodAvailable(viewingFood, orderType, currentTime)
                     ? "Available in Kitchen"
                     : "Currently Unavailable"}
                 </span>
@@ -1363,7 +1451,7 @@ export default function ServerFood() {
               </div>
             ) : null}
 
-            {selectedTable && (
+            {hasOrderContext && (
               <div className="mb-5 space-y-5">
                 {!viewingFood.addons?.some((addon) => String(addon.status || "Active").toLowerCase() === "active")
                   && !viewingFood.customizations?.length && (
@@ -1503,12 +1591,13 @@ export default function ServerFood() {
                 onClick={() => setViewingFood(null)}
                 className="cursor-pointer rounded-xl bg-gray-100 px-5 py-2.5 text-sm font-semibold text-gray-800 transition hover:bg-gray-200"
               >
-                {selectedTable ? "Cancel" : "Close Details"}
+                {hasOrderContext ? "Cancel" : "Close Details"}
               </button>
-              {selectedTable && (
+              {hasOrderContext && (
                 <button
                   type="button"
                   onClick={addConfiguredFood}
+                  disabled={!isFoodAvailable(viewingFood, orderType, currentTime)}
                   className="inline-flex cursor-pointer items-center gap-2 rounded-xl bg-[#FF5A00] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[#E94B00]"
                 >
                   <ShoppingCart className="h-4 w-4" />

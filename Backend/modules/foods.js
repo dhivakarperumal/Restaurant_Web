@@ -1,5 +1,5 @@
 const db = require('../config/db');
-const { getFoodAvailability } = require('./foodAvailability');
+const { MEAL_TYPES, getFoodAvailability } = require('./foodAvailability');
 
 const initializeFoodSchema = async () => {
   await db.query(`
@@ -192,6 +192,43 @@ const setFoodMenuVisibility = async (foodId, visible, updatedBy = 'system') => {
   return findFoodById(foodId);
 };
 
+
+const setFoodAvailability = async (foodId, updates = {}, updatedBy = 'system') => {
+  const fields = [];
+  const values = [];
+
+  if (typeof updates.is_available === 'boolean') {
+    fields.push('is_available = ?');
+    values.push(Number(updates.is_available));
+    if (updates.is_available && updates.stock_quantity === undefined) {
+      fields.push('stock_quantity = CASE WHEN stock_quantity <= 0 THEN 50 ELSE stock_quantity END');
+    }
+  }
+
+  if (typeof updates.meal_type === 'string' && MEAL_TYPES.includes(updates.meal_type.trim())) {
+    fields.push('meal_type = ?');
+    values.push(updates.meal_type.trim());
+  }
+
+  if (Number.isInteger(updates.stock_quantity) && updates.stock_quantity >= 0) {
+    fields.push('stock_quantity = ?');
+    values.push(updates.stock_quantity);
+  }
+
+  if (!fields.length) return null;
+
+  fields.push('updated_by = ?');
+  values.push(updatedBy);
+  values.push(foodId);
+
+  const [result] = await db.execute(
+    `UPDATE foods SET ${fields.join(', ')} WHERE food_id = ?`,
+    values
+  );
+  if (!result.affectedRows) return null;
+  return findFoodById(foodId);
+};
+
 const deleteFood = async (foodId) => {
   const [result] = await db.execute('DELETE FROM foods WHERE food_id = ?', [foodId]);
   return result.affectedRows > 0;
@@ -204,6 +241,7 @@ module.exports = {
   getNextFoodId,
   initializeFoodSchema,
   listFoods,
+  setFoodAvailability,
   setFoodMenuVisibility,
   updateFood,
 };

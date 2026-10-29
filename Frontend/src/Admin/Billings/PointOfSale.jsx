@@ -1,231 +1,246 @@
-import { useEffect, useMemo, useState } from "react";
-import { Check, ChefHat, Clock3, Coffee, Minus, Plus, Printer, RotateCcw, Search, ShoppingCart, Table2, Trash2, Utensils } from "lucide-react";
-import toast from "react-hot-toast";
-import api, { BACKEND_BASE_URL } from "../../api";
-import { useAuth } from "../../PrivateRouter/AuthContext";
-import { getFoodAvailability, useFoodAvailabilityClock } from "../../CommonComponents/foodAvailability";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import {
+  Bike,
+  ChevronRight,
+  CircleDollarSign,
+  Loader2,
+  MapPin,
+  Plus,
+  RefreshCw,
+  ShoppingBag,
+  Table2,
+  X,
+} from "lucide-react";
+import api from "../../api";
 
-const money = (value) => `₹${Number(value || 0).toFixed(2)}`;
-const getFoodPrice = (food) => Number(food.final_price ?? food.mrp ?? 0);
-const getFoodImage = (food) => {
-  const image = Array.isArray(food.food_images) ? food.food_images[0] : food.food_images || food.image;
-  if (!image) return "";
-  if (/^(https?:|data:|blob:)/i.test(image)) return image;
-  return `${BACKEND_BASE_URL}${image.startsWith("/") ? image : `/${image}`}`;
-};
+const tableStatus = (table) => (
+  Number(table.reservation_is_active) === 1 ? "Reserved" : table.status || "Available"
+);
 
 const PointOfSale = () => {
-  const { user } = useAuth();
-  const currentTime = useFoodAvailabilityClock();
-  const [foods, setFoods] = useState([]);
-  const [categories, setCategories] = useState([]);
+  const navigate = useNavigate();
+  const [tables, setTables] = useState([]);
+  const [activeBills, setActiveBills] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [selectedCategory, setSelectedCategory] = useState("all");
-  const [search, setSearch] = useState("");
-  const [cart, setCart] = useState([]);
-  const [orderType, setOrderType] = useState("Dine In");
-  const [tableNumber, setTableNumber] = useState("T-05");
-  const [discount, setDiscount] = useState(0);
-  const [billNumber, setBillNumber] = useState(1);
-  const [billGenerated, setBillGenerated] = useState(false);
-  const [sentToKitchen, setSentToKitchen] = useState(false);
+  const [error, setError] = useState("");
+  const [sheetOpen, setSheetOpen] = useState(false);
+  const [showTables, setShowTables] = useState(false);
+  const selectionLock = useRef(false);
 
-  useEffect(() => {
-    let mounted = true;
-    const loadMenu = async () => {
-      const [foodResult, categoryResult] = await Promise.allSettled([
-        api.get("/foods", { params: { include_unavailable: true } }),
-        api.get("/categories"),
+  const loadBillingData = useCallback(async ({ showLoading = true } = {}) => {
+    if (showLoading) setLoading(true);
+    setError("");
+    try {
+      const [tablesResponse, billsResponse] = await Promise.all([
+        api.get("/server-tables"),
+        api.get("/table-bills", { params: { status: "Active" } }),
       ]);
-      if (!mounted) return;
-      if (foodResult.status === "fulfilled") {
-        const rows = foodResult.value?.data?.data;
-        setFoods(Array.isArray(rows) ? rows : []);
-      } else {
-        toast.error("Could not load menu items.");
+      if (!tablesResponse.data?.success || !Array.isArray(tablesResponse.data.tables)) {
+        throw new Error(tablesResponse.data?.message || "Table data was invalid.");
       }
-      if (categoryResult.status === "fulfilled") {
-        const rows = categoryResult.value?.data?.data;
-        setCategories(Array.isArray(rows) ? rows.filter((category) => category.status !== "Inactive") : []);
+      if (!billsResponse.data?.success || !Array.isArray(billsResponse.data.bills)) {
+        throw new Error(billsResponse.data?.message || "Active bill data was invalid.");
       }
+      setTables(tablesResponse.data.tables);
+      setActiveBills(billsResponse.data.bills);
+    } catch (requestError) {
+      console.error("Could not load billing data:", requestError);
+      setError(requestError.response?.data?.message || requestError.message || "Billing data could not be loaded.");
+    } finally {
       setLoading(false);
-    };
-    loadMenu();
-    return () => { mounted = false; };
+    }
   }, []);
 
-  const menuCategories = useMemo(() => {
-    if (categories.length) return categories;
-    return [...new Map(foods.map((food) => [String(food.category_id || food.category_name), {
-      category_id: food.category_id || food.category_name,
-      category_name: food.category_name || "Other",
-    }])).values()];
-  }, [categories, foods]);
+  useEffect(() => {
+    loadBillingData({ showLoading: false });
+  }, [loadBillingData]);
 
-  const visibleFoods = useMemo(() => foods.filter((food) => {
-    if (!getFoodAvailability(food, currentTime).available) return false;
-    const query = search.trim().toLowerCase();
-    const matchesSearch = !query || `${food.food_name || ""} ${food.description || ""} ${food.category_name || ""}`.toLowerCase().includes(query);
-    const matchesCategory = selectedCategory === "all"
-      || String(food.category_id || food.category_name) === String(selectedCategory);
-    return matchesSearch && matchesCategory;
-  }), [foods, search, selectedCategory, currentTime]);
+  useEffect(() => {
+    if (!sheetOpen) return undefined;
+    const closeOnEscape = (event) => {
+      if (event.key === "Escape" && !selectionLock.current) {
+        setSheetOpen(false);
+        setShowTables(false);
+      }
+    };
+    window.addEventListener("keydown", closeOnEscape);
+    return () => window.removeEventListener("keydown", closeOnEscape);
+  }, [sheetOpen]);
 
-  const subtotal = useMemo(() => cart.reduce((sum, item) => sum + item.price * item.quantity, 0), [cart]);
-  const discountAmount = Math.min(subtotal, Math.max(0, Number(discount) || 0));
-  const taxableAmount = subtotal - discountAmount;
-  const cgst = taxableAmount * 0.025;
-  const sgst = taxableAmount * 0.025;
-  const total = taxableAmount + cgst + sgst;
-  const itemCount = cart.reduce((sum, item) => sum + item.quantity, 0);
-  const now = new Date();
-  const compactDate = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, "0")}${String(now.getDate()).padStart(2, "0")}`;
-  const invoiceNumber = `#BF${compactDate}-${String(billNumber).padStart(3, "0")}`;
-  const cashier = user?.username || user?.name || "Admin";
+  const openOrderType = (orderType) => {
+    if (selectionLock.current) return;
+    if (orderType === "dine-in") {
+      setShowTables(true);
+      loadBillingData();
+      return;
+    }
+    selectionLock.current = true;
+    setSheetOpen(false);
+    navigate("/admin/billing/order", { state: { orderType, returnPath: "/admin/billing" } });
+    window.setTimeout(() => { selectionLock.current = false; }, 350);
+  };
 
-  const addFood = (food) => {
-    const id = String(food.food_id || food.id);
-    setCart((current) => {
-      const existing = current.find((item) => item.id === id);
-      if (existing) return current.map((item) => item.id === id ? { ...item, quantity: item.quantity + 1 } : item);
-      return [...current, {
-        id,
-        foodId: food.food_id || id,
-        name: food.food_name || "Menu item",
-        category: food.category_name || "Food",
-        portion: food.portion_size || food.serving_size || "Regular",
-        image: getFoodImage(food),
-        price: getFoodPrice(food),
-        quantity: 1,
-      }];
+  const selectTable = (table) => {
+    if (selectionLock.current) return;
+    const status = tableStatus(table);
+    if (!["Available", "Occupied"].includes(status)) return;
+    selectionLock.current = true;
+    setSheetOpen(false);
+    setShowTables(false);
+    navigate("/admin/billing/order", {
+      state: {
+        orderType: "dine-in",
+        returnPath: "/admin/billing",
+        selectedTable: {
+          id: table.id ?? null,
+          table_id: table.table_id || null,
+          table_number: table.table_number,
+          no_of_seats: table.no_of_seats,
+        },
+      },
     });
-    setBillGenerated(false);
-    setSentToKitchen(false);
+    window.setTimeout(() => { selectionLock.current = false; }, 350);
   };
 
-  const updateQuantity = (id, amount) => setCart((current) => current
-    .map((item) => item.id === id ? { ...item, quantity: item.quantity + amount } : item)
-    .filter((item) => item.quantity > 0));
-  const clearOrder = () => {
-    setCart([]);
-    setDiscount(0);
-    setBillGenerated(false);
-    setSentToKitchen(false);
-  };
+  const goToBills = () => navigate("/admin/tables");
 
-  const generateBill = () => {
-    if (!cart.length) {
-      toast.error("Add a food item before generating a bill.");
-      return;
-    }
-    setBillGenerated(true);
-    toast.success("Bill generated.");
-  };
-
-  const sendToKitchen = () => {
-    if (!cart.length) {
-      toast.error("Add a food item before sending to the kitchen.");
-      return;
-    }
-    setSentToKitchen(true);
-    toast.success("Order marked as sent to kitchen.");
-  };
-
-  const startNewOrder = () => {
-    clearOrder();
-    setBillNumber((current) => current + 1);
-    setSearch("");
-    setSelectedCategory("all");
-    toast.success("New order started.");
-  };
+  const availableCount = tables.filter((table) => tableStatus(table) === "Available").length;
+  const occupiedCount = tables.filter((table) => tableStatus(table) === "Occupied").length;
+  const reservedCount = tables.filter((table) => tableStatus(table) === "Reserved").length;
 
   return (
-    <div className="pos-shell flex min-h-screen flex-col bg-[#f3f4f6] text-[#1f2937] md:h-full md:min-h-0 md:overflow-hidden">
-      <style>{`@media print { body * { visibility: hidden !important; } .pos-bill, .pos-bill * { visibility: visible !important; } .pos-bill { position: absolute; inset: 0; width: 100%; border: 0 !important; box-shadow: none !important; } .pos-actions, .pos-header, .pos-category-rail, .pos-menu { display: none !important; } }`}</style>
-      <header className="pos-header flex min-h-[76px] flex-wrap items-center gap-3 border-b border-[#e5e7eb] bg-white px-4 py-3 md:px-6">
-        <div className="flex min-w-[190px] items-center gap-3">
-          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-orange-50 text-[#FF5A00]"><ChefHat className="h-8 w-8" /></div>
-          <div className="leading-none"><p className="text-[10px] font-bold uppercase tracking-[0.28em] text-[#FF5A00]">Restaurant</p><h1 className="mt-1 text-2xl font-black tracking-tight text-[#FF5A00]">Foodies</h1><p className="mt-1 text-[8px] font-bold uppercase tracking-[0.24em] text-[#66736e]">Taste · Good · Mood</p></div>
-        </div>
-        <label className="relative min-w-[200px] flex-1 xl:max-w-[420px]">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#66736e]" />
-          <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search food items..." className="h-10 w-full rounded-lg border border-[#dfe2e5] bg-[#faf9f8] pl-10 pr-3 text-sm outline-none focus:border-[#FF5A00] focus:ring-2 focus:ring-[#FF5A00]/20" />
-        </label>
-        <div className="ml-auto flex items-center gap-4 text-xs font-semibold text-[#1f2937]">
-          {orderType === "Dine In" && <label className="flex items-center gap-2 border-l border-[#e5e7eb] pl-4"><Table2 className="h-5 w-5 text-[#FF5A00]" /><span className="hidden sm:block">Table</span><select value={tableNumber} onChange={(event) => setTableNumber(event.target.value)} className="bg-transparent font-bold outline-none focus:text-[#FF5A00]">{Array.from({ length: 12 }, (_, index) => <option key={index} value={`T-${String(index + 1).padStart(2, "0")}`}>T-{String(index + 1).padStart(2, "0")}</option>)}</select></label>}
-          <div className="flex items-center gap-2 border-l border-[#e5e7eb] pl-4"><span className="hidden sm:block">Cashier</span><strong>{cashier}</strong></div>
-          <div className="hidden items-center gap-2 border-l border-[#e5e7eb] pl-4 md:flex"><Clock3 className="h-5 w-5 text-[#FF5A00]" /><span>{now.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })}<br />{now.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })}</span></div>
-        </div>
-      </header>
+    <main className="min-h-screen bg-[#f3f4f6] px-4 pb-32 pt-6 text-slate-900 sm:px-6">
+      <div className="mx-auto max-w-6xl">
+        <header className="flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <p className="text-xs font-bold uppercase tracking-[0.2em] text-orange-700">Restaurant Point of Sale</p>
+            <h1 className="mt-2 text-3xl font-black tracking-tight sm:text-4xl">Billing & Orders</h1>
+            <p className="mt-2 max-w-2xl text-sm text-slate-600">Start a real kitchen order, review active table bills, and continue settlement from the table workspace.</p>
+          </div>
+          <button type="button" onClick={loadBillingData} disabled={loading} className="inline-flex h-10 items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 shadow-sm hover:bg-slate-50 disabled:opacity-60">
+            {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+            Refresh
+          </button>
+        </header>
 
-      <main className="pos-layout grid min-h-0 flex-1 gap-3 p-3 md:grid-cols-[160px_minmax(0,2.8fr)_minmax(320px,1fr)] md:grid-rows-[minmax(0,1fr)] md:gap-2 md:overflow-hidden md:p-2">
-        <nav className="pos-category-rail flex gap-2 overflow-x-auto rounded-lg bg-[#f3f4f6] p-2 md:flex-col md:overflow-hidden">
-          <button type="button" onClick={() => setSelectedCategory("all")} className={`flex min-w-[88px] items-center gap-2 rounded-md px-2 py-3 text-left text-xs font-semibold transition md:min-w-0 ${selectedCategory === "all" ? "bg-[#FF5A00] text-white shadow-sm" : "text-[#1f2937] hover:bg-white/80"}`}><Utensils className="h-5 w-5 shrink-0" /><span>All Items</span></button>
-          {menuCategories.map((category) => {
-            const id = String(category.category_id || category.id || category.category_name);
-            const selected = selectedCategory === id;
-            const CategoryIcon = /drink|beverage|tea|coffee/i.test(category.category_name) ? Coffee : Utensils;
-            return <button key={id} type="button" onClick={() => setSelectedCategory(id)} className={`flex min-w-[88px] items-center gap-2 rounded-md px-2 py-3 text-left text-xs font-semibold transition md:min-w-0 ${selected ? "bg-[#FF5A00] text-white shadow-sm" : "text-[#1f2937] hover:bg-white/80"}`}><CategoryIcon className="h-5 w-5 shrink-0" /><span className="line-clamp-2">{category.category_name}</span></button>;
-          })}
-        </nav>
+        {error && (
+          <div role="alert" className="mt-6 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-800">
+            <span>{error}</span>
+            <button type="button" onClick={loadBillingData} className="font-bold underline">Try again</button>
+          </div>
+        )}
 
-        <section className="pos-menu min-h-[35vh] overflow-y-auto rounded-lg bg-white p-2 md:min-h-0 md:overscroll-contain md:p-1">
-          {loading ? <div className="flex h-full min-h-40 items-center justify-center text-sm font-medium text-[#806b5e]">Loading menu...</div> : visibleFoods.length ? (
-            <div className="grid grid-cols-2 gap-2 xl:grid-cols-5">
-              {visibleFoods.map((food) => {
-                const id = String(food.food_id || food.id);
-                const inCart = cart.some((item) => item.id === id);
-                return <article key={id} className={`relative overflow-hidden rounded-lg border bg-white p-1.5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md ${inCart ? "border-[#FF5A00] ring-1 ring-[#FF5A00]/20" : "border-[#e5e7eb]"}`}>
-                  <button type="button" onClick={() => addFood(food)} className="block w-full text-left" aria-label={`Add ${food.food_name} to bill`}>
-                    <div className="relative aspect-[4/3] overflow-hidden rounded-md bg-[#f3f4f6]">
-                      {getFoodImage(food) ? <img src={getFoodImage(food)} alt={food.food_name} className="h-full w-full object-cover" /> : <div className="flex h-full items-center justify-center text-[#66736e]"><Utensils className="h-8 w-8" /></div>}
-                      {inCart && <span className="absolute right-2 top-2 flex h-6 w-6 items-center justify-center rounded-full bg-[#FF5A00] text-white"><Check className="h-4 w-4" /></span>}
-                    </div>
-                    <div className="px-1 pb-1 pt-2"><p className="truncate text-xs font-bold text-[#1f2937]">{food.food_name}</p><p className="mt-1 truncate text-[10px] text-[#66736e]">{food.subcategory_name || food.category_name || "Menu item"}</p></div>
-                  </button>
-                  <div className="flex items-center justify-between px-1 pb-1"><span className="text-xs font-bold text-[#1f2937]">{money(getFoodPrice(food))}</span><button type="button" onClick={() => addFood(food)} className="flex h-7 w-7 items-center justify-center rounded-full bg-[#FF5A00] text-white transition hover:bg-[#E94B00]" aria-label={`Add ${food.food_name}`} title={`Add ${food.food_name}`}><Plus className="h-4 w-4" /></button></div>
-                </article>;
-              })}
+        <section aria-label="Table status" className="mt-7 grid gap-3 sm:grid-cols-3">
+          {[
+            { label: "Available", value: availableCount, tone: "text-emerald-800 bg-emerald-50 border-emerald-100" },
+            { label: "Occupied", value: occupiedCount, tone: "text-amber-800 bg-amber-50 border-amber-100" },
+            { label: "Reserved", value: reservedCount, tone: "text-blue-800 bg-blue-50 border-blue-100" },
+          ].map((item) => (
+            <article key={item.label} className={`rounded-2xl border p-5 ${item.tone}`}>
+              <p className="text-xs font-bold uppercase tracking-wide">{item.label} tables</p>
+              <p className="mt-2 text-3xl font-black">{loading ? "—" : item.value}</p>
+            </article>
+          ))}
+        </section>
+
+        <section className="mt-8 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 px-5 py-4">
+            <div>
+              <h2 className="text-lg font-extrabold">Active table bills</h2>
+              <p className="mt-1 text-xs text-slate-500">Bills remain active until settlement succeeds.</p>
             </div>
-          ) : <div className="flex h-full min-h-48 flex-col items-center justify-center gap-2 text-center text-[#66736e]"><Utensils className="h-8 w-8" /><p className="text-sm font-semibold">No food items found</p><p className="text-xs">Try another category or search.</p></div>}
+            <button type="button" onClick={goToBills} className="inline-flex items-center gap-1 text-sm font-bold text-emerald-800 hover:underline">
+              Open table billing <ChevronRight className="h-4 w-4" />
+            </button>
+          </div>
+          {loading ? (
+            <div className="flex min-h-32 items-center justify-center gap-2 text-sm text-slate-500"><Loader2 className="h-4 w-4 animate-spin" />Loading active bills…</div>
+          ) : activeBills.length ? (
+            <div className="divide-y divide-slate-100">
+              {activeBills.map((bill) => (
+                <button key={bill.bill_id} type="button" onClick={goToBills} className="flex w-full flex-wrap items-center justify-between gap-3 px-5 py-4 text-left transition hover:bg-slate-50">
+                  <span className="flex items-center gap-3">
+                    <span className="grid h-10 w-10 place-items-center rounded-xl bg-emerald-50 text-emerald-800"><Table2 size={19} /></span>
+                    <span><strong className="block text-sm">Table {bill.table_number}</strong><span className="text-xs text-slate-500">Bill #{bill.bill_number} · {bill.status}</span></span>
+                  </span>
+                  <span className="font-bold tabular-nums">₹{Number(bill.grand_total || 0).toFixed(2)}</span>
+                </button>
+              ))}
+            </div>
+          ) : (
+            <div className="px-5 py-10 text-center">
+              <CircleDollarSign className="mx-auto h-8 w-8 text-slate-300" />
+              <p className="mt-2 text-sm font-semibold text-slate-700">No active table bills</p>
+              <p className="mt-1 text-xs text-slate-500">A table bill is created when its first order is sent to the kitchen.</p>
+            </div>
+          )}
         </section>
+      </div>
 
-        <section className="pos-bill flex min-h-[420px] w-full flex-col overflow-hidden rounded-lg border border-[#dfe2e5] bg-white shadow-sm md:min-h-0">
-          <div className="flex items-center justify-between bg-[#FF5A00] px-4 py-3 text-white"><h2 className="flex items-center gap-2 text-lg font-bold"><Printer className="h-5 w-5" />Invoice / Bill</h2><button type="button" onClick={generateBill} disabled={!cart.length} className={`inline-flex h-9 w-9 items-center justify-center rounded-md disabled:cursor-not-allowed disabled:opacity-60 ${billGenerated ? "bg-[#347d52]" : "bg-[#E94B00] hover:bg-[#d94300]"}`} aria-label={billGenerated ? "Bill generated" : "Generate bill"} title={billGenerated ? "Bill generated" : "Generate bill"}><Check className="h-4 w-4" /></button></div>
-          <div className="grid grid-cols-2 gap-x-4 gap-y-1 bg-[#f8faf9] px-4 py-3 text-[11px] text-[#4b5563] sm:text-xs">
-            <p className="flex justify-between gap-2"><span>Bill No</span><strong className="text-[#1f2937]">{invoiceNumber}</strong></p><p className="flex justify-between gap-2"><span>Date</span><strong>{now.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })}</strong></p>
-            <p className="flex justify-between gap-2"><span>Table No</span><strong>{orderType === "Dine In" ? tableNumber : "-"}</strong></p><p className="flex justify-between gap-2"><span>Time</span><strong>{now.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })}</strong></p>
-            <label className="col-span-2 flex items-center justify-between gap-2"><span>Order Type</span><select value={orderType} onChange={(event) => setOrderType(event.target.value)} className="rounded border border-[#dfe2e5] bg-white px-2 py-1 font-semibold text-[#FF5A00] outline-none focus:border-[#FF5A00]"><option>Dine In</option><option>Takeaway</option><option>Delivery</option></select></label>
+      <button type="button" onClick={() => { setShowTables(false); setSheetOpen(true); }} aria-label="Start a new order" className="fixed bottom-[calc(env(safe-area-inset-bottom)+1.25rem)] left-1/2 z-40 grid h-16 w-16 -translate-x-1/2 place-items-center rounded-full bg-[#FF5A00] text-white shadow-[0_12px_30px_rgba(255,90,0,0.35)] transition hover:scale-105 hover:bg-[#E94B00] active:scale-95">
+        <Plus size={30} strokeWidth={2.5} />
+      </button>
+
+      <div className={`fixed inset-0 z-50 flex items-end justify-center transition-opacity duration-200 sm:items-center ${sheetOpen ? "visible bg-slate-950/45 opacity-100" : "invisible pointer-events-none opacity-0"}`}>
+        <button type="button" aria-label="Close order selector" onClick={() => { setSheetOpen(false); setShowTables(false); }} className="absolute inset-0 h-full w-full cursor-default" />
+        <section aria-labelledby="order-selector-heading" aria-modal="true" role="dialog" aria-hidden={!sheetOpen} inert={!sheetOpen} className={`relative max-h-[88vh] w-full overflow-y-auto rounded-t-3xl bg-white px-5 pt-4 pb-[calc(env(safe-area-inset-bottom)+1.25rem)] shadow-2xl transition-transform duration-300 sm:max-w-2xl sm:rounded-3xl sm:p-6 ${sheetOpen ? "translate-y-0" : "translate-y-full"}`}>
+          <div className="mx-auto mb-4 h-1 w-10 rounded-full bg-slate-300 sm:hidden" />
+          <div className="mb-5 flex items-center justify-between gap-3">
+            <div>
+              <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-orange-700">{showTables ? "Dine-In" : "New order"}</p>
+              <h2 id="order-selector-heading" className="mt-1 text-xl font-extrabold text-slate-900">{showTables ? "Select a table" : "Select Order Type"}</h2>
+            </div>
+            <button type="button" onClick={() => { setSheetOpen(false); setShowTables(false); }} aria-label="Close order selector" className="grid h-10 w-10 place-items-center rounded-full bg-slate-100 text-slate-600 hover:bg-slate-200"><X size={19} /></button>
           </div>
 
-          <div className="min-h-[140px] flex-1 overflow-auto">
-            <table className="w-full min-w-[360px] border-collapse text-left text-[11px]">
-              <thead className="sticky top-0 bg-orange-50 text-orange-700 border-b border-orange-100"><tr><th className="px-2 py-2">#</th><th className="px-2 py-2">Item</th><th className="px-1 py-2 text-center">Qty</th><th className="px-2 py-2 text-right">Price / Total</th><th className="px-1 py-2"></th></tr></thead>
-              <tbody className="divide-y divide-[#e5e7eb]">{cart.map((item, index) => <tr key={item.id}>
-                <td className="px-2 py-2 text-[#66736e]">{index + 1}</td><td className="px-2 py-2"><div className="flex min-w-0 items-center gap-2">{item.image ? <img src={item.image} alt="" className="h-9 w-9 shrink-0 rounded object-cover" /> : <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded bg-[#f3f4f6] text-[#FF5A00]"><Utensils className="h-4 w-4" /></div>}<span className="min-w-0"><strong className="block truncate text-[#1f2937]">{item.name}</strong><small className="block truncate text-[#66736e]">{item.category}</small></span></div></td>
-                <td className="px-1 py-2"><div className="flex items-center justify-center gap-1"><button type="button" onClick={() => updateQuantity(item.id, -1)} className="flex h-6 w-6 items-center justify-center rounded border border-orange-200 text-[#FF5A00] transition hover:bg-orange-50" aria-label={`Remove one ${item.name}`} title={`Remove one ${item.name}`}><Minus className="h-3 w-3" /></button><span className="w-5 text-center font-semibold">{item.quantity}</span><button type="button" onClick={() => updateQuantity(item.id, 1)} className="flex h-6 w-6 items-center justify-center rounded border border-orange-200 text-[#FF5A00] transition hover:bg-orange-50" aria-label={`Add one ${item.name}`} title={`Add one ${item.name}`}><Plus className="h-3 w-3" /></button></div></td><td className="px-2 py-2 text-right"><span className="block text-[10px] text-[#66736e]">{money(item.price)} each</span><strong className="block text-xs text-[#1f2937]">{money(item.price * item.quantity)}</strong></td><td className="px-1 py-2"><button type="button" onClick={() => setCart((current) => current.filter((entry) => entry.id !== item.id))} className="p-1 text-red-700 hover:bg-red-50" aria-label={`Remove ${item.name}`} title={`Remove ${item.name}`}><Trash2 className="h-3.5 w-3.5" /></button></td>
-              </tr>)}{!cart.length && <tr><td colSpan="5" className="px-4 py-12 text-center text-sm text-[#66736e]">Add food from the menu to start this bill.</td></tr>}</tbody>
-            </table>
-          </div>
-
-          <div className="border-t border-[#e5e7eb] px-3 py-2 text-xs text-[#4b5563]">
-            <div className="flex items-center justify-between py-1"><span>Subtotal</span><strong>{money(subtotal)}</strong></div>
-            <label className="flex items-center justify-between gap-4 py-1"><span>Discount</span><span className="flex items-center gap-1">₹<input type="number" min="0" max={subtotal} step="0.01" value={discount} onChange={(event) => setDiscount(event.target.value)} className="w-20 rounded border border-[#dfe2e5] px-2 py-1 text-right outline-none focus:border-[#FF5A00] focus:ring-1 focus:ring-[#FF5A00]" /></span></label>
-            <div className="flex items-center justify-between py-1"><span>CGST (2.5%)</span><span>{money(cgst)}</span></div><div className="flex items-center justify-between py-1"><span>SGST (2.5%)</span><span>{money(sgst)}</span></div>
-          </div>
-          <div className="flex items-center justify-between bg-[#FF5A00] px-4 py-2.5 text-white"><span className="text-lg font-bold">Grand Total</span><strong className="text-xl">{money(total)}</strong></div>
-
-          <div className="border-t border-[#e5e7eb] bg-[#f8faf9] p-2.5">
-            <div className="mb-2 flex items-center justify-between"><h3 className="flex items-center gap-2 text-sm font-bold text-[#FF5A00]"><ShoppingCart className="h-4 w-4" />Selected Items</h3><span className="text-[11px] font-bold text-[#4b5563]">Total Items: {itemCount}</span></div>
-            <div className="flex gap-2 overflow-x-auto pb-1">{cart.length ? cart.map((item) => <article key={item.id} className="min-w-[112px] max-w-[140px] flex-1 overflow-hidden rounded-md border border-[#dfe2e5] bg-white"><div className="h-16 bg-[#f3f4f6]">{item.image ? <img src={item.image} alt={item.name} className="h-full w-full object-cover" /> : <div className="flex h-full items-center justify-center text-[#FF5A00]"><Utensils className="h-6 w-6" /></div>}</div><div className="p-1.5"><p className="truncate text-[10px] font-bold">{item.name} ({item.quantity})</p><p className="truncate text-[9px] text-[#66736e]">{item.portion}</p></div></article>) : <p className="py-2 text-xs text-[#66736e]">No items selected</p>}</div>
-          </div>
+          {!showTables ? (
+            <div className="grid gap-3 sm:grid-cols-3">
+              {[
+                { type: "dine-in", label: "Dine-In / Table", detail: "Select a table", Icon: Table2 },
+                { type: "home_delivery", label: "Home Delivery", detail: "Customer & delivery address", Icon: Bike },
+                { type: "pickup", label: "Pick Up", detail: "Customer pickup order", Icon: ShoppingBag },
+              ].map(({ type, label, detail, Icon }) => (
+                <button key={type} type="button" onClick={() => openOrderType(type)} className="flex min-h-24 items-center gap-3 rounded-2xl border border-slate-200 p-4 text-left transition hover:border-orange-300 hover:bg-orange-50 sm:flex-col sm:items-start">
+                  <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-orange-100 text-orange-700"><Icon size={22} /></span>
+                  <span><span className="block text-sm font-bold text-slate-900">{label}</span><span className="mt-1 block text-xs text-slate-500">{detail}</span></span>
+                </button>
+              ))}
+            </div>
+          ) : loading ? (
+            <div className="flex min-h-32 items-center justify-center gap-2 text-sm text-slate-500"><Loader2 className="h-4 w-4 animate-spin" />Loading tables…</div>
+          ) : (
+            <>
+              {error && <p role="alert" className="mb-3 rounded-xl bg-rose-50 p-3 text-sm text-rose-700">{error}</p>}
+              {tables.length ? (
+                <div className="grid max-h-[55vh] gap-3 overflow-y-auto sm:grid-cols-2">
+                  {tables.map((table) => {
+                    const status = tableStatus(table);
+                    const allowed = status === "Available" || status === "Occupied";
+                    const existingBill = activeBills.find((bill) => String(bill.table_id) === String(table.table_id));
+                    return (
+                      <button key={table.table_id || table.id} type="button" onClick={() => selectTable(table)} disabled={!allowed} className={`flex items-center justify-between gap-3 rounded-xl border p-4 text-left transition disabled:cursor-not-allowed disabled:opacity-55 ${status === "Available" ? "border-emerald-200 hover:bg-emerald-50" : status === "Occupied" ? "border-amber-200 hover:bg-amber-50" : "border-slate-200 bg-slate-50"}`}>
+                        <span className="flex min-w-0 items-center gap-3">
+                          <span className={`grid h-10 w-10 shrink-0 place-items-center rounded-xl ${status === "Available" ? "bg-emerald-100 text-emerald-800" : status === "Occupied" ? "bg-amber-100 text-amber-800" : "bg-slate-200 text-slate-500"}`}><Table2 size={19} /></span>
+                          <span className="min-w-0"><strong className="block truncate text-sm">Table {table.table_number}</strong><span className="mt-1 block text-xs text-slate-500">{table.no_of_seats ? `${table.no_of_seats} seats · ` : ""}{status}{existingBill ? ` · Bill #${existingBill.bill_number}` : ""}</span></span>
+                        </span>
+                        <ChevronRight className="h-4 w-4 shrink-0 text-slate-400" />
+                      </button>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="rounded-xl border border-dashed border-slate-300 p-8 text-center">
+                  <MapPin className="mx-auto h-8 w-8 text-slate-300" />
+                  <p className="mt-2 text-sm font-semibold text-slate-700">No tables are configured</p>
+                  <p className="mt-1 text-xs text-slate-500">Add tables before starting a dine-in order.</p>
+                </div>
+              )}
+            </>
+          )}
         </section>
-      </main>
-
-      <footer className="pos-actions flex flex-wrap items-center justify-between gap-2 border-t border-[#e5e7eb] bg-[#f8faf9] px-3 py-2.5 md:px-4">
-        <div className="ml-auto flex flex-wrap justify-end gap-2"><button type="button" onClick={clearOrder} className="flex h-10 w-10 items-center justify-center rounded-md border border-[#dfe2e5] bg-white text-red-700 hover:bg-red-50" aria-label="Clear all items" title="Clear all items"><Trash2 className="h-4 w-4" /></button><button type="button" onClick={startNewOrder} className="flex h-10 w-10 items-center justify-center rounded-md border border-orange-200 bg-white text-[#FF5A00] transition hover:bg-orange-50" aria-label="Reset order" title="Reset order"><RotateCcw className="h-4 w-4" /></button><button type="button" onClick={() => window.print()} disabled={!billGenerated} className="flex h-10 w-10 items-center justify-center rounded-md bg-[#FF5A00] text-white transition hover:bg-[#E94B00] disabled:cursor-not-allowed disabled:opacity-50" aria-label="Print bill" title="Print bill"><Printer className="h-4 w-4" /></button><button type="button" onClick={sendToKitchen} disabled={!cart.length} className="flex h-10 w-10 items-center justify-center rounded-md border border-orange-200 bg-white text-[#FF5A00] transition hover:bg-orange-50 disabled:cursor-not-allowed disabled:opacity-50" aria-label={sentToKitchen ? "Sent to kitchen" : "Send to kitchen"} title={sentToKitchen ? "Sent to kitchen" : "Send to kitchen"}><ChefHat className="h-4 w-4" /></button><button type="button" onClick={startNewOrder} className="flex h-10 w-10 items-center justify-center rounded-md bg-[#FF5A00] text-white transition hover:bg-[#E94B00]" aria-label="Start new order" title="Start new order"><Plus className="h-4 w-4" /></button></div>
-      </footer>
-    </div>
+      </div>
+    </main>
   );
 };
 

@@ -373,7 +373,7 @@ router.use('/attendance', attendanceRouter);
 
 router.use('/server-tables', optionalAuth, serverTableRouter);
 router.use('/tables', optionalAuth, serverTableRouter);
-router.post('/kitchen-orders', requireKitchenRole(['server']), submitKitchenOrder);
+router.post('/kitchen-orders', requireKitchenRole(['server', 'admin', 'super admin', 'superadmin']), submitKitchenOrder);
 router.get('/kitchen-orders', requireKitchenRole(['chef', 'server', 'super admin', 'admin']), getKitchenOrders);
 router.patch('/kitchen-orders/:orderId/status', requireKitchenRole(['chef', 'server', 'super admin', 'admin']), changeKitchenOrderStatus);
 router.put('/kitchen-orders/:orderId/status', requireKitchenRole(['chef', 'server', 'super admin', 'admin']), changeKitchenOrderStatus);
