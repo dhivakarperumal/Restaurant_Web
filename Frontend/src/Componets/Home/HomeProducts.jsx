@@ -140,6 +140,7 @@ function HomeProducts() {
   const currentTime = useFoodAvailabilityClock();
   const store = useContext(StoreContext) || {};
   const { wishlist = [], toggleWishlist, addToCart } = store;
+  const currentTime = useFoodAvailabilityClock();
   const activeMenu = getActiveMenu(currentTime);
 
   const fetchFoods = useCallback(async () => {

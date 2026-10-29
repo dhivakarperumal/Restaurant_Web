@@ -521,10 +521,10 @@ export default function DeliveryAttendancePage() {
 
               {/* view toggle */}
               <div className="flex overflow-hidden rounded-xl border border-[#dfe2e5] bg-[#faf9f8]">
-                <button type="button" onClick={() => { setViewMode("table"); setPage(1); }}
+                <button type="button" onClick={() => { setViewMode("table"); setPage(1); }} aria-pressed={viewMode === "table"}
                   className={`flex h-[46px] w-[46px] items-center justify-center border-r border-[#dfe2e5] transition ${viewMode==="table" ? "bg-[#FF5A00] text-white" : "text-[#4d4d4d] hover:bg-orange-50 hover:text-[#FF5A00]"}`}
                   aria-label="Table view"><Table2 className="h-4 w-4" /></button>
-                <button type="button" onClick={() => { setViewMode("card"); setPage(1); }}
+                <button type="button" onClick={() => { setViewMode("card"); setPage(1); }} aria-pressed={viewMode === "card"}
                   className={`flex h-[46px] w-[46px] items-center justify-center transition ${viewMode==="card" ? "bg-[#FF5A00] text-white" : "text-[#4d4d4d] hover:bg-orange-50 hover:text-[#FF5A00]"}`}
                   aria-label="Card view"><LayoutGrid className="h-4 w-4" /></button>
               </div>

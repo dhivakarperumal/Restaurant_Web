@@ -386,6 +386,7 @@ const AdminCategories = () => {
                 <button
                   type="button"
                   onClick={() => { setViewMode('table'); setCurrentPage(1); }}
+                  aria-pressed={viewMode === 'table'}
                   className={`flex h-[46px] w-[46px] items-center justify-center border-r border-[#dfe2e5] transition ${
                     viewMode === 'table' ? 'bg-[#FF5A00] text-white' : 'text-[#4d4d4d] hover:bg-orange-50 hover:text-[#FF5A00]'
                   }`}
@@ -396,6 +397,7 @@ const AdminCategories = () => {
                 <button
                   type="button"
                   onClick={() => { setViewMode('card'); setCurrentPage(1); }}
+                  aria-pressed={viewMode === 'card'}
                   className={`flex h-[46px] w-[46px] items-center justify-center transition ${
                     viewMode === 'card' ? 'bg-[#FF5A00] text-white' : 'text-[#4d4d4d] hover:bg-orange-50 hover:text-[#FF5A00]'
                   }`}
@@ -407,7 +409,7 @@ const AdminCategories = () => {
               <button
                 type="button"
                 onClick={openAddCategory}
-                className="inline-flex h-[46px] items-center gap-2 rounded-xl bg-[#FF5A00] px-4 text-[15px] font-semibold text-white shadow-[0_6px_14px_rgba(255,90,0,0.18)] transition hover:bg-[#E94B00]"
+                className="admin-primary-button inline-flex h-[46px] items-center gap-2 rounded-xl px-4 text-[15px] font-semibold text-white shadow-md transition"
               >
                 <Plus className="h-4 w-4" />
                 Add New Category
