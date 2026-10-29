@@ -71,6 +71,13 @@ const createUploadFilename = (req, file, callback) => {
   callback(null, `${fieldName}-${Date.now()}-${randomUUID()}-${basename}${extension}`);
 };
 
+const categoryImageTypes = new Map([
+  ['.jpg', 'image/jpeg'],
+  ['.jpeg', 'image/jpeg'],
+  ['.png', 'image/png'],
+  ['.webp', 'image/webp'],
+]);
+
 const storage = multer.diskStorage({
   destination: (req, _file, callback) => {
     const folder = String(req.body?.folder || '').toLowerCase();
@@ -89,6 +96,17 @@ const employeeStorage = multer.diskStorage({
 const upload = multer({
   storage,
   limits: { fileSize: 5 * 1024 * 1024, files: 20 },
+  fileFilter: (req, file, callback) => {
+    if (String(req.body?.folder || '').toLowerCase() !== 'categories') {
+      return callback(null, true);
+    }
+
+    const extension = path.extname(file.originalname).toLowerCase();
+    if (categoryImageTypes.get(extension) !== file.mimetype.toLowerCase()) {
+      return callback(new Error('Category images must be JPG, PNG, or WEBP files.'));
+    }
+    return callback(null, true);
+  },
 });
 const employeeUpload = multer({
   storage: employeeStorage,
@@ -365,9 +383,70 @@ router.get('/table-bills/:billId', requireKitchenRole(['server', 'super admin', 
 router.post('/table-bills/:billId/settle', requireKitchenRole(['server', 'super admin', 'admin']), settleBill);
 router.get('/table-bills', requireKitchenRole(['server', 'super admin', 'admin']), getAllBills);
 
-router.post('/upload', upload.single('file'), (req, res) => {
+const handleSingleUpload = (req, res, next) => {
+  upload.single('file')(req, res, (error) => {
+    if (!error) return next();
+    const isFileTooLarge =
+      error instanceof multer.MulterError && error.code === 'LIMIT_FILE_SIZE';
+    const message = isFileTooLarge
+      ? 'Uploaded files must be 5 MB or smaller.'
+      : error.message || 'File upload failed.';
+    return res.status(isFileTooLarge ? 413 : 400).json({
+      success: false,
+      message,
+    });
+  });
+};
+
+const isValidCategoryImageContent = async (filePath) => {
+  const file = await fs.promises.open(filePath, 'r');
+  try {
+    const header = Buffer.alloc(12);
+    const { bytesRead } = await file.read(header, 0, header.length, 0);
+    if (bytesRead < header.length) return false;
+    const isJpeg = header[0] === 0xff && header[1] === 0xd8 && header[2] === 0xff;
+    const isPng = header.subarray(0, 8).equals(
+      Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]),
+    );
+    const isWebp =
+      header.toString('ascii', 0, 4) === 'RIFF' &&
+      header.toString('ascii', 8, 12) === 'WEBP';
+    return isJpeg || isPng || isWebp;
+  } finally {
+    await file.close();
+  }
+};
+
+router.post('/upload', optionalAuth, handleSingleUpload, async (req, res) => {
   if (!req.file) {
     return res.status(400).json({ success: false, message: 'A file is required' });
+  }
+
+  if (String(req.body?.folder || '').toLowerCase() === 'categories') {
+    let isValidImage = false;
+    try {
+      isValidImage = await isValidCategoryImageContent(req.file.path);
+    } catch (error) {
+      console.error('Unable to validate category image upload:', error.message);
+    }
+    if (!isValidImage) {
+      await fs.promises.unlink(req.file.path);
+      return res.status(400).json({
+        success: false,
+        message: 'Uploaded file is not a valid JPG, PNG, or WEBP image.',
+      });
+    }
+
+    const role = String(req.auth?.role || '').trim().toLowerCase();
+    if (!['admin', 'super admin', 'superadmin'].includes(role)) {
+      await fs.promises.unlink(req.file.path);
+      return res.status(req.auth ? 403 : 401).json({
+        success: false,
+        message: req.auth
+          ? 'Administrator access is required to upload category images.'
+          : 'Administrator login is required to upload category images.',
+      });
+    }
   }
 
   const relativePath = path.relative(uploadDirectory, req.file.path)
