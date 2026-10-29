@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import {
   ArrowDownUp,
   ArrowUpRight,
@@ -33,6 +33,7 @@ import AddFood from './AddFood.jsx';
 const AdminProducts = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { foodId: editingFoodId } = useParams();
   const [productsList, setProductsList] = useState([]);
   const [categoriesList, setCategoriesList] = useState([]);
   const [cuisinesList, setCuisinesList] = useState([]);
@@ -47,6 +48,10 @@ const AdminProducts = () => {
   const [viewMode, setViewMode] = useState('card');
   const [selectedProductView, setSelectedProductView] = useState(null);
   const [addFoodOpen, setAddFoodOpen] = useState(false);
+  const closeFoodEditor = () => {
+    setAddFoodOpen(false);
+    if (editingFoodId) navigate('/admin/products');
+  };
 
   const fetchProducts = async () => {
     try {
@@ -395,7 +400,7 @@ const AdminProducts = () => {
                           {product.status}
                         </span>
                         <div className="flex gap-2">
-                          <button type="button" onClick={() => navigate(`/admin/products/edit/${product.id}`)}                           className="flex h-8 w-8 items-center justify-center rounded-lg border border-orange-200 bg-white text-[#FF5A00] transition hover:bg-orange-50" aria-label="Edit product photos" title="Edit product photos"><Upload className="h-4 w-4" /></button>
+                          <button type="button" onClick={() => navigate(`/admin/products/edit/${product.id}`)} className="flex h-8 w-8 items-center justify-center rounded-lg border border-orange-200 bg-white text-[#FF5A00] transition hover:bg-orange-50" aria-label="Edit product photos and details" title="Edit product"><Upload className="h-4 w-4" /></button>
                           <button type="button" onClick={() => handleDeleteProduct(product.id)} className="flex h-8 w-8 items-center justify-center rounded-lg border border-[#f3d7d7] bg-[#fff8f8] text-[#d04d4d]" aria-label="Delete product" title="Delete product"><Trash2 className="h-4 w-4" /></button>
                         </div>
                       </div>
@@ -606,10 +611,11 @@ const AdminProducts = () => {
             </div>
           </div>
         )}
-        {addFoodOpen && (
+        {(addFoodOpen || editingFoodId) && (
           <AddFood
             drawer
-            onClose={() => setAddFoodOpen(false)}
+            foodId={editingFoodId}
+            onClose={closeFoodEditor}
             onSaved={fetchProducts}
           />
         )}

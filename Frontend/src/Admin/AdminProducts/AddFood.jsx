@@ -8,10 +8,33 @@ import { MEAL_TYPES } from '../../CommonComponents/foodAvailability';
 
 const makeId = () => globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(36).slice(2)}`;
 const MEAL_AVAILABLE_TIMES = {
+  'All Day': '12:00 AM - 11:59 PM',
   Breakfast: '6:00 AM - 11:00 AM',
   Lunch: '11:00 AM - 3:00 PM',
   'Evening Snacks': '3:00 PM - 6:00 PM',
   Dinner: '6:00 PM - 11:00 PM',
+};
+const parseTimeRange = (value) => {
+  const match = String(value || '').match(/^\s*(\d{1,2}):(\d{2})\s*(AM|PM)?\s*-\s*(\d{1,2}):(\d{2})\s*(AM|PM)?\s*$/i);
+  if (!match) return null;
+  const to24Hour = (hourText, minuteText, meridiem) => {
+    let hour = Number(hourText);
+    const minute = Number(minuteText);
+    if (hour > 23 || minute > 59 || (meridiem && (hour < 1 || hour > 12))) return null;
+    if (meridiem) {
+      hour %= 12;
+      if (meridiem.toUpperCase() === 'PM') hour += 12;
+    }
+    return `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
+  };
+  const start = to24Hour(match[1], match[2], match[3]);
+  const end = to24Hour(match[4], match[5], match[6]);
+  return start && end ? { start, end } : null;
+};
+const formatTime = (value) => {
+  const [hourText, minute] = value.split(':');
+  const hour = Number(hourText);
+  return `${hour % 12 || 12}:${minute} ${hour < 12 ? 'AM' : 'PM'}`;
 };
 
 const blankFood = (foodId = '', actor = '') => ({
@@ -114,9 +137,10 @@ const Toggle = ({ label, checked, onChange }) => (
   </label>
 );
 
-const AddFood = ({ drawer = false, onClose, onSaved }) => {
+const AddFood = ({ drawer = false, onClose, onSaved, foodId: requestedFoodId }) => {
   const navigate = useNavigate();
-  const { foodId: editingFoodId } = useParams();
+  const { foodId: routeFoodId } = useParams();
+  const editingFoodId = requestedFoodId || routeFoodId;
   const { profileName } = useAuth();
   const [form, setForm] = useState(() => blankFood('', profileName));
   const [cuisines, setCuisines] = useState([]);
@@ -188,7 +212,7 @@ const AddFood = ({ drawer = false, onClose, onSaved }) => {
             cuisineId: String(food.cuisine_id || ''),
             categoryId: String(food.category_id || ''),
             subcategoryName: food.subcategory_name || '',
-            mealType: food.meal_type || 'All Day',
+            mealType: food.meal_type || '',
             description: food.description || '',
             mrp: String(food.mrp ?? ''),
             discount: String(food.discount ?? 0),
@@ -241,6 +265,15 @@ const AddFood = ({ drawer = false, onClose, onSaved }) => {
       availableTime: MEAL_AVAILABLE_TIMES[mealType] || current.availableTime,
     }));
     setErrors((current) => ({ ...current, mealType: '' }));
+  };
+
+  const setAvailableTime = (part, value) => {
+    if (!value) return;
+    const currentRange = parseTimeRange(form.availableTime)
+      || parseTimeRange(MEAL_AVAILABLE_TIMES[form.mealType])
+      || { start: '10:00', end: '13:00' };
+    const nextRange = { ...currentRange, [part]: value };
+    setValue('availableTime', `${formatTime(nextRange.start)} - ${formatTime(nextRange.end)}`);
   };
 
   const addImageFiles = async (fileList) => {
@@ -326,6 +359,7 @@ const AddFood = ({ drawer = false, onClose, onSaved }) => {
     if (!form.categoryId) nextErrors.categoryId = 'Choose a category.';
     if (!form.subcategoryName) nextErrors.subcategoryName = 'Choose a subcategory.';
     if (!MEAL_TYPES.includes(form.mealType)) nextErrors.mealType = 'Choose a valid meal time.';
+    if (!parseTimeRange(form.availableTime)) nextErrors.availableTime = 'Choose a valid start and end time.';
     if (form.mrp === '' || !Number.isFinite(Number(form.mrp)) || Number(form.mrp) < 0) nextErrors.mrp = 'Enter a valid non-negative MRP.';
     if (!Number.isFinite(Number(form.discount)) || Number(form.discount) < 0 || Number(form.discount) > 100) nextErrors.discount = 'Discount must be between 0 and 100.';
     if (Number(form.preparationTime) < 0) nextErrors.preparationTime = 'Preparation time cannot be negative.';
@@ -428,7 +462,7 @@ const AddFood = ({ drawer = false, onClose, onSaved }) => {
     <div
       role={drawer ? 'dialog' : undefined}
       aria-modal={drawer ? 'true' : undefined}
-      aria-label={drawer ? 'Add food' : undefined}
+      aria-label={drawer ? (editingFoodId ? 'Edit food' : 'Add food') : undefined}
       className={drawer ? 'fixed inset-0 z-[80] flex justify-end bg-black/45' : undefined}
       onMouseDown={(event) => {
         if (drawer && event.target === event.currentTarget && !saving && !uploading) closeForm();
@@ -526,6 +560,7 @@ const AddFood = ({ drawer = false, onClose, onSaved }) => {
                     {form.mealType ? `Choose a meal time (current: ${form.mealType})` : 'Choose a meal time'}
                   </option>
                 )}
+                <option value="All Day">All Day (12:00 AM – 11:59 PM)</option>
                 <option value="Breakfast">Breakfast (6:00 AM – 11:00 AM)</option>
                 <option value="Lunch">Lunch (11:00 AM – 3:00 PM)</option>
                 <option value="Evening Snacks">Evening Snacks (3:00 PM – 6:00 PM)</option>
@@ -534,10 +569,27 @@ const AddFood = ({ drawer = false, onClose, onSaved }) => {
               <span className="mt-1 block text-xs font-normal text-gray-500">Choose when this food is scheduled to be offered.</span>
               {errors.mealType && <span className="mt-1 block text-xs text-red-700">{errors.mealType}</span>}
             </label>
-            <label className="block text-sm font-medium text-gray-700">Available time
-              <input type="text" value={form.availableTime} onChange={(event) => setValue('availableTime', event.target.value)} maxLength={100} placeholder="e.g. 10:00 AM - 1:00 PM" className="mt-1.5 h-10 w-full rounded-md border border-gray-300 px-3 outline-none focus:border-[#FF5A00]" />
-              <span className="mt-1 block text-xs font-normal text-gray-500">Automatically set from the selected meal time; you can adjust it.</span>
-            </label>
+            <div className="text-sm font-medium text-gray-700">
+              <span>Available time</span>
+              <div className="mt-1.5 grid grid-cols-2 gap-2">
+                {[
+                  { label: 'From', part: 'start' },
+                  { label: 'Until', part: 'end' },
+                ].map(({ label, part }) => (
+                  <label key={part} className="text-xs font-medium text-gray-600">
+                    {label}
+                    <input
+                      type="time"
+                      value={parseTimeRange(form.availableTime)?.[part] || ''}
+                      onChange={(event) => setAvailableTime(part, event.target.value)}
+                      className="mt-1 block h-10 w-full rounded-md border border-gray-300 bg-white px-2 text-sm text-gray-900 outline-none focus:border-[#FF5A00]"
+                    />
+                  </label>
+                ))}
+              </div>
+              <span className="mt-1 block text-xs font-normal text-gray-500">Choose times with the picker or enter them manually. Meal selection sets an initial range.</span>
+              {errors.availableTime && <span className="mt-1 block text-xs text-red-700">{errors.availableTime}</span>}
+            </div>
             <Toggle label="Available" checked={form.isAvailable} onChange={(value) => setValue('isAvailable', value)} />
             <Toggle label="Dining available" checked={form.diningAvailable} onChange={(value) => setValue('diningAvailable', value)} />
             <Toggle label="Takeaway available" checked={form.takeawayAvailable} onChange={(value) => setValue('takeawayAvailable', value)} />

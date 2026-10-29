@@ -193,10 +193,11 @@ export default function ServerFood() {
 
         const isAvailable = isFoodAvailable(food, orderType, currentTime);
 
-        const statusMatch =
+        const statusMatch = (hasOrderContext ? isAvailable : true) && (
           selectedStatus === "all" ||
           (selectedStatus === "available" && isAvailable) ||
-          (selectedStatus === "unavailable" && !isAvailable);
+          (selectedStatus === "unavailable" && !isAvailable)
+        );
 
         return nameMatch && categoryMatch && typeMatch && statusMatch;
       })
@@ -234,6 +235,7 @@ export default function ServerFood() {
     sortBy,
     orderType,
     currentTime,
+    hasOrderContext,
   ]);
 
   // Statistics Summary
@@ -714,18 +716,24 @@ export default function ServerFood() {
               <option value="non-veg">🔴 Non-Veg ({stats.nonVegCount})</option>
             </select>
 
-            {/* Availability Filter */}
-            <select
-              value={selectedStatus}
-              onChange={(e) => setSelectedStatus(e.target.value)}
-              className="px-3 py-2 text-xs sm:text-sm bg-gray-50 border border-gray-200 rounded-xl text-gray-700 outline-none focus:border-[#FF5A00]"
-            >
-              <option value="all">All Availability</option>
-              <option value="available">Available ({stats.available})</option>
-              <option value="unavailable">
-                Unavailable ({stats.total - stats.available})
-              </option>
-            </select>
+            {/* Order entry only shows items that can be added to the current order. */}
+            {hasOrderContext ? (
+              <span className="rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-800">
+                Available foods only
+              </span>
+            ) : (
+              <select
+                value={selectedStatus}
+                onChange={(e) => setSelectedStatus(e.target.value)}
+                className="px-3 py-2 text-xs sm:text-sm bg-gray-50 border border-gray-200 rounded-xl text-gray-700 outline-none focus:border-[#FF5A00]"
+              >
+                <option value="all">All Availability</option>
+                <option value="available">Available ({stats.available})</option>
+                <option value="unavailable">
+                  Unavailable ({stats.total - stats.available})
+                </option>
+              </select>
+            )}
 
             {/* Sort Dropdown */}
             <select

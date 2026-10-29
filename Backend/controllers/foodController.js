@@ -78,7 +78,7 @@ const validateFood = (food) => {
   if (!food.food_name) return 'Food name is required.';
   if (!food.cuisine_id || !food.cuisine_name) return 'Choose a cuisine.';
   if (!food.category_id || !food.category_name) return 'Choose a category.';
-  if (!MEAL_TYPES.includes(food.meal_type)) return 'Choose Breakfast, Lunch, Evening Snacks, or Dinner for the meal type.';
+  if (!MEAL_TYPES.includes(food.meal_type)) return 'Choose All Day, Breakfast, Lunch, Evening Snacks, or Dinner for the meal type.';
   if (!food.subcategory_name) return 'Choose a subcategory.';
   if (food.mrp < 0) return 'MRP cannot be negative.';
   if (food.discount < 0 || food.discount > 100) return 'Discount must be between 0 and 100.';
@@ -181,10 +181,11 @@ const updateMenuVisibility = async (req, res) => {
 const updateFoodAvailability = async (req, res) => {
   const isAvailable = req.body?.is_available;
   const mealType = req.body?.meal_type;
+  const availableTime = req.body?.available_time;
   const stockQuantity = req.body?.stock_quantity;
 
-  if (isAvailable === undefined && mealType === undefined && stockQuantity === undefined) {
-    return res.status(400).json({ success: false, message: 'Provide is_available, meal_type, or stock_quantity.' });
+  if (isAvailable === undefined && mealType === undefined && availableTime === undefined && stockQuantity === undefined) {
+    return res.status(400).json({ success: false, message: 'Provide is_available, meal_type, available_time, or stock_quantity.' });
   }
 
   if (isAvailable !== undefined && typeof isAvailable !== 'boolean') {
@@ -192,7 +193,11 @@ const updateFoodAvailability = async (req, res) => {
   }
 
   if (mealType !== undefined && !MEAL_TYPES.includes(String(mealType).trim())) {
-    return res.status(400).json({ success: false, message: 'Invalid meal_type. Allowed: Breakfast, Lunch, Evening Snacks, Dinner.' });
+    return res.status(400).json({ success: false, message: 'Invalid meal_type. Allowed: All Day, Breakfast, Lunch, Evening Snacks, Dinner.' });
+  }
+
+  if (availableTime !== undefined && (typeof availableTime !== 'string' || availableTime.length > 100)) {
+    return res.status(400).json({ success: false, message: 'available_time must be 100 characters or fewer.' });
   }
 
   try {
@@ -201,6 +206,7 @@ const updateFoodAvailability = async (req, res) => {
       {
         is_available: isAvailable,
         meal_type: mealType ? String(mealType).trim() : undefined,
+        available_time: typeof availableTime === 'string' ? availableTime.trim() : undefined,
         stock_quantity: typeof stockQuantity === 'number' ? Math.floor(stockQuantity) : undefined,
       },
       req.auth?.username || req.auth?.name || 'Chef'

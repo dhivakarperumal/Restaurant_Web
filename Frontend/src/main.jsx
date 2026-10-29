@@ -342,7 +342,7 @@ const router = createHashRouter([
           },
           {
             path: 'products/edit/:foodId',
-            element: <AddFood />,
+            element: <AdminProducts />,
           },
           {
             path: 'products/categories',

@@ -210,6 +210,11 @@ const setFoodAvailability = async (foodId, updates = {}, updatedBy = 'system') =
     values.push(updates.meal_type.trim());
   }
 
+  if (typeof updates.available_time === 'string' && updates.available_time.trim().length > 0 && updates.available_time.trim().length <= 100) {
+    fields.push('available_time = ?');
+    values.push(updates.available_time.trim());
+  }
+
   if (Number.isInteger(updates.stock_quantity) && updates.stock_quantity >= 0) {
     fields.push('stock_quantity = ?');
     values.push(updates.stock_quantity);
