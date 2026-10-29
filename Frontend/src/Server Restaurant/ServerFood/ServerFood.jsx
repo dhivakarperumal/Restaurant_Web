@@ -282,6 +282,11 @@ export default function ServerFood() {
     setCustomizeQuantity(1);
   };
 
+  const hasConfiguredOptions = (food) => (
+    (food.addons || []).some((addon) => String(addon.status || "Active").toLowerCase() === "active")
+    || (food.customizations || []).length > 0
+  );
+
   const getDefaultCartKey = (food) => `${food.food_id || food.id}:default`;
   const getFoodQuantity = (food) => {
     const foodId = String(food.food_id || food.id);
@@ -313,11 +318,27 @@ export default function ServerFood() {
     });
   };
 
+  const addFoodDirectly = (food) => {
+    if (submissionLock.current || !isFoodAvailable(food, orderType, currentTime)) return;
+    const defaultKey = getDefaultCartKey(food);
+    const nextQuantity = (cart[defaultKey]?.quantity || 0) + 1;
+    if (getFoodQuantity(food) >= 99) {
+      toast.error("You can add up to 99 of this food.");
+      return;
+    }
+    updateCartQuantity(food, nextQuantity, defaultKey);
+    toast.success(`${food.food_name} added to this order.`);
+  };
+
   const adjustFoodQuantity = (food, change) => {
     const defaultKey = getDefaultCartKey(food);
     const defaultQuantity = cart[defaultKey]?.quantity || 0;
     if (change > 0) {
-      handleOpenDetails(food);
+      if (hasConfiguredOptions(food)) {
+        handleOpenDetails(food);
+      } else {
+        updateCartQuantity(food, defaultQuantity + 1, defaultKey);
+      }
       return;
     }
     if (defaultQuantity > 0) {
@@ -956,14 +977,37 @@ export default function ServerFood() {
                       </div>
                     </div>
                   )}
-                  <button
-                    type="button"
-                    onClick={() => handleOpenDetails(food)}
-                    className="w-full flex items-center justify-center gap-2 py-2 px-3 bg-[#FF5A00] hover:bg-[#E94B00] text-white rounded-xl text-xs font-semibold transition border border-[#FF5A00] cursor-pointer"
-                  >
-                    <Eye className="w-3.5 h-3.5" />
-                    <span>{hasOrderContext ? "Customize & Add" : "View Food Details"}</span>
-                  </button>
+                  {hasOrderContext ? (
+                    <div className="grid grid-cols-2 gap-2">
+                      <button
+                        type="button"
+                        onClick={() => addFoodDirectly(food)}
+                        disabled={!isAvailable || getFoodQuantity(food) >= 99}
+                        className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-[#FF5A00] bg-[#FF5A00] px-3 py-2 text-xs font-semibold text-white transition hover:bg-[#E94B00] disabled:cursor-not-allowed disabled:opacity-50"
+                      >
+                        <Plus className="h-3.5 w-3.5" />
+                        <span>Add</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleOpenDetails(food)}
+                        disabled={!isAvailable}
+                        className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-orange-200 bg-white px-3 py-2 text-xs font-semibold text-[#C74700] transition hover:bg-orange-50 disabled:cursor-not-allowed disabled:opacity-50"
+                      >
+                        <Eye className="h-3.5 w-3.5" />
+                        <span>Customize</span>
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => handleOpenDetails(food)}
+                      className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl border border-[#FF5A00] bg-[#FF5A00] px-3 py-2 text-xs font-semibold text-white transition hover:bg-[#E94B00]"
+                    >
+                      <Eye className="h-3.5 w-3.5" />
+                      <span>View Food Details</span>
+                    </button>
+                  )}
                 </div>
               </div>
             );
@@ -1125,14 +1169,37 @@ export default function ServerFood() {
                               </button>
                             </div>
                           )}
-                          <button
-                            type="button"
-                            onClick={() => handleOpenDetails(food)}
-                            className="inline-flex cursor-pointer items-center gap-1.5 rounded-xl bg-[#FF5A00] px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-[#E94B00]"
-                          >
-                            <Eye className="h-3.5 w-3.5" />
-                            <span>{hasOrderContext ? "Customize & Add" : "View"}</span>
-                          </button>
+                          {hasOrderContext ? (
+                            <>
+                              <button
+                                type="button"
+                                onClick={() => addFoodDirectly(food)}
+                                disabled={!isAvailable || getFoodQuantity(food) >= 99}
+                                className="inline-flex cursor-pointer items-center gap-1.5 rounded-xl bg-[#FF5A00] px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-[#E94B00] disabled:cursor-not-allowed disabled:opacity-50"
+                              >
+                                <Plus className="h-3.5 w-3.5" />
+                                <span>Add</span>
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleOpenDetails(food)}
+                                disabled={!isAvailable}
+                                className="inline-flex cursor-pointer items-center gap-1.5 rounded-xl border border-orange-200 bg-white px-3 py-1.5 text-xs font-semibold text-[#C74700] transition hover:bg-orange-50 disabled:cursor-not-allowed disabled:opacity-50"
+                              >
+                                <Eye className="h-3.5 w-3.5" />
+                                <span>Customize</span>
+                              </button>
+                            </>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => handleOpenDetails(food)}
+                              className="inline-flex cursor-pointer items-center gap-1.5 rounded-xl bg-[#FF5A00] px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-[#E94B00]"
+                            >
+                              <Eye className="h-3.5 w-3.5" />
+                              <span>View</span>
+                            </button>
+                          )}
                         </div>
                       </td>
                     </tr>
