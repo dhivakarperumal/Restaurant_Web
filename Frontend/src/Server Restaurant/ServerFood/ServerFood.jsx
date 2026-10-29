@@ -85,11 +85,13 @@ export default function ServerFood() {
   const [selectedStatus, setSelectedStatus] = useState("all"); // 'all' | 'available' | 'unavailable'
   const [sortBy, setSortBy] = useState("latest");
   const [viewMode, setViewMode] = useState("grid"); // 'grid' | 'table'
-  const [cart, setCart] = useState({});
+  const [cart, setCart] = useState(() => location.state?.orderDraft?.cart || {});
   const [submittingOrder, setSubmittingOrder] = useState(false);
   const [activeBill, setActiveBill] = useState(null);
   const [showBillItems, setShowBillItems] = useState(false);
-  const [customer, setCustomer] = useState({ name: "", phone: "", address: "" });
+  const [customer, setCustomer] = useState(() => (
+    location.state?.orderDraft?.customer || { name: "", phone: "", address: "" }
+  ));
   const submissionLock = useRef(false);
   const submissionRequest = useRef(null);
 
@@ -493,6 +495,19 @@ export default function ServerFood() {
     }
   };
 
+  const changeSelectedTable = () => {
+    if (orderReturnPath === "/admin/billing") {
+      navigate("/admin/billing", {
+        state: {
+          openTableSelector: true,
+          orderDraft: { selectedTable, cart, customer },
+        },
+      });
+      return;
+    }
+    navigate("/server/tables", { state: { returnPath: orderReturnPath } });
+  };
+
   return (
     <div className="space-y-6">
      
@@ -639,7 +654,7 @@ export default function ServerFood() {
           </div>
           <button
             type="button"
-            onClick={() => navigate(orderReturnPath === "/admin/billing" ? "/admin/tables" : "/server/tables", { state: { returnPath: orderReturnPath } })}
+            onClick={changeSelectedTable}
             className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-xl bg-[#FF5A00] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#E94B00]"
           >
             Change Table

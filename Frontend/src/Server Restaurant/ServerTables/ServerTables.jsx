@@ -413,6 +413,13 @@ export default function ServerTables() {
     }
   };
 
+  useEffect(() => {
+    const billId = location.state?.openBillId;
+    if (!billId || loading) return;
+    handleOpenBillModal({ bill_id: billId });
+    navigate(location.pathname, { replace: true, state: null });
+  }, [location.pathname, location.state, loading, navigate]);
+
   const handleSettleBill = async () => {
     if (!viewingBill || settleLock.current) return;
     settleLock.current = true;

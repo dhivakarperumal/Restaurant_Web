@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import {
   Bike,
   ChevronRight,
@@ -19,6 +19,7 @@ const tableStatus = (table) => (
 );
 
 const PointOfSale = () => {
+  const location = useLocation();
   const navigate = useNavigate();
   const [tables, setTables] = useState([]);
   const [activeBills, setActiveBills] = useState([]);
@@ -26,6 +27,7 @@ const PointOfSale = () => {
   const [error, setError] = useState("");
   const [sheetOpen, setSheetOpen] = useState(false);
   const [showTables, setShowTables] = useState(false);
+  const [orderDraft, setOrderDraft] = useState(() => location.state?.orderDraft || null);
   const selectionLock = useRef(false);
 
   const loadBillingData = useCallback(async ({ showLoading = true } = {}) => {
@@ -57,16 +59,43 @@ const PointOfSale = () => {
   }, [loadBillingData]);
 
   useEffect(() => {
+    if (!location.state?.openTableSelector) return;
+    setSheetOpen(true);
+    setShowTables(true);
+    loadBillingData();
+    navigate(location.pathname, { replace: true, state: null });
+  }, [location.pathname, location.state, loadBillingData, navigate]);
+
+  const closeOrderSelector = useCallback(() => {
+    setSheetOpen(false);
+    setShowTables(false);
+    if (orderDraft?.selectedTable) {
+      navigate("/admin/billing/order", {
+        state: {
+          orderType: "dine-in",
+          returnPath: "/admin/billing",
+          selectedTable: orderDraft.selectedTable,
+          orderDraft: {
+            cart: orderDraft.cart,
+            customer: orderDraft.customer,
+          },
+        },
+      });
+    } else {
+      setOrderDraft(null);
+    }
+  }, [navigate, orderDraft]);
+
+  useEffect(() => {
     if (!sheetOpen) return undefined;
     const closeOnEscape = (event) => {
       if (event.key === "Escape" && !selectionLock.current) {
-        setSheetOpen(false);
-        setShowTables(false);
+        closeOrderSelector();
       }
     };
     window.addEventListener("keydown", closeOnEscape);
     return () => window.removeEventListener("keydown", closeOnEscape);
-  }, [sheetOpen]);
+  }, [sheetOpen, closeOrderSelector]);
 
   const openOrderType = (orderType) => {
     if (selectionLock.current) return;
@@ -75,6 +104,7 @@ const PointOfSale = () => {
       loadBillingData();
       return;
     }
+    setOrderDraft(null);
     selectionLock.current = true;
     setSheetOpen(false);
     navigate("/admin/billing/order", { state: { orderType, returnPath: "/admin/billing" } });
@@ -98,12 +128,39 @@ const PointOfSale = () => {
           table_number: table.table_number,
           no_of_seats: table.no_of_seats,
         },
+        ...(orderDraft ? {
+          orderDraft: {
+            cart: orderDraft.cart,
+            customer: orderDraft.customer,
+          },
+        } : {}),
       },
     });
     window.setTimeout(() => { selectionLock.current = false; }, 350);
   };
 
   const goToBills = () => navigate("/admin/tables");
+
+  const addItemsToActiveBill = (bill) => {
+    if (!bill.table_id) {
+      setError(`Could not find the table for bill #${bill.bill_number}. Refresh and try again.`);
+      return;
+    }
+    navigate("/admin/billing/order", {
+      state: {
+        orderType: "dine-in",
+        returnPath: "/admin/billing",
+        selectedTable: {
+          table_id: bill.table_id,
+          table_number: bill.table_number,
+        },
+      },
+    });
+  };
+
+  const completeActiveBill = (bill) => {
+    navigate("/admin/tables", { state: { openBillId: bill.bill_id } });
+  };
 
   const availableCount = tables.filter((table) => tableStatus(table) === "Available").length;
   const occupiedCount = tables.filter((table) => tableStatus(table) === "Occupied").length;
@@ -118,10 +175,20 @@ const PointOfSale = () => {
             <h1 className="mt-2 text-3xl font-black tracking-tight sm:text-4xl">Billing & Orders</h1>
             <p className="mt-2 max-w-2xl text-sm text-slate-600">Start a real kitchen order, review active table bills, and continue settlement from the table workspace.</p>
           </div>
-          <button type="button" onClick={loadBillingData} disabled={loading} className="inline-flex h-10 items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 shadow-sm hover:bg-slate-50 disabled:opacity-60">
-            {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
-            Refresh
-          </button>
+          <div className="flex items-center gap-2">
+            <button type="button" onClick={loadBillingData} disabled={loading} className="inline-flex h-10 items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 shadow-sm hover:bg-slate-50 disabled:opacity-60">
+              {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+              Refresh
+            </button>
+            <button
+              type="button"
+              onClick={() => { setShowTables(false); setSheetOpen(true); }}
+              aria-label="Start a new order"
+              className="grid h-11 w-11 place-items-center rounded-xl bg-[#FF5A00] text-white shadow-md shadow-orange-500/25 transition hover:bg-[#E94B00] active:scale-95"
+            >
+              <Plus size={24} strokeWidth={2.5} />
+            </button>
+          </div>
         </header>
 
         {error && (
@@ -159,13 +226,21 @@ const PointOfSale = () => {
           ) : activeBills.length ? (
             <div className="divide-y divide-slate-100">
               {activeBills.map((bill) => (
-                <button key={bill.bill_id} type="button" onClick={goToBills} className="flex w-full flex-wrap items-center justify-between gap-3 px-5 py-4 text-left transition hover:bg-slate-50">
-                  <span className="flex items-center gap-3">
-                    <span className="grid h-10 w-10 place-items-center rounded-xl bg-emerald-50 text-emerald-800"><Table2 size={19} /></span>
-                    <span><strong className="block text-sm">Table {bill.table_number}</strong><span className="text-xs text-slate-500">Bill #{bill.bill_number} · {bill.status}</span></span>
-                  </span>
-                  <span className="font-bold tabular-nums">₹{Number(bill.grand_total || 0).toFixed(2)}</span>
-                </button>
+                <article key={bill.bill_id} className="flex flex-wrap items-center justify-between gap-4 px-5 py-4 transition hover:bg-slate-50">
+                  <button type="button" onClick={() => completeActiveBill(bill)} className="flex min-w-0 flex-1 items-center gap-3 text-left">
+                    <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-emerald-50 text-emerald-800"><Table2 size={19} /></span>
+                    <span className="min-w-0"><strong className="block text-sm">Table {bill.table_number}</strong><span className="text-xs text-slate-500">Bill #{bill.bill_number} · {bill.status}</span></span>
+                    <span className="ml-auto font-bold tabular-nums">₹{Number(bill.grand_total || 0).toFixed(2)}</span>
+                  </button>
+                  <div className="flex shrink-0 items-center gap-2">
+                    <button type="button" onClick={() => addItemsToActiveBill(bill)} className="rounded-lg border border-orange-200 bg-white px-3 py-2 text-xs font-bold text-orange-800 transition hover:bg-orange-50">
+                      Add items
+                    </button>
+                    <button type="button" onClick={() => completeActiveBill(bill)} className="rounded-lg bg-emerald-800 px-3 py-2 text-xs font-bold text-white transition hover:bg-emerald-900">
+                      Complete bill
+                    </button>
+                  </div>
+                </article>
               ))}
             </div>
           ) : (
@@ -178,12 +253,8 @@ const PointOfSale = () => {
         </section>
       </div>
 
-      <button type="button" onClick={() => { setShowTables(false); setSheetOpen(true); }} aria-label="Start a new order" className="fixed bottom-[calc(env(safe-area-inset-bottom)+1.25rem)] left-1/2 z-40 grid h-16 w-16 -translate-x-1/2 place-items-center rounded-full bg-[#FF5A00] text-white shadow-[0_12px_30px_rgba(255,90,0,0.35)] transition hover:scale-105 hover:bg-[#E94B00] active:scale-95">
-        <Plus size={30} strokeWidth={2.5} />
-      </button>
-
       <div className={`fixed inset-0 z-50 flex items-end justify-center transition-opacity duration-200 sm:items-center ${sheetOpen ? "visible bg-slate-950/45 opacity-100" : "invisible pointer-events-none opacity-0"}`}>
-        <button type="button" aria-label="Close order selector" onClick={() => { setSheetOpen(false); setShowTables(false); }} className="absolute inset-0 h-full w-full cursor-default" />
+        <button type="button" aria-label="Close order selector" onClick={closeOrderSelector} className="absolute inset-0 h-full w-full cursor-default" />
         <section aria-labelledby="order-selector-heading" aria-modal="true" role="dialog" aria-hidden={!sheetOpen} inert={!sheetOpen} className={`relative max-h-[88vh] w-full overflow-y-auto rounded-t-3xl bg-white px-5 pt-4 pb-[calc(env(safe-area-inset-bottom)+1.25rem)] shadow-2xl transition-transform duration-300 sm:max-w-2xl sm:rounded-3xl sm:p-6 ${sheetOpen ? "translate-y-0" : "translate-y-full"}`}>
           <div className="mx-auto mb-4 h-1 w-10 rounded-full bg-slate-300 sm:hidden" />
           <div className="mb-5 flex items-center justify-between gap-3">
@@ -191,7 +262,7 @@ const PointOfSale = () => {
               <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-orange-700">{showTables ? "Dine-In" : "New order"}</p>
               <h2 id="order-selector-heading" className="mt-1 text-xl font-extrabold text-slate-900">{showTables ? "Select a table" : "Select Order Type"}</h2>
             </div>
-            <button type="button" onClick={() => { setSheetOpen(false); setShowTables(false); }} aria-label="Close order selector" className="grid h-10 w-10 place-items-center rounded-full bg-slate-100 text-slate-600 hover:bg-slate-200"><X size={19} /></button>
+            <button type="button" onClick={closeOrderSelector} aria-label="Close order selector" className="grid h-10 w-10 place-items-center rounded-full bg-slate-100 text-slate-600 hover:bg-slate-200"><X size={19} /></button>
           </div>
 
           {!showTables ? (
