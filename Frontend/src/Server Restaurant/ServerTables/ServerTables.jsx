@@ -3,10 +3,13 @@ import { useLocation, useNavigate } from "react-router-dom";
 import {
   Armchair,
   ArrowRight,
+  Banknote,
   Bell,
   Check,
   CheckCircle2,
   Clock,
+  Copy,
+  CreditCard,
   Edit2,
   FileText,
   Flame,
@@ -17,9 +20,11 @@ import {
   Merge,
   Plus,
   Printer,
+  QrCode,
   RefreshCw,
   Search,
   Table2,
+  Tag,
   Trash2,
   Users,
   UtensilsCrossed,
@@ -465,6 +470,155 @@ export default function ServerTables() {
       settleLock.current = false;
       setSettlingBill(false);
     }
+  };
+
+  const copyBillNumber = (billNumber, event) => {
+    event?.stopPropagation();
+    if (!billNumber) return;
+    navigator.clipboard?.writeText(billNumber);
+    toast.success(`Copied #${billNumber}`);
+  };
+
+  const handlePrintReceipt = () => {
+    if (!viewingBill) return;
+    const printWindow = window.open("", "_blank", "width=420,height=650");
+    if (!printWindow) {
+      window.print();
+      return;
+    }
+    const grandTotal = Math.max(0, Number(viewingBill.subtotal || 0) + Number(viewingBill.tax_amount || 0) - (Number(settleDiscount) || 0));
+    const tableDisplay = Array.isArray(viewingBill.merged_table_numbers) && viewingBill.merged_table_numbers.length > 1
+      ? viewingBill.merged_table_numbers.map((n) => `Table ${n}`).join(" + ")
+      : `Table ${viewingBill.table_number}`;
+
+    const itemsHtml = billItems.map((item) => {
+      const customizations = Object.entries(item.selected_customizations || {}).flatMap(([group, selection]) => {
+        const options = Array.isArray(selection) ? selection : [selection];
+        return options.filter(Boolean).map((option) => `${group === "__custom_request__" ? "Custom" : group}: ${option}`);
+      });
+      const itemOptions = [
+        ...(Array.isArray(item.selected_addons) ? item.selected_addons : []),
+        ...customizations,
+      ];
+      return `
+        <tr>
+          <td style="padding: 6px 0; text-align: left; vertical-align: top;">
+            <div style="font-weight: 700; color: #111;">${item.food_name}</div>
+            ${itemOptions.length ? `<div style="font-size: 10px; color: #666; margin-top: 1px;">${itemOptions.join(" · ")}</div>` : ''}
+            <div style="font-size: 11px; color: #555; margin-top: 2px;">₹${Number(item.unit_price).toFixed(2)} × ${item.quantity}</div>
+          </td>
+          <td style="padding: 6px 0; text-align: right; font-weight: 700; font-family: monospace; font-size: 12px; vertical-align: top;">
+            ₹${Number(item.total_price).toFixed(2)}
+          </td>
+        </tr>
+      `;
+    }).join("");
+
+    printWindow.document.write(`
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <meta charset="utf-8" />
+          <title>Receipt - Bill #${viewingBill.bill_number}</title>
+          <style>
+            @page { size: auto; margin: 5mm; }
+            * { box-sizing: border-box; }
+            body {
+              font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+              margin: 0;
+              padding: 16px;
+              color: #111;
+              font-size: 12px;
+              line-height: 1.4;
+              max-width: 320px;
+              margin: 0 auto;
+            }
+            .center { text-align: center; }
+            .divider { border-top: 1px dashed #aaa; margin: 10px 0; }
+            .double-divider { border-top: 2px solid #222; margin: 10px 0; }
+            table { width: 100%; border-collapse: collapse; }
+            .totals-table td { padding: 3px 0; }
+            .grand-total td { font-size: 15px; font-weight: 900; padding-top: 6px; }
+            @media print {
+              body { padding: 0; max-width: 100%; }
+              .no-print { display: none; }
+            }
+          </style>
+        </head>
+        <body>
+          <div class="center">
+            <h2 style="margin: 0 0 2px 0; font-size: 18px; font-weight: 900; letter-spacing: -0.5px;">BUY FOODS RESTAURANT</h2>
+            <p style="margin: 0; font-size: 11px; color: #555; text-transform: uppercase; letter-spacing: 1px;">Fresh Food Welcome</p>
+            <div class="divider"></div>
+            <p style="margin: 2px 0; font-size: 12px; font-weight: 800; letter-spacing: 0.5px;">TABLE DINING RECEIPT</p>
+            <p style="margin: 2px 0; font-size: 11px; font-family: monospace; color: #444;">#${viewingBill.bill_number}</p>
+          </div>
+          <div class="divider"></div>
+          <table style="font-size: 11px;">
+            <tr>
+              <td style="color: #666;">Table:</td>
+              <td style="text-align: right; font-weight: 800; color: #111;">${tableDisplay}</td>
+            </tr>
+            <tr>
+              <td style="color: #666;">Server:</td>
+              <td style="text-align: right; font-weight: 600;">${viewingBill.server_name || "Assigned Server"}</td>
+            </tr>
+            <tr>
+              <td style="color: #666;">Date:</td>
+              <td style="text-align: right;">${new Date(viewingBill.created_at).toLocaleString("en-IN", { dateStyle: "short", timeStyle: "short" })}</td>
+            </tr>
+            <tr>
+              <td style="color: #666;">Payment:</td>
+              <td style="text-align: right; font-weight: 700;">${paymentMethod}</td>
+            </tr>
+          </table>
+          <div class="divider"></div>
+          <table>
+            <thead>
+              <tr style="border-bottom: 1px solid #ddd; font-size: 10px; color: #666; text-transform: uppercase;">
+                <th style="text-align: left; padding-bottom: 4px;">Item Description</th>
+                <th style="text-align: right; padding-bottom: 4px;">Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${itemsHtml}
+            </tbody>
+          </table>
+          <div class="double-divider"></div>
+          <table class="totals-table">
+            <tr>
+              <td style="color: #555;">Subtotal (${viewingBill.total_items_count || billItems.reduce((acc, i) => acc + (Number(i.quantity) || 0), 0)} items):</td>
+              <td style="text-align: right; font-family: monospace; font-weight: 600;">₹${Number(viewingBill.subtotal || 0).toFixed(2)}</td>
+            </tr>
+            <tr>
+              <td style="color: #555;">GST (${Number(viewingBill.tax_rate ?? 5).toFixed(2)}%):</td>
+              <td style="text-align: right; font-family: monospace; font-weight: 600;">₹${Number(viewingBill.tax_amount || 0).toFixed(2)}</td>
+            </tr>
+            ${Number(settleDiscount) > 0 ? `
+              <tr>
+                <td style="color: #b91c1c;">Discount Applied:</td>
+                <td style="text-align: right; font-family: monospace; font-weight: 700; color: #b91c1c;">-₹${Number(settleDiscount).toFixed(2)}</td>
+              </tr>
+            ` : ''}
+            <tr class="grand-total">
+              <td style="border-top: 1px dashed #999;">Grand Total:</td>
+              <td style="text-align: right; border-top: 1px dashed #999; font-family: monospace;">₹${grandTotal.toFixed(2)}</td>
+            </tr>
+          </table>
+          <div class="divider"></div>
+          <div class="center" style="margin-top: 12px; font-size: 11px; color: #666;">
+            <p style="margin: 0; font-weight: 600;">Thank you for dining with us!</p>
+            <p style="margin: 2px 0 0 0;">Hope to see you again soon.</p>
+          </div>
+        </body>
+      </html>
+    `);
+    printWindow.document.close();
+    printWindow.focus();
+    setTimeout(() => {
+      printWindow.print();
+      printWindow.close();
+    }, 250);
   };
 
   const currentUserName = userProfile?.name || userProfile?.displayName || userProfile?.full_name || userProfile?.username;
@@ -1960,169 +2114,294 @@ export default function ServerTables() {
 
       {/* Table Bill & Settlement Modal */}
       {viewingBill && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in overflow-y-auto">
-          <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-gray-100 relative my-8">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-slate-950/60 backdrop-blur-xs animate-fade-in overflow-y-auto">
+          <div className="bg-white rounded-2xl sm:rounded-3xl max-w-lg sm:max-w-xl w-full p-4 sm:p-5 shadow-2xl border border-slate-200/90 relative my-auto max-h-[94vh] flex flex-col text-slate-900 transition-all">
+            
+            {/* Top Close Button */}
             <button
+              type="button"
               onClick={() => !settlingBill && setViewingBill(null)}
-              className="absolute right-4 top-4 p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition cursor-pointer"
+              aria-label="Close billing popup"
+              className="absolute right-3.5 top-3.5 grid h-8 w-8 place-items-center rounded-full bg-slate-100 text-slate-500 hover:bg-slate-200 hover:text-slate-900 transition-colors cursor-pointer"
             >
-              <X className="w-5 h-5" />
+              <X className="w-3.5 h-3.5" />
             </button>
 
             {/* Bill Header */}
-            <div className="border-b border-gray-100 pb-4 mb-4">
-              <div className="flex items-center gap-2 mb-1">
-                <span className="p-2 rounded-xl bg-[#1f3228] text-[#d4a843]">
+            <div className="border-b border-slate-100 pb-2.5 mb-2.5 pr-8 shrink-0">
+              <div className="flex items-center gap-2.5">
+                <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-emerald-50 text-emerald-800 border border-emerald-100">
                   <UtensilsCrossed className="w-4 h-4" />
                 </span>
                 <div>
-                  <h3 className="text-lg font-bold text-gray-900 font-serif">
+                  <h3 className="text-base sm:text-lg font-black text-slate-900 tracking-tight leading-tight">
                     Table Dining Bill
                   </h3>
-                  <p className="text-xs text-gray-500 font-mono">
-                    Bill #{viewingBill.bill_number}
-                  </p>
+                  <div className="flex items-center gap-1.5 text-[11px] text-slate-500 font-medium">
+                    <span>Bill #{viewingBill.bill_number}</span>
+                    <button
+                      type="button"
+                      onClick={(e) => copyBillNumber(viewingBill.bill_number, e)}
+                      title="Copy bill number"
+                      className="text-slate-400 hover:text-slate-900 transition-colors cursor-pointer"
+                    >
+                      <Copy size={11} />
+                    </button>
+                  </div>
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-2 mt-3 p-3 bg-gray-50 rounded-xl text-xs text-gray-600">
+
+              {/* Table Metadata Grid (Compact) */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-2 p-2.5 bg-slate-50 rounded-xl border border-slate-200/70 text-[11px]">
                 <div>
-                  <span className="text-gray-400 block text-[10px]">
+                  <span className="text-slate-400 block text-[9px] font-bold uppercase tracking-wider">
                     {Array.isArray(viewingBill.merged_table_numbers) && viewingBill.merged_table_numbers.length > 1 ? "Tables" : "Table"}
                   </span>
-                  <strong className="text-gray-900 text-sm">
-                    {Array.isArray(viewingBill.merged_table_numbers) && viewingBill.merged_table_numbers.length > 1
-                      ? viewingBill.merged_table_numbers.map((number) => `Table ${number}`).join(" + ")
-                      : `Table ${viewingBill.table_number}`}
+                  {Array.isArray(viewingBill.merged_table_numbers) && viewingBill.merged_table_numbers.length > 1 ? (
+                    <div className="flex flex-wrap items-center gap-1 mt-0.5">
+                      {viewingBill.merged_table_numbers.map((num) => (
+                        <span key={num} className="inline-flex items-center gap-0.5 rounded bg-emerald-100 px-1.5 py-0.2 text-[10px] font-black text-emerald-950 border border-emerald-200">
+                          T{num}
+                        </span>
+                      ))}
+                    </div>
+                  ) : (
+                    <strong className="text-slate-900 text-xs font-black block">
+                      Table {viewingBill.table_number}
+                    </strong>
+                  )}
+                </div>
+
+                <div>
+                  <span className="text-slate-400 block text-[9px] font-bold uppercase tracking-wider">Server</span>
+                  <strong className="text-slate-900 text-xs font-bold block truncate">
+                    {viewingBill.server_name || "Assigned Server"}
                   </strong>
                 </div>
+
                 <div>
-                  <span className="text-gray-400 block text-[10px]">Server</span>
-                  <strong className="text-gray-900">{viewingBill.server_name || "Assigned Server"}</strong>
-                </div>
-                <div>
-                  <span className="text-gray-400 block text-[10px]">Date & Time</span>
-                  <span>{new Date(viewingBill.created_at).toLocaleString("en-IN", { dateStyle: "short", timeStyle: "short" })}</span>
-                </div>
-                <div>
-                  <span className="text-gray-400 block text-[10px]">Bill Status</span>
-                  <span className={`inline-block px-2 py-0.5 rounded font-bold text-[11px] ${viewingBill.status === 'Paid' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'}`}>
-                    {viewingBill.status === 'Paid' ? 'PAID' : 'ACTIVE / OPEN'}
+                  <span className="text-slate-400 block text-[9px] font-bold uppercase tracking-wider">Date & Time</span>
+                  <span className="font-semibold text-slate-700 text-[11px] block truncate">
+                    {new Date(viewingBill.created_at).toLocaleString("en-IN", { dateStyle: "short", timeStyle: "short" })}
                   </span>
                 </div>
-              </div>
-            </div>
 
-            {/* Consolidated bill items */}
-            <div className="max-h-64 overflow-y-auto divide-y divide-gray-100 mb-4 pr-1">
-              {billItems.length > 0 ? (
-                billItems.map((item) => {
-                  const customizations = Object.entries(item.selected_customizations || {}).flatMap(([group, selection]) => {
-                    const options = Array.isArray(selection) ? selection : [selection];
-                    return options.filter(Boolean).map((option) => `${group === "__custom_request__" ? "Custom request" : group}: ${option}`);
-                  });
-                  const itemOptions = [
-                    ...(Array.isArray(item.selected_addons) ? item.selected_addons : []),
-                    ...customizations,
-                  ];
-                  return (
-                    <div key={item.food_id} className="flex items-center justify-between gap-3 py-2.5 text-xs">
-                      <div className="min-w-0">
-                        <span className="font-semibold text-gray-800">{item.food_name}</span>
-                        <span className="ml-2 text-gray-500">× {item.quantity}</span>
-                        {itemOptions.length > 0 && (
-                          <span className="mt-1 block break-words text-[10px] text-gray-500">{itemOptions.join(" · ")}</span>
-                        )}
-                        <span className="mt-1 block text-[10px] text-gray-400">₹{item.unit_price.toFixed(2)} each</span>
-                      </div>
-                      <span className="shrink-0 font-mono text-gray-700">₹{item.total_price.toFixed(2)}</span>
-                    </div>
-                  );
-                })
-              ) : (
-                <div className="text-center py-6 text-xs text-gray-400">No items on this bill yet.</div>
-              )}
-            </div>
-
-            {/* Calculations Breakdown */}
-            <div className="border-t border-gray-100 pt-3 space-y-1.5 text-xs text-gray-600 mb-4">
-              <div className="flex justify-between">
-                <span>Subtotal ({viewingBill.total_items_count} items):</span>
-                <span className="font-mono">₹{viewingBill.subtotal.toFixed(2)}</span>
-              </div>
-              <div className="flex justify-between">
-                <span>GST ({Number(viewingBill.tax_rate ?? 5).toFixed(2)}%):</span>
-                <span className="font-mono">₹{viewingBill.tax_amount.toFixed(2)}</span>
-              </div>
-              {viewingBill.status !== 'Paid' && (
-                <div className="flex justify-between items-center py-1">
-                  <span>Discount (₹):</span>
-                  <input
-                    type="number"
-                    min="0"
-                    max={viewingBill.subtotal}
-                    value={settleDiscount}
-                    onChange={(e) => setSettleDiscount(e.target.value)}
-                    className="w-20 px-2 py-1 text-right text-xs border border-gray-200 rounded-lg outline-none focus:border-[#FF5A00]"
-                  />
+                <div>
+                  <span className="text-slate-400 block text-[9px] font-bold uppercase tracking-wider">Status</span>
+                  <div className="mt-0.5">
+                    {viewingBill.status === 'Paid' ? (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.2 text-[10px] font-bold text-emerald-900 border border-emerald-200">
+                        <CheckCircle2 size={10} className="text-emerald-700" /> PAID
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.2 text-[10px] font-bold text-emerald-800 border border-emerald-200/80">
+                        <span className="relative flex h-1.5 w-1.5">
+                          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
+                          <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-600" />
+                        </span>
+                        ACTIVE
+                      </span>
+                    )}
+                  </div>
                 </div>
-              )}
-              <div className="flex justify-between text-base font-bold text-gray-900 pt-2 border-t border-gray-200">
-                <span>Grand Total:</span>
-                <span className="font-mono text-emerald-800">
-                  ₹{Math.max(0, viewingBill.subtotal + viewingBill.tax_amount - (Number(settleDiscount) || 0)).toFixed(2)}
+              </div>
+            </div>
+
+            {/* Scrollable Center Body */}
+            <div className="overflow-y-auto pr-1 flex-1 min-h-0 [scrollbar-width:thin] [scrollbar-color:#cbd5e1_transparent] space-y-2.5">
+              {/* Consolidated bill items */}
+              <div>
+                <div className="flex items-center justify-between mb-1 px-1">
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                    Ordered Items ({billItems.reduce((acc, i) => acc + (Number(i.quantity) || 0), 0)})
+                  </span>
+                  <span className="text-[10px] font-medium text-slate-400">
+                    Unit Price × Qty
+                  </span>
+                </div>
+
+                <div className="max-h-36 sm:max-h-40 overflow-y-auto space-y-1.5 rounded-xl border border-slate-200/80 bg-slate-50/60 p-2 [scrollbar-width:thin] [scrollbar-color:#cbd5e1_transparent]">
+                  {billItems.length > 0 ? (
+                    billItems.map((item) => {
+                      const customizations = Object.entries(item.selected_customizations || {}).flatMap(([group, selection]) => {
+                        const options = Array.isArray(selection) ? selection : [selection];
+                        return options.filter(Boolean).map((option) => `${group === "__custom_request__" ? "Custom" : group}: ${option}`);
+                      });
+                      const itemOptions = [
+                        ...(Array.isArray(item.selected_addons) ? item.selected_addons : []),
+                        ...customizations,
+                      ];
+                      return (
+                        <div
+                          key={item.food_id || item.food_name}
+                          className="flex items-center justify-between gap-2.5 rounded-lg bg-white px-2.5 py-1.5 border border-slate-200/70 shadow-2xs"
+                        >
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center gap-1.5">
+                              <span className="font-bold text-slate-900 text-xs truncate">
+                                {item.food_name}
+                              </span>
+                              <span className="inline-flex items-center rounded bg-slate-100 px-1 py-0.2 text-[10px] font-black text-slate-700 border border-slate-200">
+                                ×{item.quantity}
+                              </span>
+                            </div>
+                            {itemOptions.length > 0 && (
+                              <div className="mt-0.5 flex flex-wrap gap-1">
+                                {itemOptions.map((opt, i) => (
+                                  <span
+                                    key={i}
+                                    className="rounded bg-slate-100 px-1 py-0.2 text-[9px] font-medium text-slate-600"
+                                  >
+                                    {opt}
+                                  </span>
+                                ))}
+                              </div>
+                            )}
+                            <span className="block text-[10px] font-medium text-slate-400">
+                              ₹${Number(item.unit_price).toFixed(2)} each
+                            </span>
+                          </div>
+                          <span className="shrink-0 font-mono font-bold text-slate-900 text-xs">
+                            ₹${Number(item.total_price).toFixed(2)}
+                          </span>
+                        </div>
+                      );
+                    })
+                  ) : (
+                    <div className="text-center py-4 text-xs text-slate-400">
+                      No items on this bill yet.
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Calculations Breakdown (Compact) */}
+              <div className="space-y-1.5 rounded-xl border border-slate-200/80 bg-slate-50/70 p-2.5 text-xs text-slate-600">
+                <div className="flex items-center justify-between text-[11px]">
+                  <span className="text-slate-500 font-medium">Subtotal ({viewingBill.total_items_count || billItems.reduce((acc, i) => acc + (Number(i.quantity) || 0), 0)} items):</span>
+                  <span className="font-mono font-bold text-slate-800">₹${Number(viewingBill.subtotal || 0).toFixed(2)}</span>
+                </div>
+                <div className="flex items-center justify-between text-[11px]">
+                  <span className="text-slate-500 font-medium">GST ({Number(viewingBill.tax_rate ?? 5).toFixed(2)}%):</span>
+                  <span className="font-mono font-bold text-slate-800">₹${Number(viewingBill.tax_amount || 0).toFixed(2)}</span>
+                </div>
+                {viewingBill.status !== 'Paid' && (
+                  <div className="flex items-center justify-between pt-1 border-t border-slate-200/60 text-[11px]">
+                    <span className="flex items-center gap-1 font-semibold text-slate-700">
+                      <Tag size={12} className="text-slate-400" />
+                      <span>Discount</span>
+                    </span>
+                    <div className="relative">
+                      <span className="absolute left-2 top-1/2 -translate-y-1/2 text-[11px] font-bold text-slate-400">₹</span>
+                      <input
+                        type="number"
+                        min="0"
+                        max={viewingBill.subtotal}
+                        value={settleDiscount}
+                        onChange={(e) => setSettleDiscount(e.target.value)}
+                        placeholder="0"
+                        className="w-20 rounded-lg border border-slate-200 bg-white pl-5 pr-2 py-0.5 text-right text-xs font-bold text-slate-800 outline-none transition focus:border-emerald-600 focus:ring-1 focus:ring-emerald-500/20"
+                      />
+                    </div>
+                  </div>
+                )}
+                {Number(settleDiscount) > 0 && (
+                  <div className="flex items-center justify-between text-rose-700 font-semibold text-[11px]">
+                    <span>Discount Applied:</span>
+                    <span className="font-mono">-₹${Number(settleDiscount).toFixed(2)}</span>
+                  </div>
+                )}
+              </div>
+
+              {/* Grand Total Banner (Compact) */}
+              <div className="rounded-xl border border-emerald-200 bg-gradient-to-r from-emerald-50 via-emerald-100/40 to-emerald-50 px-3.5 py-2.5 flex items-center justify-between shadow-xs">
+                <div>
+                  <span className="block text-[10px] font-black uppercase tracking-wider text-emerald-900">
+                    Grand Total
+                  </span>
+                  <span className="text-[10px] text-emerald-700 font-medium">
+                    Net payable amount
+                  </span>
+                </div>
+                <span className="font-mono text-xl sm:text-2xl font-black text-emerald-950">
+                  ₹${Math.max(0, Number(viewingBill.subtotal || 0) + Number(viewingBill.tax_amount || 0) - (Number(settleDiscount) || 0)).toFixed(2)}
                 </span>
               </div>
             </div>
 
-            {/* Payment & Actions */}
-            {viewingBill.status !== 'Paid' ? (
-              <div className="space-y-3 pt-2 border-t border-gray-100">
-                <div>
-                  <label className="block text-xs font-semibold text-gray-700 mb-1.5">
-                    Payment Method:
-                  </label>
-                  <div className="grid grid-cols-3 gap-2">
-                    {["Cash", "UPI", "Card"].map((method) => (
-                      <button
-                        key={method}
-                        type="button"
-                        onClick={() => setPaymentMethod(method)}
-                        className={`py-2 px-3 text-xs font-bold rounded-xl border transition cursor-pointer ${
-                          paymentMethod === method
-                            ? "bg-[#FF5A00] text-white border-[#FF5A00] shadow-sm"
-                            : "bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100"
-                        }`}
-                      >
-                        {method}
-                      </button>
-                    ))}
+            {/* Bottom Payment & Actions */}
+            <div className="shrink-0 pt-2.5 border-t border-slate-100 mt-2">
+              {viewingBill.status !== 'Paid' ? (
+                <div className="space-y-2.5">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 shrink-0">
+                      Payment
+                    </span>
+                    <div className="grid grid-cols-3 gap-1.5 flex-1">
+                      {[
+                        { id: "Cash", label: "Cash", Icon: Banknote },
+                        { id: "UPI", label: "UPI / QR", Icon: QrCode },
+                        { id: "Card", label: "Card", Icon: CreditCard },
+                      ].map(({ id, label, Icon }) => (
+                        <button
+                          key={id}
+                          type="button"
+                          onClick={() => setPaymentMethod(id)}
+                          className={`flex items-center justify-center gap-1.5 rounded-lg py-1.5 px-2 text-xs font-bold transition-all border cursor-pointer ${
+                            paymentMethod === id
+                              ? "bg-[#0A4731] text-white border-[#0A4731] shadow-xs"
+                              : "bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100 hover:text-slate-950 hover:border-slate-300"
+                          }`}
+                        >
+                          <Icon size={13} />
+                          <span>{label}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2 pt-1">
+                    <button
+                      type="button"
+                      onClick={handlePrintReceipt}
+                      className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-white py-2.5 px-3 text-xs font-bold text-slate-700 shadow-xs transition hover:bg-slate-50 hover:border-slate-300 hover:text-slate-950 active:scale-95 cursor-pointer"
+                    >
+                      <Printer size={14} />
+                      <span>Print Receipt</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      disabled={settlingBill}
+                      onClick={handleSettleBill}
+                      className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-xl bg-[#0A4731] py-2.5 px-3 text-xs font-black uppercase tracking-wider text-white shadow-md shadow-emerald-950/20 transition hover:bg-[#062D22] active:scale-95 disabled:opacity-50 cursor-pointer"
+                    >
+                      {settlingBill ? (
+                        <Loader2 size={15} className="animate-spin" />
+                      ) : (
+                        <CheckCircle2 size={15} />
+                      )}
+                      <span>Settle & Free Table</span>
+                    </button>
                   </div>
                 </div>
-
-                <div className="flex items-center gap-2 pt-2">
+              ) : (
+                <div className="space-y-2">
+                  <div className="p-2.5 bg-emerald-50 border border-emerald-200 rounded-xl text-center text-xs text-emerald-900 font-bold flex items-center justify-center gap-1.5">
+                    <CheckCircle2 size={15} className="text-emerald-700" />
+                    <span>Bill Settled & Paid via {viewingBill.payment_method || "Cash"}</span>
+                  </div>
                   <button
                     type="button"
-                    onClick={() => window.print()}
-                    className="flex-1 py-2.5 px-3 rounded-xl border border-gray-300 text-gray-700 hover:bg-gray-50 text-xs font-bold flex items-center justify-center gap-1.5 transition cursor-pointer"
+                    onClick={handlePrintReceipt}
+                    className="w-full inline-flex items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-white py-2.5 px-3 text-xs font-bold text-slate-700 shadow-xs transition hover:bg-slate-50 hover:text-slate-950 cursor-pointer"
                   >
-                    <Printer className="w-3.5 h-3.5" /> Print Receipt
-                  </button>
-                  <button
-                    type="button"
-                    disabled={settlingBill}
-                    onClick={handleSettleBill}
-                    className="flex-1 py-2.5 px-3 rounded-xl bg-[#FF5A00] hover:bg-[#E94B00] text-white text-xs font-bold flex items-center justify-center gap-1.5 shadow transition cursor-pointer disabled:opacity-50"
-                  >
-                    {settlingBill ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
-                    Settle & Free Table ✓
+                    <Printer size={14} />
+                    <span>Print Receipt</span>
                   </button>
                 </div>
-              </div>
-            ) : (
-              <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-center text-xs text-emerald-800 font-semibold">
-                ✓ Bill Settled & Paid via {viewingBill.payment_method || "Cash"}
-              </div>
-            )}
+              )}
+            </div>
           </div>
         </div>
       )}
