@@ -35,8 +35,8 @@ const statusConfig = {
     label: "Available",
   },
   Occupied: {
-    bg: "bg-amber-50 text-amber-700 border-amber-200",
-    badge: "bg-amber-500",
+    bg: "bg-orange-50 text-orange-700 border-orange-200",
+    badge: "bg-orange-500",
     label: "Occupied",
   },
   Reserved: {
@@ -70,12 +70,14 @@ export default function ServerTables() {
   const location = useLocation();
   const navigate = useNavigate();
   const isAdminTablesPage = location.pathname.startsWith("/admin/tables");
+  const serverLookupId = userProfile?.employee_id || userProfile?.employeeId || userProfile?.user_id || userProfile?.id || userProfile?.uuid;
   const [tables, setTables] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [tableLoadError, setTableLoadError] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [assignmentFilter, setAssignmentFilter] = useState("all");
-  const [viewMode, setViewMode] = useState("table");
+  const [viewMode, setViewMode] = useState(() => isAdminTablesPage ? "table" : "grid");
   const [sortOrder, setSortOrder] = useState("latest");
   const [kitchenOrders, setKitchenOrders] = useState([]);
   const [updatingOrderId, setUpdatingOrderId] = useState("");
@@ -86,6 +88,7 @@ export default function ServerTables() {
   const settleLock = useRef(false);
   const [paymentMethod, setPaymentMethod] = useState("Cash");
   const [settleDiscount, setSettleDiscount] = useState(0);
+  const orderLock = useRef(false);
   const billItems = useMemo(() => {
     if (!viewingBill) return [];
     const roundItems = Array.isArray(viewingBill.rounds)
@@ -154,15 +157,24 @@ export default function ServerTables() {
   const fetchTables = async ({ quiet = false } = {}) => {
     try {
       if (!quiet) setLoading(true);
-      const res = await api.get("/server-tables");
-      if (res.data?.success) {
-        setTables(res.data.tables || []);
+      setTableLoadError("");
+      if (!isAdminTablesPage && !serverLookupId) {
+        throw new Error("Your server employee ID is missing. Please sign in again.");
       }
+      const res = isAdminTablesPage
+        ? await api.get("/server-tables")
+        : await api.get(`/server-tables/server/${encodeURIComponent(serverLookupId)}`);
+      if (!res.data?.success || !Array.isArray(res.data.tables)) {
+        throw new Error(res.data?.message || "Table data was invalid.");
+      }
+      setTables(res.data.tables);
       fetchKitchenOrders();
       fetchActiveBills();
     } catch (error) {
       console.error("Error loading server tables:", error);
-      toast.error(error.response?.data?.message || "Failed to load server tables");
+      const message = error.response?.data?.message || error.message || "Failed to load server tables";
+      setTableLoadError(message);
+      toast.error(message);
     } finally {
       if (!quiet) setLoading(false);
     }
@@ -444,8 +456,6 @@ export default function ServerTables() {
     }
   };
 
-  const currentServerEmployeeId = userProfile?.employee_id || userProfile?.employeeId;
-  const currentUserId = userProfile?.user_id || userProfile?.id || userProfile?.uuid;
   const currentUserName = userProfile?.name || userProfile?.displayName || userProfile?.full_name || userProfile?.username;
   const getDisplayStatus = (table) => (
     Number(table.reservation_is_active) === 1 ? "Reserved" : table.status
@@ -459,42 +469,52 @@ export default function ServerTables() {
     };
   };
 
-  const selectTableForOrder = (table) => {
+  const selectTableForOrder = async (table) => {
+    if (orderLock.current) return;
     const tableStatus = getDisplayStatus(table);
-    if (!["Available", "Occupied"].includes(tableStatus)) {
+    if (tableStatus === "Occupied" || getTableActiveBill(table)) {
+      await handleOpenBillModal(table);
+      return;
+    }
+    if (tableStatus !== "Available") {
       toast.error(`Table ${table.table_number} is ${tableStatus.toLowerCase()} and cannot be selected.`);
       return;
     }
-    navigate("/server/foods", {
-      state: {
-        returnPath: isAdminTablesPage ? "/admin/billing" : "/server",
-        selectedTable: {
-          id: table.id ?? null,
-          table_id: table.table_id || null,
-          table_number: table.table_number,
-          no_of_seats: table.no_of_seats,
+    if (!table.table_id) {
+      toast.error("This table is missing its ID and cannot be checked for an active bill.");
+      return;
+    }
+    orderLock.current = true;
+    try {
+      const activeBillResponse = await api.get(`/table-bills/active/${encodeURIComponent(table.table_id)}`);
+      if (activeBillResponse.data?.bill) {
+        setActiveBills((previous) => [
+          activeBillResponse.data.bill,
+          ...previous.filter((bill) => bill.bill_id !== activeBillResponse.data.bill.bill_id),
+        ]);
+        await handleOpenBillModal({ bill_id: activeBillResponse.data.bill.bill_id });
+        return;
+      }
+      navigate("/server/foods", {
+        state: {
+          returnPath: isAdminTablesPage ? "/admin/billing" : "/server",
+          selectedTable: {
+            id: table.id ?? null,
+            table_id: table.table_id,
+            table_number: table.table_number,
+            no_of_seats: table.no_of_seats,
+          },
         },
-      },
-    });
+      });
+    } catch (error) {
+      console.error("Could not verify table bill before starting an order:", error);
+      toast.error(error.response?.data?.message || "Could not verify this table's active bill. Please try again.");
+    } finally {
+      orderLock.current = false;
+    }
   };
 
-  const isCurrentServerTable = (table) => {
-    if (!table.assigned_server_id) return false;
-    const assignedId = String(table.assigned_server_id).trim().toLowerCase();
-    if (currentServerEmployeeId && assignedId === String(currentServerEmployeeId).trim().toLowerCase()) return true;
-    if (currentUserId && assignedId === String(currentUserId).trim().toLowerCase()) return true;
-    if (userProfile?.id && assignedId === String(userProfile.id).trim().toLowerCase()) return true;
-    if (userProfile?.uuid && assignedId === String(userProfile.uuid).trim().toLowerCase()) return true;
-    if (currentUserName && table.assigned_server_name && String(table.assigned_server_name).trim().toLowerCase() === String(currentUserName).trim().toLowerCase()) return true;
-    if (userProfile?.email && table.assigned_server_email && String(table.assigned_server_email).trim().toLowerCase() === String(userProfile.email).trim().toLowerCase()) return true;
-    return false;
-  };
-
-  // Base tables: on /server/tables, only consider tables assigned to this server
-  const baseTables = useMemo(() => {
-    if (isAdminTablesPage) return tables;
-    return tables.filter(isCurrentServerTable);
-  }, [tables, isAdminTablesPage, userProfile]);
+  const baseTables = tables;
 
   // Filtered tables
   const filteredTables = useMemo(() => {
@@ -520,7 +540,7 @@ export default function ServerTables() {
           String(value || "").toLowerCase().includes(normalizedSearchQuery)
         );
 
-      const matchesStatus =
+      const matchesStatus = !isAdminTablesPage ||
         statusFilter === "all" ||
         String(getDisplayStatus(table) || "").toLowerCase() === statusFilter.toLowerCase();
 
@@ -534,7 +554,7 @@ export default function ServerTables() {
 
       return matchesSearch && matchesStatus && matchesAssignment;
     });
-  }, [baseTables, searchQuery, statusFilter, assignmentFilter, isAdminTablesPage, userProfile, kitchenOrders, activeBills]);
+  }, [baseTables, searchQuery, statusFilter, assignmentFilter, isAdminTablesPage, kitchenOrders, activeBills]);
 
   const sortedTables = useMemo(() => {
     if (isAdminTablesPage) return filteredTables;
@@ -595,20 +615,13 @@ export default function ServerTables() {
         </div>
 
         <div className="flex items-center gap-3 w-full sm:w-auto">
-          <button
-            onClick={fetchTables}
-            title="Refresh tables"
-            className={isAdminTablesPage ? "flex h-[46px] w-[46px] cursor-pointer items-center justify-center rounded-xl border border-[#dfe2e5] bg-white text-gray-600 transition hover:bg-[#faf9f8]" : "p-2.5 rounded-xl border border-gray-200 text-gray-600 hover:bg-gray-50 transition cursor-pointer"}
-          >
-            <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
-          </button>
           {isAdminTablesPage && (
             <button
-              onClick={handleOpenAddModal}
-              className="inline-flex h-[46px] cursor-pointer items-center justify-center gap-2 rounded-xl bg-[#1a3c36] px-4 text-[15px] font-semibold text-white shadow-[0_6px_14px_rgba(26,60,54,0.18)] transition hover:bg-[#214a42]"
+              onClick={fetchTables}
+              title="Refresh tables"
+              className="flex h-[46px] w-[46px] cursor-pointer items-center justify-center rounded-xl border border-[#dfe2e5] bg-white text-gray-600 transition hover:bg-[#faf9f8]"
             >
-              <Plus className="w-4 h-4" />
-              <span>Add Table</span>
+              <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
             </button>
           )}
         </div>
@@ -640,6 +653,13 @@ export default function ServerTables() {
               </p>
             </div>
           </div>
+        </div>
+      )}
+
+      {!isAdminTablesPage && tableLoadError && (
+        <div role="alert" className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-800">
+          <span>{tableLoadError}</span>
+          <button type="button" onClick={fetchTables} className="font-bold underline">Try again</button>
         </div>
       )}
 
@@ -735,36 +755,39 @@ export default function ServerTables() {
       </div>
 
       {/* Filter and Search Bar */}
-      <div className={isAdminTablesPage ? "flex flex-col gap-3 rounded-[18px] border border-[#e7e0d8] bg-white p-4 shadow-[0_1px_0_rgba(16,24,40,0.02)] sm:flex-row sm:items-center sm:justify-between" : "flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-white p-4 rounded-xl border border-gray-100 shadow-sm"}>
-        <div className={`relative flex-1 ${isAdminTablesPage ? "max-w-md" : "min-w-0 sm:max-w-[480px]"}`}>
-          <Search className={`absolute top-1/2 -translate-y-1/2 text-gray-400 ${isAdminTablesPage ? "left-3 w-4 h-4" : "left-4 w-5 h-5"}`} />
-          <input
-            type="text"
-            placeholder={isAdminTablesPage ? "Search by table number or server..." : "Search table, ticket, food..."}
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className={isAdminTablesPage ? "h-[46px] w-full rounded-xl border border-[#dfe2e5] bg-[#faf9f8] pl-10 pr-3 text-[14px] text-[#2d2d2d] outline-none placeholder:text-[#8a8a8a] focus:border-[#d2bc8a]" : "h-[58px] w-full rounded-2xl border border-[#dfe2e5] bg-[#faf9f8] pl-12 pr-4 text-[15px] text-[#2d2d2d] outline-none placeholder:text-[#8a8a8a] focus:border-[#FF5A00]"}
-          />
-        </div>
+      <div className={isAdminTablesPage ? "flex flex-col gap-3 rounded-[18px] border border-[#e7e0d8] bg-white p-4 shadow-[0_1px_0_rgba(16,24,40,0.02)] lg:flex-row lg:items-center lg:justify-between" : "flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-white p-4 rounded-xl border border-gray-100 shadow-sm"}>
+        <div className={isAdminTablesPage ? "flex min-w-0 flex-1 flex-col gap-2 sm:flex-row sm:items-center" : "contents"}>
+          <div className={`relative flex-1 ${isAdminTablesPage ? "max-w-md" : "min-w-0 sm:max-w-[480px]"}`}>
+            <Search className={`absolute top-1/2 -translate-y-1/2 text-gray-400 ${isAdminTablesPage ? "left-3 w-4 h-4" : "left-4 w-5 h-5"}`} />
+            <input
+              type="text"
+              placeholder={isAdminTablesPage ? "Search by table number or server..." : "Search table, ticket, food..."}
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className={isAdminTablesPage ? "h-[46px] w-full rounded-xl border border-[#dfe2e5] bg-[#faf9f8] pl-10 pr-3 text-[14px] text-[#2d2d2d] outline-none placeholder:text-[#8a8a8a] focus:border-[#d2bc8a]" : "h-[58px] w-full rounded-2xl border border-[#dfe2e5] bg-[#faf9f8] pl-12 pr-4 text-[15px] text-[#2d2d2d] outline-none placeholder:text-[#8a8a8a] focus:border-[#FF5A00]"}
+            />
+          </div>
 
-        <div className="flex flex-wrap items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
           {!isAdminTablesPage && (
             <span className="mr-2 whitespace-nowrap text-sm font-medium text-[#51605c]" aria-live="polite">
               {filteredTables.length} of {baseTables.length}
             </span>
           )}
           {/* Status filter tabs */}
-          <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-            className={isAdminTablesPage ? "h-[46px] rounded-xl border border-[#dfe2e5] bg-[#faf9f8] px-3 text-[14px] font-medium text-[#2d2d2d] outline-none focus:border-[#d2bc8a]" : "h-[58px] min-w-[180px] rounded-2xl border border-[#dfe2e5] bg-white px-4 text-[15px] font-medium text-[#2d2d2d] outline-none focus:border-[#FF5A00]"}
-          >
-            <option value="all">{isAdminTablesPage ? "All Statuses" : "All Status"} ({baseTables.length})</option>
-            <option value="Available">Available ({stats.available})</option>
-            <option value="Occupied">Occupied ({stats.occupied})</option>
-            <option value="Reserved">Reserved ({stats.reserved})</option>
-            <option value="Maintenance">Maintenance</option>
-          </select>
+          {isAdminTablesPage && (
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className="h-[46px] rounded-xl border border-[#dfe2e5] bg-[#faf9f8] px-3 text-[14px] font-medium text-[#2d2d2d] outline-none focus:border-[#d2bc8a]"
+            >
+              <option value="all">All Statuses ({baseTables.length})</option>
+              <option value="Available">Available ({stats.available})</option>
+              <option value="Occupied">Occupied ({stats.occupied})</option>
+              <option value="Reserved">Reserved ({stats.reserved})</option>
+              <option value="Maintenance">Maintenance</option>
+            </select>
+          )}
 
           {/* Assignment filter (Admin only) */}
           {isAdminTablesPage && (
@@ -791,8 +814,8 @@ export default function ServerTables() {
             </select>
           )}
 
-          {/* View mode toggle */}
-          <div className={isAdminTablesPage ? "flex h-[46px] items-center overflow-hidden rounded-xl border border-[#dfe2e5] bg-[#faf9f8]" : "flex h-[58px] items-center overflow-hidden rounded-2xl border border-[#dfe2e5] bg-white"}>
+          {/* Server view mode toggle */}
+          {!isAdminTablesPage && <div className="flex h-[58px] items-center overflow-hidden rounded-2xl border border-[#dfe2e5] bg-white">
             <button
               type="button"
               onClick={() => setViewMode(isAdminTablesPage ? "grid" : "table")}
@@ -817,8 +840,44 @@ export default function ServerTables() {
             >
               {isAdminTablesPage ? <Table2 className="w-4 h-4" /> : <LayoutGrid className="mx-auto w-5 h-5" />}
             </button>
+          </div>}
           </div>
         </div>
+
+        {isAdminTablesPage && (
+          <div className="flex shrink-0 items-center justify-between gap-2 sm:justify-end">
+            <button
+              type="button"
+              onClick={handleOpenAddModal}
+              className="inline-flex h-[46px] cursor-pointer items-center justify-center gap-2 rounded-xl bg-[#1a3c36] px-4 text-[15px] font-semibold text-white shadow-[0_6px_14px_rgba(26,60,54,0.18)] transition hover:bg-[#214a42]"
+            >
+              <Plus className="h-4 w-4" />
+              <span>Add Table</span>
+            </button>
+            <div className="flex h-[46px] items-center overflow-hidden rounded-xl border border-[#dfe2e5] bg-[#faf9f8]">
+              <button
+                type="button"
+                onClick={() => setViewMode("grid")}
+                className={`flex h-[46px] w-[46px] cursor-pointer items-center justify-center transition ${viewMode === "grid" ? "bg-[#1a3c36] text-white" : "text-[#4d4d4d] hover:bg-white"}`}
+                aria-label="Card view"
+                aria-pressed={viewMode === "grid"}
+                title="Card view"
+              >
+                <LayoutGrid className="h-4 w-4" />
+              </button>
+              <button
+                type="button"
+                onClick={() => setViewMode("table")}
+                className={`flex h-[46px] w-[46px] cursor-pointer items-center justify-center border-l border-[#dfe2e5] transition ${viewMode === "table" ? "bg-[#1a3c36] text-white" : "text-[#4d4d4d] hover:bg-white"}`}
+                aria-label="Table view"
+                aria-pressed={viewMode === "table"}
+                title="Table view"
+              >
+                <Table2 className="h-4 w-4" />
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Main Content: Grid or List */}
@@ -841,7 +900,7 @@ export default function ServerTables() {
                 ? (searchQuery || statusFilter !== "all"
                     ? "No server tables match your filter criteria. Try clearing search."
                     : "No server tables have been added yet. Click 'Add Table' to create your first dining table.")
-                : (searchQuery || statusFilter !== "all"
+                : (searchQuery
                     ? "No assigned tables match your filter criteria. Try clearing search or status filter."
                     : "You do not have any dining tables assigned to your station yet. Your restaurant administrator will assign tables to you.")}
             </p>
@@ -858,7 +917,7 @@ export default function ServerTables() {
         </div>
       ) : viewMode === "grid" ? (
         /* GRID VIEW */
-        <div className={`grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 ${isAdminTablesPage ? "rounded-[18px]" : ""}`}>
+        <div className={`grid grid-cols-1 gap-4 sm:grid-cols-2 ${isAdminTablesPage ? "rounded-[18px] lg:grid-cols-3 xl:grid-cols-4" : ""}`}>
           {sortedTables.map((table) => {
             const displayStatus = getDisplayStatus(table);
             const config = statusConfig[displayStatus] || statusConfig.Available;
@@ -866,7 +925,6 @@ export default function ServerTables() {
             const activeOrder = getTableActiveOrder(table);
             const activeBill = getTableActiveBill(table);
             const isReady = activeOrder?.status === "Ready to Serve";
-            const canOrder = String(table.status || "").trim().toLowerCase() === "occupied";
             return (
               <div
                 key={table.table_id || table.id}
@@ -884,15 +942,27 @@ export default function ServerTables() {
                   {/* Top Bar: Table Number & Status */}
                   <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center gap-2">
-                        {table.image_url ? (
+                        {table.image_url && isAdminTablesPage ? (
                           <img
                             src={table.image_url}
                             alt={`${table.table_number} table`}
                             className="h-10 w-10 rounded-xl object-cover"
                           />
                         ) : (
-                          <div className="w-10 h-10 rounded-xl bg-[#1f3228] text-[#d4a843] flex items-center justify-center font-bold text-base font-serif shadow-inner">
-                            {table.table_number.length <= 4 ? table.table_number : "#"}
+                          <div className={`flex h-10 w-10 items-center justify-center rounded-xl ${
+                            isAdminTablesPage
+                              ? "bg-[#1f3228] text-[#d4a843]"
+                              : displayStatus === "Occupied"
+                                ? "bg-orange-100 text-orange-700"
+                                : displayStatus === "Reserved"
+                                  ? "bg-blue-100 text-blue-700"
+                                  : "bg-emerald-100 text-emerald-800"
+                          }`}>
+                            {isAdminTablesPage ? (
+                              <span className="font-serif text-base font-bold">{table.table_number.length <= 4 ? table.table_number : "#"}</span>
+                            ) : (
+                              <Table2 className="h-5 w-5" />
+                            )}
                           </div>
                         )}
                       <div>
@@ -977,9 +1047,20 @@ export default function ServerTables() {
                           Station:
                         </span>
                         <span className="font-semibold text-emerald-800 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded text-[11px]">
-                          Assigned to You
+                          Assigned to {table.assigned_server_name || currentUserName || "you"}
                         </span>
                       </div>
+                    )}
+                    {!isAdminTablesPage && displayStatus === "Occupied" && (
+                    <div className="flex items-center justify-between text-xs text-gray-600">
+                      <span className="flex items-center gap-1.5 text-gray-500 font-medium">
+                        <FileText className="h-3.5 w-3.5 text-orange-600" />
+                        Active bill:
+                      </span>
+                      <span className="font-semibold text-orange-800">
+                        {activeBill ? `#${activeBill.bill_number}` : "No active bill found"}
+                      </span>
+                    </div>
                     )}
                   </div>
 
@@ -1095,29 +1176,17 @@ export default function ServerTables() {
                   )}
                   {!isAdminTablesPage && (
                     <div className="flex flex-col gap-2 mt-2">
-                      {activeBill && (
-                        <button
-                          type="button"
-                          onClick={() => handleOpenBillModal(table)}
-                          className="inline-flex w-full cursor-pointer items-center justify-between rounded-xl border border-orange-200 bg-orange-50 px-3 py-2 text-xs font-bold text-orange-800 transition hover:bg-orange-100 shadow-sm"
-                        >
-                          <span className="flex items-center gap-1.5">
-                            <FileText className="h-3.5 w-3.5 text-[#FF5A00]" />
-                            Bill #{activeBill.bill_number}
-                          </span>
-                          <span className="font-mono text-orange-800 text-[11px]">
-                            ₹{Number(activeBill.grand_total || 0).toFixed(0)} ({activeBill.total_items_count || "Items"}) · View & Settle
-                          </span>
-                        </button>
-                      )}
                       <button
                         type="button"
-                        disabled={!canOrder}
-                        onClick={() => selectTableForOrder(table)}
-                        title={canOrder ? "Select table and create an order" : "Mark the table as Occupied before ordering"}
-                        className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#FF5A00] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#E94B00] enabled:cursor-pointer disabled:cursor-not-allowed disabled:opacity-45 disabled:hover:bg-[#FF5A00]"
+                        disabled={!["Available", "Occupied"].includes(displayStatus)}
+                        onClick={() => displayStatus === "Occupied" ? handleOpenBillModal(table) : selectTableForOrder(table)}
+                        title={displayStatus === "Occupied" ? "View the existing active bill" : displayStatus === "Available" ? "Select table and create an order" : `Table is ${displayStatus.toLowerCase()}`}
+                        className={`inline-flex w-full items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold text-white transition enabled:cursor-pointer disabled:cursor-not-allowed disabled:opacity-45 ${
+                          displayStatus === "Occupied" ? "bg-orange-600 hover:bg-orange-700" : "bg-[#FF5A00] hover:bg-[#E94B00]"
+                        }`}
                       >
-                        {activeBill ? "+ Add Round / Items" : "Select Table & Order"} <ArrowRight className="h-4 w-4" />
+                        {displayStatus === "Occupied" ? `View Bill${activeBill ? ` #${activeBill.bill_number}` : ""}` : displayStatus === "Available" ? "Select Table & Order" : displayStatus}
+                        {displayStatus !== "Reserved" && <ArrowRight className="h-4 w-4" />}
                       </button>
                     </div>
                   )}
@@ -1264,7 +1333,7 @@ export default function ServerTables() {
                           <td className="py-3 px-4">
                             <span className="inline-flex items-center gap-1 font-semibold text-emerald-800 bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 rounded-full text-xs">
                               <UtensilsCrossed className="w-3 h-3 text-[#d4a843]" />
-                              Assigned to You
+                              Assigned to {table.assigned_server_name || currentUserName || "you"}
                             </span>
                           </td>
                           <td className="py-3 px-4">
@@ -1324,10 +1393,10 @@ export default function ServerTables() {
                             <div className="flex items-center justify-end gap-2">
                               {(() => {
                                 const activeBill = getTableActiveBill(table);
-                                const canOrder = String(table.status || "").trim().toLowerCase() === "occupied";
+                                const displayStatus = getDisplayStatus(table);
                                 return (
                                   <>
-                                    {activeBill && (
+                                    {displayStatus === "Occupied" && activeBill && (
                                       <button
                                         type="button"
                                         onClick={() => handleOpenBillModal(table)}
@@ -1338,12 +1407,15 @@ export default function ServerTables() {
                                     )}
                                     <button
                                       type="button"
-                                      disabled={!canOrder}
-                                      onClick={() => selectTableForOrder(table)}
-                                      title={canOrder ? "Select table and create an order" : "Mark the table as Occupied before ordering"}
-                                      className="inline-flex items-center gap-1.5 rounded-lg bg-[#FF5A00] px-3 py-2 text-xs font-semibold text-white transition hover:bg-[#E94B00] enabled:cursor-pointer disabled:cursor-not-allowed disabled:opacity-45 disabled:hover:bg-[#FF5A00]"
+                                      disabled={!["Available", "Occupied"].includes(displayStatus)}
+                                      onClick={() => displayStatus === "Occupied" ? handleOpenBillModal(table) : selectTableForOrder(table)}
+                                      title={displayStatus === "Occupied" ? "View the existing active bill" : displayStatus === "Available" ? "Select table and create an order" : `Table is ${displayStatus.toLowerCase()}`}
+                                      className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-semibold text-white transition enabled:cursor-pointer disabled:cursor-not-allowed disabled:opacity-45 ${
+                                        displayStatus === "Occupied" ? "bg-orange-600 hover:bg-orange-700" : "bg-[#FF5A00] hover:bg-[#E94B00]"
+                                      }`}
                                     >
-                                      {activeBill ? "+ Add Round" : "Select Table"} <ArrowRight className="h-3.5 w-3.5" />
+                                      {displayStatus === "Occupied" ? "View Active Bill" : displayStatus === "Available" ? "Select Table" : displayStatus}
+                                      {displayStatus !== "Reserved" && <ArrowRight className="h-3.5 w-3.5" />}
                                     </button>
                                   </>
                                 );

@@ -495,7 +495,14 @@ async function getServerAssignedTables(req, res) {
       });
     }
 
-    const employee = await findEmployeeById(employeeId);
+    let employee = await findEmployeeById(employeeId);
+    if (!employee) {
+      const [employees] = await db.execute(
+        'SELECT * FROM employees WHERE user_id = ? LIMIT 1',
+        [employeeId]
+      );
+      employee = employees[0] || null;
+    }
     if (!employee) {
       return res.status(404).json({
         success: false,
@@ -503,7 +510,7 @@ async function getServerAssignedTables(req, res) {
       });
     }
 
-    const tables = await findServerTables({ assigned_server_id: employeeId });
+    const tables = await findServerTables({ assigned_server_id: employee.employee_id });
     const capacityInfo = validateTableCapacity(tables);
 
     return res.json({

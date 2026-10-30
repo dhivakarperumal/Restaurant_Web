@@ -141,7 +141,7 @@ const ServerLayout = () => {
              </div>
              <div className="grid gap-3 sm:grid-cols-3">
                {[
-                 { type: "dine-in", label: "Dine-In / Table", Icon: Table2, detail: "Choose an available table" },
+                 { type: "dine-in", label: "Dine-In / Table", Icon: Table2, detail: "Select a table or continue an active bill" },
                  { type: "home_delivery", label: "Home Delivery", Icon: Bike, detail: "Enter customer and address" },
                  { type: "pickup", label: "Pick Up", Icon: ShoppingBag, detail: "Enter customer details" },
                ].map(({ type, label, Icon, detail }) => (
