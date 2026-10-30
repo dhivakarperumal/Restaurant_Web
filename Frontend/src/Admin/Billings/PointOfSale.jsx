@@ -65,6 +65,7 @@ const PointOfSale = () => {
   const [orderDraft, setOrderDraft] = useState(() => location.state?.orderDraft || null);
   const [activeTab, setActiveTab] = useState("all"); // "all" | "bills" | "tables"
   const [tableFilter, setTableFilter] = useState("all"); // "all" | "Available" | "Occupied" | "Reserved"
+  const [viewMode, setViewMode] = useState("card"); // "card" | "table"
   const [searchQuery, setSearchQuery] = useState("");
   const [lastUpdated, setLastUpdated] = useState("");
   const selectionLock = useRef(false);
@@ -279,22 +280,11 @@ const PointOfSale = () => {
               <h1 className="text-2xl font-black tracking-tight text-slate-900 sm:text-3xl lg:text-4xl">
                 Billing & Orders
               </h1>
-              <p className="max-w-2xl text-sm leading-relaxed text-slate-600">
-                Manage live table occupancy, monitor active kitchen orders, launch instant counter bills, and settle payments smoothly.
-              </p>
+              
             </div>
 
             <div className="flex flex-wrap items-center gap-3">
-              <button
-                type="button"
-                onClick={() => loadBillingData()}
-                disabled={loading}
-                title="Refresh bills and tables"
-                className="inline-flex h-11 items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3.5 text-sm font-semibold text-slate-700 shadow-xs transition hover:bg-slate-100 hover:text-slate-900 active:scale-95 disabled:opacity-60"
-              >
-                <RefreshCw className={`h-4 w-4 text-slate-500 ${loading ? "animate-spin text-emerald-700" : ""}`} />
-                <span className="hidden sm:inline">Refresh</span>
-              </button>
+            
 
               <button
                 type="button"
@@ -533,47 +523,12 @@ const PointOfSale = () => {
           </button>
         </section>
 
-        {/* View Controls & Filter Bar */}
-        <section className="flex flex-col gap-4 rounded-2xl border border-slate-200/90 bg-white p-4 shadow-xs md:flex-row md:items-center md:justify-between">
-          {/* Main Tabs */}
-          <div className="flex flex-wrap items-center gap-2">
-            <button
-              type="button"
-              onClick={() => setActiveTab("all")}
-              className={`inline-flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-bold transition ${activeTab === "all" ? "bg-[#0A4731] text-white shadow-xs" : "bg-slate-100 text-slate-600 hover:bg-slate-200"}`}
-            >
-              <Sparkles size={14} />
-              <span>All Overview</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setActiveTab("bills")}
-              className={`inline-flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-bold transition ${activeTab === "bills" ? "bg-[#0A4731] text-white shadow-xs" : "bg-slate-100 text-slate-600 hover:bg-slate-200"}`}
-            >
-              <Receipt size={14} />
-              <span>Active Bills</span>
-              <span className={`rounded-full px-2 py-0.5 text-[10px] ${activeTab === "bills" ? "bg-white/25 text-white" : "bg-slate-200 text-slate-700"}`}>
-                {activeBills.length}
-              </span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setActiveTab("tables")}
-              className={`inline-flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-bold transition ${activeTab === "tables" ? "bg-[#0A4731] text-white shadow-xs" : "bg-slate-100 text-slate-600 hover:bg-slate-200"}`}
-            >
-              <LayoutGrid size={14} />
-              <span>Floor Tables</span>
-              <span className={`rounded-full px-2 py-0.5 text-[10px] ${activeTab === "tables" ? "bg-white/25 text-white" : "bg-slate-200 text-slate-700"}`}>
-                {tables.length}
-              </span>
-            </button>
-          </div>
-
-          {/* Search & Status Filters */}
-          <div className="flex flex-wrap items-center gap-3">
-            <div className="relative min-w-[220px] flex-1 sm:w-64">
+        {/* View Controls & Filter Bar: Left side Search & Filters, Right side Card/Table Mode */}
+        <section className="flex flex-col gap-4 rounded-2xl border border-slate-200/90 bg-white p-4 shadow-xs lg:flex-row lg:items-center lg:justify-between">
+          {/* LEFT SIDE: Search input & all filters */}
+          <div className="flex flex-wrap items-center gap-3 flex-1 min-w-0">
+            {/* Real-time search */}
+            <div className="relative w-full sm:w-64 md:w-72">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
               <input
                 type="text"
@@ -593,7 +548,43 @@ const PointOfSale = () => {
               )}
             </div>
 
-            {/* Filter buttons for tables */}
+            {/* Scope tabs */}
+            <div className="flex items-center gap-1 rounded-xl border border-slate-200 bg-slate-50 p-1">
+              <button
+                type="button"
+                onClick={() => setActiveTab("all")}
+                className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold transition ${activeTab === "all" ? "bg-white text-emerald-900 shadow-xs" : "text-slate-600 hover:text-slate-900"}`}
+              >
+                <Sparkles size={13} />
+                <span>All</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setActiveTab("bills")}
+                className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold transition ${activeTab === "bills" ? "bg-white text-emerald-900 shadow-xs" : "text-slate-600 hover:text-slate-900"}`}
+              >
+                <Receipt size={13} />
+                <span>Bills</span>
+                <span className={`rounded-full px-1.5 py-0.2 text-[10px] ${activeTab === "bills" ? "bg-emerald-100 text-emerald-800 font-bold" : "bg-slate-200 text-slate-700 font-medium"}`}>
+                  {activeBills.length}
+                </span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setActiveTab("tables")}
+                className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold transition ${activeTab === "tables" ? "bg-white text-emerald-900 shadow-xs" : "text-slate-600 hover:text-slate-900"}`}
+              >
+                <Table2 size={13} />
+                <span>Tables</span>
+                <span className={`rounded-full px-1.5 py-0.2 text-[10px] ${activeTab === "tables" ? "bg-emerald-100 text-emerald-800 font-bold" : "bg-slate-200 text-slate-700 font-medium"}`}>
+                  {tables.length}
+                </span>
+              </button>
+            </div>
+
+            {/* Status Filters */}
             {(activeTab === "tables" || activeTab === "all") && (
               <div className="flex items-center gap-1.5 overflow-x-auto">
                 {[
@@ -606,13 +597,41 @@ const PointOfSale = () => {
                     key={f.id}
                     type="button"
                     onClick={() => setTableFilter(f.id)}
-                    className={`whitespace-nowrap rounded-lg px-2.5 py-1.5 text-xs font-semibold transition ${tableFilter === f.id ? "bg-slate-800 text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"}`}
+                    className={`whitespace-nowrap rounded-lg px-2.5 py-1.5 text-xs font-semibold transition ${tableFilter === f.id ? "bg-slate-800 text-white shadow-xs" : "bg-slate-100 text-slate-600 hover:bg-slate-200"}`}
                   >
                     {f.label}
                   </button>
                 ))}
               </div>
             )}
+          </div>
+
+          {/* RIGHT SIDE: Card Mode / Table Mode Switcher */}
+          <div className="flex shrink-0 items-center justify-end gap-2">
+            <div className="flex h-10 items-center overflow-hidden rounded-xl border border-slate-200 bg-slate-50 p-1">
+              <button
+                type="button"
+                onClick={() => setViewMode("card")}
+                aria-label="Card mode"
+                aria-pressed={viewMode === "card"}
+                title="Card mode"
+                className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold transition ${viewMode === "card" ? "bg-white text-emerald-900 shadow-xs" : "text-slate-600 hover:text-slate-900"}`}
+              >
+                <LayoutGrid size={15} />
+                
+              </button>
+              <button
+                type="button"
+                onClick={() => setViewMode("table")}
+                aria-label="Table mode"
+                aria-pressed={viewMode === "table"}
+                title="Table mode"
+                className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold transition ${viewMode === "table" ? "bg-white text-emerald-900 shadow-xs" : "text-slate-600 hover:text-slate-900"}`}
+              >
+                <List size={15} />
+                
+              </button>
+            </div>
           </div>
         </section>
 
@@ -647,24 +666,122 @@ const PointOfSale = () => {
                 <span>Loading active dining bills…</span>
               </div>
             ) : filteredActiveBills.length > 0 ? (
-              <div className="grid gap-4 p-5 sm:grid-cols-2 lg:grid-cols-3">
-                {filteredActiveBills.map((bill) => (
-                  <article
-                    key={bill.bill_id}
-                    className="group relative flex flex-col justify-between overflow-hidden rounded-2xl border border-slate-200/90 bg-white p-5 shadow-xs transition-all duration-200 hover:-translate-y-0.5 hover:border-emerald-300 hover:shadow-md"
-                  >
-                    <div>
-                      {/* Top Row: Table & Status */}
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="flex items-center gap-3">
-                          <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-emerald-50 text-emerald-800 border border-emerald-100 font-black">
-                            <Table2 size={20} />
+              viewMode === "card" ? (
+                /* Card Mode */
+                <div className="grid gap-4 p-5 sm:grid-cols-2 lg:grid-cols-3">
+                  {filteredActiveBills.map((bill) => (
+                    <article
+                      key={bill.bill_id}
+                      className="group relative flex flex-col justify-between overflow-hidden rounded-2xl border border-slate-200/90 bg-white p-5 shadow-xs transition-all duration-200 hover:-translate-y-0.5 hover:border-emerald-300 hover:shadow-md"
+                    >
+                      <div>
+                        {/* Top Row: Table & Status */}
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="flex items-center gap-3">
+                            <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-emerald-50 text-emerald-800 border border-emerald-100 font-black">
+                              <Table2 size={20} />
+                            </span>
+                            <div>
+                              <h3 className="text-base font-black text-slate-900">
+                                Table {bill.table_number}
+                              </h3>
+                              <div className="flex items-center gap-1.5 text-xs text-slate-500">
+                                <span>#{bill.bill_number}</span>
+                                <button
+                                  type="button"
+                                  onClick={(e) => copyBillNumber(bill.bill_number, e)}
+                                  title="Copy bill number"
+                                  className="text-slate-400 hover:text-slate-700"
+                                >
+                                  <Copy size={12} />
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+
+                          <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-bold text-emerald-800 border border-emerald-200/60">
+                            <span className="h-1.5 w-1.5 rounded-full bg-emerald-600 animate-pulse" />
+                            Active
                           </span>
-                          <div>
-                            <h3 className="text-base font-black text-slate-900">
-                              Table {bill.table_number}
-                            </h3>
-                            <div className="flex items-center gap-1.5 text-xs text-slate-500">
+                        </div>
+
+                        {/* Middle Row: Details & Timing */}
+                        <div className="mt-4 space-y-2 rounded-xl bg-slate-50/80 p-3 text-xs text-slate-600">
+                          <div className="flex items-center justify-between">
+                            <span className="flex items-center gap-1.5 text-slate-500">
+                              <Clock size={13} />
+                              <span>Started</span>
+                            </span>
+                            <span className="font-semibold text-slate-800">
+                              {formatTime(bill.created_at)} ({getTimeAgo(bill.created_at)})
+                            </span>
+                          </div>
+                          {bill.server_name && (
+                            <div className="flex items-center justify-between">
+                              <span className="text-slate-500">Assigned Server</span>
+                              <span className="font-semibold text-slate-800">{bill.server_name}</span>
+                            </div>
+                          )}
+                          <div className="flex items-center justify-between border-t border-slate-200/60 pt-2">
+                            <span className="font-semibold text-slate-500">Grand Total</span>
+                            <span className="text-base font-black text-emerald-800">
+                              {formatCurrency(bill.grand_total)}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Bottom Action Buttons */}
+                      <div className="mt-4 flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => addItemsToActiveBill(bill)}
+                          className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-white py-2.5 text-xs font-bold text-slate-700 shadow-xs transition hover:border-orange-300 hover:bg-orange-50 hover:text-orange-800 active:scale-95"
+                        >
+                          <Plus size={14} />
+                          <span>Add Items</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => completeActiveBill(bill)}
+                          className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-xl bg-[#0A4731] py-2.5 text-xs font-bold text-white shadow-xs transition hover:bg-[#062D22] active:scale-95"
+                        >
+                          <Receipt size={14} />
+                          <span>Settle Bill</span>
+                        </button>
+                      </div>
+                    </article>
+                  ))}
+                </div>
+              ) : (
+                /* Table Mode */
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-xs">
+                    <thead className="border-b border-slate-200 bg-slate-50/80 text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                      <tr>
+                        <th className="py-3.5 px-5">Table</th>
+                        <th className="py-3.5 px-4">Bill Number</th>
+                        <th className="py-3.5 px-4">Status</th>
+                        <th className="py-3.5 px-4">Started Time</th>
+                        <th className="py-3.5 px-4">Assigned Server</th>
+                        <th className="py-3.5 px-4 text-right">Grand Total</th>
+                        <th className="py-3.5 px-5 text-right">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {filteredActiveBills.map((bill) => (
+                        <tr key={bill.bill_id} className="transition hover:bg-slate-50/80">
+                          <td className="py-3.5 px-5 font-black text-slate-900">
+                            <div className="flex items-center gap-2.5">
+                              <span className="grid h-8 w-8 place-items-center rounded-lg bg-emerald-50 text-emerald-800 font-bold border border-emerald-100">
+                                <Table2 size={16} />
+                              </span>
+                              <span>Table {bill.table_number}</span>
+                            </div>
+                          </td>
+                          <td className="py-3.5 px-4">
+                            <div className="flex items-center gap-1.5 font-bold text-slate-800">
                               <span>#{bill.bill_number}</span>
                               <button
                                 type="button"
@@ -675,64 +792,47 @@ const PointOfSale = () => {
                                 <Copy size={12} />
                               </button>
                             </div>
-                          </div>
-                        </div>
-
-                        <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-bold text-emerald-800 border border-emerald-200/60">
-                          <span className="h-1.5 w-1.5 rounded-full bg-emerald-600 animate-pulse" />
-                          Active
-                        </span>
-                      </div>
-
-                      {/* Middle Row: Details & Timing */}
-                      <div className="mt-4 space-y-2 rounded-xl bg-slate-50/80 p-3 text-xs text-slate-600">
-                        <div className="flex items-center justify-between">
-                          <span className="flex items-center gap-1.5 text-slate-500">
-                            <Clock size={13} />
-                            <span>Started</span>
-                          </span>
-                          <span className="font-semibold text-slate-800">
-                            {formatTime(bill.created_at)} ({getTimeAgo(bill.created_at)})
-                          </span>
-                        </div>
-                        {bill.server_name && (
-                          <div className="flex items-center justify-between">
-                            <span className="text-slate-500">Assigned Server</span>
-                            <span className="font-semibold text-slate-800">{bill.server_name}</span>
-                          </div>
-                        )}
-                        <div className="flex items-center justify-between border-t border-slate-200/60 pt-2">
-                          <span className="font-semibold text-slate-500">Grand Total</span>
-                          <span className="text-base font-black text-emerald-800">
+                          </td>
+                          <td className="py-3.5 px-4">
+                            <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-0.5 text-[11px] font-bold text-emerald-800 border border-emerald-200/60">
+                              <span className="h-1.5 w-1.5 rounded-full bg-emerald-600 animate-pulse" />
+                              Active
+                            </span>
+                          </td>
+                          <td className="py-3.5 px-4 text-slate-600">
+                            <div className="font-semibold text-slate-800">{formatTime(bill.created_at)}</div>
+                            <div className="text-[10px] text-slate-400">{getTimeAgo(bill.created_at)}</div>
+                          </td>
+                          <td className="py-3.5 px-4 font-medium text-slate-700">
+                            {bill.server_name || "—"}
+                          </td>
+                          <td className="py-3.5 px-4 text-right font-black text-emerald-800 text-sm">
                             {formatCurrency(bill.grand_total)}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Bottom Action Buttons */}
-                    <div className="mt-4 flex items-center gap-2">
-                      <button
-                        type="button"
-                        onClick={() => addItemsToActiveBill(bill)}
-                        className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-white py-2.5 text-xs font-bold text-slate-700 shadow-xs transition hover:border-orange-300 hover:bg-orange-50 hover:text-orange-800 active:scale-95"
-                      >
-                        <Plus size={14} />
-                        <span>Add Items</span>
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() => completeActiveBill(bill)}
-                        className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-xl bg-[#0A4731] py-2.5 text-xs font-bold text-white shadow-xs transition hover:bg-[#062D22] active:scale-95"
-                      >
-                        <Receipt size={14} />
-                        <span>Settle Bill</span>
-                      </button>
-                    </div>
-                  </article>
-                ))}
-              </div>
+                          </td>
+                          <td className="py-3.5 px-5 text-right">
+                            <div className="flex items-center justify-end gap-1.5">
+                              <button
+                                type="button"
+                                onClick={() => addItemsToActiveBill(bill)}
+                                className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-bold text-slate-700 shadow-xs transition hover:border-orange-300 hover:bg-orange-50 hover:text-orange-800 active:scale-95"
+                              >
+                                + Items
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => completeActiveBill(bill)}
+                                className="rounded-lg bg-[#0A4731] px-3.5 py-1.5 text-xs font-bold text-white shadow-xs transition hover:bg-[#062D22] active:scale-95"
+                              >
+                                Settle
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )
             ) : (
               <div className="px-6 py-12 text-center">
                 <div className="mx-auto grid h-14 w-14 place-items-center rounded-3xl bg-slate-100 text-slate-400">
@@ -755,7 +855,7 @@ const PointOfSale = () => {
           </section>
         )}
 
-        {/* FLOOR TABLES GRID SECTION */}
+        {/* FLOOR TABLES SECTION */}
         {(activeTab === "all" || activeTab === "tables") && (
           <section className="overflow-hidden rounded-3xl border border-slate-200/90 bg-white shadow-xs">
             <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 bg-slate-50/60 px-6 py-4">
@@ -786,31 +886,55 @@ const PointOfSale = () => {
                 <span>Loading tables…</span>
               </div>
             ) : filteredTables.length > 0 ? (
-              <div className="grid gap-4 p-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                {filteredTables.map((table) => {
-                  const status = tableStatus(table);
-                  const isAvailable = status === "Available";
-                  const isOccupied = status === "Occupied";
-                  const isReserved = status === "Reserved";
-                  const activeBill = billsByTableId.get(String(table.table_id || table.id));
+              viewMode === "card" ? (
+                /* Card Mode */
+                <div className="grid gap-4 p-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                  {filteredTables.map((table) => {
+                    const status = tableStatus(table);
+                    const isAvailable = status === "Available";
+                    const isOccupied = status === "Occupied";
+                    const isReserved = status === "Reserved";
+                    const activeBill = billsByTableId.get(String(table.table_id || table.id));
 
-                  return (
-                    <article
-                      key={table.table_id || table.id}
-                      className={`group relative flex flex-col justify-between rounded-2xl border p-4.5 shadow-xs transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md ${
-                        isAvailable
-                          ? "border-emerald-200/90 bg-emerald-50/20 hover:border-emerald-400"
-                          : isOccupied
-                          ? "border-amber-200/90 bg-amber-50/20 hover:border-amber-400"
-                          : "border-blue-200/90 bg-blue-50/20 hover:border-blue-400"
-                      }`}
-                    >
-                      <div>
-                        {/* Table Header */}
-                        <div className="flex items-start justify-between gap-2">
-                          <div className="flex items-center gap-2.5">
+                    return (
+                      <article
+                        key={table.table_id || table.id}
+                        className={`group relative flex flex-col justify-between rounded-2xl border p-4.5 shadow-xs transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md ${
+                          isAvailable
+                            ? "border-emerald-200/90 bg-emerald-50/20 hover:border-emerald-400"
+                            : isOccupied
+                            ? "border-amber-200/90 bg-amber-50/20 hover:border-amber-400"
+                            : "border-blue-200/90 bg-blue-50/20 hover:border-blue-400"
+                        }`}
+                      >
+                        <div>
+                          {/* Table Header */}
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="flex items-center gap-2.5">
+                              <span
+                                className={`grid h-10 w-10 place-items-center rounded-xl font-black ${
+                                  isAvailable
+                                    ? "bg-emerald-100 text-emerald-800"
+                                    : isOccupied
+                                    ? "bg-amber-100 text-amber-800"
+                                    : "bg-blue-100 text-blue-800"
+                                }`}
+                              >
+                                <Table2 size={18} />
+                              </span>
+                              <div>
+                                <h3 className="text-base font-black text-slate-900">
+                                  Table {table.table_number}
+                                </h3>
+                                <span className="flex items-center gap-1 text-[11px] font-medium text-slate-500">
+                                  <Users size={12} />
+                                  {table.no_of_seats ? `${table.no_of_seats} Seats` : "Standard table"}
+                                </span>
+                              </div>
+                            </div>
+
                             <span
-                              className={`grid h-10 w-10 place-items-center rounded-xl font-black ${
+                              className={`rounded-full px-2.5 py-0.5 text-[11px] font-bold ${
                                 isAvailable
                                   ? "bg-emerald-100 text-emerald-800"
                                   : isOccupied
@@ -818,96 +942,210 @@ const PointOfSale = () => {
                                   : "bg-blue-100 text-blue-800"
                               }`}
                             >
-                              <Table2 size={18} />
+                              {status}
                             </span>
-                            <div>
-                              <h3 className="text-base font-black text-slate-900">
-                                Table {table.table_number}
-                              </h3>
-                              <span className="flex items-center gap-1 text-[11px] font-medium text-slate-500">
-                                <Users size={12} />
-                                {table.no_of_seats ? `${table.no_of_seats} Seats` : "Standard table"}
-                              </span>
-                            </div>
                           </div>
 
-                          <span
-                            className={`rounded-full px-2.5 py-0.5 text-[11px] font-bold ${
-                              isAvailable
-                                ? "bg-emerald-100 text-emerald-800"
-                                : isOccupied
-                                ? "bg-amber-100 text-amber-800"
-                                : "bg-blue-100 text-blue-800"
-                            }`}
-                          >
-                            {status}
-                          </span>
+                          {/* Card Info Body */}
+                          <div className="mt-3.5 min-h-[52px] rounded-xl bg-white/90 p-2.5 text-xs text-slate-600 border border-slate-100">
+                            {isOccupied && activeBill ? (
+                              <div className="space-y-1">
+                                <div className="flex items-center justify-between">
+                                  <span className="text-slate-400">Bill</span>
+                                  <span className="font-bold text-slate-700">#{activeBill.bill_number}</span>
+                                </div>
+                                <div className="flex items-center justify-between">
+                                  <span className="text-slate-400">Total</span>
+                                  <span className="font-extrabold text-emerald-800">{formatCurrency(activeBill.grand_total)}</span>
+                                </div>
+                              </div>
+                            ) : isReserved ? (
+                              <p className="text-blue-700 font-medium">Table currently reserved for booking.</p>
+                            ) : (
+                              <p className="text-slate-500 font-medium">Clean & ready for new guest seating.</p>
+                            )}
+                          </div>
                         </div>
 
-                        {/* Card Info Body */}
-                        <div className="mt-3.5 min-h-[52px] rounded-xl bg-white/90 p-2.5 text-xs text-slate-600 border border-slate-100">
-                          {isOccupied && activeBill ? (
-                            <div className="space-y-1">
-                              <div className="flex items-center justify-between">
-                                <span className="text-slate-400">Bill</span>
-                                <span className="font-bold text-slate-700">#{activeBill.bill_number}</span>
-                              </div>
-                              <div className="flex items-center justify-between">
-                                <span className="text-slate-400">Total</span>
-                                <span className="font-extrabold text-emerald-800">{formatCurrency(activeBill.grand_total)}</span>
-                              </div>
+                        {/* Card Action Footer */}
+                        <div className="mt-3.5 pt-2 border-t border-slate-200/50">
+                          {isAvailable ? (
+                            <button
+                              type="button"
+                              onClick={() => selectTable(table)}
+                              className="w-full inline-flex items-center justify-center gap-1.5 rounded-xl bg-[#0A4731] py-2 text-xs font-bold text-white shadow-xs transition hover:bg-[#062D22] active:scale-95"
+                            >
+                              <Plus size={14} />
+                              <span>Seat & Start Order</span>
+                            </button>
+                          ) : isOccupied && activeBill ? (
+                            <div className="flex items-center gap-1.5">
+                              <button
+                                type="button"
+                                onClick={() => addItemsToActiveBill(activeBill)}
+                                className="flex-1 rounded-xl border border-slate-200 bg-white py-2 text-xs font-bold text-slate-700 shadow-xs transition hover:bg-slate-50"
+                              >
+                                + Items
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => completeActiveBill(activeBill)}
+                                className="flex-1 rounded-xl bg-[#0A4731] py-2 text-xs font-bold text-white shadow-xs transition hover:bg-[#062D22]"
+                              >
+                                Settle
+                              </button>
                             </div>
-                          ) : isReserved ? (
-                            <p className="text-blue-700 font-medium">Table currently reserved for booking.</p>
                           ) : (
-                            <p className="text-slate-500 font-medium">Clean & ready for new guest seating.</p>
+                            <button
+                              type="button"
+                              onClick={() => selectTable(table)}
+                              disabled={!["Available", "Occupied"].includes(status)}
+                              className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2 text-xs font-semibold text-slate-500 disabled:opacity-50"
+                            >
+                              Reserved
+                            </button>
                           )}
                         </div>
-                      </div>
+                      </article>
+                    );
+                  })}
+                </div>
+              ) : (
+                /* Table Mode */
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-xs">
+                    <thead className="border-b border-slate-200 bg-slate-50/80 text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                      <tr>
+                        <th className="py-3.5 px-5">Table</th>
+                        <th className="py-3.5 px-4">Seats / Capacity</th>
+                        <th className="py-3.5 px-4">Status</th>
+                        <th className="py-3.5 px-4">Active Order / Bill</th>
+                        <th className="py-3.5 px-4">Live Running Total</th>
+                        <th className="py-3.5 px-4">Assigned Server</th>
+                        <th className="py-3.5 px-5 text-right">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {filteredTables.map((table) => {
+                        const status = tableStatus(table);
+                        const isAvailable = status === "Available";
+                        const isOccupied = status === "Occupied";
+                        const isReserved = status === "Reserved";
+                        const activeBill = billsByTableId.get(String(table.table_id || table.id));
 
-                      {/* Card Action Footer */}
-                      <div className="mt-3.5 pt-2 border-t border-slate-200/50">
-                        {isAvailable ? (
-                          <button
-                            type="button"
-                            onClick={() => selectTable(table)}
-                            className="w-full inline-flex items-center justify-center gap-1.5 rounded-xl bg-[#0A4731] py-2 text-xs font-bold text-white shadow-xs transition hover:bg-[#062D22] active:scale-95"
-                          >
-                            <Plus size={14} />
-                            <span>Seat & Start Order</span>
-                          </button>
-                        ) : isOccupied && activeBill ? (
-                          <div className="flex items-center gap-1.5">
-                            <button
-                              type="button"
-                              onClick={() => addItemsToActiveBill(activeBill)}
-                              className="flex-1 rounded-xl border border-slate-200 bg-white py-2 text-xs font-bold text-slate-700 shadow-xs transition hover:bg-slate-50"
-                            >
-                              + Items
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => completeActiveBill(activeBill)}
-                              className="flex-1 rounded-xl bg-[#0A4731] py-2 text-xs font-bold text-white shadow-xs transition hover:bg-[#062D22]"
-                            >
-                              Settle
-                            </button>
-                          </div>
-                        ) : (
-                          <button
-                            type="button"
-                            onClick={() => selectTable(table)}
-                            disabled={!["Available", "Occupied"].includes(status)}
-                            className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2 text-xs font-semibold text-slate-500 disabled:opacity-50"
-                          >
-                            Reserved
-                          </button>
-                        )}
-                      </div>
-                    </article>
-                  );
-                })}
-              </div>
+                        return (
+                          <tr key={table.table_id || table.id} className="transition hover:bg-slate-50/80">
+                            <td className="py-3.5 px-5 font-black text-slate-900">
+                              <div className="flex items-center gap-2.5">
+                                <span
+                                  className={`grid h-8 w-8 place-items-center rounded-lg font-bold ${
+                                    isAvailable
+                                      ? "bg-emerald-50 text-emerald-800 border border-emerald-100"
+                                      : isOccupied
+                                      ? "bg-amber-50 text-amber-800 border border-amber-100"
+                                      : "bg-blue-50 text-blue-800 border border-blue-100"
+                                  }`}
+                                >
+                                  <Table2 size={16} />
+                                </span>
+                                <span>Table {table.table_number}</span>
+                              </div>
+                            </td>
+                            <td className="py-3.5 px-4 text-slate-600 font-medium">
+                              <span className="inline-flex items-center gap-1">
+                                <Users size={12} className="text-slate-400" />
+                                {table.no_of_seats ? `${table.no_of_seats} Seats` : "Standard"}
+                              </span>
+                            </td>
+                            <td className="py-3.5 px-4">
+                              <span
+                                className={`rounded-full px-2.5 py-0.5 text-[11px] font-bold ${
+                                  isAvailable
+                                    ? "bg-emerald-100 text-emerald-800"
+                                    : isOccupied
+                                    ? "bg-amber-100 text-amber-800"
+                                    : "bg-blue-100 text-blue-800"
+                                }`}
+                              >
+                                {status}
+                              </span>
+                            </td>
+                            <td className="py-3.5 px-4 font-medium text-slate-700">
+                              {isOccupied && activeBill ? (
+                                <div className="flex items-center gap-1.5 font-bold">
+                                  <span>#{activeBill.bill_number}</span>
+                                  <button
+                                    type="button"
+                                    onClick={(e) => copyBillNumber(activeBill.bill_number, e)}
+                                    title="Copy bill number"
+                                    className="text-slate-400 hover:text-slate-700"
+                                  >
+                                    <Copy size={12} />
+                                  </button>
+                                </div>
+                              ) : isReserved ? (
+                                <span className="text-blue-700 font-semibold">Reserved Booking</span>
+                              ) : (
+                                <span className="text-slate-400 font-normal">No active bill</span>
+                              )}
+                            </td>
+                            <td className="py-3.5 px-4 font-black">
+                              {isOccupied && activeBill ? (
+                                <span className="text-emerald-800 text-sm">
+                                  {formatCurrency(activeBill.grand_total)}
+                                </span>
+                              ) : (
+                                <span className="text-slate-300 font-normal">—</span>
+                              )}
+                            </td>
+                            <td className="py-3.5 px-4 text-slate-600 font-medium">
+                              {table.assigned_server_name || "—"}
+                            </td>
+                            <td className="py-3.5 px-5 text-right">
+                              {isAvailable ? (
+                                <button
+                                  type="button"
+                                  onClick={() => selectTable(table)}
+                                  className="inline-flex items-center gap-1.5 rounded-lg bg-[#0A4731] px-3 py-1.5 text-xs font-bold text-white shadow-xs transition hover:bg-[#062D22] active:scale-95"
+                                >
+                                  <Plus size={13} />
+                                  <span>Seat & Order</span>
+                                </button>
+                              ) : isOccupied && activeBill ? (
+                                <div className="flex items-center justify-end gap-1.5">
+                                  <button
+                                    type="button"
+                                    onClick={() => addItemsToActiveBill(activeBill)}
+                                    className="rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-bold text-slate-700 shadow-xs transition hover:bg-slate-50"
+                                  >
+                                    + Items
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => completeActiveBill(activeBill)}
+                                    className="rounded-lg bg-[#0A4731] px-3 py-1.5 text-xs font-bold text-white shadow-xs transition hover:bg-[#062D22]"
+                                  >
+                                    Settle
+                                  </button>
+                                </div>
+                              ) : (
+                                <button
+                                  type="button"
+                                  onClick={() => selectTable(table)}
+                                  disabled={!["Available", "Occupied"].includes(status)}
+                                  className="rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs font-semibold text-slate-400 disabled:opacity-50"
+                                >
+                                  Reserved
+                                </button>
+                              )}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )
             ) : (
               <div className="px-6 py-12 text-center">
                 <MapPin className="mx-auto h-10 w-10 text-slate-300" />

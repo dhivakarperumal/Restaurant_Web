@@ -39,7 +39,7 @@ const {
   updateAssignedDeliveryOrderStatus,
   updateDeliveryPartnerAvailability,
 } = require('../controllers/customerOrderController');
-const { getActiveBill, getAllBills, getBill, settleBill } = require('../controllers/tableBillController');
+const { getActiveBill, getAllBills, getBill, mergeBills, settleBill } = require('../controllers/tableBillController');
 const ordersRouter = require('./orders');
 const revenueRouter = require('./revenue');
 const reservationsRouter = require('./reservations');
@@ -379,6 +379,7 @@ router.patch('/kitchen-orders/:orderId/status', requireKitchenRole(['chef', 'ser
 router.put('/kitchen-orders/:orderId/status', requireKitchenRole(['chef', 'server', 'super admin', 'admin']), changeKitchenOrderStatus);
 
 router.get('/table-bills/active/:tableId', requireKitchenRole(['server', 'super admin', 'admin']), getActiveBill);
+router.post('/table-bills/merge', requireKitchenRole(['server', 'super admin', 'admin']), mergeBills);
 router.get('/table-bills/:billId', requireKitchenRole(['server', 'super admin', 'admin']), getBill);
 router.post('/table-bills/:billId/settle', requireKitchenRole(['server', 'super admin', 'admin']), settleBill);
 router.get('/table-bills', requireKitchenRole(['server', 'super admin', 'admin']), getAllBills);

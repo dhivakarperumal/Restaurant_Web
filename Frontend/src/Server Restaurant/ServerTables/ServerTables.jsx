@@ -14,6 +14,7 @@ import {
   LayoutGrid,
   Loader2,
   List,
+  Merge,
   Plus,
   Printer,
   RefreshCw,
@@ -83,6 +84,12 @@ export default function ServerTables() {
   const [updatingOrderId, setUpdatingOrderId] = useState("");
   const [activeBills, setActiveBills] = useState([]);
   const [viewingBill, setViewingBill] = useState(null);
+  const [mergeTablesOpen, setMergeTablesOpen] = useState(false);
+  const [mergeConfirmationOpen, setMergeConfirmationOpen] = useState(false);
+  const [mergePrimaryTableId, setMergePrimaryTableId] = useState("");
+  const [mergeSecondaryTableIds, setMergeSecondaryTableIds] = useState([]);
+  const [loadingMergeTables, setLoadingMergeTables] = useState(false);
+  const [mergingTables, setMergingTables] = useState(false);
   const [loadingBillDetails, setLoadingBillDetails] = useState(false);
   const [settlingBill, setSettlingBill] = useState(false);
   const settleLock = useRef(false);
@@ -99,7 +106,9 @@ export default function ServerTables() {
       : viewingBill.consolidated_items || viewingBill.items || [];
     const itemsByFood = new Map();
     sourceItems.forEach((item) => {
-      const key = String(item.food_id || item.food_name);
+      const selectedAddons = item.selected_addons || [];
+      const selectedCustomizations = item.selected_customizations || {};
+      const key = `${item.food_id || item.food_name}:${item.unit_price}:${JSON.stringify([selectedAddons, selectedCustomizations])}`;
       const existing = itemsByFood.get(key);
       const quantity = Number(item.quantity || 0);
       const totalPrice = Number(item.total_price ?? Number(item.unit_price || 0) * quantity);
@@ -112,6 +121,9 @@ export default function ServerTables() {
           food_name: item.food_name,
           quantity,
           total_price: totalPrice,
+          unit_price: Number(item.unit_price || 0),
+          selected_addons: selectedAddons,
+          selected_customizations: selectedCustomizations,
         });
       }
     });
@@ -168,8 +180,7 @@ export default function ServerTables() {
         throw new Error(res.data?.message || "Table data was invalid.");
       }
       setTables(res.data.tables);
-      fetchKitchenOrders();
-      fetchActiveBills();
+      await Promise.all([fetchKitchenOrders(), fetchActiveBills()]);
     } catch (error) {
       console.error("Error loading server tables:", error);
       const message = error.response?.data?.message || error.message || "Failed to load server tables";
@@ -514,6 +525,80 @@ export default function ServerTables() {
     }
   };
 
+  const openMergeTables = async () => {
+    setMergePrimaryTableId("");
+    setMergeSecondaryTableIds([]);
+    setMergeConfirmationOpen(false);
+    setMergeTablesOpen(true);
+    setLoadingMergeTables(true);
+    try {
+      await fetchTables({ quiet: true });
+    } finally {
+      setLoadingMergeTables(false);
+    }
+  };
+
+  const toggleMergeTable = (table) => {
+    const tableId = String(table.table_id || "");
+    if (getDisplayStatus(table) !== "Occupied" || !getTableActiveBill(table)) return;
+
+    if (tableId === mergePrimaryTableId) {
+      setMergePrimaryTableId(mergeSecondaryTableIds[0] || "");
+      setMergeSecondaryTableIds((ids) => ids.slice(1));
+      return;
+    }
+    if (mergeSecondaryTableIds.includes(tableId)) {
+      setMergeSecondaryTableIds((ids) => ids.filter((id) => id !== tableId));
+      return;
+    }
+    if (!mergePrimaryTableId) {
+      setMergePrimaryTableId(tableId);
+      return;
+    }
+    setMergeSecondaryTableIds((ids) => [...ids, tableId]);
+  };
+
+  const makeMergeTablePrimary = (tableId) => {
+    if (tableId === mergePrimaryTableId) return;
+    setMergeSecondaryTableIds((ids) => [
+      mergePrimaryTableId,
+      ...ids.filter((id) => id !== tableId),
+    ]);
+    setMergePrimaryTableId(tableId);
+  };
+
+  const confirmTableMerge = async () => {
+    if (mergingTables || !mergePrimaryTableId || !mergeSecondaryTableIds.length) return;
+    setMergingTables(true);
+    try {
+      const response = await api.post("/table-bills/merge", {
+        primary_table_id: mergePrimaryTableId,
+        merge_table_ids: mergeSecondaryTableIds,
+      });
+      if (!response.data?.success || !response.data.bill) {
+        throw new Error(response.data?.message || "The tables could not be merged.");
+      }
+
+      toast.success(response.data.message || "Tables merged successfully.");
+      setMergeTablesOpen(false);
+      setMergeConfirmationOpen(false);
+      setMergePrimaryTableId("");
+      setMergeSecondaryTableIds([]);
+      setViewingBill(response.data.bill);
+      setSettleDiscount(response.data.bill.discount || 0);
+      await Promise.all([
+        fetchTables({ quiet: true }),
+        fetchActiveBills(),
+        fetchKitchenOrders(),
+      ]);
+    } catch (error) {
+      console.error("Could not merge table bills:", error);
+      toast.error(error.response?.data?.message || error.message || "Could not merge tables. Please refresh and try again.");
+    } finally {
+      setMergingTables(false);
+    }
+  };
+
   const baseTables = tables;
 
   // Filtered tables
@@ -812,6 +897,17 @@ export default function ServerTables() {
               <option value="latest">Sort by: Latest</option>
               <option value="oldest">Sort by: Oldest</option>
             </select>
+          )}
+
+          {!isAdminTablesPage && (
+            <button
+              type="button"
+              onClick={openMergeTables}
+              className="inline-flex h-[58px] items-center justify-center gap-2 rounded-2xl border border-orange-200 bg-orange-50 px-4 text-sm font-bold text-orange-800 transition hover:bg-orange-100"
+            >
+              <Merge className="h-4 w-4" />
+              Merge Tables
+            </button>
           )}
 
           {/* Server view mode toggle */}
@@ -1613,6 +1709,206 @@ export default function ServerTables() {
         </div>
       )}
 
+      {mergeTablesOpen && (
+        <div className="fixed inset-0 z-[70] flex items-center justify-center bg-slate-950/50 p-4 backdrop-blur-sm">
+          <button
+            type="button"
+            aria-label="Close merge tables dialog"
+            disabled={mergingTables}
+            onClick={() => {
+              setMergeTablesOpen(false);
+              setMergeConfirmationOpen(false);
+            }}
+            className="absolute inset-0 h-full w-full cursor-default"
+          />
+          <section
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="merge-tables-heading"
+            className="relative flex max-h-[88vh] w-full max-w-3xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl"
+          >
+            <header className="flex items-start justify-between gap-4 border-b border-slate-100 p-5 sm:p-6">
+              <div>
+                <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-orange-700">Table management</p>
+                <h2 id="merge-tables-heading" className="mt-1 text-xl font-extrabold text-slate-900">
+                  {mergeConfirmationOpen ? "Confirm table merge" : "Merge occupied tables"}
+                </h2>
+                <p className="mt-1 text-sm text-slate-500">
+                  {mergeConfirmationOpen
+                    ? "Orders and charges will be moved to the primary table."
+                    : "Choose the primary table first, then choose one or more occupied tables to merge."}
+                </p>
+              </div>
+              <button
+                type="button"
+                aria-label="Close merge tables dialog"
+                disabled={mergingTables}
+                onClick={() => {
+                  setMergeTablesOpen(false);
+                  setMergeConfirmationOpen(false);
+                }}
+                className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-slate-100 text-slate-600 hover:bg-slate-200 disabled:opacity-50"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </header>
+
+            {mergeConfirmationOpen ? (
+              <div className="space-y-4 overflow-y-auto p-5 sm:p-6">
+                <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4">
+                  <p className="text-xs font-bold uppercase tracking-wide text-emerald-800">Primary Table</p>
+                  <p className="mt-1 text-lg font-extrabold text-slate-900">
+                    Table {baseTables.find((table) => String(table.table_id) === mergePrimaryTableId)?.table_number || "—"}
+                  </p>
+                </div>
+                <div className="rounded-xl border border-orange-200 bg-orange-50 p-4">
+                  <p className="text-xs font-bold uppercase tracking-wide text-orange-800">Merge Table{mergeSecondaryTableIds.length === 1 ? "" : "s"}</p>
+                  <p className="mt-1 text-sm font-bold text-slate-900">
+                    {mergeSecondaryTableIds.map((id) => {
+                      const table = baseTables.find((entry) => String(entry.table_id) === id);
+                      return table ? `Table ${table.table_number}` : null;
+                    }).filter(Boolean).join(", ")}
+                  </p>
+                </div>
+                <p className="rounded-xl bg-slate-50 p-4 text-sm font-semibold text-slate-700">
+                  Total Selected Tables: {mergeSecondaryTableIds.length + 1}
+                </p>
+                <div className="flex flex-col-reverse gap-2 border-t border-slate-100 pt-4 sm:flex-row sm:justify-end">
+                  <button
+                    type="button"
+                    disabled={mergingTables}
+                    onClick={() => setMergeConfirmationOpen(false)}
+                    className="rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    disabled={mergingTables || !mergePrimaryTableId || !mergeSecondaryTableIds.length}
+                    onClick={confirmTableMerge}
+                    className="inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-800 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-emerald-900 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    {mergingTables && <Loader2 className="h-4 w-4 animate-spin" />}
+                    {mergingTables ? "Merging…" : "Confirm Merge"}
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <>
+                <div className="overflow-y-auto p-5 sm:p-6">
+                  {loadingMergeTables ? (
+                    <div className="flex min-h-40 items-center justify-center gap-2 text-sm text-slate-500">
+                      <Loader2 className="h-4 w-4 animate-spin" /> Refreshing assigned tables and bills…
+                    </div>
+                  ) : tableLoadError ? (
+                    <div role="alert" className="rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-800">
+                      {tableLoadError}
+                    </div>
+                  ) : (
+                    <div className="grid max-h-[55vh] gap-3 overflow-y-auto sm:grid-cols-2">
+                      {baseTables.map((table) => {
+                        const tableId = String(table.table_id || "");
+                        const status = getDisplayStatus(table) || "Available";
+                        const activeBill = getTableActiveBill(table);
+                        const canMerge = status === "Occupied" && Boolean(activeBill);
+                        const isPrimary = tableId === mergePrimaryTableId;
+                        const isSecondary = mergeSecondaryTableIds.includes(tableId);
+                        return (
+                          <article
+                            key={tableId || table.id}
+                            className={`rounded-xl border p-4 transition ${
+                              isPrimary ? "border-emerald-300 bg-emerald-50/50" :
+                                isSecondary ? "border-orange-300 bg-orange-50/50" :
+                                  "border-slate-200 bg-white"
+                            } ${canMerge ? "hover:border-slate-300" : "opacity-60"}`}
+                          >
+                            <button
+                              type="button"
+                              disabled={!canMerge || loadingMergeTables}
+                              onClick={() => toggleMergeTable(table)}
+                              className="flex w-full items-center gap-3 text-left disabled:cursor-not-allowed"
+                            >
+                              <span className={`grid h-11 w-11 shrink-0 place-items-center rounded-xl ${
+                                status === "Occupied" ? "bg-orange-100 text-orange-700" :
+                                  status === "Reserved" ? "bg-blue-100 text-blue-700" :
+                                    "bg-emerald-100 text-emerald-800"
+                              }`}>
+                                <Table2 className="h-5 w-5" />
+                              </span>
+                              <span className="min-w-0 flex-1">
+                                <strong className="block truncate text-sm text-slate-900">Table {table.table_number}</strong>
+                                <span className="mt-1 block text-xs text-slate-500">
+                                  {table.no_of_seats ? `${table.no_of_seats} seats · ` : ""}{status}
+                                  {activeBill ? ` · Bill #${activeBill.bill_number}` : ""}
+                                </span>
+                              </span>
+                              <span className={`grid h-6 w-6 shrink-0 place-items-center rounded-full border ${
+                                isPrimary ? "border-emerald-700 bg-emerald-700 text-white" :
+                                  isSecondary ? "border-orange-600 bg-orange-600 text-white" :
+                                    "border-slate-300 text-transparent"
+                              }`}>
+                                {(isPrimary || isSecondary) && <Check className="h-4 w-4" />}
+                              </span>
+                            </button>
+                            {(isPrimary || isSecondary) && (
+                              <div className="mt-3 flex items-center justify-between border-t border-slate-200/70 pt-2">
+                                <span className={`text-xs font-bold ${isPrimary ? "text-emerald-800" : "text-orange-800"}`}>
+                                  {isPrimary ? "Primary table" : "Merge table"}
+                                </span>
+                                {isSecondary && (
+                                  <button
+                                    type="button"
+                                    onClick={() => makeMergeTablePrimary(tableId)}
+                                    className="text-xs font-semibold text-slate-600 underline hover:text-slate-900"
+                                  >
+                                    Make primary
+                                  </button>
+                                )}
+                              </div>
+                            )}
+                          </article>
+                        );
+                      })}
+                      {!baseTables.length && (
+                        <div className="col-span-full rounded-xl border border-dashed border-slate-300 p-8 text-center text-sm text-slate-500">
+                          No assigned tables are available.
+                        </div>
+                      )}
+                    </div>
+                  )}
+                  <p className="mt-3 text-xs text-slate-500">
+                    Only occupied tables with active bills can be merged. The first selection is primary; select any chosen table to remove it.
+                  </p>
+                </div>
+                <footer className="flex flex-col-reverse gap-2 border-t border-slate-100 p-5 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+                  <span className="text-sm font-semibold text-slate-600">
+                    Selected: {mergePrimaryTableId ? mergeSecondaryTableIds.length + 1 : 0}
+                  </span>
+                  <div className="flex flex-col-reverse gap-2 sm:flex-row">
+                    <button
+                      type="button"
+                      disabled={mergingTables}
+                      onClick={() => setMergeTablesOpen(false)}
+                      className="rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="button"
+                      disabled={loadingMergeTables || !mergePrimaryTableId || !mergeSecondaryTableIds.length}
+                      onClick={() => setMergeConfirmationOpen(true)}
+                      className="rounded-xl bg-emerald-800 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-emerald-900 disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      Review Merge
+                    </button>
+                  </div>
+                </footer>
+              </>
+            )}
+          </section>
+        </div>
+      )}
+
       {/* Table Bill & Settlement Modal */}
       {viewingBill && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in overflow-y-auto">
@@ -1641,8 +1937,14 @@ export default function ServerTables() {
               </div>
               <div className="grid grid-cols-2 gap-2 mt-3 p-3 bg-gray-50 rounded-xl text-xs text-gray-600">
                 <div>
-                  <span className="text-gray-400 block text-[10px]">Table</span>
-                  <strong className="text-gray-900 text-sm">Table {viewingBill.table_number}</strong>
+                  <span className="text-gray-400 block text-[10px]">
+                    {Array.isArray(viewingBill.merged_table_numbers) && viewingBill.merged_table_numbers.length > 1 ? "Tables" : "Table"}
+                  </span>
+                  <strong className="text-gray-900 text-sm">
+                    {Array.isArray(viewingBill.merged_table_numbers) && viewingBill.merged_table_numbers.length > 1
+                      ? viewingBill.merged_table_numbers.map((number) => `Table ${number}`).join(" + ")
+                      : `Table ${viewingBill.table_number}`}
+                  </strong>
                 </div>
                 <div>
                   <span className="text-gray-400 block text-[10px]">Server</span>
@@ -1664,15 +1966,29 @@ export default function ServerTables() {
             {/* Consolidated bill items */}
             <div className="max-h-64 overflow-y-auto divide-y divide-gray-100 mb-4 pr-1">
               {billItems.length > 0 ? (
-                billItems.map((item) => (
-                  <div key={item.food_id} className="py-2.5 flex justify-between items-center text-xs">
-                    <div>
-                      <span className="font-semibold text-gray-800">{item.food_name}</span>
-                      <span className="text-gray-500 ml-2">× {item.quantity}</span>
+                billItems.map((item) => {
+                  const customizations = Object.entries(item.selected_customizations || {}).flatMap(([group, selection]) => {
+                    const options = Array.isArray(selection) ? selection : [selection];
+                    return options.filter(Boolean).map((option) => `${group === "__custom_request__" ? "Custom request" : group}: ${option}`);
+                  });
+                  const itemOptions = [
+                    ...(Array.isArray(item.selected_addons) ? item.selected_addons : []),
+                    ...customizations,
+                  ];
+                  return (
+                    <div key={item.food_id} className="flex items-center justify-between gap-3 py-2.5 text-xs">
+                      <div className="min-w-0">
+                        <span className="font-semibold text-gray-800">{item.food_name}</span>
+                        <span className="ml-2 text-gray-500">× {item.quantity}</span>
+                        {itemOptions.length > 0 && (
+                          <span className="mt-1 block break-words text-[10px] text-gray-500">{itemOptions.join(" · ")}</span>
+                        )}
+                        <span className="mt-1 block text-[10px] text-gray-400">₹{item.unit_price.toFixed(2)} each</span>
+                      </div>
+                      <span className="shrink-0 font-mono text-gray-700">₹{item.total_price.toFixed(2)}</span>
                     </div>
-                    <span className="font-mono text-gray-700">₹{item.total_price.toFixed(2)}</span>
-                  </div>
-                ))
+                  );
+                })
               ) : (
                 <div className="text-center py-6 text-xs text-gray-400">No items on this bill yet.</div>
               )}
@@ -1685,7 +2001,7 @@ export default function ServerTables() {
                 <span className="font-mono">₹{viewingBill.subtotal.toFixed(2)}</span>
               </div>
               <div className="flex justify-between">
-                <span>GST (5%):</span>
+                <span>GST ({Number(viewingBill.tax_rate || 5).toFixed(2)}%):</span>
                 <span className="font-mono">₹{viewingBill.tax_amount.toFixed(2)}</span>
               </div>
               {viewingBill.status !== 'Paid' && (

@@ -2,6 +2,7 @@ const {
   getActiveBillForTable,
   getTableBillDetails,
   listTableBills,
+  mergeActiveTableBills,
   settleTableBill,
 } = require('../modules/tableBills');
 
@@ -73,9 +74,39 @@ async function getAllBills(req, res) {
   }
 }
 
+async function mergeBills(req, res) {
+  try {
+    const role = String(req.auth?.role || '').trim().toLowerCase();
+    const allowedServerIds = ['admin', 'super admin', 'superadmin'].includes(role)
+      ? null
+      : [req.auth?.employee_id, req.auth?.user_id].filter(Boolean);
+    if (allowedServerIds && !allowedServerIds.length) {
+      return res.status(403).json({ success: false, message: 'Your server account is not linked to an employee.' });
+    }
+
+    const bill = await mergeActiveTableBills({
+      primaryTableId: req.body?.primary_table_id,
+      mergeTableIds: req.body?.merge_table_ids,
+      allowedServerIds,
+    });
+    return res.json({
+      success: true,
+      message: 'Tables merged successfully.',
+      bill,
+    });
+  } catch (error) {
+    if (error.statusCode) {
+      return res.status(error.statusCode).json({ success: false, message: error.message });
+    }
+    console.error('Error merging table bills:', error.message);
+    return res.status(500).json({ success: false, message: 'Could not merge table bills.' });
+  }
+}
+
 module.exports = {
   getActiveBill,
   getAllBills,
   getBill,
+  mergeBills,
   settleBill,
 };

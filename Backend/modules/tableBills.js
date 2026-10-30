@@ -19,6 +19,8 @@ async function initializeTableBillsSchema() {
       grand_total DECIMAL(10,2) NOT NULL DEFAULT 0.00,
       payment_method VARCHAR(50) DEFAULT NULL,
       settled_at TIMESTAMP NULL DEFAULT NULL,
+      merged_table_numbers LONGTEXT NULL,
+      merged_into_bill_id VARCHAR(36) NULL,
       created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
       updated_at TIMESTAMP NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
       INDEX table_bills_status_idx (status),
@@ -26,6 +28,16 @@ async function initializeTableBillsSchema() {
       INDEX table_bills_created_idx (created_at)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
   `);
+
+  for (const [column, definition] of [
+    ['merged_table_numbers', 'LONGTEXT NULL'],
+    ['merged_into_bill_id', 'VARCHAR(36) NULL'],
+  ]) {
+    const [existingColumn] = await db.query(`SHOW COLUMNS FROM table_bills LIKE '${column}'`);
+    if (!existingColumn.length) {
+      await db.query(`ALTER TABLE table_bills ADD COLUMN ${column} ${definition}`);
+    }
+  }
 
   // Ensure bill_id and round_number exist on kitchen_orders
   try {
@@ -115,14 +127,13 @@ async function recalculateBillTotals(connection, billId) {
   );
 
   const subtotal = Number(sumRows[0]?.subtotal || 0);
-  const taxRate = 5.00; // 5% standard restaurant GST (2.5% CGST + 2.5% SGST)
-  const taxAmount = Number((subtotal * 0.05).toFixed(2));
-
   const [billRows] = await connection.execute(
-    `SELECT discount FROM table_bills WHERE bill_id = ? LIMIT 1`,
+    `SELECT discount, tax_rate FROM table_bills WHERE bill_id = ? LIMIT 1`,
     [billId]
   );
   const discount = Number(billRows[0]?.discount || 0);
+  const taxRate = Number(billRows[0]?.tax_rate ?? 5.00);
+  const taxAmount = Number((subtotal * taxRate / 100).toFixed(2));
   const grandTotal = Math.max(0, Number((subtotal + taxAmount - discount).toFixed(2)));
 
   await connection.execute(
@@ -162,6 +173,7 @@ async function getTableBillDetails(billId) {
       rounds: [],
       items: [],
       total_items_count: 0,
+      merged_table_numbers: parseStoredJson(bill.merged_table_numbers, []),
     };
   }
 
@@ -202,7 +214,7 @@ async function getTableBillDetails(billId) {
     totalItemsCount += Number(item.quantity);
 
     // Consolidate for a unified invoice view
-    const variantKey = `${item.food_id}:${JSON.stringify([itemData.selected_addons, itemData.selected_customizations])}`;
+      const variantKey = `${item.food_id}:${item.unit_price}:${JSON.stringify([itemData.selected_addons, itemData.selected_customizations])}`;
     if (consolidatedMap.has(variantKey)) {
       const existing = consolidatedMap.get(variantKey);
       existing.quantity += Number(item.quantity);
@@ -229,9 +241,157 @@ async function getTableBillDetails(billId) {
     discount: Number(bill.discount || 0),
     grand_total: Number(bill.grand_total || 0),
     total_items_count: totalItemsCount,
+    merged_table_numbers: parseStoredJson(bill.merged_table_numbers, []),
     rounds,
     consolidated_items: Array.from(consolidatedMap.values()),
   };
+}
+
+async function mergeActiveTableBills({ primaryTableId, mergeTableIds, allowedServerIds = null }) {
+  const primaryId = String(primaryTableId || '').trim();
+  const secondaryIds = Array.isArray(mergeTableIds)
+    ? mergeTableIds.map((id) => String(id || '').trim()).filter(Boolean)
+    : [];
+  const tableIds = [primaryId, ...secondaryIds];
+  if (!primaryId || secondaryIds.length < 1 || new Set(tableIds).size !== tableIds.length) {
+    const error = new Error('Choose a primary table and at least one different table to merge.');
+    error.statusCode = 400;
+    throw error;
+  }
+
+  const connection = await db.getConnection();
+  try {
+    await connection.beginTransaction();
+
+    const placeholders = tableIds.map(() => '?').join(', ');
+    const [tables] = await connection.execute(
+      `SELECT st.table_id, st.table_number, st.status, st.assigned_server_id,
+              EXISTS (
+                SELECT 1 FROM reservations r
+                WHERE r.table_id = st.table_id
+                  AND r.status IN ('Pending', 'Confirmed')
+                  AND r.reservation_date = CURDATE()
+                  AND r.start_time <= CURTIME()
+                  AND r.end_time > CURTIME()
+              ) AS reservation_is_active
+       FROM server_table st
+       WHERE st.table_id IN (${placeholders})
+       ORDER BY st.table_id
+       FOR UPDATE`,
+      tableIds
+    );
+    if (tables.length !== tableIds.length) {
+      const error = new Error('One or more selected tables could not be found.');
+      error.statusCode = 404;
+      throw error;
+    }
+
+    const tableById = new Map(tables.map((table) => [String(table.table_id), table]));
+    for (const tableId of tableIds) {
+      const table = tableById.get(tableId);
+      if (String(table.status).toLowerCase() !== 'occupied') {
+        const error = new Error(`Table ${table.table_number} must be occupied before it can be merged.`);
+        error.statusCode = 409;
+        throw error;
+      }
+      if (Number(table.reservation_is_active) === 1) {
+        const error = new Error(`Table ${table.table_number} is reserved and cannot be merged.`);
+        error.statusCode = 409;
+        throw error;
+      }
+      if (allowedServerIds && !allowedServerIds.some((id) => (
+        id && String(id).trim().toLowerCase() === String(table.assigned_server_id || '').trim().toLowerCase()
+      ))) {
+        const error = new Error(`Table ${table.table_number} is not assigned to your server account.`);
+        error.statusCode = 403;
+        throw error;
+      }
+    }
+
+    const [bills] = await connection.execute(
+      `SELECT * FROM table_bills
+       WHERE table_id IN (${placeholders}) AND status = 'Active'
+       ORDER BY table_id, id
+       FOR UPDATE`,
+      tableIds
+    );
+    const billByTable = new Map();
+    for (const bill of bills) {
+      if (billByTable.has(String(bill.table_id))) {
+        const error = new Error(`Table ${tableById.get(String(bill.table_id))?.table_number || ''} has multiple active bills.`);
+        error.statusCode = 409;
+        throw error;
+      }
+      billByTable.set(String(bill.table_id), bill);
+    }
+    if (billByTable.size !== tableIds.length) {
+      const missingTable = tableIds.find((id) => !billByTable.has(id));
+      const error = new Error(`Table ${tableById.get(missingTable)?.table_number || ''} must have an active bill before it can be merged.`);
+      error.statusCode = 409;
+      throw error;
+    }
+
+    const primaryBill = billByTable.get(primaryId);
+    const sourceBills = secondaryIds.map((id) => billByTable.get(id));
+    const allBills = [primaryBill, ...sourceBills];
+    if (allBills.some((bill) => bill.payment_method || bill.settled_at)) {
+      const error = new Error('Bills with recorded payment information cannot be merged.');
+      error.statusCode = 409;
+      throw error;
+    }
+    const taxRate = Number(primaryBill.tax_rate ?? 5);
+    if (allBills.some((bill) => Number(bill.tax_rate ?? 5) !== taxRate)) {
+      const error = new Error('Bills with different tax rates cannot be merged.');
+      error.statusCode = 409;
+      throw error;
+    }
+
+    const tableNumbers = [];
+    for (const bill of allBills) {
+      const storedNumbers = parseStoredJson(bill.merged_table_numbers, []);
+      for (const number of [bill.table_number, ...(Array.isArray(storedNumbers) ? storedNumbers : [])]) {
+        const normalized = String(number || '').trim();
+        if (normalized && !tableNumbers.includes(normalized)) tableNumbers.push(normalized);
+      }
+    }
+    const combinedDiscount = allBills.reduce((sum, bill) => sum + Number(bill.discount || 0), 0);
+
+    for (const sourceBill of sourceBills) {
+      await connection.execute(
+        `UPDATE kitchen_orders SET bill_id = ? WHERE bill_id = ?`,
+        [primaryBill.bill_id, sourceBill.bill_id]
+      );
+      await connection.execute(
+        `UPDATE table_bills
+         SET status = 'Merged', merged_into_bill_id = ?
+         WHERE bill_id = ? AND status = 'Active'`,
+        [primaryBill.bill_id, sourceBill.bill_id]
+      );
+      await connection.execute(
+        `UPDATE server_table SET status = 'Available' WHERE table_id = ?`,
+        [sourceBill.table_id]
+      );
+    }
+
+    await connection.execute(
+      `UPDATE table_bills
+       SET merged_table_numbers = ?, discount = ?
+       WHERE bill_id = ? AND status = 'Active'`,
+      [JSON.stringify(tableNumbers), combinedDiscount, primaryBill.bill_id]
+    );
+    await connection.execute(
+      `UPDATE server_table SET status = 'Occupied' WHERE table_id = ?`,
+      [primaryId]
+    );
+    await recalculateBillTotals(connection, primaryBill.bill_id);
+    await connection.commit();
+    return getTableBillDetails(primaryBill.bill_id);
+  } catch (error) {
+    await connection.rollback();
+    throw error;
+  } finally {
+    connection.release();
+  }
 }
 
 function parseStoredJson(value, fallback) {
@@ -365,6 +525,7 @@ module.exports = {
   getTableBillDetails,
   initializeTableBillsSchema,
   listTableBills,
+  mergeActiveTableBills,
   recalculateBillTotals,
   settleTableBill,
 };
