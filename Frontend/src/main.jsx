@@ -422,7 +422,7 @@ const router = createHashRouter([
           },
           {
             path: 'orders',
-            element: <ChefKitchenOrders lightSummaryCards />,
+            element: <ChefKitchenOrders lightSummaryCards allowServing={false} />,
           },
           {
             path: 'event-orders',
@@ -460,7 +460,7 @@ const router = createHashRouter([
             path: 'customer-orders/homedelivery',
             element: (
               <>
-                <ChefKitchenOrders key="chef-kitchen-homedelivery" orderTypeFilter="home_delivery" />
+                <ChefKitchenOrders key="chef-kitchen-homedelivery" orderTypeFilter="home_delivery" allowServing={false} />
                 <CustomerOrdersPage key="chef-orders-homedelivery" audience="chef" view="delivery" showOrderFilters />
               </>
             ),
@@ -469,14 +469,14 @@ const router = createHashRouter([
             path: 'customer-orders/pickup',
             element: (
               <>
-                <ChefKitchenOrders key="chef-kitchen-pickup" orderTypeFilter="pickup" />
+                <ChefKitchenOrders key="chef-kitchen-pickup" orderTypeFilter="pickup" allowServing={false} />
                 <CustomerOrdersPage key="chef-orders-pickup" audience="chef" view="pickup" showOrderFilters />
               </>
             ),
           },
           {
             path: 'customer-orders/dining',
-            element: <ChefKitchenOrders key="chef-orders-dining" defaultViewMode="table" orderTypeFilter="dine-in" lightSummaryCards />,
+            element: <ChefKitchenOrders key="chef-orders-dining" defaultViewMode="table" orderTypeFilter="dine-in" lightSummaryCards allowServing={false} />,
           },
           {
             path: 'customer-orders/delivery',
@@ -513,6 +513,10 @@ const router = createHashRouter([
           {
             path: 'tables',
             element: <ServerTables />,
+          },
+          {
+            path: 'orders',
+            element: <ChefKitchenOrders serverOnly />,
           },
           {
             path: 'supplies',

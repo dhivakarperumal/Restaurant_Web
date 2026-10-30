@@ -537,10 +537,19 @@ async function createKitchenOrder({
   }
 }
 
-async function updateKitchenOrderStatus({ orderId, status }) {
+async function updateKitchenOrderStatus({ orderId, status, serverUserId = null }) {
+  const conditions = ['order_id = ?'];
+  const params = [status, orderId];
+  if (serverUserId) {
+    conditions.push('(user_id = ? OR created_by = ?)');
+    params.push(serverUserId, serverUserId);
+    conditions.push("status = 'Ready to Serve'");
+  }
   const [result] = await db.execute(
-    `UPDATE kitchen_orders SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE order_id = ?`,
-    [status, orderId]
+    `UPDATE kitchen_orders
+     SET status = ?, updated_at = CURRENT_TIMESTAMP
+     WHERE ${conditions.join(' AND ')}`,
+    params
   );
   if (result.affectedRows === 0) return null;
 
@@ -579,6 +588,10 @@ async function listKitchenOrders(filters = {}) {
   if (filters.order_id) {
     conditions.push('ko.order_id = ?');
     params.push(filters.order_id);
+  }
+  if (filters.createdByUserId) {
+    conditions.push('(ko.user_id = ? OR ko.created_by = ?)');
+    params.push(filters.createdByUserId, filters.createdByUserId);
   }
   if (conditions.length > 0) {
     query += ` WHERE ${conditions.join(' AND ')}`;

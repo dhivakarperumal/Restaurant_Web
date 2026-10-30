@@ -96,7 +96,7 @@ const getOrderTypeLabel = (orderType) => ({
   pickup: "Pick Up",
 }[orderType] || "Dine-In");
 
-const ChefKitchenOrders = ({ defaultViewMode = "table", orderTypeFilter = "", todayOnly = false, adminTheme = false, lightSummaryCards = false }) => {
+const ChefKitchenOrders = ({ defaultViewMode = "table", orderTypeFilter = "", todayOnly = false, adminTheme = false, lightSummaryCards = false, serverOnly = false, allowServing = true }) => {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -112,7 +112,10 @@ const ChefKitchenOrders = ({ defaultViewMode = "table", orderTypeFilter = "", to
     if (showLoading) setLoading(true);
     try {
       const response = await api.get("/kitchen-orders", {
-        params: selectedOrderType !== "all" ? { order_type: selectedOrderType } : undefined,
+        params: {
+          ...(selectedOrderType !== "all" ? { order_type: selectedOrderType } : {}),
+          ...(serverOnly ? { scope: "mine" } : {}),
+        },
       });
       const list = Array.isArray(response.data?.orders) ? response.data.orders : [];
       const visibleOrders = todayOnly
@@ -128,7 +131,7 @@ const ChefKitchenOrders = ({ defaultViewMode = "table", orderTypeFilter = "", to
     } finally {
       setLoading(false);
     }
-  }, [selectedOrderType, todayOnly]);
+  }, [selectedOrderType, todayOnly, serverOnly]);
 
   useEffect(() => {
     fetchOrders(true);
@@ -319,10 +322,16 @@ const ChefKitchenOrders = ({ defaultViewMode = "table", orderTypeFilter = "", to
           <div className="rounded-2xl border-2 border-dashed border-[#e6ddd1] bg-[#faf9f8] py-16 text-center shadow-sm">
             <UtensilsCrossed className="mx-auto h-12 w-12 text-[#8a8a8a]" />
             <h2 className="mt-3 text-base font-bold text-[#333]">
-              {activeTab === "all" ? "No kitchen orders yet" : `No orders currently in ${activeTab}`}
-            </h2>
-            <p className="mt-1 text-xs text-[#888]">Dine-in, home delivery, and pickup kitchen orders appear here as they are submitted.</p>
-          </div>
+            {activeTab === "all"
+              ? (serverOnly ? "No kitchen orders for your account yet" : "No kitchen orders yet")
+              : `No orders currently in ${activeTab}`}
+          </h2>
+          <p className="mt-1 text-xs text-[#888]">
+            {serverOnly
+              ? "Kitchen tickets created by your server account appear here."
+              : "Dine-in, home delivery, and pickup kitchen orders appear here as they are submitted."}
+          </p>
+        </div>
         ) : viewMode === "table" ? (
           <div className="overflow-x-auto rounded-2xl border border-[#e7e0d8] bg-white shadow-sm">
             <table className="w-full min-w-[940px] border-collapse text-left text-sm">
@@ -336,6 +345,7 @@ const ChefKitchenOrders = ({ defaultViewMode = "table", orderTypeFilter = "", to
                   const currentStatus = order.status || 'Pending';
                   const cfg = STATUS_CONFIG[currentStatus] || STATUS_CONFIG.Pending;
                   const isUpdating = updatingOrderId === order.order_id;
+                  const serverCanMarkServed = serverOnly && currentStatus === "Ready to Serve";
                   const totalItems = order.items.reduce((sum, item) => sum + Number(item.quantity || 1), 0);
                   const orderTotal = order.items.reduce((sum, item) => sum + Number(item.unit_price || 0) * Number(item.quantity || 1), 0);
                   const orderLabel = order.order_type === "dine-in"
@@ -350,7 +360,33 @@ const ChefKitchenOrders = ({ defaultViewMode = "table", orderTypeFilter = "", to
                     <td className="whitespace-nowrap px-4 py-3 font-semibold text-[#283c2f]">₹{orderTotal.toFixed(2)}</td>
                     <td className="whitespace-nowrap px-4 py-3"><span className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-bold ${cfg.badgeBg}`}><span className={`h-1.5 w-1.5 rounded-full ${cfg.dotBg}`} />{currentStatus}</span></td>
                     <td className="whitespace-nowrap px-4 py-3 text-xs text-[#7c8980]">{formatTimeAgo(order.created_at)}</td>
-                    <td className="whitespace-nowrap px-4 py-3">{cfg.nextAction && <button type="button" onClick={() => updateOrderStatus(order.order_id, cfg.nextStatus)} disabled={isUpdating} className={`rounded-lg px-3 py-2 text-[11px] font-bold disabled:opacity-50 ${cfg.nextBtnStyle}`}>{isUpdating ? 'Updating…' : currentStatus === 'Pending' ? 'Start cooking' : currentStatus === 'Preparing' ? 'Mark ready' : 'Mark served'}</button>}{!cfg.nextAction && <span className="text-xs text-[#849087]">No action</span>}</td>
+                    <td className="whitespace-nowrap px-4 py-3">
+                      {serverOnly ? (
+                        serverCanMarkServed ? (
+                          <button
+                            type="button"
+                            onClick={() => updateOrderStatus(order.order_id, "Served")}
+                            disabled={isUpdating}
+                            className="rounded-lg bg-[#1a3c36] px-3 py-2 text-[11px] font-bold text-white disabled:opacity-50"
+                          >
+                            {isUpdating ? "Updating…" : "Mark Served"}
+                          </button>
+                        ) : (
+                          <span className="text-xs text-[#849087]">
+                            {currentStatus === "Served" ? "Served" : currentStatus === "Cancelled" ? "Cancelled" : "Waiting for kitchen"}
+                          </span>
+                        )
+                      ) : cfg.nextAction && (allowServing || cfg.nextStatus !== "Served") ? (
+                        <button
+                          type="button"
+                          onClick={() => updateOrderStatus(order.order_id, cfg.nextStatus)}
+                          disabled={isUpdating}
+                          className={`rounded-lg px-3 py-2 text-[11px] font-bold disabled:opacity-50 ${cfg.nextBtnStyle}`}
+                        >
+                          {isUpdating ? "Updating…" : currentStatus === "Pending" ? "Start cooking" : currentStatus === "Preparing" ? "Mark ready" : "Mark served"}
+                        </button>
+                      ) : <span className="text-xs text-[#849087]">No action</span>}
+                    </td>
                   </tr>;
                 })}
               </tbody>
@@ -363,6 +399,7 @@ const ChefKitchenOrders = ({ defaultViewMode = "table", orderTypeFilter = "", to
               const cfg = STATUS_CONFIG[currentStatus] || STATUS_CONFIG.Pending;
               const StatusIcon = cfg.icon;
               const isUpdating = updatingOrderId === order.order_id;
+              const serverCanMarkServed = serverOnly && currentStatus === "Ready to Serve";
               const totalItems = order.items.reduce((s, it) => s + Number(it.quantity || 1), 0);
               const orderTotal = order.items.reduce((s, it) => s + Number(it.unit_price || 0) * Number(it.quantity || 1), 0);
 
@@ -468,10 +505,10 @@ const ChefKitchenOrders = ({ defaultViewMode = "table", orderTypeFilter = "", to
                   {/* Actions Bar */}
                   <div className="border-t border-[#f0ebe6] pt-3.5 flex flex-col gap-2">
                     {/* Primary Next Action Button */}
-                    {cfg.nextAction && (
+                    {(serverOnly ? serverCanMarkServed : cfg.nextAction && (allowServing || cfg.nextStatus !== "Served")) && (
                       <button
                         type="button"
-                        onClick={() => updateOrderStatus(order.order_id, cfg.nextStatus)}
+                        onClick={() => updateOrderStatus(order.order_id, serverOnly ? "Served" : cfg.nextStatus)}
                         disabled={isUpdating}
                         className={`w-full flex h-11 items-center justify-center gap-2 rounded-xl text-xs font-bold transition disabled:opacity-60 cursor-pointer ${cfg.nextBtnStyle}`}
                       >
@@ -482,17 +519,17 @@ const ChefKitchenOrders = ({ defaultViewMode = "table", orderTypeFilter = "", to
                           </>
                         ) : (
                           <>
-                            {currentStatus === "Pending" && <Flame className="h-4 w-4" />}
-                            {currentStatus === "Preparing" && <Bell className="h-4 w-4 animate-bounce" />}
-                            {currentStatus === "Ready to Serve" && <Check className="h-4 w-4" />}
-                            <span>{cfg.nextAction}</span>
+                            {serverOnly ? <Check className="h-4 w-4" /> : currentStatus === "Pending" ? <Flame className="h-4 w-4" /> : currentStatus === "Preparing" ? <Bell className="h-4 w-4 animate-bounce" /> : <Check className="h-4 w-4" />}
+                            <span>{serverOnly ? "Mark Served" : cfg.nextAction}</span>
                           </>
                         )}
                       </button>
                     )}
 
                     {/* Secondary Status Dropdown / Actions */}
-                    <div className="flex items-center justify-between gap-2 text-xs">
+                    {!serverOnly && (
+                      <>
+                        <div className="flex items-center justify-between gap-2 text-xs">
                       <span className="text-gray-400">Change status:</span>
                       <div className="flex items-center gap-1.5">
                         {currentStatus !== "Pending" && currentStatus !== "Served" && (
@@ -526,9 +563,19 @@ const ChefKitchenOrders = ({ defaultViewMode = "table", orderTypeFilter = "", to
                             <CheckCircle2 className="h-4 w-4" /> Served to table
                           </span>
                         )}
-                      </div>
+                        </div>
+                        </div>
+                      </>
+                    )}
+                      {serverOnly && currentStatus !== "Ready to Serve" && currentStatus !== "Served" && currentStatus !== "Cancelled" && (
+                        <p className="text-center text-xs font-medium text-slate-500">Waiting for the kitchen to prepare this order.</p>
+                      )}
+                      {serverOnly && currentStatus === "Served" && (
+                        <p className="flex items-center justify-center gap-1 text-xs font-bold text-emerald-700">
+                          <CheckCircle2 className="h-4 w-4" /> Served to table
+                        </p>
+                      )}
                     </div>
-                  </div>
                 </article>
               );
             })}

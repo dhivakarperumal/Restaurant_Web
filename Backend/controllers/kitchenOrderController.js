@@ -95,11 +95,20 @@ async function submitKitchenOrder(req, res) {
 async function getKitchenOrders(req, res) {
   try {
     const { status, table_id, order_type, all } = req.query || {};
+    const role = String(req.auth?.role || '').trim().toLowerCase();
+    const isServer = role === 'server';
+    const currentUserId = req.auth?.user_id;
+    const shouldScopeToCurrentUser = isServer || req.query?.scope === 'mine';
+    const createdByUserId = shouldScopeToCurrentUser ? currentUserId : null;
+    if (shouldScopeToCurrentUser && !createdByUserId) {
+      return res.status(403).json({ success: false, message: 'Your account is not linked to an order user ID.' });
+    }
     const orders = await listKitchenOrders({
       status,
       table_id,
       order_type,
       includeAll: all === '1',
+      createdByUserId,
     });
     return res.json({ success: true, orders });
   } catch (error) {
@@ -123,6 +132,24 @@ async function changeKitchenOrderStatus(req, res) {
     });
   }
 
+  const role = String(req.auth?.role || '').trim().toLowerCase();
+  const isServer = role === 'server';
+  if (role === 'chef' && matchedStatus === 'Served') {
+    return res.status(403).json({
+      success: false,
+      message: 'Only the assigned server can mark an order as served.',
+    });
+  }
+  if (isServer && !req.auth?.user_id) {
+    return res.status(403).json({ success: false, message: 'Your server account is not linked to an order user ID.' });
+  }
+  if (isServer && matchedStatus !== 'Served') {
+    return res.status(403).json({
+      success: false,
+      message: 'Servers can only mark their own ready orders as served.',
+    });
+  }
+
   try {
     const [previousOrders] = await db.execute(
       'SELECT status, table_id, table_number FROM kitchen_orders WHERE order_id = ? LIMIT 1',
@@ -131,10 +158,16 @@ async function changeKitchenOrderStatus(req, res) {
     const updatedOrder = await updateKitchenOrderStatus({
       orderId,
       status: matchedStatus,
+      serverUserId: isServer ? req.auth?.user_id : null,
     });
 
     if (!updatedOrder) {
-      return res.status(404).json({ success: false, message: 'Kitchen order not found.' });
+      return res.status(isServer ? 409 : 404).json({
+        success: false,
+        message: isServer
+          ? 'Only your own orders that are Ready to Serve can be marked as served.'
+          : 'Kitchen order not found.',
+      });
     }
 
     if (matchedStatus === 'Ready to Serve' && previousOrders[0]?.status !== matchedStatus) {

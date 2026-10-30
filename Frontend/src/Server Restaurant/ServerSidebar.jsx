@@ -68,6 +68,11 @@ const navItems = [
     label: "Server Tables",
     icon: UtensilsCrossed,
   },
+  {
+    path: "/server/orders",
+    label: "Orders",
+    icon: ClipboardList,
+  },
 
   /* ---- FOODS ---- */
   {

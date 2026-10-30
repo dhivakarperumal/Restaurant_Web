@@ -198,22 +198,7 @@ export default function ServerDashboard() {
                 </p>
               </div>
 
-              <div className="flex flex-wrap items-center gap-3">
-                <button
-                  type="button"
-                  onClick={fetchDashboardData}
-                  title="Refresh dashboard"
-                  className="flex h-11 w-11 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 shadow-sm transition hover:border-orange-200 hover:bg-orange-50 hover:text-orange-600"
-                >
-                  <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
-                </button>
-                <Link
-                  to="/server/foods"
-                  className="inline-flex h-11 items-center gap-2 rounded-xl bg-gradient-to-r from-orange-500 to-amber-400 px-4 text-xs font-bold text-white shadow-sm shadow-orange-500/20 transition hover:from-orange-600 hover:to-amber-500"
-                >
-                  <Utensils className="h-4 w-4" /> Food Menu & Orders
-                </Link>
-              </div>
+              
             </div>
           </div>
 
