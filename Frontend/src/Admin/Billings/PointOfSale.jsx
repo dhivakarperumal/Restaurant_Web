@@ -28,9 +28,42 @@ import {
 import toast from "react-hot-toast";
 import api from "../../api";
 
-const tableStatus = (table) => (
-  Number(table.reservation_is_active) === 1 ? "Reserved" : table.status || "Available"
+const tableStatus = (table, activeBills = []) => {
+  const tableId = String(table.table_id || table.id || "");
+  const hasActiveBill = activeBills.some((bill) => String(bill.table_id || "") === tableId);
+  const storedStatus = String(table.status || "Available").trim().toLowerCase();
+  const now = new Date();
+  const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+  const hasReservationToday = table.next_reservation_date === today
+    && ["pending", "confirmed"].includes(String(table.next_reservation_status || "").trim().toLowerCase());
+
+  if (hasActiveBill || storedStatus === "occupied") return "Occupied";
+  if (Number(table.reservation_is_active) === 1 || hasReservationToday) return "Reserved";
+  if (storedStatus === "reserved") return "Available";
+  return storedStatus === "available" ? "Available" : table.status || "Available";
+};
+
+const isTableSelectionAllowed = (table, status) => (
+  ["Available", "Occupied"].includes(status)
+  || (status === "Reserved" && Number(table.reservation_is_active) !== 1)
 );
+
+const formatReservationTime = (value) => {
+  const match = /^(\d{1,2}):([0-5]\d)/.exec(String(value || ""));
+  if (!match) return String(value || "");
+  const hour = Number(match[1]);
+  return `${hour % 12 || 12}:${match[2]} ${hour >= 12 ? "PM" : "AM"}`;
+};
+
+const formatReservationDate = (value) => {
+  const date = String(value || "");
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return date;
+  return new Date(`${date}T00:00:00`).toLocaleDateString("en-IN", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
+};
 
 const formatCurrency = (value) =>
   `₹${Number(value || 0).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -67,6 +100,7 @@ const PointOfSale = () => {
   const [activeBills, setActiveBills] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [billingDataFresh, setBillingDataFresh] = useState(false);
   const [sheetOpen, setSheetOpen] = useState(false);
   const [showTables, setShowTables] = useState(false);
   const [orderDraft, setOrderDraft] = useState(() => location.state?.orderDraft || null);
@@ -92,9 +126,13 @@ const PointOfSale = () => {
   const [settlementDiscount, setSettlementDiscount] = useState(0);
   const selectionLock = useRef(false);
   const settlementLock = useRef(false);
+  const billingLoadSequence = useRef(0);
 
   const loadBillingData = useCallback(async ({ showLoading = true } = {}) => {
+    const requestId = billingLoadSequence.current + 1;
+    billingLoadSequence.current = requestId;
     if (showLoading) setLoading(true);
+    setBillingDataFresh(false);
     setError("");
     try {
       const [tablesResponse, billsResponse] = await Promise.all([
@@ -107,16 +145,20 @@ const PointOfSale = () => {
       if (!billsResponse.data?.success || !Array.isArray(billsResponse.data.bills)) {
         throw new Error(billsResponse.data?.message || "Active bill data was invalid.");
       }
+      if (requestId !== billingLoadSequence.current) return false;
       setTables(tablesResponse.data.tables);
       setActiveBills(billsResponse.data.bills);
+      setBillingDataFresh(true);
       setLastUpdated(new Date().toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", second: "2-digit" }));
       return true;
     } catch (requestError) {
       console.error("Could not load billing data:", requestError);
-      setError(requestError.response?.data?.message || requestError.message || "Billing data could not be loaded.");
+      if (requestId === billingLoadSequence.current) {
+        setError(requestError.response?.data?.message || requestError.message || "Billing data could not be loaded.");
+      }
       return false;
     } finally {
-      setLoading(false);
+      if (requestId === billingLoadSequence.current) setLoading(false);
     }
   }, []);
 
@@ -200,10 +242,16 @@ const PointOfSale = () => {
     window.setTimeout(() => { selectionLock.current = false; }, 350);
   };
 
+  const openTableAssignment = () => {
+    setShowTables(true);
+    setSheetOpen(true);
+    loadBillingData();
+  };
+
   const selectTable = (table) => {
-    if (selectionLock.current) return;
-    const status = tableStatus(table);
-    if (!["Available", "Occupied"].includes(status)) return;
+    if (selectionLock.current || !billingDataFresh) return;
+    const status = tableStatus(table, activeBills);
+    if (!isTableSelectionAllowed(table, status)) return;
     selectionLock.current = true;
     setSheetOpen(false);
     setShowTables(false);
@@ -305,9 +353,9 @@ const PointOfSale = () => {
   };
 
   // Metrics
-  const availableCount = tables.filter((table) => tableStatus(table) === "Available").length;
-  const occupiedCount = tables.filter((table) => tableStatus(table) === "Occupied").length;
-  const reservedCount = tables.filter((table) => tableStatus(table) === "Reserved").length;
+  const availableCount = tables.filter((table) => tableStatus(table, activeBills) === "Available").length;
+  const occupiedCount = tables.filter((table) => tableStatus(table, activeBills) === "Occupied").length;
+  const reservedCount = tables.filter((table) => tableStatus(table, activeBills) === "Reserved").length;
   const totalTables = tables.length;
   const totalRunningBalance = activeBills.reduce((sum, b) => sum + Number(b.grand_total || 0), 0);
   const capacityPercent = totalTables > 0 ? Math.round((availableCount / totalTables) * 100) : 0;
@@ -338,7 +386,7 @@ const PointOfSale = () => {
   const filteredTables = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
     return tables.filter((table) => {
-      const status = tableStatus(table);
+      const status = tableStatus(table, activeBills);
       if (tableFilter !== "all" && status !== tableFilter) return false;
       if (!q) return true;
       const tableNum = String(table.table_number || "").toLowerCase();
@@ -347,9 +395,9 @@ const PointOfSale = () => {
       const billNum = String(existingBill?.bill_number || "").toLowerCase();
       return tableNum.includes(q) || serverName.includes(q) || billNum.includes(q) || status.toLowerCase().includes(q);
     });
-  }, [tables, tableFilter, searchQuery, billsByTableId]);
+  }, [tables, activeBills, tableFilter, searchQuery, billsByTableId]);
 
-  const occupiedMergeTables = tables.filter((table) => tableStatus(table) === "Occupied");
+  const occupiedMergeTables = tables.filter((table) => tableStatus(table, activeBills) === "Occupied");
   const primaryMergeTable = tables.find((table) => String(table.table_id || table.id) === mergePrimaryTableId);
   const secondaryMergeTable = tables.find((table) => String(table.table_id || table.id) === mergeSecondaryTableId);
   const primaryMergeBill = primaryMergeTable
@@ -670,15 +718,15 @@ const PointOfSale = () => {
             onClick={() => { setActiveTab("tables"); setTableFilter("Reserved"); }}
             className={`group cursor-pointer rounded-2xl border bg-white p-4.5 shadow-xs transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md ${
               tableFilter === "Reserved" && activeTab === "tables"
-                ? "border-blue-500 ring-2 ring-blue-500/20"
-                : "border-slate-200/90 hover:border-blue-300"
+                ? "border-amber-500 ring-2 ring-amber-500/20"
+                : "border-slate-200/90 hover:border-amber-300"
             }`}
           >
             <div className="flex items-center justify-between">
               <span className="text-xs font-bold uppercase tracking-wider text-slate-500 group-hover:text-blue-800 transition-colors">
                 Reserved
               </span>
-              <span className="grid h-9 w-9 place-items-center rounded-xl bg-blue-50 text-blue-700 border border-blue-100 group-hover:bg-blue-100 group-hover:text-blue-900 transition-colors">
+              <span className="grid h-9 w-9 place-items-center rounded-xl bg-amber-50 text-amber-700 border border-amber-100 group-hover:bg-amber-100 group-hover:text-amber-900 transition-colors">
                 <Users size={18} />
               </span>
             </div>
@@ -686,7 +734,7 @@ const PointOfSale = () => {
               <span className="text-3xl font-black text-slate-900">
                 {loading ? "—" : reservedCount}
               </span>
-              <span className="text-xs font-semibold text-blue-700">
+              <span className="text-xs font-semibold text-amber-700">
                 Bookings
               </span>
             </div>
@@ -753,7 +801,7 @@ const PointOfSale = () => {
         <section aria-label="Fast POS Launchers" className="grid gap-3.5 sm:grid-cols-3">
           <button
             type="button"
-            onClick={() => { setShowTables(true); setSheetOpen(true); }}
+            onClick={openTableAssignment}
             className="group flex items-center justify-between rounded-2xl border border-slate-200/90 bg-white p-4 text-left shadow-xs transition-all duration-200 hover:-translate-y-0.5 hover:border-emerald-400 hover:shadow-md active:scale-98"
           >
             <div className="flex items-center gap-3.5">
@@ -1177,7 +1225,7 @@ const PointOfSale = () => {
                 </p>
                 <button
                   type="button"
-                  onClick={() => { setShowTables(true); setSheetOpen(true); }}
+                  onClick={openTableAssignment}
                   className="mt-4 inline-flex items-center gap-2 rounded-xl bg-[#0A4731] px-4 py-2 text-xs font-bold text-white shadow-xs transition hover:bg-[#062D22] hover:text-white"
                 >
                   <Plus size={14} />
@@ -1208,7 +1256,7 @@ const PointOfSale = () => {
                 <span className="inline-flex items-center gap-1.5 text-xs font-medium text-slate-500">
                   <span className="h-2 w-2 rounded-full bg-emerald-500" /> Available
                   <span className="ml-2 h-2 w-2 rounded-full bg-amber-500" /> Occupied
-                  <span className="ml-2 h-2 w-2 rounded-full bg-blue-500" /> Reserved
+                  <span className="ml-2 h-2 w-2 rounded-full bg-amber-500" /> Reserved
                 </span>
               </div>
             </div>
@@ -1223,7 +1271,7 @@ const PointOfSale = () => {
                 /* Card Mode */
                 <div className="grid gap-4 p-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                   {filteredTables.map((table) => {
-                    const status = tableStatus(table);
+                    const status = tableStatus(table, activeBills);
                     const isAvailable = status === "Available";
                     const isOccupied = status === "Occupied";
                     const isReserved = status === "Reserved";
@@ -1236,8 +1284,8 @@ const PointOfSale = () => {
                           isAvailable
                             ? "border-emerald-200/90 bg-emerald-50/20 hover:border-emerald-400"
                             : isOccupied
-                            ? "border-amber-200/90 bg-amber-50/20 hover:border-amber-400"
-                            : "border-blue-200/90 bg-blue-50/20 hover:border-blue-400"
+                            ? "border-red-200/90 bg-red-50/20 hover:border-red-400"
+                            : "border-amber-200/90 bg-amber-50/20 hover:border-amber-400"
                         }`}
                       >
                         <div>
@@ -1249,8 +1297,8 @@ const PointOfSale = () => {
                                   isAvailable
                                     ? "bg-emerald-100 text-emerald-800"
                                     : isOccupied
-                                    ? "bg-amber-100 text-amber-800"
-                                    : "bg-blue-100 text-blue-800"
+                                    ? "bg-red-100 text-red-800"
+                                    : "bg-amber-100 text-amber-800"
                                 }`}
                               >
                                 <Table2 size={18} />
@@ -1271,8 +1319,8 @@ const PointOfSale = () => {
                                 isAvailable
                                   ? "bg-emerald-100 text-emerald-800"
                                   : isOccupied
-                                  ? "bg-amber-100 text-amber-800"
-                                  : "bg-blue-100 text-blue-800"
+                                  ? "bg-red-100 text-red-800"
+                                  : "bg-amber-100 text-amber-800"
                               }`}
                             >
                               {status}
@@ -1298,7 +1346,14 @@ const PointOfSale = () => {
                                 )}
                               </div>
                             ) : isReserved ? (
-                              <p className="text-blue-700 font-medium">Table currently reserved for booking.</p>
+                              <div className="space-y-1 text-amber-800">
+                                <p className="font-semibold">
+                                  {table.next_reservation_customer_name || "Reservation"} · {table.next_reservation_guests || "—"} guests
+                                </p>
+                                <p className="text-[11px] font-medium">
+                                  {formatReservationTime(table.next_reservation_start_time)}–{formatReservationTime(table.next_reservation_end_time)}
+                                </p>
+                              </div>
                             ) : (
                               <p className="text-slate-500 font-medium">Clean & ready for new guest seating.</p>
                             )}
@@ -1365,7 +1420,7 @@ const PointOfSale = () => {
                     </thead>
                     <tbody className="divide-y divide-slate-100">
                       {filteredTables.map((table) => {
-                        const status = tableStatus(table);
+                        const status = tableStatus(table, activeBills);
                         const isAvailable = status === "Available";
                         const isOccupied = status === "Occupied";
                         const isReserved = status === "Reserved";
@@ -1609,11 +1664,24 @@ const PointOfSale = () => {
               <Loader2 className="h-5 w-5 animate-spin text-emerald-700" />
               <span>Loading tables…</span>
             </div>
+          ) : !billingDataFresh ? (
+            <div className="rounded-2xl border border-red-200 bg-red-50 p-5 text-center">
+              <p className="text-sm font-bold text-red-800">
+                {error || "Latest table availability could not be loaded."}
+              </p>
+              <button
+                type="button"
+                onClick={() => loadBillingData()}
+                className="mt-3 rounded-lg bg-red-700 px-4 py-2 text-xs font-bold text-white hover:bg-red-800"
+              >
+                Retry
+              </button>
+            </div>
           ) : (
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <p className="text-xs text-slate-500">
-                  Select an available table to begin. Occupied tables will append new rounds to the active bill.
+                  Today’s confirmed reservations are shown as Reserved. You can select one before its reservation time; occupied tables append rounds to their active bill.
                 </p>
                 <button
                   type="button"
@@ -1627,8 +1695,8 @@ const PointOfSale = () => {
               {tables.length ? (
                 <div className="grid max-h-[55vh] gap-3 overflow-y-auto sm:grid-cols-2 pr-1">
                   {tables.map((table) => {
-                    const status = tableStatus(table);
-                    const allowed = status === "Available" || status === "Occupied";
+                    const status = tableStatus(table, activeBills);
+                    const allowed = isTableSelectionAllowed(table, status);
                     const existingBill = billsByTableId.get(String(table.table_id || table.id));
 
                     return (
@@ -1641,8 +1709,8 @@ const PointOfSale = () => {
                           status === "Available"
                             ? "border-emerald-200 bg-emerald-50/20 hover:border-emerald-400 hover:bg-emerald-50/60"
                             : status === "Occupied"
-                            ? "border-amber-200 bg-amber-50/20 hover:border-amber-400 hover:bg-amber-50/60"
-                            : "border-slate-200 bg-slate-50"
+                            ? "border-red-200 bg-red-50/20 hover:border-red-400 hover:bg-red-50/60"
+                            : "border-amber-200 bg-amber-50/20"
                         }`}
                       >
                         <div className="flex min-w-0 items-center gap-3">
@@ -1651,8 +1719,8 @@ const PointOfSale = () => {
                               status === "Available"
                                 ? "bg-emerald-100 text-emerald-800"
                                 : status === "Occupied"
-                                ? "bg-amber-100 text-amber-800"
-                                : "bg-slate-200 text-slate-500"
+                                ? "bg-red-100 text-red-800"
+                                : "bg-amber-100 text-amber-800"
                             }`}
                           >
                             <Table2 size={20} />
@@ -1663,9 +1731,26 @@ const PointOfSale = () => {
                             </strong>
                             <span className="mt-0.5 block text-xs text-slate-500 group-hover:text-slate-700 transition-colors">
                               {table.no_of_seats ? `${table.no_of_seats} seats · ` : ""}
-                              <span className="font-semibold">{status}</span>
+                              <span className={`font-semibold ${
+                                status === "Available"
+                                  ? "text-emerald-800"
+                                  : status === "Occupied"
+                                  ? "text-red-800"
+                                  : "text-amber-800"
+                              }`}>{status}</span>
                               {existingBill ? ` · Bill #${existingBill.bill_number}` : ""}
                             </span>
+                            {status === "Reserved" && (
+                              <span className="mt-1 block text-[11px] font-medium text-amber-800">
+                                {table.next_reservation_customer_name || "Reservation"}
+                                {" · "}
+                                {formatReservationDate(table.next_reservation_date)}
+                                {" · "}
+                                {formatReservationTime(table.next_reservation_start_time)}–{formatReservationTime(table.next_reservation_end_time)}
+                                {" · "}
+                                {table.next_reservation_guests || "—"} guests
+                              </span>
+                            )}
                             {table.assigned_server_name && (
                               <span className="mt-0.5 block truncate text-[11px] text-slate-600 group-hover:text-slate-800 transition-colors">
                                 Server: {table.assigned_server_name}

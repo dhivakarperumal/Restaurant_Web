@@ -51,7 +51,9 @@ async function findAvailableReservationTables({ date, time, guests }) {
   const [rows] = await db.execute(
     `SELECT st.table_id, st.table_number, st.no_of_seats, st.image_url
      FROM server_table st
-     WHERE LOWER(TRIM(st.status)) = 'available'
+     WHERE ${date && time
+       ? "LOWER(TRIM(st.status)) IN ('available', 'reserved')"
+       : "LOWER(TRIM(st.status)) = 'available'"}
        ${guests ? 'AND st.no_of_seats >= ?' : ''}
        ${availabilityCondition}
      ORDER BY st.id ASC`,
@@ -71,7 +73,7 @@ async function createReservationRequest(input) {
       [input.tableId]
     );
     const table = tableRows[0];
-    if (!table || String(table.status).trim().toLowerCase() !== 'available') {
+    if (!table || !['available', 'reserved'].includes(String(table.status).trim().toLowerCase())) {
       const error = new Error('This table is no longer available.');
       error.statusCode = 409;
       throw error;

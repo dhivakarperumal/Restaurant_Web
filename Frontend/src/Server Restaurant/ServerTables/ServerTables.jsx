@@ -41,13 +41,13 @@ const statusConfig = {
     label: "Available",
   },
   Occupied: {
-    bg: "bg-orange-50 text-orange-700 border-orange-200",
-    badge: "bg-orange-500",
+    bg: "bg-red-50 text-red-700 border-red-200",
+    badge: "bg-red-500",
     label: "Occupied",
   },
   Reserved: {
-    bg: "bg-blue-50 text-blue-700 border-blue-200",
-    badge: "bg-blue-500",
+    bg: "bg-orange-50 text-orange-700 border-orange-200",
+    badge: "bg-orange-500",
     label: "Reserved",
   },
   Maintenance: {
@@ -622,9 +622,13 @@ export default function ServerTables() {
   };
 
   const currentUserName = userProfile?.name || userProfile?.displayName || userProfile?.full_name || userProfile?.username;
-  const getDisplayStatus = (table) => (
-    Number(table.reservation_is_active) === 1 ? "Reserved" : table.status
-  );
+  const getDisplayStatus = (table) => {
+    const storedStatus = String(table.status || "Available").trim().toLowerCase();
+    if (getTableActiveBill(table) || storedStatus === "occupied") return "Occupied";
+    if (Number(table.reservation_is_active) === 1) return "Reserved";
+    if (storedStatus === "reserved") return "Available";
+    return table.status || "Available";
+  };
   const getReservationSchedule = (table) => {
     if (!table.next_reservation_date) return null;
     return {
@@ -1259,7 +1263,7 @@ export default function ServerTables() {
                   </div>
 
                   {reservationSchedule && (
-                    <div className={`mb-3 rounded-xl border px-3 py-2 text-xs ${Number(table.reservation_is_active) === 1 ? "border-blue-200 bg-blue-50 text-blue-900" : "border-slate-200 bg-slate-50 text-slate-700"}`}>
+                    <div className={`mb-3 rounded-xl border px-3 py-2 text-xs ${Number(table.reservation_is_active) === 1 ? "border-orange-200 bg-orange-50 text-orange-900" : "border-slate-200 bg-slate-50 text-slate-700"}`}>
                       <p className="font-semibold">
                         {Number(table.reservation_is_active) === 1 ? "Reserved now" : "Next reservation"}
                         {" · "}{reservationSchedule.date}

@@ -261,7 +261,7 @@ async function createKitchenOrder({
         throw error;
       }
       table = tableRows[0];
-      if (['reserved', 'maintenance'].includes(String(table.status || '').toLowerCase())
+      if (!['available', 'occupied', 'reserved'].includes(String(table.status || '').trim().toLowerCase())
         || Number(table.reservation_is_active) === 1) {
         const error = new Error('This table is reserved or unavailable. Choose another table.');
         error.statusCode = 409;
@@ -469,7 +469,7 @@ async function createKitchenOrder({
     // Ensure table status is set to Occupied
     if (table) {
       await connection.execute(
-        `UPDATE server_table SET status = 'Occupied' WHERE table_id = ? AND status = 'Available'`,
+        `UPDATE server_table SET status = 'Occupied' WHERE table_id = ?`,
         [table.table_id]
       );
     }

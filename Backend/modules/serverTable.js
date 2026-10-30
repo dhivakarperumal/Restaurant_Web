@@ -123,6 +123,7 @@ async function findServerTables(filters = {}) {
       e.employee_type AS assigned_server_type,
       e.email AS assigned_server_email,
       e.phone_number AS assigned_server_phone,
+      r.reservation_id AS next_reservation_id,
       DATE_FORMAT(r.reservation_date, '%Y-%m-%d') AS next_reservation_date,
       r.start_time AS next_reservation_start_time,
       r.end_time AS next_reservation_end_time,
