@@ -2,7 +2,6 @@ const express = require('express');
 const { notifyAdmins } = require('../utils/notificationSocket');
 const {
   listInventoryCategories,
-  listInventorySubcategories,
   listInventoryUnits,
   listInventoryLocations,
   listSuppliers,
@@ -12,24 +11,16 @@ const {
   updateProduct,
   deleteProduct,
   createCategory,
-  updateCategory,
-  deleteCategory,
-  createSubcategory,
   createUnit,
   createSupplier,
-  createLocation,
   createPurchase,
   createStockIn,
   createStockOut,
-  createTransfer,
-  createAdjustment,
   createKitchenRequest,
   updateKitchenRequest,
   deleteKitchenRequest,
   rejectKitchenRequest,
   approveKitchenRequest,
-  createWastage,
-  createRecipe,
   getExpiryItems,
   getLowStockItems,
   getReports,
@@ -87,25 +78,6 @@ router.post('/categories', withErrorHandler(async (req, res) => {
   res.status(201).json({ success: true, message: 'Category added successfully.', data: result });
 }));
 
-router.put('/categories/:id', withErrorHandler(async (req, res) => {
-  await updateCategory(Number(req.params.id), req.body);
-  res.json({ success: true, message: 'Category updated successfully.' });
-}));
-
-router.delete('/categories/:id', withErrorHandler(async (req, res) => {
-  await deleteCategory(Number(req.params.id));
-  res.json({ success: true, message: 'Category deleted successfully.' });
-}));
-
-router.get('/subcategories', withErrorHandler(async (req, res) => {
-  res.json({ success: true, data: await listInventorySubcategories() });
-}));
-
-router.post('/subcategories', withErrorHandler(async (req, res) => {
-  const result = await createSubcategory(req.body);
-  res.status(201).json({ success: true, message: 'Sub category added successfully.', data: result });
-}));
-
 router.get('/units', withErrorHandler(async (req, res) => {
   res.json({ success: true, data: await listInventoryUnits() });
 }));
@@ -117,11 +89,6 @@ router.post('/units', withErrorHandler(async (req, res) => {
 
 router.get('/locations', withErrorHandler(async (req, res) => {
   res.json({ success: true, data: await listInventoryLocations() });
-}));
-
-router.post('/locations', withErrorHandler(async (req, res) => {
-  const result = await createLocation(req.body);
-  res.status(201).json({ success: true, message: 'Location added successfully.', data: result });
 }));
 
 router.get('/suppliers', withErrorHandler(async (req, res) => {
@@ -166,16 +133,6 @@ router.post('/chef-usage', withErrorHandler(async (req, res) => {
     created_by: req.auth?.name || req.auth?.username || 'chef',
   });
   res.status(201).json({ success: true, message: 'Kitchen usage saved successfully.', data: result });
-}));
-
-router.post('/transfers', withErrorHandler(async (req, res) => {
-  const result = await createTransfer(req.body);
-  res.status(201).json({ success: true, message: 'Stock transfer completed successfully.', data: result });
-}));
-
-router.post('/adjustments', withErrorHandler(async (req, res) => {
-  const result = await createAdjustment(req.body);
-  res.status(201).json({ success: true, message: 'Stock adjusted successfully.', data: result });
 }));
 
 router.get('/kitchen-requests', withErrorHandler(async (req, res) => {
@@ -229,26 +186,6 @@ router.put('/kitchen-requests/:id/approve', withErrorHandler(async (req, res) =>
 router.put('/kitchen-requests/:id/reject', withErrorHandler(async (req, res) => {
   await rejectKitchenRequest(Number(req.params.id), req.body?.reason);
   res.json({ success: true, message: 'Kitchen request rejected.' });
-}));
-
-router.get('/recipes', withErrorHandler(async (req, res) => {
-  const [rows] = await require('../config/db').query('SELECT * FROM recipes ORDER BY created_at DESC');
-  res.json({ success: true, data: rows });
-}));
-
-router.post('/recipes', withErrorHandler(async (req, res) => {
-  const result = await createRecipe(req.body);
-  res.status(201).json({ success: true, message: 'Recipe saved successfully.', data: result });
-}));
-
-router.get('/wastage', withErrorHandler(async (req, res) => {
-  const [rows] = await require('../config/db').query('SELECT * FROM wastages ORDER BY wastage_date DESC');
-  res.json({ success: true, data: rows });
-}));
-
-router.post('/wastage', withErrorHandler(async (req, res) => {
-  const result = await createWastage(req.body);
-  res.status(201).json({ success: true, message: 'Wastage recorded successfully.', data: result });
 }));
 
 router.get('/expiry', withErrorHandler(async (req, res) => {

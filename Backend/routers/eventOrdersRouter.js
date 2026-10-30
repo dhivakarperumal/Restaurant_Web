@@ -5,7 +5,6 @@ const {
   getAllEventOrders,
   getEventOrder,
   updateStatus,
-  updateDetails,
   removeEventOrder,
   getBulkOrderMenu,
   sendQuotation,
@@ -27,7 +26,6 @@ router.get('/', getAllEventOrders);
 router.get('/:id', getEventOrder);
 router.post('/:id/quote', sendQuotation);
 router.patch('/:id/status', updateStatus);
-router.put('/:id', updateDetails);
 router.delete('/:id', removeEventOrder);
 
 module.exports = router;

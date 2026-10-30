@@ -55,7 +55,6 @@ router.get('/:foodId', controller.getById);
 router.post('/', requireAdmin, controller.create);
 router.patch('/:foodId/visibility', requireFoodVisibilityAccess, controller.updateMenuVisibility);
 router.patch('/:foodId/availability', requireFoodVisibilityAccess, controller.updateFoodAvailability);
-router.put('/:foodId/availability', requireFoodVisibilityAccess, controller.updateFoodAvailability);
 router.put('/:foodId', requireAdmin, controller.update);
 router.delete('/:foodId', requireAdmin, controller.remove);
 

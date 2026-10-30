@@ -11,7 +11,6 @@ router.delete('/addresses/:addressId', controller.removeAddress);
 router.post('/delivery-quote', controller.quoteDelivery);
 router.post('/', controller.create);
 router.post('/verify-payment', controller.verifyPayment);
-router.get('/mine/:orderNumber', customerOrderController.getMyOrder);
 router.get('/mine', customerOrderController.listMyOrders);
 router.get('/management', customerOrderController.listCustomerOrders);
 router.patch('/management/:orderNumber/status', customerOrderController.updateCustomerOrderStatus);

@@ -256,7 +256,6 @@ router.get('/delivery-partner/dashboard', requireDeliveryPartner, getDeliveryPar
 router.get('/delivery-partner/earnings', requireDeliveryPartner, getDeliveryPartnerEarnings);
 router.get('/delivery-partner/history', requireDeliveryPartner, getDeliveryPartnerHistory);
 router.patch('/delivery-partner/availability', requireDeliveryPartner, updateDeliveryPartnerAvailability);
-router.put('/delivery-partner/availability', requireDeliveryPartner, updateDeliveryPartnerAvailability);
 router.get('/delivery-partner/orders', requireDeliveryPartner, listAssignedDeliveryOrders);
 router.patch('/delivery-partner/orders/:orderId/status', requireDeliveryPartner, updateAssignedDeliveryOrderStatus);
 router.use(
@@ -372,11 +371,9 @@ router.post('/employees', optionalAuth, requireEmployeeAdmin, employeeUpload.any
 router.use('/attendance', attendanceRouter);
 
 router.use('/server-tables', optionalAuth, serverTableRouter);
-router.use('/tables', optionalAuth, serverTableRouter);
 router.post('/kitchen-orders', requireKitchenRole(['server', 'admin', 'super admin', 'superadmin']), submitKitchenOrder);
 router.get('/kitchen-orders', requireKitchenRole(['chef', 'server', 'super admin', 'admin']), getKitchenOrders);
 router.patch('/kitchen-orders/:orderId/status', requireKitchenRole(['chef', 'server', 'super admin', 'admin']), changeKitchenOrderStatus);
-router.put('/kitchen-orders/:orderId/status', requireKitchenRole(['chef', 'server', 'super admin', 'admin']), changeKitchenOrderStatus);
 
 router.get('/table-bills/active/:tableId', requireKitchenRole(['server', 'super admin', 'admin']), getActiveBill);
 router.post('/table-bills/merge', requireKitchenRole(['server', 'super admin', 'admin']), mergeBills);

@@ -16,7 +16,6 @@ const router = express.Router();
 router.post('/assign', assignTables);
 router.post('/unassign', unassignTable);
 router.get('/server/:employeeId', getServerAssignedTables);
-router.put('/:id/unassign', unassignTable);
 
 // GET all tables or POST a new table
 router.route('/')
