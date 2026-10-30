@@ -676,16 +676,16 @@ export default function ServerFood() {
           <div className="grid gap-3 sm:grid-cols-2">
             <label className="text-xs font-semibold text-slate-700">
               Customer name *
-              <input value={customer.name} onChange={(event) => setCustomer((current) => ({ ...current, name: event.target.value }))} disabled={submittingOrder} maxLength={150} autoComplete="name" className="mt-1 h-11 w-full rounded-xl border border-slate-200 px-3 text-sm outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-100 disabled:bg-slate-100" />
+              <input value={customer.name} onChange={(event) => setCustomer((current) => ({ ...current, name: event.target.value }))} disabled={submittingOrder} maxLength={150} autoComplete="name" placeholder="Enter customer name" className="mt-1 h-11 w-full rounded-xl border border-slate-200 px-3 text-sm text-slate-900 placeholder:text-slate-500 outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-100 disabled:bg-slate-100" />
             </label>
             <label className="text-xs font-semibold text-slate-700">
               Phone number *
-              <input value={customer.phone} onChange={(event) => setCustomer((current) => ({ ...current, phone: event.target.value }))} disabled={submittingOrder} maxLength={32} inputMode="tel" autoComplete="tel" className="mt-1 h-11 w-full rounded-xl border border-slate-200 px-3 text-sm outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-100 disabled:bg-slate-100" />
+              <input value={customer.phone} onChange={(event) => setCustomer((current) => ({ ...current, phone: event.target.value }))} disabled={submittingOrder} maxLength={32} inputMode="tel" autoComplete="tel" placeholder="Enter phone number" className="mt-1 h-11 w-full rounded-xl border border-slate-200 px-3 text-sm text-slate-900 placeholder:text-slate-500 outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-100 disabled:bg-slate-100" />
             </label>
             {orderType === "home_delivery" && (
               <label className="text-xs font-semibold text-slate-700 sm:col-span-2">
                 Delivery address *
-                <textarea value={customer.address} onChange={(event) => setCustomer((current) => ({ ...current, address: event.target.value }))} disabled={submittingOrder} maxLength={1000} rows={2} autoComplete="street-address" className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-100 disabled:bg-slate-100" />
+                <textarea value={customer.address} onChange={(event) => setCustomer((current) => ({ ...current, address: event.target.value }))} disabled={submittingOrder} maxLength={1000} rows={2} autoComplete="street-address" placeholder="Enter delivery address" className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-900 placeholder:text-slate-500 outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-100 disabled:bg-slate-100" />
               </label>
             )}
           </div>
