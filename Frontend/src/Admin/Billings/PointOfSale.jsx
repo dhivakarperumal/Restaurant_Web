@@ -8,6 +8,7 @@ import {
   CircleDollarSign,
   Clock,
   Copy,
+  GitMerge,
   IndianRupee,
   LayoutGrid,
   List,
@@ -53,6 +54,12 @@ const formatTime = (dateStr) => {
   return d.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" });
 };
 
+const getBillItems = (bill) => (
+  Array.isArray(bill?.consolidated_items)
+    ? bill.consolidated_items
+    : (bill?.rounds || []).flatMap((round) => round.items || [])
+);
+
 const PointOfSale = () => {
   const location = useLocation();
   const navigate = useNavigate();
@@ -68,7 +75,23 @@ const PointOfSale = () => {
   const [viewMode, setViewMode] = useState("card"); // "card" | "table"
   const [searchQuery, setSearchQuery] = useState("");
   const [lastUpdated, setLastUpdated] = useState("");
+  const [mergeModalOpen, setMergeModalOpen] = useState(false);
+  const [mergeConfirmationOpen, setMergeConfirmationOpen] = useState(false);
+  const [mergePrimaryTableId, setMergePrimaryTableId] = useState("");
+  const [mergeSecondaryTableId, setMergeSecondaryTableId] = useState("");
+  const [mergeBillDetails, setMergeBillDetails] = useState({});
+  const [loadingMergeBillIds, setLoadingMergeBillIds] = useState(() => new Set());
+  const [loadingMergeTables, setLoadingMergeTables] = useState(false);
+  const [mergingTables, setMergingTables] = useState(false);
+  const [mergeError, setMergeError] = useState("");
+  const [settlementBill, setSettlementBill] = useState(null);
+  const [loadingSettlementBill, setLoadingSettlementBill] = useState(false);
+  const [settlingBill, setSettlingBill] = useState(false);
+  const [settlementError, setSettlementError] = useState("");
+  const [settlementPaymentMethod, setSettlementPaymentMethod] = useState("Cash");
+  const [settlementDiscount, setSettlementDiscount] = useState(0);
   const selectionLock = useRef(false);
+  const settlementLock = useRef(false);
 
   const loadBillingData = useCallback(async ({ showLoading = true } = {}) => {
     if (showLoading) setLoading(true);
@@ -87,9 +110,11 @@ const PointOfSale = () => {
       setTables(tablesResponse.data.tables);
       setActiveBills(billsResponse.data.bills);
       setLastUpdated(new Date().toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", second: "2-digit" }));
+      return true;
     } catch (requestError) {
       console.error("Could not load billing data:", requestError);
       setError(requestError.response?.data?.message || requestError.message || "Billing data could not be loaded.");
+      return false;
     } finally {
       setLoading(false);
     }
@@ -137,6 +162,29 @@ const PointOfSale = () => {
     window.addEventListener("keydown", closeOnEscape);
     return () => window.removeEventListener("keydown", closeOnEscape);
   }, [sheetOpen, closeOrderSelector]);
+
+  useEffect(() => {
+    if (!mergeModalOpen) return undefined;
+    const closeOnEscape = (event) => {
+      if (event.key !== "Escape" || mergingTables) return;
+      if (mergeConfirmationOpen) {
+        setMergeConfirmationOpen(false);
+      } else {
+        setMergeModalOpen(false);
+      }
+    };
+    window.addEventListener("keydown", closeOnEscape);
+    return () => window.removeEventListener("keydown", closeOnEscape);
+  }, [mergeModalOpen, mergeConfirmationOpen, mergingTables]);
+
+  useEffect(() => {
+    if (!settlementBill) return undefined;
+    const closeOnEscape = (event) => {
+      if (event.key === "Escape" && !settlingBill && !loadingSettlementBill) setSettlementBill(null);
+    };
+    window.addEventListener("keydown", closeOnEscape);
+    return () => window.removeEventListener("keydown", closeOnEscape);
+  }, [settlementBill, settlingBill, loadingSettlementBill]);
 
   const openOrderType = (orderType) => {
     if (selectionLock.current) return;
@@ -199,8 +247,54 @@ const PointOfSale = () => {
     });
   };
 
-  const completeActiveBill = (bill) => {
-    navigate("/admin/tables", { state: { openBillId: bill.bill_id } });
+  const completeActiveBill = async (bill) => {
+    if (!bill?.bill_id || loadingSettlementBill || settlingBill) return;
+    setSettlementBill(bill);
+    setLoadingSettlementBill(true);
+    setSettlementError("");
+    setSettlementDiscount(Number(bill.discount || 0));
+    setSettlementPaymentMethod(bill.payment_method || "Cash");
+    try {
+      const response = await api.get(`/table-bills/${encodeURIComponent(bill.bill_id)}`);
+      if (!response.data?.success || !response.data.bill) {
+        throw new Error(response.data?.message || `Could not load bill #${bill.bill_number}.`);
+      }
+      setSettlementBill(response.data.bill);
+      setSettlementDiscount(Number(response.data.bill.discount || 0));
+    } catch (requestError) {
+      console.error("Could not load bill for settlement:", requestError);
+      setSettlementError(requestError.response?.data?.message || requestError.message || "Could not load bill details.");
+    } finally {
+      setLoadingSettlementBill(false);
+    }
+  };
+
+  const settleBillInPopup = async () => {
+    if (!settlementBill?.bill_id || settlementLock.current || settlingBill) return;
+    settlementLock.current = true;
+    setSettlingBill(true);
+    setSettlementError("");
+    try {
+      const response = await api.post(`/table-bills/${encodeURIComponent(settlementBill.bill_id)}/settle`, {
+        payment_method: settlementPaymentMethod,
+        discount: Number(settlementDiscount) || 0,
+      });
+      if (!response.data?.success) {
+        throw new Error(response.data?.message || "Failed to settle bill.");
+      }
+      toast.success(`Bill #${settlementBill.bill_number} settled successfully.`);
+      setSettlementBill(null);
+      const refreshed = await loadBillingData({ showLoading: false });
+      if (!refreshed) toast.error("Bill was settled, but table status could not be refreshed.");
+    } catch (requestError) {
+      console.error("Could not settle bill:", requestError);
+      const message = requestError.response?.data?.message || requestError.message || "Failed to settle bill.";
+      setSettlementError(message);
+      toast.error(message);
+    } finally {
+      settlementLock.current = false;
+      setSettlingBill(false);
+    }
   };
 
   const copyBillNumber = (billNumber, event) => {
@@ -255,6 +349,172 @@ const PointOfSale = () => {
     });
   }, [tables, tableFilter, searchQuery, billsByTableId]);
 
+  const occupiedMergeTables = tables.filter((table) => tableStatus(table) === "Occupied");
+  const primaryMergeTable = tables.find((table) => String(table.table_id || table.id) === mergePrimaryTableId);
+  const secondaryMergeTable = tables.find((table) => String(table.table_id || table.id) === mergeSecondaryTableId);
+  const primaryMergeBill = primaryMergeTable
+    ? billsByTableId.get(String(primaryMergeTable.table_id || primaryMergeTable.id))
+    : null;
+  const secondaryMergeBill = secondaryMergeTable
+    ? billsByTableId.get(String(secondaryMergeTable.table_id || secondaryMergeTable.id))
+    : null;
+  const primaryMergeDetails = mergeBillDetails[String(primaryMergeBill?.bill_id || "")];
+  const secondaryMergeDetails = mergeBillDetails[String(secondaryMergeBill?.bill_id || "")];
+
+  const combinedMergeItems = useMemo(() => {
+    const items = [...getBillItems(primaryMergeDetails), ...getBillItems(secondaryMergeDetails)];
+    const combined = new Map();
+    for (const item of items) {
+      const key = JSON.stringify([
+        item.food_id || item.food_name,
+        Number(item.unit_price || 0),
+        item.selected_addons || [],
+        item.selected_customizations || {},
+      ]);
+      const existing = combined.get(key);
+      if (existing) {
+        existing.quantity += Number(item.quantity || 0);
+        existing.total_price = Number((existing.quantity * existing.unit_price).toFixed(2));
+      } else {
+        const quantity = Number(item.quantity || 0);
+        const unitPrice = Number(item.unit_price || 0);
+        combined.set(key, {
+          ...item,
+          quantity,
+          unit_price: unitPrice,
+          total_price: Number((quantity * unitPrice).toFixed(2)),
+        });
+      }
+    }
+    return Array.from(combined.values());
+  }, [primaryMergeDetails, secondaryMergeDetails]);
+
+  const mergePreview = useMemo(() => {
+    if (!primaryMergeDetails || !secondaryMergeDetails) return null;
+    const subtotal = Number(primaryMergeDetails.subtotal || 0) + Number(secondaryMergeDetails.subtotal || 0);
+    const discount = Number(primaryMergeDetails.discount || 0) + Number(secondaryMergeDetails.discount || 0);
+    const taxRate = Number(primaryMergeDetails.tax_rate ?? 5);
+    const taxAmount = Number((subtotal * taxRate / 100).toFixed(2));
+    const grandTotal = Math.max(0, Number((subtotal + taxAmount - discount).toFixed(2)));
+    return { subtotal, discount, taxRate, taxAmount, grandTotal };
+  }, [primaryMergeDetails, secondaryMergeDetails]);
+
+  const mergeEligibilityError = (() => {
+    if (!primaryMergeDetails || !secondaryMergeDetails) return "";
+    if ([primaryMergeDetails, secondaryMergeDetails].some((bill) => bill.status !== "Active")) {
+      return "Only active bills can be merged.";
+    }
+    if ([primaryMergeDetails, secondaryMergeDetails].some((bill) => bill.payment_method || bill.settled_at)) {
+      return "Bills with recorded payment information cannot be merged.";
+    }
+    if (Number(primaryMergeDetails.tax_rate ?? 5) !== Number(secondaryMergeDetails.tax_rate ?? 5)) {
+      return "Bills with different tax rates cannot be merged.";
+    }
+    return "";
+  })();
+
+  const loadMergeBillDetails = async (bill) => {
+    if (!bill?.bill_id || mergeBillDetails[String(bill.bill_id)]) return;
+    const billId = String(bill.bill_id);
+    setLoadingMergeBillIds((current) => new Set(current).add(billId));
+    setMergeError("");
+    try {
+      const response = await api.get(`/table-bills/${encodeURIComponent(billId)}`);
+      if (!response.data?.success || !response.data.bill) {
+        throw new Error(response.data?.message || `Could not load bill #${bill.bill_number}.`);
+      }
+      setMergeBillDetails((current) => ({ ...current, [billId]: response.data.bill }));
+    } catch (requestError) {
+      console.error("Could not load merge bill details:", requestError);
+      setMergeError(requestError.response?.data?.message || requestError.message || "Could not load selected bill details.");
+    } finally {
+      setLoadingMergeBillIds((current) => {
+        const next = new Set(current);
+        next.delete(billId);
+        return next;
+      });
+    }
+  };
+
+  const openMergeTables = async () => {
+    setMergePrimaryTableId("");
+    setMergeSecondaryTableId("");
+    setMergeBillDetails({});
+    setLoadingMergeBillIds(new Set());
+    setMergeConfirmationOpen(false);
+    setMergeError("");
+    setMergeModalOpen(true);
+    setLoadingMergeTables(true);
+    const loaded = await loadBillingData({ showLoading: false });
+    if (!loaded) setMergeError("Could not refresh tables and bills. Please try again.");
+    setLoadingMergeTables(false);
+  };
+
+  const selectMergeTable = async (table) => {
+    const tableId = String(table.table_id || table.id);
+    const activeBill = billsByTableId.get(tableId);
+    if (!activeBill?.bill_id) return;
+    setMergeError("");
+    if (tableId === mergePrimaryTableId) {
+      if (mergeSecondaryTableId) {
+        setMergePrimaryTableId(mergeSecondaryTableId);
+        setMergeSecondaryTableId("");
+      } else {
+        setMergePrimaryTableId("");
+      }
+    } else if (tableId === mergeSecondaryTableId) {
+      setMergeSecondaryTableId("");
+    } else if (!mergePrimaryTableId) {
+      setMergePrimaryTableId(tableId);
+    } else {
+      setMergeSecondaryTableId(tableId);
+    }
+    await loadMergeBillDetails(activeBill);
+  };
+
+  const makeMergeTablePrimary = (tableId) => {
+    if (tableId !== mergeSecondaryTableId) return;
+    setMergePrimaryTableId(mergeSecondaryTableId);
+    setMergeSecondaryTableId(mergePrimaryTableId);
+  };
+
+  const confirmTableMerge = async () => {
+    if (
+      mergingTables ||
+      !mergePrimaryTableId ||
+      !mergeSecondaryTableId ||
+      !primaryMergeDetails ||
+      !secondaryMergeDetails ||
+      mergeEligibilityError
+    ) return;
+    setMergingTables(true);
+    setMergeError("");
+    try {
+      const response = await api.post("/table-bills/merge", {
+        primary_table_id: mergePrimaryTableId,
+        merge_table_ids: [mergeSecondaryTableId],
+      });
+      if (!response.data?.success || !response.data.bill) {
+        throw new Error(response.data?.message || "The tables could not be merged.");
+      }
+
+      toast.success(response.data.message || "Tables merged successfully.");
+      setMergeModalOpen(false);
+      setMergeConfirmationOpen(false);
+      setMergePrimaryTableId("");
+      setMergeSecondaryTableId("");
+      const refreshed = await loadBillingData({ showLoading: false });
+      if (!refreshed) toast.error("Merge completed, but tables could not be refreshed. Please refresh the page.");
+    } catch (requestError) {
+      console.error("Could not merge table bills:", requestError);
+      const message = requestError.response?.data?.message || requestError.message || "Could not merge tables. Please try again.";
+      setMergeError(message);
+      toast.error(message);
+    } finally {
+      setMergingTables(false);
+    }
+  };
+
   return (
     <main className="min-h-screen bg-[#F8FAFC] px-4 py-6 text-slate-900 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-7xl space-y-6">
@@ -280,7 +540,7 @@ const PointOfSale = () => {
               <h1 className="text-2xl font-black tracking-tight text-slate-900 sm:text-3xl lg:text-4xl">
                 Billing & Orders
               </h1>
-              
+
             </div>
 
             <div className="flex flex-wrap items-center gap-3">
@@ -289,7 +549,7 @@ const PointOfSale = () => {
               <button
                 type="button"
                 onClick={goToBills}
-                className="inline-flex h-11 items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 shadow-xs transition hover:border-slate-300 hover:bg-slate-50 active:scale-95"
+                className="inline-flex h-11 items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 shadow-xs transition hover:border-slate-300 hover:bg-slate-100 hover:text-slate-900 active:scale-95"
               >
                 <Table2 className="h-4 w-4 text-slate-500" />
                 <span>Floor Workspace</span>
@@ -298,7 +558,7 @@ const PointOfSale = () => {
               <button
                 type="button"
                 onClick={() => navigate("/admin/billing/history")}
-                className="inline-flex h-11 items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 shadow-xs transition hover:border-slate-300 hover:bg-slate-50 active:scale-95"
+                className="inline-flex h-11 items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 shadow-xs transition hover:border-slate-300 hover:bg-slate-100 hover:text-slate-900 active:scale-95"
               >
                 <Receipt className="h-4 w-4 text-slate-500" />
                 <span>Bill History</span>
@@ -306,8 +566,18 @@ const PointOfSale = () => {
 
               <button
                 type="button"
+                onClick={openMergeTables}
+                disabled={loading || mergingTables}
+                className="inline-flex h-11 items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-4 text-sm font-bold text-emerald-900 shadow-xs transition hover:border-emerald-300 hover:bg-emerald-100 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                <GitMerge className="h-4 w-4" />
+                <span>Merge Table</span>
+              </button>
+
+              <button
+                type="button"
                 onClick={() => { setShowTables(false); setSheetOpen(true); }}
-                className="inline-flex h-11 items-center gap-2 rounded-xl bg-[#0A4731] px-5 text-sm font-bold text-white shadow-md shadow-emerald-950/20 transition hover:bg-[#062D22] active:scale-95"
+                className="inline-flex h-11 items-center gap-2 rounded-xl bg-[#0A4731] px-5 text-sm font-bold text-white shadow-md shadow-emerald-950/20 transition hover:bg-[#062D22] hover:text-white active:scale-95"
               >
                 <Plus size={18} strokeWidth={2.6} />
                 <span>Start New Order</span>
@@ -326,7 +596,7 @@ const PointOfSale = () => {
             <button
               type="button"
               onClick={() => loadBillingData()}
-              className="rounded-lg bg-rose-100 px-3 py-1 font-bold text-rose-900 transition hover:bg-rose-200"
+              className="rounded-lg bg-rose-100 px-3 py-1 font-bold text-rose-900 transition hover:bg-rose-200 hover:text-rose-950"
             >
               Try again
             </button>
@@ -338,13 +608,17 @@ const PointOfSale = () => {
           {/* Available Tables */}
           <article
             onClick={() => { setActiveTab("tables"); setTableFilter("Available"); }}
-            className={`group cursor-pointer rounded-2xl border bg-white p-4.5 shadow-xs transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md ${tableFilter === "Available" && activeTab === "tables" ? "border-emerald-500 ring-2 ring-emerald-500/20" : "border-slate-200/90"}`}
+            className={`group cursor-pointer rounded-2xl border bg-white p-4.5 shadow-xs transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md ${
+              tableFilter === "Available" && activeTab === "tables"
+                ? "border-emerald-500 ring-2 ring-emerald-500/20"
+                : "border-slate-200/90 hover:border-emerald-300"
+            }`}
           >
             <div className="flex items-center justify-between">
-              <span className="text-xs font-bold uppercase tracking-wider text-slate-500 group-hover:text-emerald-700 transition-colors">
+              <span className="text-xs font-bold uppercase tracking-wider text-slate-500 group-hover:text-emerald-800 transition-colors">
                 Available Tables
               </span>
-              <span className="grid h-9 w-9 place-items-center rounded-xl bg-emerald-50 text-emerald-700 border border-emerald-100">
+              <span className="grid h-9 w-9 place-items-center rounded-xl bg-emerald-50 text-emerald-700 border border-emerald-100 group-hover:bg-emerald-100 group-hover:text-emerald-900 transition-colors">
                 <CheckCircle2 size={18} />
               </span>
             </div>
@@ -356,7 +630,7 @@ const PointOfSale = () => {
                 {capacityPercent}% free
               </span>
             </div>
-            <p className="mt-1 text-[11px] font-medium text-slate-400">
+            <p className="mt-1 text-[11px] font-medium text-slate-400 group-hover:text-slate-600 transition-colors">
               Ready for walk-in seating
             </p>
           </article>
@@ -364,13 +638,17 @@ const PointOfSale = () => {
           {/* Occupied Tables */}
           <article
             onClick={() => { setActiveTab("tables"); setTableFilter("Occupied"); }}
-            className={`group cursor-pointer rounded-2xl border bg-white p-4.5 shadow-xs transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md ${tableFilter === "Occupied" && activeTab === "tables" ? "border-amber-500 ring-2 ring-amber-500/20" : "border-slate-200/90"}`}
+            className={`group cursor-pointer rounded-2xl border bg-white p-4.5 shadow-xs transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md ${
+              tableFilter === "Occupied" && activeTab === "tables"
+                ? "border-amber-500 ring-2 ring-amber-500/20"
+                : "border-slate-200/90 hover:border-amber-300"
+            }`}
           >
             <div className="flex items-center justify-between">
-              <span className="text-xs font-bold uppercase tracking-wider text-slate-500 group-hover:text-amber-700 transition-colors">
+              <span className="text-xs font-bold uppercase tracking-wider text-slate-500 group-hover:text-amber-800 transition-colors">
                 Occupied Tables
               </span>
-              <span className="grid h-9 w-9 place-items-center rounded-xl bg-amber-50 text-amber-700 border border-amber-100">
+              <span className="grid h-9 w-9 place-items-center rounded-xl bg-amber-50 text-amber-700 border border-amber-100 group-hover:bg-amber-100 group-hover:text-amber-900 transition-colors">
                 <UtensilsCrossed size={18} />
               </span>
             </div>
@@ -382,7 +660,7 @@ const PointOfSale = () => {
                 {occupiedCount > 0 ? "Dining now" : "None"}
               </span>
             </div>
-            <p className="mt-1 text-[11px] font-medium text-slate-400">
+            <p className="mt-1 text-[11px] font-medium text-slate-400 group-hover:text-slate-600 transition-colors">
               Active service & orders
             </p>
           </article>
@@ -390,13 +668,17 @@ const PointOfSale = () => {
           {/* Reserved Tables */}
           <article
             onClick={() => { setActiveTab("tables"); setTableFilter("Reserved"); }}
-            className={`group cursor-pointer rounded-2xl border bg-white p-4.5 shadow-xs transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md ${tableFilter === "Reserved" && activeTab === "tables" ? "border-blue-500 ring-2 ring-blue-500/20" : "border-slate-200/90"}`}
+            className={`group cursor-pointer rounded-2xl border bg-white p-4.5 shadow-xs transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md ${
+              tableFilter === "Reserved" && activeTab === "tables"
+                ? "border-blue-500 ring-2 ring-blue-500/20"
+                : "border-slate-200/90 hover:border-blue-300"
+            }`}
           >
             <div className="flex items-center justify-between">
-              <span className="text-xs font-bold uppercase tracking-wider text-slate-500 group-hover:text-blue-700 transition-colors">
+              <span className="text-xs font-bold uppercase tracking-wider text-slate-500 group-hover:text-blue-800 transition-colors">
                 Reserved
               </span>
-              <span className="grid h-9 w-9 place-items-center rounded-xl bg-blue-50 text-blue-700 border border-blue-100">
+              <span className="grid h-9 w-9 place-items-center rounded-xl bg-blue-50 text-blue-700 border border-blue-100 group-hover:bg-blue-100 group-hover:text-blue-900 transition-colors">
                 <Users size={18} />
               </span>
             </div>
@@ -408,7 +690,7 @@ const PointOfSale = () => {
                 Bookings
               </span>
             </div>
-            <p className="mt-1 text-[11px] font-medium text-slate-400">
+            <p className="mt-1 text-[11px] font-medium text-slate-400 group-hover:text-slate-600 transition-colors">
               Scheduled table holds
             </p>
           </article>
@@ -416,13 +698,17 @@ const PointOfSale = () => {
           {/* Active Running Bills */}
           <article
             onClick={() => setActiveTab("bills")}
-            className={`group cursor-pointer rounded-2xl border bg-white p-4.5 shadow-xs transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md ${activeTab === "bills" ? "border-purple-500 ring-2 ring-purple-500/20" : "border-slate-200/90"}`}
+            className={`group cursor-pointer rounded-2xl border bg-white p-4.5 shadow-xs transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md ${
+              activeTab === "bills"
+                ? "border-purple-500 ring-2 ring-purple-500/20"
+                : "border-slate-200/90 hover:border-purple-300"
+            }`}
           >
             <div className="flex items-center justify-between">
-              <span className="text-xs font-bold uppercase tracking-wider text-slate-500 group-hover:text-purple-700 transition-colors">
+              <span className="text-xs font-bold uppercase tracking-wider text-slate-500 group-hover:text-purple-800 transition-colors">
                 Active Bills
               </span>
-              <span className="grid h-9 w-9 place-items-center rounded-xl bg-purple-50 text-purple-700 border border-purple-100">
+              <span className="grid h-9 w-9 place-items-center rounded-xl bg-purple-50 text-purple-700 border border-purple-100 group-hover:bg-purple-100 group-hover:text-purple-900 transition-colors">
                 <Receipt size={18} />
               </span>
             </div>
@@ -434,7 +720,7 @@ const PointOfSale = () => {
                 Open tickets
               </span>
             </div>
-            <p className="mt-1 text-[11px] font-medium text-slate-400">
+            <p className="mt-1 text-[11px] font-medium text-slate-400 group-hover:text-slate-600 transition-colors">
               Awaiting settlement
             </p>
           </article>
@@ -442,13 +728,13 @@ const PointOfSale = () => {
           {/* Live Floor Balance */}
           <article
             onClick={() => setActiveTab("bills")}
-            className="col-span-2 sm:col-span-2 lg:col-span-1 group cursor-pointer rounded-2xl border border-emerald-200/90 bg-gradient-to-br from-emerald-50/70 via-white to-white p-4.5 shadow-xs transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md"
+            className="col-span-2 sm:col-span-2 lg:col-span-1 group cursor-pointer rounded-2xl border border-emerald-200/90 bg-gradient-to-br from-emerald-50/70 via-white to-white p-4.5 shadow-xs transition-all duration-200 hover:-translate-y-0.5 hover:border-emerald-400 hover:shadow-md"
           >
             <div className="flex items-center justify-between">
-              <span className="text-xs font-bold uppercase tracking-wider text-emerald-900">
+              <span className="text-xs font-bold uppercase tracking-wider text-emerald-900 group-hover:text-emerald-950 transition-colors">
                 Floor Running Total
               </span>
-              <span className="grid h-9 w-9 place-items-center rounded-xl bg-[#0A4731] text-white shadow-xs">
+              <span className="grid h-9 w-9 place-items-center rounded-xl bg-[#0A4731] text-white shadow-xs group-hover:bg-[#062D22] transition-colors">
                 <IndianRupee size={17} />
               </span>
             </div>
@@ -457,7 +743,7 @@ const PointOfSale = () => {
                 {loading ? "—" : formatCurrency(totalRunningBalance)}
               </span>
             </div>
-            <p className="mt-1 text-[11px] font-medium text-emerald-800">
+            <p className="mt-1 text-[11px] font-medium text-emerald-800 group-hover:text-emerald-950 transition-colors">
               Live unsettled dining revenue
             </p>
           </article>
@@ -468,18 +754,18 @@ const PointOfSale = () => {
           <button
             type="button"
             onClick={() => { setShowTables(true); setSheetOpen(true); }}
-            className="group flex items-center justify-between rounded-2xl border border-slate-200/90 bg-white p-4 text-left shadow-xs transition-all duration-200 hover:-translate-y-0.5 hover:border-emerald-300 hover:shadow-md"
+            className="group flex items-center justify-between rounded-2xl border border-slate-200/90 bg-white p-4 text-left shadow-xs transition-all duration-200 hover:-translate-y-0.5 hover:border-emerald-400 hover:shadow-md active:scale-98"
           >
             <div className="flex items-center gap-3.5">
-              <div className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-emerald-50 text-emerald-800 border border-emerald-100 transition-transform group-hover:scale-105">
+              <div className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-emerald-50 text-emerald-800 border border-emerald-100 transition-transform group-hover:scale-105 group-hover:bg-emerald-100 group-hover:text-emerald-900">
                 <Table2 size={22} />
               </div>
               <div>
-                <span className="block text-sm font-black text-slate-900">Dine-In Order</span>
-                <span className="text-xs text-slate-500">Assign table & generate KOT</span>
+                <span className="block text-sm font-black text-slate-900 group-hover:text-emerald-900 transition-colors">Dine-In Order</span>
+                <span className="text-xs text-slate-500 group-hover:text-slate-700 transition-colors">Assign table & generate KOT</span>
               </div>
             </div>
-            <div className="grid h-8 w-8 place-items-center rounded-full bg-slate-100 text-slate-400 transition-colors group-hover:bg-[#0A4731] group-hover:text-white">
+            <div className="grid h-8 w-8 place-items-center rounded-full bg-slate-100 text-slate-500 transition-colors group-hover:bg-[#0A4731] group-hover:text-white">
               <ChevronRight size={16} />
             </div>
           </button>
@@ -487,18 +773,18 @@ const PointOfSale = () => {
           <button
             type="button"
             onClick={() => openOrderType("pickup")}
-            className="group flex items-center justify-between rounded-2xl border border-slate-200/90 bg-white p-4 text-left shadow-xs transition-all duration-200 hover:-translate-y-0.5 hover:border-amber-300 hover:shadow-md"
+            className="group flex items-center justify-between rounded-2xl border border-slate-200/90 bg-white p-4 text-left shadow-xs transition-all duration-200 hover:-translate-y-0.5 hover:border-amber-400 hover:shadow-md active:scale-98"
           >
             <div className="flex items-center gap-3.5">
-              <div className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-amber-50 text-amber-800 border border-amber-100 transition-transform group-hover:scale-105">
+              <div className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-amber-50 text-amber-800 border border-amber-100 transition-transform group-hover:scale-105 group-hover:bg-amber-100 group-hover:text-amber-900">
                 <ShoppingBag size={22} />
               </div>
               <div>
-                <span className="block text-sm font-black text-slate-900">Takeaway / Pick-Up</span>
-                <span className="text-xs text-slate-500">Fast counter order & checkout</span>
+                <span className="block text-sm font-black text-slate-900 group-hover:text-amber-900 transition-colors">Takeaway / Pick-Up</span>
+                <span className="text-xs text-slate-500 group-hover:text-slate-700 transition-colors">Fast counter order & checkout</span>
               </div>
             </div>
-            <div className="grid h-8 w-8 place-items-center rounded-full bg-slate-100 text-slate-400 transition-colors group-hover:bg-amber-600 group-hover:text-white">
+            <div className="grid h-8 w-8 place-items-center rounded-full bg-slate-100 text-slate-500 transition-colors group-hover:bg-amber-600 group-hover:text-white">
               <ChevronRight size={16} />
             </div>
           </button>
@@ -506,18 +792,18 @@ const PointOfSale = () => {
           <button
             type="button"
             onClick={() => openOrderType("home_delivery")}
-            className="group flex items-center justify-between rounded-2xl border border-slate-200/90 bg-white p-4 text-left shadow-xs transition-all duration-200 hover:-translate-y-0.5 hover:border-blue-300 hover:shadow-md"
+            className="group flex items-center justify-between rounded-2xl border border-slate-200/90 bg-white p-4 text-left shadow-xs transition-all duration-200 hover:-translate-y-0.5 hover:border-blue-400 hover:shadow-md active:scale-98"
           >
             <div className="flex items-center gap-3.5">
-              <div className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-blue-50 text-blue-800 border border-blue-100 transition-transform group-hover:scale-105">
+              <div className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-blue-50 text-blue-800 border border-blue-100 transition-transform group-hover:scale-105 group-hover:bg-blue-100 group-hover:text-blue-900">
                 <Bike size={22} />
               </div>
               <div>
-                <span className="block text-sm font-black text-slate-900">Home Delivery</span>
-                <span className="text-xs text-slate-500">Address, customer & rider dispatch</span>
+                <span className="block text-sm font-black text-slate-900 group-hover:text-blue-900 transition-colors">Home Delivery</span>
+                <span className="text-xs text-slate-500 group-hover:text-slate-700 transition-colors">Address, customer & rider dispatch</span>
               </div>
             </div>
-            <div className="grid h-8 w-8 place-items-center rounded-full bg-slate-100 text-slate-400 transition-colors group-hover:bg-blue-600 group-hover:text-white">
+            <div className="grid h-8 w-8 place-items-center rounded-full bg-slate-100 text-slate-500 transition-colors group-hover:bg-blue-600 group-hover:text-white">
               <ChevronRight size={16} />
             </div>
           </button>
@@ -541,7 +827,7 @@ const PointOfSale = () => {
                 <button
                   type="button"
                   onClick={() => setSearchQuery("")}
-                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-900 transition-colors"
                 >
                   <X size={14} />
                 </button>
@@ -553,7 +839,11 @@ const PointOfSale = () => {
               <button
                 type="button"
                 onClick={() => setActiveTab("all")}
-                className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold transition ${activeTab === "all" ? "bg-white text-emerald-900 shadow-xs" : "text-slate-600 hover:text-slate-900"}`}
+                className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold transition ${
+                  activeTab === "all"
+                    ? "bg-[#0A4731] text-white shadow-xs hover:bg-[#062D22] hover:text-white"
+                    : "text-slate-600 hover:bg-slate-200/80 hover:text-slate-950"
+                }`}
               >
                 <Sparkles size={13} />
                 <span>All</span>
@@ -562,11 +852,19 @@ const PointOfSale = () => {
               <button
                 type="button"
                 onClick={() => setActiveTab("bills")}
-                className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold transition ${activeTab === "bills" ? "bg-white text-emerald-900 shadow-xs" : "text-slate-600 hover:text-slate-900"}`}
+                className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold transition ${
+                  activeTab === "bills"
+                    ? "bg-[#0A4731] text-white shadow-xs hover:bg-[#062D22] hover:text-white"
+                    : "text-slate-600 hover:bg-slate-200/80 hover:text-slate-950"
+                }`}
               >
                 <Receipt size={13} />
                 <span>Bills</span>
-                <span className={`rounded-full px-1.5 py-0.2 text-[10px] ${activeTab === "bills" ? "bg-emerald-100 text-emerald-800 font-bold" : "bg-slate-200 text-slate-700 font-medium"}`}>
+                <span className={`rounded-full px-1.5 py-0.2 text-[10px] ${
+                  activeTab === "bills"
+                    ? "bg-white/20 text-white font-bold"
+                    : "bg-slate-200 text-slate-700 font-semibold"
+                }`}>
                   {activeBills.length}
                 </span>
               </button>
@@ -574,11 +872,19 @@ const PointOfSale = () => {
               <button
                 type="button"
                 onClick={() => setActiveTab("tables")}
-                className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold transition ${activeTab === "tables" ? "bg-white text-emerald-900 shadow-xs" : "text-slate-600 hover:text-slate-900"}`}
+                className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold transition ${
+                  activeTab === "tables"
+                    ? "bg-[#0A4731] text-white shadow-xs hover:bg-[#062D22] hover:text-white"
+                    : "text-slate-600 hover:bg-slate-200/80 hover:text-slate-950"
+                }`}
               >
                 <Table2 size={13} />
                 <span>Tables</span>
-                <span className={`rounded-full px-1.5 py-0.2 text-[10px] ${activeTab === "tables" ? "bg-emerald-100 text-emerald-800 font-bold" : "bg-slate-200 text-slate-700 font-medium"}`}>
+                <span className={`rounded-full px-1.5 py-0.2 text-[10px] ${
+                  activeTab === "tables"
+                    ? "bg-white/20 text-white font-bold"
+                    : "bg-slate-200 text-slate-700 font-semibold"
+                }`}>
                   {tables.length}
                 </span>
               </button>
@@ -597,7 +903,11 @@ const PointOfSale = () => {
                     key={f.id}
                     type="button"
                     onClick={() => setTableFilter(f.id)}
-                    className={`whitespace-nowrap rounded-lg px-2.5 py-1.5 text-xs font-semibold transition ${tableFilter === f.id ? "bg-slate-800 text-white shadow-xs" : "bg-slate-100 text-slate-600 hover:bg-slate-200"}`}
+                    className={`whitespace-nowrap rounded-lg px-2.5 py-1.5 text-xs font-bold transition ${
+                      tableFilter === f.id
+                        ? "bg-[#0A4731] text-white shadow-xs hover:bg-[#062D22] hover:text-white"
+                        : "bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-950"
+                    }`}
                   >
                     {f.label}
                   </button>
@@ -612,10 +922,12 @@ const PointOfSale = () => {
               <button
                 type="button"
                 onClick={() => setViewMode("card")}
-                aria-label="Card mode"
-                aria-pressed={viewMode === "card"}
                 title="Card mode"
-                className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold transition ${viewMode === "card" ? "bg-white text-emerald-900 shadow-xs" : "text-slate-600 hover:text-slate-900"}`}
+                className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold transition ${
+                  viewMode === "card"
+                    ? "bg-[#0A4731] text-white shadow-xs hover:bg-[#062D22] hover:text-white"
+                    : "text-slate-600 hover:bg-slate-200/80 hover:text-slate-950"
+                }`}
               >
                 <LayoutGrid size={15} />
                 
@@ -623,13 +935,15 @@ const PointOfSale = () => {
               <button
                 type="button"
                 onClick={() => setViewMode("table")}
-                aria-label="Table mode"
-                aria-pressed={viewMode === "table"}
                 title="Table mode"
-                className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold transition ${viewMode === "table" ? "bg-white text-emerald-900 shadow-xs" : "text-slate-600 hover:text-slate-900"}`}
+                className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold transition ${
+                  viewMode === "table"
+                    ? "bg-[#0A4731] text-white shadow-xs hover:bg-[#062D22] hover:text-white"
+                    : "text-slate-600 hover:bg-slate-200/80 hover:text-slate-950"
+                }`}
               >
                 <List size={15} />
-                
+
               </button>
             </div>
           </div>
@@ -685,13 +999,18 @@ const PointOfSale = () => {
                               <h3 className="text-base font-black text-slate-900">
                                 Table {bill.table_number}
                               </h3>
+                              {Array.isArray(bill.merged_table_numbers) && bill.merged_table_numbers.length > 1 && (
+                                <span className="mt-0.5 block text-[10px] font-semibold text-emerald-800">
+                                  Tables {bill.merged_table_numbers.join(" + ")}
+                                </span>
+                              )}
                               <div className="flex items-center gap-1.5 text-xs text-slate-500">
                                 <span>#{bill.bill_number}</span>
                                 <button
                                   type="button"
                                   onClick={(e) => copyBillNumber(bill.bill_number, e)}
                                   title="Copy bill number"
-                                  className="text-slate-400 hover:text-slate-700"
+                                  className="text-slate-400 hover:text-slate-900 transition-colors"
                                 >
                                   <Copy size={12} />
                                 </button>
@@ -736,7 +1055,7 @@ const PointOfSale = () => {
                         <button
                           type="button"
                           onClick={() => addItemsToActiveBill(bill)}
-                          className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-white py-2.5 text-xs font-bold text-slate-700 shadow-xs transition hover:border-orange-300 hover:bg-orange-50 hover:text-orange-800 active:scale-95"
+                          className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-white py-2.5 text-xs font-bold text-slate-700 shadow-xs transition hover:border-slate-300 hover:bg-slate-100 hover:text-slate-950 active:scale-95"
                         >
                           <Plus size={14} />
                           <span>Add Items</span>
@@ -745,7 +1064,7 @@ const PointOfSale = () => {
                         <button
                           type="button"
                           onClick={() => completeActiveBill(bill)}
-                          className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-xl bg-[#0A4731] py-2.5 text-xs font-bold text-white shadow-xs transition hover:bg-[#062D22] active:scale-95"
+                          className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-xl bg-[#0A4731] py-2.5 text-xs font-bold text-white shadow-xs transition hover:bg-[#062D22] hover:text-white active:scale-95"
                         >
                           <Receipt size={14} />
                           <span>Settle Bill</span>
@@ -771,26 +1090,40 @@ const PointOfSale = () => {
                     </thead>
                     <tbody className="divide-y divide-slate-100">
                       {filteredActiveBills.map((bill) => (
-                        <tr key={bill.bill_id} className="transition hover:bg-slate-50/80">
+                        <tr key={bill.bill_id} className="transition hover:bg-emerald-50/20">
                           <td className="py-3.5 px-5 font-black text-slate-900">
                             <div className="flex items-center gap-2.5">
                               <span className="grid h-8 w-8 place-items-center rounded-lg bg-emerald-50 text-emerald-800 font-bold border border-emerald-100">
                                 <Table2 size={16} />
                               </span>
-                              <span>Table {bill.table_number}</span>
+                              <span>
+                                Table {bill.table_number}
+                                {Array.isArray(bill.merged_table_numbers) && bill.merged_table_numbers.length > 1 && (
+                                  <span className="mt-0.5 block text-[10px] font-semibold text-emerald-800">
+                                    Merged: {bill.merged_table_numbers.join(" + ")}
+                                  </span>
+                                )}
+                              </span>
                             </div>
                           </td>
                           <td className="py-3.5 px-4">
-                            <div className="flex items-center gap-1.5 font-bold text-slate-800">
-                              <span>#{bill.bill_number}</span>
-                              <button
-                                type="button"
-                                onClick={(e) => copyBillNumber(bill.bill_number, e)}
-                                title="Copy bill number"
-                                className="text-slate-400 hover:text-slate-700"
-                              >
-                                <Copy size={12} />
-                              </button>
+                            <div>
+                              <div className="flex items-center gap-1.5 font-bold text-slate-800">
+                                <span>#{bill.bill_number}</span>
+                                <button
+                                  type="button"
+                                  onClick={(e) => copyBillNumber(bill.bill_number, e)}
+                                  title="Copy bill number"
+                                  className="text-slate-400 hover:text-slate-900 transition-colors"
+                                >
+                                  <Copy size={12} />
+                                </button>
+                              </div>
+                              {Array.isArray(bill.merged_table_numbers) && bill.merged_table_numbers.length > 1 && (
+                                <span className="mt-0.5 block text-[10px] font-semibold text-emerald-800">
+                                  Tables {bill.merged_table_numbers.join(" + ")}
+                                </span>
+                              )}
                             </div>
                           </td>
                           <td className="py-3.5 px-4">
@@ -814,14 +1147,14 @@ const PointOfSale = () => {
                               <button
                                 type="button"
                                 onClick={() => addItemsToActiveBill(bill)}
-                                className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-bold text-slate-700 shadow-xs transition hover:border-orange-300 hover:bg-orange-50 hover:text-orange-800 active:scale-95"
+                                className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-bold text-slate-700 shadow-xs transition hover:border-slate-300 hover:bg-slate-100 hover:text-slate-950 active:scale-95"
                               >
                                 + Items
                               </button>
                               <button
                                 type="button"
                                 onClick={() => completeActiveBill(bill)}
-                                className="rounded-lg bg-[#0A4731] px-3.5 py-1.5 text-xs font-bold text-white shadow-xs transition hover:bg-[#062D22] active:scale-95"
+                                className="rounded-lg bg-[#0A4731] px-3.5 py-1.5 text-xs font-bold text-white shadow-xs transition hover:bg-[#062D22] hover:text-white active:scale-95"
                               >
                                 Settle
                               </button>
@@ -845,7 +1178,7 @@ const PointOfSale = () => {
                 <button
                   type="button"
                   onClick={() => { setShowTables(true); setSheetOpen(true); }}
-                  className="mt-4 inline-flex items-center gap-2 rounded-xl bg-[#0A4731] px-4 py-2 text-xs font-bold text-white shadow-xs transition hover:bg-[#062D22]"
+                  className="mt-4 inline-flex items-center gap-2 rounded-xl bg-[#0A4731] px-4 py-2 text-xs font-bold text-white shadow-xs transition hover:bg-[#062D22] hover:text-white"
                 >
                   <Plus size={14} />
                   <span>Start Dine-In Order</span>
@@ -923,10 +1256,10 @@ const PointOfSale = () => {
                                 <Table2 size={18} />
                               </span>
                               <div>
-                                <h3 className="text-base font-black text-slate-900">
+                                <h3 className="text-base font-black text-slate-900 group-hover:text-slate-950 transition-colors">
                                   Table {table.table_number}
                                 </h3>
-                                <span className="flex items-center gap-1 text-[11px] font-medium text-slate-500">
+                                <span className="flex items-center gap-1 text-[11px] font-medium text-slate-500 group-hover:text-slate-700 transition-colors">
                                   <Users size={12} />
                                   {table.no_of_seats ? `${table.no_of_seats} Seats` : "Standard table"}
                                 </span>
@@ -958,6 +1291,11 @@ const PointOfSale = () => {
                                   <span className="text-slate-400">Total</span>
                                   <span className="font-extrabold text-emerald-800">{formatCurrency(activeBill.grand_total)}</span>
                                 </div>
+                                {Array.isArray(activeBill.merged_table_numbers) && activeBill.merged_table_numbers.length > 1 && (
+                                  <div className="border-t border-slate-100 pt-1 font-semibold text-emerald-800">
+                                    Merged: {activeBill.merged_table_numbers.join(" + ")}
+                                  </div>
+                                )}
                               </div>
                             ) : isReserved ? (
                               <p className="text-blue-700 font-medium">Table currently reserved for booking.</p>
@@ -973,7 +1311,7 @@ const PointOfSale = () => {
                             <button
                               type="button"
                               onClick={() => selectTable(table)}
-                              className="w-full inline-flex items-center justify-center gap-1.5 rounded-xl bg-[#0A4731] py-2 text-xs font-bold text-white shadow-xs transition hover:bg-[#062D22] active:scale-95"
+                              className="w-full inline-flex items-center justify-center gap-1.5 rounded-xl bg-[#0A4731] py-2 text-xs font-bold text-white shadow-xs transition hover:bg-[#062D22] hover:text-white active:scale-95"
                             >
                               <Plus size={14} />
                               <span>Seat & Start Order</span>
@@ -983,14 +1321,14 @@ const PointOfSale = () => {
                               <button
                                 type="button"
                                 onClick={() => addItemsToActiveBill(activeBill)}
-                                className="flex-1 rounded-xl border border-slate-200 bg-white py-2 text-xs font-bold text-slate-700 shadow-xs transition hover:bg-slate-50"
+                                className="flex-1 rounded-xl border border-slate-200 bg-white py-2 text-xs font-bold text-slate-700 shadow-xs transition hover:border-slate-300 hover:bg-slate-100 hover:text-slate-950 active:scale-95"
                               >
                                 + Items
                               </button>
                               <button
                                 type="button"
                                 onClick={() => completeActiveBill(activeBill)}
-                                className="flex-1 rounded-xl bg-[#0A4731] py-2 text-xs font-bold text-white shadow-xs transition hover:bg-[#062D22]"
+                                className="flex-1 rounded-xl bg-[#0A4731] py-2 text-xs font-bold text-white shadow-xs transition hover:bg-[#062D22] hover:text-white active:scale-95"
                               >
                                 Settle
                               </button>
@@ -1034,7 +1372,7 @@ const PointOfSale = () => {
                         const activeBill = billsByTableId.get(String(table.table_id || table.id));
 
                         return (
-                          <tr key={table.table_id || table.id} className="transition hover:bg-slate-50/80">
+                          <tr key={table.table_id || table.id} className="transition hover:bg-slate-50">
                             <td className="py-3.5 px-5 font-black text-slate-900">
                               <div className="flex items-center gap-2.5">
                                 <span
@@ -1072,16 +1410,23 @@ const PointOfSale = () => {
                             </td>
                             <td className="py-3.5 px-4 font-medium text-slate-700">
                               {isOccupied && activeBill ? (
-                                <div className="flex items-center gap-1.5 font-bold">
-                                  <span>#{activeBill.bill_number}</span>
-                                  <button
-                                    type="button"
-                                    onClick={(e) => copyBillNumber(activeBill.bill_number, e)}
-                                    title="Copy bill number"
-                                    className="text-slate-400 hover:text-slate-700"
-                                  >
-                                    <Copy size={12} />
-                                  </button>
+                                <div>
+                                  <div className="flex items-center gap-1.5 font-bold">
+                                    <span>#{activeBill.bill_number}</span>
+                                    <button
+                                      type="button"
+                                      onClick={(e) => copyBillNumber(activeBill.bill_number, e)}
+                                      title="Copy bill number"
+                                      className="text-slate-400 hover:text-slate-900 transition-colors"
+                                    >
+                                      <Copy size={12} />
+                                    </button>
+                                  </div>
+                                  {Array.isArray(activeBill.merged_table_numbers) && activeBill.merged_table_numbers.length > 1 && (
+                                    <span className="mt-0.5 block text-[10px] font-semibold text-emerald-800">
+                                      Tables {activeBill.merged_table_numbers.join(" + ")}
+                                    </span>
+                                  )}
                                 </div>
                               ) : isReserved ? (
                                 <span className="text-blue-700 font-semibold">Reserved Booking</span>
@@ -1106,7 +1451,7 @@ const PointOfSale = () => {
                                 <button
                                   type="button"
                                   onClick={() => selectTable(table)}
-                                  className="inline-flex items-center gap-1.5 rounded-lg bg-[#0A4731] px-3 py-1.5 text-xs font-bold text-white shadow-xs transition hover:bg-[#062D22] active:scale-95"
+                                  className="inline-flex items-center gap-1.5 rounded-lg bg-[#0A4731] px-3 py-1.5 text-xs font-bold text-white shadow-xs transition hover:bg-[#062D22] hover:text-white active:scale-95"
                                 >
                                   <Plus size={13} />
                                   <span>Seat & Order</span>
@@ -1116,14 +1461,14 @@ const PointOfSale = () => {
                                   <button
                                     type="button"
                                     onClick={() => addItemsToActiveBill(activeBill)}
-                                    className="rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-bold text-slate-700 shadow-xs transition hover:bg-slate-50"
+                                    className="rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-bold text-slate-700 shadow-xs transition hover:border-slate-300 hover:bg-slate-100 hover:text-slate-950 active:scale-95"
                                   >
                                     + Items
                                   </button>
                                   <button
                                     type="button"
                                     onClick={() => completeActiveBill(activeBill)}
-                                    className="rounded-lg bg-[#0A4731] px-3 py-1.5 text-xs font-bold text-white shadow-xs transition hover:bg-[#062D22]"
+                                    className="rounded-lg bg-[#0A4731] px-3 py-1.5 text-xs font-bold text-white shadow-xs transition hover:bg-[#062D22] hover:text-white active:scale-95"
                                   >
                                     Settle
                                   </button>
@@ -1154,7 +1499,7 @@ const PointOfSale = () => {
                 <button
                   type="button"
                   onClick={() => { setTableFilter("all"); setSearchQuery(""); }}
-                  className="mt-3 rounded-lg bg-slate-100 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-200"
+                  className="mt-3 rounded-lg bg-slate-100 px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-200 hover:text-slate-950"
                 >
                   Clear filters
                 </button>
@@ -1204,7 +1549,7 @@ const PointOfSale = () => {
               type="button"
               onClick={closeOrderSelector}
               aria-label="Close order selector"
-              className="grid h-10 w-10 place-items-center rounded-full bg-slate-100 text-slate-600 transition hover:bg-slate-200"
+              className="grid h-10 w-10 place-items-center rounded-full bg-slate-100 text-slate-600 transition hover:bg-slate-200 hover:text-slate-950"
             >
               <X size={18} />
             </button>
@@ -1218,21 +1563,21 @@ const PointOfSale = () => {
                   label: "Dine-In / Table",
                   detail: "Assign guests to a floor table and send live tickets to the kitchen",
                   Icon: Table2,
-                  tone: "text-emerald-700 bg-emerald-50 border-emerald-100",
+                  tone: "text-emerald-700 bg-emerald-50 border-emerald-100 group-hover:bg-emerald-100 group-hover:text-emerald-900",
                 },
                 {
                   type: "pickup",
                   label: "Takeaway / Pick Up",
                   detail: "Customer counter takeaway with immediate invoice & payment",
                   Icon: ShoppingBag,
-                  tone: "text-amber-700 bg-amber-50 border-amber-100",
+                  tone: "text-amber-700 bg-amber-50 border-amber-100 group-hover:bg-amber-100 group-hover:text-amber-900",
                 },
                 {
                   type: "home_delivery",
                   label: "Home Delivery",
                   detail: "Order dispatched with customer contact & delivery address",
                   Icon: Bike,
-                  tone: "text-blue-700 bg-blue-50 border-blue-100",
+                  tone: "text-blue-700 bg-blue-50 border-blue-100 group-hover:bg-blue-100 group-hover:text-blue-900",
                 },
               ].map(({ type, label, detail, Icon, tone }) => (
                 <button
@@ -1241,18 +1586,18 @@ const PointOfSale = () => {
                   onClick={() => openOrderType(type)}
                   className="group flex flex-col justify-between rounded-2xl border border-slate-200/90 bg-white p-5 text-left transition-all duration-200 hover:-translate-y-1 hover:border-slate-400 hover:shadow-lg"
                 >
-                  <div className={`grid h-12 w-12 place-items-center rounded-2xl border ${tone} transition-transform group-hover:scale-105`}>
+                  <div className={`grid h-12 w-12 place-items-center rounded-2xl border ${tone} transition-all`}>
                     <Icon size={24} />
                   </div>
                   <div className="mt-4">
-                    <span className="block text-base font-black text-slate-900 group-hover:text-emerald-800 transition-colors">
+                    <span className="block text-base font-black text-slate-900 group-hover:text-emerald-950 transition-colors">
                       {label}
                     </span>
-                    <span className="mt-1.5 block text-xs leading-relaxed text-slate-500">
+                    <span className="mt-1.5 block text-xs leading-relaxed text-slate-500 group-hover:text-slate-700 transition-colors">
                       {detail}
                     </span>
                   </div>
-                  <div className="mt-4 flex items-center gap-1 text-xs font-bold text-slate-700 group-hover:text-emerald-800">
+                  <div className="mt-4 flex items-center gap-1 text-xs font-bold text-slate-700 group-hover:text-emerald-900 transition-colors">
                     <span>Continue</span>
                     <ArrowRight size={14} className="transition-transform group-hover:translate-x-1" />
                   </div>
@@ -1273,7 +1618,7 @@ const PointOfSale = () => {
                 <button
                   type="button"
                   onClick={() => setShowTables(false)}
-                  className="text-xs font-bold text-emerald-800 hover:underline"
+                  className="text-xs font-bold text-emerald-800 hover:text-emerald-950 hover:underline transition-colors"
                 >
                   ← Back to order channels
                 </button>
@@ -1313,16 +1658,16 @@ const PointOfSale = () => {
                             <Table2 size={20} />
                           </span>
                           <div className="min-w-0">
-                            <strong className="block truncate text-sm font-black text-slate-900">
+                            <strong className="block truncate text-sm font-black text-slate-900 group-hover:text-emerald-950 transition-colors">
                               Table {table.table_number}
                             </strong>
-                            <span className="mt-0.5 block text-xs text-slate-500">
+                            <span className="mt-0.5 block text-xs text-slate-500 group-hover:text-slate-700 transition-colors">
                               {table.no_of_seats ? `${table.no_of_seats} seats · ` : ""}
                               <span className="font-semibold">{status}</span>
                               {existingBill ? ` · Bill #${existingBill.bill_number}` : ""}
                             </span>
                             {table.assigned_server_name && (
-                              <span className="mt-0.5 block truncate text-[11px] text-slate-600">
+                              <span className="mt-0.5 block truncate text-[11px] text-slate-600 group-hover:text-slate-800 transition-colors">
                                 Server: {table.assigned_server_name}
                               </span>
                             )}
@@ -1347,6 +1692,563 @@ const PointOfSale = () => {
           )}
         </section>
       </div>
+
+    {settlementBill && (
+      <div className="fixed inset-0 z-[90] flex items-center justify-center bg-slate-950/55 p-3 backdrop-blur-sm sm:p-5">
+        <button
+          type="button"
+          aria-label="Close bill settlement"
+          disabled={settlingBill || loadingSettlementBill}
+          onClick={() => setSettlementBill(null)}
+          className="absolute inset-0 h-full w-full cursor-default disabled:cursor-wait"
+        />
+        <section
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="settlement-heading"
+          className="relative flex max-h-[92vh] w-full max-w-xl flex-col overflow-hidden rounded-3xl bg-white shadow-2xl"
+        >
+          <header className="flex items-start justify-between gap-4 border-b border-slate-100 p-5 sm:p-6">
+            <div>
+              <p className="inline-flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.18em] text-emerald-800">
+                <Receipt className="h-4 w-4" />
+                Bill settlement
+              </p>
+              <h2 id="settlement-heading" className="mt-1 text-xl font-black text-slate-900">
+                Settle Table {settlementBill.table_number} Bill
+              </h2>
+              <p className="mt-1 text-sm text-slate-500">Bill #{settlementBill.bill_number}</p>
+            </div>
+            <button
+              type="button"
+              aria-label="Close bill settlement"
+              disabled={settlingBill || loadingSettlementBill}
+              onClick={() => setSettlementBill(null)}
+              className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-slate-100 text-slate-600 transition hover:bg-slate-200 hover:text-slate-950 disabled:opacity-50"
+            >
+              <X size={18} />
+            </button>
+          </header>
+
+          {settlementError && (
+            <div role="alert" className="mx-5 mt-4 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-800 sm:mx-6">
+              <span>{settlementError}</span>
+              {!loadingSettlementBill && (
+                <button
+                  type="button"
+                  onClick={() => completeActiveBill(settlementBill)}
+                  className="font-bold text-rose-900 underline underline-offset-2"
+                >
+                  Retry
+                </button>
+              )}
+            </div>
+          )}
+
+          {loadingSettlementBill ? (
+            <div className="flex min-h-64 items-center justify-center gap-3 text-sm text-slate-500">
+              <Loader2 className="h-5 w-5 animate-spin text-emerald-700" />
+              Loading bill details…
+            </div>
+          ) : (
+            <>
+              <div className="space-y-4 overflow-y-auto p-5 sm:p-6">
+                <div className="grid grid-cols-2 gap-3 rounded-2xl bg-slate-50 p-4 text-xs">
+                  <div>
+                    <span className="block text-[10px] font-bold uppercase tracking-wide text-slate-400">
+                      {Array.isArray(settlementBill.merged_table_numbers) && settlementBill.merged_table_numbers.length > 1 ? "Merged tables" : "Table"}
+                    </span>
+                    <strong className="mt-1 block text-sm text-slate-900">
+                      {Array.isArray(settlementBill.merged_table_numbers) && settlementBill.merged_table_numbers.length > 1
+                        ? settlementBill.merged_table_numbers.map((number) => `Table ${number}`).join(" + ")
+                        : `Table ${settlementBill.table_number}`}
+                    </strong>
+                  </div>
+                  <div>
+                    <span className="block text-[10px] font-bold uppercase tracking-wide text-slate-400">Assigned server</span>
+                    <strong className="mt-1 block text-sm text-slate-900">{settlementBill.server_name || "—"}</strong>
+                  </div>
+                </div>
+
+                <div className="max-h-64 overflow-y-auto divide-y divide-slate-100 rounded-2xl border border-slate-100 px-4">
+                  {getBillItems(settlementBill).length ? getBillItems(settlementBill).map((item, index) => {
+                    const customizations = Object.entries(item.selected_customizations || {}).flatMap(([group, selection]) => {
+                      const options = Array.isArray(selection) ? selection : [selection];
+                      return options.filter(Boolean).map((option) => `${group === "__custom_request__" ? "Custom request" : group}: ${option}`);
+                    });
+                    const itemOptions = [
+                      ...(Array.isArray(item.selected_addons) ? item.selected_addons : []),
+                      ...customizations,
+                    ];
+                    return (
+                      <div key={`${item.food_id || item.food_name}-${index}`} className="flex items-start justify-between gap-3 py-3 text-sm">
+                        <div className="min-w-0">
+                          <p className="font-semibold text-slate-800">
+                            {item.food_name || "Food item"} <span className="text-slate-500">× {Number(item.quantity || 0)}</span>
+                          </p>
+                          {itemOptions.length > 0 && (
+                            <p className="mt-1 break-words text-xs text-slate-500">{itemOptions.join(" · ")}</p>
+                          )}
+                          <p className="mt-1 text-xs text-slate-400">{formatCurrency(item.unit_price)} each</p>
+                        </div>
+                        <span className="shrink-0 font-semibold text-slate-700">
+                          {formatCurrency(item.total_price ?? Number(item.unit_price || 0) * Number(item.quantity || 0))}
+                        </span>
+                      </div>
+                    );
+                  }) : (
+                    <p className="py-8 text-center text-sm text-slate-500">No items on this bill yet.</p>
+                  )}
+                </div>
+
+                {(() => {
+                  const subtotal = Number(settlementBill.subtotal || 0);
+                  const taxAmount = Number(settlementBill.tax_amount || 0);
+                  const discount = Math.max(0, Math.min(subtotal, Number(settlementDiscount) || 0));
+                  const grandTotal = Math.max(0, subtotal + taxAmount - discount);
+                  return (
+                    <div className="space-y-3 rounded-2xl border border-slate-200 p-4">
+                      <dl className="space-y-2 text-sm">
+                        <div className="flex justify-between gap-3 text-slate-600">
+                          <dt>Subtotal ({settlementBill.total_items_count || getBillItems(settlementBill).reduce((sum, item) => sum + Number(item.quantity || 0), 0)} items)</dt>
+                          <dd>{formatCurrency(subtotal)}</dd>
+                        </div>
+                        <div className="flex justify-between gap-3 text-slate-600">
+                          <dt>GST ({Number(settlementBill.tax_rate ?? 5).toFixed(2)}%)</dt>
+                          <dd>{formatCurrency(taxAmount)}</dd>
+                        </div>
+                        <div className="flex items-center justify-between gap-3 text-slate-600">
+                          <label htmlFor="settlement-discount">Discount (₹)</label>
+                          <input
+                            id="settlement-discount"
+                            type="number"
+                            min="0"
+                            max={subtotal}
+                            step="0.01"
+                            value={settlementDiscount}
+                            onChange={(event) => setSettlementDiscount(event.target.value)}
+                            disabled={settlingBill}
+                            className="h-9 w-28 rounded-lg border border-slate-200 px-2 text-right text-sm font-semibold text-slate-800 outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-500/20 disabled:bg-slate-50"
+                          />
+                        </div>
+                        <div className="flex justify-between gap-3 border-t border-slate-200 pt-3 text-base font-black text-slate-900">
+                          <dt>Grand Total</dt>
+                          <dd className="text-emerald-800">{formatCurrency(grandTotal)}</dd>
+                        </div>
+                      </dl>
+
+                      <div>
+                        <p className="mb-2 text-xs font-bold text-slate-700">Payment method</p>
+                        <div className="grid grid-cols-3 gap-2">
+                          {["Cash", "UPI", "Card"].map((method) => (
+                            <button
+                              key={method}
+                              type="button"
+                              disabled={settlingBill}
+                              onClick={() => setSettlementPaymentMethod(method)}
+                              className={`rounded-xl border px-3 py-2.5 text-sm font-bold transition disabled:cursor-not-allowed disabled:opacity-60 ${
+                                settlementPaymentMethod === method
+                                  ? "border-[#0A4731] bg-[#0A4731] text-white"
+                                  : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
+                              }`}
+                            >
+                              {method}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })()}
+              </div>
+
+              <footer className="flex flex-col-reverse gap-2 border-t border-slate-100 p-5 sm:flex-row sm:justify-end sm:px-6">
+                <button
+                  type="button"
+                  disabled={settlingBill || loadingSettlementBill}
+                  onClick={() => setSettlementBill(null)}
+                  className="rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-bold text-slate-700 transition hover:bg-slate-50 disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  disabled={settlingBill || loadingSettlementBill || Boolean(settlementError)}
+                  onClick={settleBillInPopup}
+                  className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#0A4731] px-5 py-2.5 text-sm font-bold text-white transition hover:bg-[#062D22] disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {settlingBill && <Loader2 className="h-4 w-4 animate-spin" />}
+                  {settlingBill ? "Settling…" : "Confirm Settlement"}
+                </button>
+              </footer>
+            </>
+          )}
+        </section>
+      </div>
+    )}
+
+    {mergeModalOpen && (
+      <div className="fixed inset-0 z-[80] flex items-center justify-center bg-slate-950/55 p-3 backdrop-blur-sm sm:p-5">
+        <button
+          type="button"
+          aria-label="Close merge tables dialog"
+          disabled={mergingTables}
+          onClick={() => {
+            setMergeModalOpen(false);
+            setMergeConfirmationOpen(false);
+          }}
+          className="absolute inset-0 h-full w-full cursor-default disabled:cursor-wait"
+        />
+        <section
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="billing-merge-heading"
+          className="relative flex max-h-[92vh] w-full max-w-5xl flex-col overflow-hidden rounded-3xl bg-white shadow-2xl"
+        >
+          <header className="flex items-start justify-between gap-4 border-b border-slate-100 p-5 sm:p-6">
+            <div>
+              <p className="inline-flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.18em] text-emerald-800">
+                <GitMerge className="h-4 w-4" />
+                Table management
+              </p>
+              <h2 id="billing-merge-heading" className="mt-1 text-xl font-black text-slate-900 sm:text-2xl">
+                {mergeConfirmationOpen ? "Confirm table merge" : "Merge occupied tables"}
+              </h2>
+              <p className="mt-1 text-sm text-slate-500">
+                {mergeConfirmationOpen
+                  ? "Review the selected tables and combined bill before continuing."
+                  : "Choose the primary table first, then select the secondary table to merge."}
+              </p>
+            </div>
+            <button
+              type="button"
+              aria-label="Close merge tables dialog"
+              disabled={mergingTables}
+              onClick={() => {
+                setMergeModalOpen(false);
+                setMergeConfirmationOpen(false);
+              }}
+              className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-slate-100 text-slate-600 transition hover:bg-slate-200 hover:text-slate-950 disabled:opacity-50"
+            >
+              <X size={18} />
+            </button>
+          </header>
+
+          {mergeError && (
+            <div role="alert" className="mx-5 mt-4 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-800 sm:mx-6">
+              {mergeError}
+            </div>
+          )}
+
+          {mergeConfirmationOpen ? (
+            <div className="space-y-5 overflow-y-auto p-5 sm:p-6">
+              <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 sm:p-5">
+                <p className="text-sm font-bold text-slate-900">
+                  Are you sure you want to merge Table {primaryMergeTable?.table_number || "—"} and Table {secondaryMergeTable?.table_number || "—"} into Table {primaryMergeTable?.table_number || "—"}?
+                </p>
+                <p className="mt-2 text-sm text-slate-600">
+                  The primary table will keep its active bill. The secondary table will become available after the merge succeeds.
+                </p>
+              </div>
+              {mergePreview && (
+                <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 p-4">
+                  <span className="text-sm font-bold text-emerald-900">
+                    {combinedMergeItems.length} combined food item{combinedMergeItems.length === 1 ? "" : "s"}
+                  </span>
+                  <span className="text-lg font-black text-emerald-900">{formatCurrency(mergePreview.grandTotal)}</span>
+                </div>
+              )}
+              {mergeEligibilityError && (
+                <p role="alert" className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-900">
+                  {mergeEligibilityError}
+                </p>
+              )}
+              <div className="flex flex-col-reverse gap-2 border-t border-slate-100 pt-4 sm:flex-row sm:justify-end">
+                <button
+                  type="button"
+                  disabled={mergingTables}
+                  onClick={() => setMergeConfirmationOpen(false)}
+                  className="rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-bold text-slate-700 transition hover:bg-slate-50 disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  disabled={mergingTables || !mergePreview || Boolean(mergeEligibilityError)}
+                  onClick={confirmTableMerge}
+                  className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#0A4731] px-5 py-2.5 text-sm font-bold text-white transition hover:bg-[#062D22] disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {mergingTables && <Loader2 className="h-4 w-4 animate-spin" />}
+                  {mergingTables ? "Merging…" : "Confirm Merge"}
+                </button>
+              </div>
+            </div>
+          ) : (
+            <>
+              <div className="grid min-h-0 gap-5 overflow-y-auto p-5 sm:p-6 lg:grid-cols-[0.9fr_1.1fr]">
+                <section aria-label="Occupied tables to merge" className="min-w-0">
+                  <div className="mb-3 flex items-center justify-between gap-3">
+                    <div>
+                      <h3 className="text-sm font-black text-slate-900">Occupied tables</h3>
+                      <p className="mt-0.5 text-xs text-slate-500">Only tables with an active bill can be selected.</p>
+                    </div>
+                    <button
+                      type="button"
+                      disabled={loadingMergeTables}
+                      onClick={async () => {
+                        setLoadingMergeTables(true);
+                        setMergeError("");
+                        if (!await loadBillingData({ showLoading: false })) {
+                          setMergeError("Could not refresh tables and bills. Please try again.");
+                        }
+                        setLoadingMergeTables(false);
+                      }}
+                      className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-slate-200 px-3 py-2 text-xs font-bold text-slate-700 transition hover:bg-slate-50 disabled:opacity-50"
+                    >
+                      <RefreshCw className={`h-3.5 w-3.5 ${loadingMergeTables ? "animate-spin" : ""}`} />
+                      Refresh
+                    </button>
+                  </div>
+
+                  {loadingMergeTables ? (
+                    <div className="flex min-h-48 items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 text-sm text-slate-500">
+                      <Loader2 className="h-4 w-4 animate-spin text-emerald-700" />
+                      Loading occupied tables…
+                    </div>
+                  ) : occupiedMergeTables.length ? (
+                    <div className="grid max-h-[48vh] gap-3 overflow-y-auto pr-1 sm:grid-cols-2 lg:grid-cols-1">
+                      {occupiedMergeTables.map((table) => {
+                        const tableId = String(table.table_id || table.id);
+                        const activeBill = billsByTableId.get(tableId);
+                        const canSelect = Boolean(activeBill?.bill_id);
+                        const isPrimary = tableId === mergePrimaryTableId;
+                        const isSecondary = tableId === mergeSecondaryTableId;
+                        const selectedRole = isPrimary ? "Primary Table" : isSecondary ? "Secondary Table" : "";
+                        return (
+                          <button
+                            key={tableId}
+                            type="button"
+                            disabled={!canSelect}
+                            onClick={() => selectMergeTable(table)}
+                            className={`flex w-full items-center gap-3 rounded-2xl border p-3 text-left transition disabled:cursor-not-allowed disabled:opacity-60 ${
+                              isPrimary ? "border-emerald-300 bg-emerald-50/70 ring-1 ring-emerald-200" :
+                                isSecondary ? "border-orange-300 bg-orange-50/70 ring-1 ring-orange-200" :
+                                  "border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50"
+                            }`}
+                          >
+                            <span className={`grid h-10 w-10 shrink-0 place-items-center rounded-xl ${
+                              isPrimary ? "bg-emerald-100 text-emerald-800" : "bg-orange-100 text-orange-800"
+                            }`}>
+                              <Table2 className="h-5 w-5" />
+                            </span>
+                            <span className="min-w-0 flex-1">
+                              <span className="flex flex-wrap items-center gap-2">
+                                <strong className="text-sm font-black text-slate-900">
+                                  Table {table.table_number || table.table_name || tableId}
+                                </strong>
+                                {selectedRole && (
+                                  <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${
+                                    isPrimary ? "bg-emerald-100 text-emerald-800" : "bg-orange-100 text-orange-800"
+                                  }`}>
+                                    {selectedRole}
+                                  </span>
+                                )}
+                              </span>
+                              {table.table_name && table.table_name !== table.table_number && (
+                                <span className="mt-0.5 block truncate text-xs text-slate-500">{table.table_name}</span>
+                              )}
+                              <span className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-slate-600">
+                                <span className="inline-flex items-center gap-1">
+                                  <span className="h-2 w-2 rounded-full bg-orange-500" /> Occupied
+                                </span>
+                                {activeBill ? (
+                                  <>
+                                    <span>Bill #{activeBill.bill_number}</span>
+                                    <span className="font-bold text-slate-800">{formatCurrency(activeBill.grand_total)}</span>
+                                  </>
+                                ) : (
+                                  <span className="font-semibold text-rose-700">No active bill</span>
+                                )}
+                              </span>
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <div className="rounded-2xl border border-dashed border-slate-300 px-5 py-10 text-center">
+                      <Table2 className="mx-auto h-8 w-8 text-slate-300" />
+                      <p className="mt-2 text-sm font-bold text-slate-700">No occupied tables</p>
+                      <p className="mt-1 text-xs text-slate-500">There are no occupied tables available to merge.</p>
+                    </div>
+                  )}
+                </section>
+
+                <div className="min-w-0 space-y-4">
+                  <section aria-label="Selected table bill details">
+                    <div className="mb-3">
+                      <h3 className="text-sm font-black text-slate-900">Selected table details</h3>
+                      <p className="mt-0.5 text-xs text-slate-500">Review both active bills before merging.</p>
+                    </div>
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      {[
+                        { table: primaryMergeTable, bill: primaryMergeBill, details: primaryMergeDetails, role: "Primary Table", roleClass: "text-emerald-800", borderClass: "border-emerald-200" },
+                        { table: secondaryMergeTable, bill: secondaryMergeBill, details: secondaryMergeDetails, role: "Secondary Table", roleClass: "text-orange-800", borderClass: "border-orange-200" },
+                      ].map(({ table, bill, details, role, roleClass, borderClass }) => {
+                        const billId = String(bill?.bill_id || "");
+                        const isLoading = loadingMergeBillIds.has(billId);
+                        return (
+                          <article key={role} className={`min-h-44 rounded-2xl border ${table ? borderClass : "border-dashed border-slate-200"} bg-white p-3`}>
+                            <p className={`text-[10px] font-black uppercase tracking-wider ${table ? roleClass : "text-slate-400"}`}>{role}</p>
+                            {table ? (
+                              <>
+                                <div className="mt-1 flex items-start justify-between gap-2">
+                                  <div className="min-w-0">
+                                    <h4 className="truncate text-sm font-black text-slate-900">
+                                      Table {table.table_number || table.table_name || "—"}
+                                    </h4>
+                                    {table.table_name && table.table_name !== table.table_number && (
+                                      <p className="truncate text-xs text-slate-500">{table.table_name}</p>
+                                    )}
+                                  </div>
+                                  {role === "Secondary Table" && (
+                                    <button
+                                      type="button"
+                                      onClick={() => makeMergeTablePrimary(String(table.table_id || table.id))}
+                                      className="shrink-0 text-[10px] font-bold text-emerald-800 hover:underline"
+                                    >
+                                      Make primary
+                                    </button>
+                                  )}
+                                </div>
+                                <p className="mt-1 text-xs font-semibold text-slate-600">
+                                  Active bill: {bill?.bill_number ? `#${bill.bill_number}` : "Not found"}
+                                </p>
+                                {isLoading ? (
+                                  <div className="mt-4 flex items-center gap-2 text-xs text-slate-500">
+                                    <Loader2 className="h-3.5 w-3.5 animate-spin text-emerald-700" />
+                                    Loading order items…
+                                  </div>
+                                ) : details ? (
+                                  <>
+                                    <ul className="mt-2 max-h-28 space-y-1 overflow-y-auto border-t border-slate-100 pt-2">
+                                      {getBillItems(details).length ? getBillItems(details).map((item, index) => (
+                                        <li key={`${billId}-${item.food_id || item.food_name}-${index}`} className="flex items-start justify-between gap-2 text-xs">
+                                          <span className="min-w-0 truncate text-slate-700">
+                                            {item.food_name || "Food item"} <span className="font-bold text-slate-500">×{Number(item.quantity || 0)}</span>
+                                          </span>
+                                          <span className="shrink-0 font-semibold text-slate-700">{formatCurrency(item.total_price ?? Number(item.unit_price || 0) * Number(item.quantity || 0))}</span>
+                                        </li>
+                                      )) : <li className="text-xs text-slate-500">No food items on this bill.</li>}
+                                    </ul>
+                                    <div className="mt-2 flex items-center justify-between border-t border-slate-100 pt-2 text-xs">
+                                      <span className="font-semibold text-slate-500">Bill amount</span>
+                                      <span className="font-black text-slate-900">{formatCurrency(details.grand_total)}</span>
+                                    </div>
+                                  </>
+                                ) : (
+                                  <div className="mt-3 text-xs text-slate-500">
+                                    <p>{bill ? "Select this table to load its bill items." : "This table has no active bill."}</p>
+                                    {bill && mergeError && (
+                                      <button
+                                        type="button"
+                                        onClick={() => loadMergeBillDetails(bill)}
+                                        className="mt-1 font-bold text-emerald-800 hover:underline"
+                                      >
+                                        Retry bill details
+                                      </button>
+                                    )}
+                                  </div>
+                                )}
+                              </>
+                            ) : (
+                              <p className="mt-3 text-xs text-slate-500">Select an occupied table to assign this role.</p>
+                            )}
+                          </article>
+                        );
+                      })}
+                    </div>
+                  </section>
+
+                  <section aria-label="Combined order preview" className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <h3 className="text-sm font-black text-slate-900">Combined order preview</h3>
+                        <p className="mt-0.5 text-xs text-slate-500">
+                          {mergePreview ? `${combinedMergeItems.length} distinct food item${combinedMergeItems.length === 1 ? "" : "s"}` : "Select two tables to preview the combined bill."}
+                        </p>
+                      </div>
+                      {mergePreview && <strong className="shrink-0 text-base font-black text-emerald-900">{formatCurrency(mergePreview.grandTotal)}</strong>}
+                    </div>
+                    {mergePreview && (
+                      <>
+                        <ul className="mt-3 max-h-32 space-y-1.5 overflow-y-auto border-t border-slate-200 pt-3">
+                          {combinedMergeItems.map((item, index) => (
+                            <li key={`${item.food_id || item.food_name}-${index}`} className="flex items-center justify-between gap-3 text-xs">
+                              <span className="min-w-0 truncate text-slate-700">
+                                {item.food_name || "Food item"} <span className="font-bold text-slate-500">×{item.quantity}</span>
+                              </span>
+                              <span className="shrink-0 font-semibold text-slate-700">{formatCurrency(item.total_price)}</span>
+                            </li>
+                          ))}
+                        </ul>
+                        <dl className="mt-3 space-y-1 border-t border-slate-200 pt-3 text-xs">
+                          <div className="flex justify-between gap-3 text-slate-600">
+                            <dt>Subtotal</dt><dd>{formatCurrency(mergePreview.subtotal)}</dd>
+                          </div>
+                          <div className="flex justify-between gap-3 text-slate-600">
+                            <dt>Tax ({mergePreview.taxRate.toFixed(2)}%)</dt><dd>{formatCurrency(mergePreview.taxAmount)}</dd>
+                          </div>
+                          <div className="flex justify-between gap-3 text-slate-600">
+                            <dt>Discount</dt><dd>−{formatCurrency(mergePreview.discount)}</dd>
+                          </div>
+                          <div className="flex justify-between gap-3 border-t border-slate-200 pt-2 text-sm font-black text-slate-900">
+                            <dt>Combined total</dt><dd>{formatCurrency(mergePreview.grandTotal)}</dd>
+                          </div>
+                        </dl>
+                      </>
+                    )}
+                    {mergeEligibilityError && (
+                      <p role="alert" className="mt-3 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-900">
+                        {mergeEligibilityError}
+                      </p>
+                    )}
+                  </section>
+                </div>
+              </div>
+
+              <footer className="flex flex-col-reverse gap-2 border-t border-slate-100 p-5 sm:flex-row sm:justify-end sm:px-6">
+                <button
+                  type="button"
+                  disabled={mergingTables}
+                  onClick={() => setMergeModalOpen(false)}
+                  className="rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-bold text-slate-700 transition hover:bg-slate-50 disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  disabled={
+                    !mergePrimaryTableId ||
+                    !mergeSecondaryTableId ||
+                    !primaryMergeDetails ||
+                    !secondaryMergeDetails ||
+                    Boolean(mergeEligibilityError) ||
+                    loadingMergeBillIds.size > 0 ||
+                    mergingTables
+                  }
+                  onClick={() => setMergeConfirmationOpen(true)}
+                  className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#0A4731] px-5 py-2.5 text-sm font-bold text-white transition hover:bg-[#062D22] disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  <GitMerge className="h-4 w-4" />
+                  Merge Tables
+                </button>
+              </footer>
+            </>
+          )}
+        </section>
+      </div>
+    )}
     </main>
   );
 };

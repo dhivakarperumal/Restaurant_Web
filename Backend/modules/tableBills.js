@@ -213,8 +213,8 @@ async function getTableBillDetails(billId) {
 
     totalItemsCount += Number(item.quantity);
 
-    // Consolidate for a unified invoice view
-      const variantKey = `${item.food_id}:${item.unit_price}:${JSON.stringify([itemData.selected_addons, itemData.selected_customizations])}`;
+    // Consolidate identical food variants while keeping distinct prices separate.
+    const variantKey = `${item.food_id}:${item.unit_price}:${JSON.stringify([itemData.selected_addons, itemData.selected_customizations])}`;
     if (consolidatedMap.has(variantKey)) {
       const existing = consolidatedMap.get(variantKey);
       existing.quantity += Number(item.quantity);
@@ -515,6 +515,7 @@ async function listTableBills(filters = {}) {
     tax_amount: Number(r.tax_amount || 0),
     discount: Number(r.discount || 0),
     grand_total: Number(r.grand_total || 0),
+    merged_table_numbers: parseStoredJson(r.merged_table_numbers, []),
   }));
 }
 

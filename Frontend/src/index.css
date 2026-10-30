@@ -207,6 +207,7 @@
 .admin-theme :is(button, a):hover[class*="hover:bg-orange-"] {
   background-color: var(--admin-color-primary-dark) !important;
   border-color: var(--admin-color-primary-dark) !important;
+  color: #FFFFFF !important;
 }
 
 .admin-theme :is(button, a)[class*="hover:text-[#FF5A00]"]:hover,

@@ -525,6 +525,29 @@ export default function ServerTables() {
     }
   };
 
+  const handleAddItemsToActiveBill = (table) => {
+    const tableId = table.table_id || table.id;
+    if (getDisplayStatus(table) !== "Occupied" || !getTableActiveBill(table)) {
+      toast.error("This table does not have an active bill for additional items.");
+      return;
+    }
+    if (!tableId) {
+      toast.error("This table is missing its ID and cannot be selected.");
+      return;
+    }
+    navigate("/server/foods", {
+      state: {
+        returnPath: "/server",
+        selectedTable: {
+          id: table.id ?? null,
+          table_id: tableId,
+          table_number: table.table_number,
+          no_of_seats: table.no_of_seats,
+        },
+      },
+    });
+  };
+
   const openMergeTables = async () => {
     setMergePrimaryTableId("");
     setMergeSecondaryTableIds([]);
@@ -586,11 +609,7 @@ export default function ServerTables() {
       setMergeSecondaryTableIds([]);
       setViewingBill(response.data.bill);
       setSettleDiscount(response.data.bill.discount || 0);
-      await Promise.all([
-        fetchTables({ quiet: true }),
-        fetchActiveBills(),
-        fetchKitchenOrders(),
-      ]);
+      await fetchTables({ quiet: true });
     } catch (error) {
       console.error("Could not merge table bills:", error);
       toast.error(error.response?.data?.message || error.message || "Could not merge tables. Please refresh and try again.");
@@ -1271,19 +1290,40 @@ export default function ServerTables() {
                     </div>
                   )}
                   {!isAdminTablesPage && (
-                    <div className="flex flex-col gap-2 mt-2">
-                      <button
-                        type="button"
-                        disabled={!["Available", "Occupied"].includes(displayStatus)}
-                        onClick={() => displayStatus === "Occupied" ? handleOpenBillModal(table) : selectTableForOrder(table)}
-                        title={displayStatus === "Occupied" ? "View the existing active bill" : displayStatus === "Available" ? "Select table and create an order" : `Table is ${displayStatus.toLowerCase()}`}
-                        className={`inline-flex w-full items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold text-white transition enabled:cursor-pointer disabled:cursor-not-allowed disabled:opacity-45 ${
-                          displayStatus === "Occupied" ? "bg-orange-600 hover:bg-orange-700" : "bg-[#FF5A00] hover:bg-[#E94B00]"
-                        }`}
-                      >
-                        {displayStatus === "Occupied" ? `View Bill${activeBill ? ` #${activeBill.bill_number}` : ""}` : displayStatus === "Available" ? "Select Table & Order" : displayStatus}
-                        {displayStatus !== "Reserved" && <ArrowRight className="h-4 w-4" />}
-                      </button>
+                    <div className="mt-2 flex flex-col gap-2">
+                      {displayStatus === "Occupied" && activeBill ? (
+                        <div className="grid grid-cols-2 gap-2">
+                          <button
+                            type="button"
+                            onClick={() => handleAddItemsToActiveBill(table)}
+                            title={`Add items to bill #${activeBill.bill_number}`}
+                            className="inline-flex w-full items-center justify-center gap-1.5 rounded-xl bg-[#FF5A00] px-3 py-2.5 text-sm font-semibold text-white transition hover:bg-[#E94B00]"
+                          >
+                            <Plus className="h-4 w-4" />
+                            Add Items
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleOpenBillModal(table)}
+                            title="View the existing active bill"
+                            className="inline-flex w-full items-center justify-center gap-1.5 rounded-xl bg-orange-100 px-3 py-2.5 text-sm font-semibold text-orange-800 transition hover:bg-orange-200"
+                          >
+                            <FileText className="h-4 w-4" />
+                            View Bill
+                          </button>
+                        </div>
+                      ) : (
+                        <button
+                          type="button"
+                          disabled={displayStatus !== "Available"}
+                          onClick={() => selectTableForOrder(table)}
+                          title={displayStatus === "Available" ? "Select table and create an order" : `Table is ${displayStatus.toLowerCase()}`}
+                          className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#FF5A00] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#E94B00] enabled:cursor-pointer disabled:cursor-not-allowed disabled:opacity-45"
+                        >
+                          {displayStatus === "Available" ? "Select Table & Order" : displayStatus}
+                          {displayStatus === "Available" && <ArrowRight className="h-4 w-4" />}
+                        </button>
+                      )}
                     </div>
                   )}
                 </div>
@@ -1492,6 +1532,15 @@ export default function ServerTables() {
                                 const displayStatus = getDisplayStatus(table);
                                 return (
                                   <>
+                                    {displayStatus === "Occupied" && activeBill && (
+                                      <button
+                                        type="button"
+                                        onClick={() => handleAddItemsToActiveBill(table)}
+                                        className="inline-flex cursor-pointer items-center gap-1 rounded-lg bg-[#FF5A00] px-2.5 py-1.5 text-xs font-bold text-white transition hover:bg-[#E94B00]"
+                                      >
+                                        <Plus className="h-3.5 w-3.5" /> Add Items
+                                      </button>
+                                    )}
                                     {displayStatus === "Occupied" && activeBill && (
                                       <button
                                         type="button"
@@ -2001,7 +2050,7 @@ export default function ServerTables() {
                 <span className="font-mono">₹{viewingBill.subtotal.toFixed(2)}</span>
               </div>
               <div className="flex justify-between">
-                <span>GST ({Number(viewingBill.tax_rate || 5).toFixed(2)}%):</span>
+                <span>GST ({Number(viewingBill.tax_rate ?? 5).toFixed(2)}%):</span>
                 <span className="font-mono">₹{viewingBill.tax_amount.toFixed(2)}</span>
               </div>
               {viewingBill.status !== 'Paid' && (
