@@ -6,6 +6,7 @@ import {
   ChevronRight,
   Clock,
   Eye,
+  EyeOff,
   Filter,
   Flame,
   IndianRupee,
@@ -519,15 +520,17 @@ export default function ServerFood() {
      
         
 
-      {location.pathname === "/admin/billing/order" && (
+      {location.pathname === "/admin/billing/order" && !selectedTable && (
         <div className="flex justify-end">
           <button
             type="button"
             onClick={() => setShowStatsSummary((visible) => !visible)}
             aria-pressed={showStatsSummary}
-            className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+            aria-label={showStatsSummary ? "Disable summary" : "Enable summary"}
+            title={showStatsSummary ? "Disable summary" : "Enable summary"}
+            className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-700 transition hover:bg-slate-50"
           >
-            {showStatsSummary ? "Disable Summary" : "Enable Summary"}
+            {showStatsSummary ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
           </button>
         </div>
       )}
@@ -622,13 +625,27 @@ export default function ServerFood() {
               </p>
             </div>
           </div>
-          <button
-            type="button"
-            onClick={changeSelectedTable}
-            className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-xl bg-[#FF5A00] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#E94B00]"
-          >
-            Change Table
-          </button>
+          <div className="flex flex-wrap items-center gap-2">
+            {location.pathname === "/admin/billing/order" && (
+              <button
+                type="button"
+                onClick={() => setShowStatsSummary((visible) => !visible)}
+                aria-pressed={showStatsSummary}
+                aria-label={showStatsSummary ? "Disable summary" : "Enable summary"}
+                title={showStatsSummary ? "Disable summary" : "Enable summary"}
+                className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-700 transition hover:bg-slate-50"
+              >
+                {showStatsSummary ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={changeSelectedTable}
+              className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-xl bg-[#FF5A00] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#E94B00]"
+            >
+              Change Table
+            </button>
+          </div>
         </div>
       )}
 
