@@ -268,21 +268,11 @@ const router = createHashRouter([
           },
           {
             path: 'orders/homedelivery',
-            element: (
-              <>
-                <ChefKitchenOrders key="admin-kitchen-homedelivery" orderTypeFilter="home_delivery" todayOnly adminTheme />
-                <CustomerOrdersPage key="admin-orders-homedelivery" audience="admin" view="delivery" showOrderFilters todayOnly />
-              </>
-            ),
+            element: <CustomerOrdersPage key="admin-orders-homedelivery" audience="admin" view="delivery" showOrderFilters todayOnly />,
           },
           {
             path: 'orders/pickup',
-            element: (
-              <>
-                <ChefKitchenOrders key="admin-kitchen-pickup" orderTypeFilter="pickup" todayOnly adminTheme />
-                <CustomerOrdersPage key="admin-orders-pickup" audience="admin" view="pickup" showOrderFilters todayOnly />
-              </>
-            ),
+            element: <CustomerOrdersPage key="admin-orders-pickup" audience="admin" view="pickup" showOrderFilters todayOnly />,
           },
           {
             path: 'orders/dining',
@@ -458,21 +448,11 @@ const router = createHashRouter([
           },
           {
             path: 'customer-orders/homedelivery',
-            element: (
-              <>
-                <ChefKitchenOrders key="chef-kitchen-homedelivery" orderTypeFilter="home_delivery" allowServing={false} />
-                <CustomerOrdersPage key="chef-orders-homedelivery" audience="chef" view="delivery" showOrderFilters />
-              </>
-            ),
+            element: <CustomerOrdersPage key="chef-orders-homedelivery" audience="chef" view="delivery" showOrderFilters todayOnly />,
           },
           {
             path: 'customer-orders/pickup',
-            element: (
-              <>
-                <ChefKitchenOrders key="chef-kitchen-pickup" orderTypeFilter="pickup" allowServing={false} />
-                <CustomerOrdersPage key="chef-orders-pickup" audience="chef" view="pickup" showOrderFilters />
-              </>
-            ),
+            element: <CustomerOrdersPage key="chef-orders-pickup" audience="chef" view="pickup" showOrderFilters todayOnly />,
           },
           {
             path: 'customer-orders/dining',
