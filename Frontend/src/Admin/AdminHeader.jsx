@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { useNavigate, Link, useLocation } from "react-router-dom";
 import {
   Menu, Search, Bell, Settings, User, LogOut, ChevronDown,
+  Eye, EyeOff, LayoutGrid, Table2,
   ShoppingBag, Package, Clock, X, LayoutDashboard, MessageSquare,
   Users, CreditCard, UserCheck, ClipboardList, Activity, UserRound, UserRoundPlus,
   CalendarCheck, Receipt, ShoppingCart, BarChart3, Dumbbell, Send,
@@ -115,7 +116,7 @@ const AlertDropdown = ({ title, items, icon, type, onClose, accent }) => {
 };
 
 /* ══════════════════ MAIN HEADER ══════════════════ */
-const Header = ({ onMenuClick }) => {
+const Header = ({ onMenuClick, onChangeTable, billingControls }) => {
   const [activeDropdown, setActiveDropdown] = useState(null);
   const [showSearch, setShowSearch] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -135,6 +136,18 @@ const Header = ({ onMenuClick }) => {
   const { title: pageTitle, icon: PageIcon } = getPageInfo(location.pathname);
   const isBillingOrderPage = location.pathname === "/admin/billing/order";
   const selectedTable = location.state?.selectedTable;
+  const productSearch = new URLSearchParams(location.search).get("productSearch") || "";
+
+  const updateProductSearch = (value) => {
+    const params = new URLSearchParams(location.search);
+    if (value) params.set("productSearch", value);
+    else params.delete("productSearch");
+    const search = params.toString();
+    navigate(
+      { pathname: location.pathname, search: search ? `?${search}` : "" },
+      { replace: true, state: location.state }
+    );
+  };
 
   /* clock */
   useEffect(() => {
@@ -286,7 +299,7 @@ const Header = ({ onMenuClick }) => {
           : "border-gray-200 bg-white shadow-sm"
       }`}>
         <div className={`flex items-center gap-3 px-4 sm:px-6 ${
-          isBillingOrderPage ? "h-16" : "h-18"
+          isBillingOrderPage ? "min-h-16 flex-nowrap overflow-x-auto py-2" : "h-18"
         }`} ref={dropdownRef}>
 
           {/* ── HAMBURGER (mobile) ── */}
@@ -298,7 +311,9 @@ const Header = ({ onMenuClick }) => {
           </button>
 
           {/* ── PAGE TITLE ── */}
-          <div className="flex items-center gap-2.5 flex-1 min-w-0">
+          <div className={`flex min-w-0 items-center gap-2.5 ${
+            isBillingOrderPage ? "shrink-0" : "flex-1"
+          }`}>
             {isBillingOrderPage ? (
               <img
                 src="/images/adminlogo.png"
@@ -329,44 +344,151 @@ const Header = ({ onMenuClick }) => {
             </div>
           </div>
 
+          {isBillingOrderPage && (
+            <div className="flex min-w-0 flex-1 items-center justify-end gap-2">
+              <div className="relative w-40 shrink-0 sm:w-56 lg:w-64">
+                <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                <input
+                  type="search"
+                  value={productSearch}
+                  onChange={(event) => updateProductSearch(event.target.value)}
+                  placeholder="Search products..."
+                  aria-label="Search products"
+                  className="h-10 w-full rounded-xl border border-[#dce7df] bg-[#f7faf7] pl-10 pr-10 text-sm text-gray-800 outline-none transition placeholder:text-gray-400 focus:border-[#1a3c36] focus:bg-white focus:ring-2 focus:ring-[#1a3c36]/10"
+                />
+                {productSearch && (
+                  <button
+                    type="button"
+                    onClick={() => updateProductSearch("")}
+                    aria-label="Clear product search"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 transition hover:text-gray-700"
+                  >
+                    <X size={15} />
+                  </button>
+                )}
+              </div>
+              {selectedTable && onChangeTable && (
+                <button
+                  type="button"
+                  onClick={onChangeTable}
+                  className="inline-flex h-10 shrink-0 items-center justify-center rounded-xl bg-[#1a3c36] px-3 text-xs font-semibold text-white transition hover:bg-[#244c43] sm:px-4 sm:text-sm"
+                >
+                  <span className="sm:hidden">Table</span>
+                  <span className="hidden sm:inline">Change Table</span>
+                </button>
+              )}
+            </div>
+          )}
+
+          {isBillingOrderPage && billingControls && (
+            <div className="flex shrink-0 flex-nowrap items-center justify-end gap-2">
+              <select
+                value={billingControls.selectedType}
+                onChange={(event) => billingControls.setSelectedType(event.target.value)}
+                aria-label="Filter products by type"
+                className="h-10 min-w-36 rounded-xl border border-[#dce7df] bg-[#f7faf7] px-3 text-sm text-gray-700 outline-none focus:border-[#1a3c36]"
+              >
+                <option value="all">All Types</option>
+                <option value="veg">Veg Only ({billingControls.vegCount})</option>
+                <option value="non-veg">Non-Veg ({billingControls.nonVegCount})</option>
+              </select>
+              <select
+                value={billingControls.sortBy}
+                onChange={(event) => billingControls.setSortBy(event.target.value)}
+                aria-label="Sort products"
+                className="h-10 min-w-44 rounded-xl border border-[#dce7df] bg-[#f7faf7] px-3 text-sm text-gray-700 outline-none focus:border-[#1a3c36]"
+              >
+                <option value="latest">Sort: Latest Added</option>
+                <option value="price-low">Price: Low to High</option>
+                <option value="price-high">Price: High to Low</option>
+                <option value="prep-time">Prep Time: Quickest</option>
+                <option value="name">Name: A to Z</option>
+              </select>
+              <div className="flex h-10 items-center rounded-xl border border-[#dce7df] bg-[#f7faf7] p-1">
+                <button
+                  type="button"
+                  onClick={() => billingControls.setViewMode("grid")}
+                  aria-label="Grid view"
+                  aria-pressed={billingControls.viewMode === "grid"}
+                  className={`flex h-8 w-8 items-center justify-center rounded-lg transition ${
+                    billingControls.viewMode === "grid"
+                      ? "bg-[#1a3c36] text-white shadow-sm"
+                      : "text-gray-500 hover:text-[#1a3c36]"
+                  }`}
+                >
+                  <LayoutGrid className="h-4 w-4" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => billingControls.setViewMode("table")}
+                  aria-label="Table view"
+                  aria-pressed={billingControls.viewMode === "table"}
+                  className={`flex h-8 w-8 items-center justify-center rounded-lg transition ${
+                    billingControls.viewMode === "table"
+                      ? "bg-[#1a3c36] text-white shadow-sm"
+                      : "text-gray-500 hover:text-[#1a3c36]"
+                  }`}
+                >
+                  <Table2 className="h-4 w-4" />
+                </button>
+              </div>
+              <button
+                type="button"
+                onClick={() => billingControls.setShowStatsSummary((visible) => !visible)}
+                aria-pressed={billingControls.showStatsSummary}
+                aria-label={billingControls.showStatsSummary ? "Hide summary" : "Show summary"}
+                title={billingControls.showStatsSummary ? "Hide summary" : "Show summary"}
+                className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-[#dce7df] bg-white text-[#1a3c36] transition hover:bg-[#f3f8f4]"
+              >
+                {billingControls.showStatsSummary
+                  ? <EyeOff className="h-4 w-4" />
+                  : <Eye className="h-4 w-4" />}
+              </button>
+            </div>
+          )}
+
           {/* ── RIGHT ACTIONS ── */}
           <div className="flex items-center gap-2 shrink-0">
 
             {/* Search */}
-            <button
+            {!isBillingOrderPage && <button
               onClick={() => setShowSearch(p => !p)}
               className="flex items-center gap-2 px-3 h-9 rounded-xl bg-gray-50 hover:bg-gray-100 border border-gray-200 text-gray-600 transition text-xs"
             >
               <Search size={14} />
               <span className="hidden md:block">Search...</span>
               <span className="hidden md:block text-[10px] bg-gray-100 px-1.5 py-0.5 rounded-md">⌘K</span>
-            </button>
+            </button>}
 
             {/* Divider */}
-            <div className="w-px h-6 bg-gray-200 mx-1" />
+            {!isBillingOrderPage && <div className="w-px h-6 bg-gray-200 mx-1" />}
 
-            {/* Order notifications */}
-            <div className="relative">
-              <IconBtn name="orders" badge={alerts.orders.length} badgeColor="bg-orange-500" title="Order Notifications">
-                <ShoppingCart size={18} />
-              </IconBtn>
-              {activeDropdown === "orders" && (
-                <AlertDropdown title="Order Notifications" items={alerts.orders} icon={<ShoppingCart size={13} className="text-orange-400" />} type="orders" onClose={() => setActiveDropdown(null)} accent="bg-orange-500/20 text-orange-400" />
-              )}
-            </div>
+            {!isBillingOrderPage && (
+              <>
+                {/* Order notifications */}
+                <div className="relative">
+                  <IconBtn name="orders" badge={alerts.orders.length} badgeColor="bg-orange-500" title="Order Notifications">
+                    <ShoppingCart size={18} />
+                  </IconBtn>
+                  {activeDropdown === "orders" && (
+                    <AlertDropdown title="Order Notifications" items={alerts.orders} icon={<ShoppingCart size={13} className="text-orange-400" />} type="orders" onClose={() => setActiveDropdown(null)} accent="bg-orange-500/20 text-orange-400" />
+                  )}
+                </div>
 
-            {/* Low stock notifications */}
-            <div className="relative">
-              <IconBtn name="lowStock" badge={alerts.lowStock.length} badgeColor="bg-red-500" title="Low Stock Notifications">
-                <Package size={18} />
-              </IconBtn>
-              {activeDropdown === "lowStock" && (
-                <AlertDropdown title="Low Stock Notifications" items={alerts.lowStock} icon={<Package size={13} className="text-red-400" />} type="lowStock" onClose={() => setActiveDropdown(null)} accent="bg-red-500/20 text-red-400" />
-              )}
-            </div>
+                {/* Low stock notifications */}
+                <div className="relative">
+                  <IconBtn name="lowStock" badge={alerts.lowStock.length} badgeColor="bg-red-500" title="Low Stock Notifications">
+                    <Package size={18} />
+                  </IconBtn>
+                  {activeDropdown === "lowStock" && (
+                    <AlertDropdown title="Low Stock Notifications" items={alerts.lowStock} icon={<Package size={13} className="text-red-400" />} type="lowStock" onClose={() => setActiveDropdown(null)} accent="bg-red-500/20 text-red-400" />
+                  )}
+                </div>
+              </>
+            )}
 
             {/* Divider */}
-            <div className="w-px h-6 bg-gray-200 mx-1" />
+            {!isBillingOrderPage && <div className="w-px h-6 bg-gray-200 mx-1" />}
 
             {/* ── USER PROFILE ── */}
             <div className="relative ml-1 sm:ml-2">

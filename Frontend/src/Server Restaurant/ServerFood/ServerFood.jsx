@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate, useOutletContext } from "react-router-dom";
 import {
   AlertCircle,
   CheckCircle2,
@@ -71,6 +71,7 @@ const isFoodAvailable = (food, orderType = "", currentTime) => {
 export default function ServerFood() {
   const location = useLocation();
   const navigate = useNavigate();
+  const { registerChangeBillingTable, registerBillingControls } = useOutletContext() || {};
   const selectedTable = location.state?.selectedTable;
   const orderType = selectedTable ? "dine-in" : location.state?.orderType || "";
   const orderReturnPath = location.state?.returnPath || "/server";
@@ -123,6 +124,11 @@ export default function ServerFood() {
   useEffect(() => {
     fetchActiveBill();
   }, [selectedTable?.table_id]);
+
+  useEffect(() => {
+    if (!isAdminBillingOrderPage) return;
+    setSearchQuery(new URLSearchParams(location.search).get("productSearch") || "");
+  }, [isAdminBillingOrderPage, location.search]);
 
   const fetchFoodsAndCategories = async () => {
     try {
@@ -516,25 +522,42 @@ export default function ServerFood() {
     navigate("/server/tables", { state: { returnPath: orderReturnPath } });
   };
 
+  useEffect(() => {
+    if (!isAdminBillingOrderPage || !registerChangeBillingTable) return undefined;
+    registerChangeBillingTable(() => changeSelectedTable);
+    return () => registerChangeBillingTable(null);
+  }, [isAdminBillingOrderPage, registerChangeBillingTable, selectedTable, cart, customer, orderReturnPath]);
+
+  useEffect(() => {
+    if (!isAdminBillingOrderPage || !registerBillingControls) return undefined;
+    registerBillingControls({
+      selectedType,
+      setSelectedType,
+      sortBy,
+      setSortBy,
+      viewMode,
+      setViewMode,
+      showStatsSummary,
+      setShowStatsSummary,
+      vegCount: stats.vegCount,
+      nonVegCount: stats.nonVegCount,
+    });
+    return () => registerBillingControls(null);
+  }, [
+    isAdminBillingOrderPage,
+    registerBillingControls,
+    selectedType,
+    sortBy,
+    viewMode,
+    showStatsSummary,
+    stats.vegCount,
+    stats.nonVegCount,
+  ]);
+
   return (
     <div className={isAdminBillingOrderPage ? "flex h-full min-h-0 flex-col gap-3 overflow-hidden p-3" : "space-y-6"}>
      
         
-
-      {isAdminBillingOrderPage && !selectedTable && (
-        <div className="flex justify-end">
-          <button
-            type="button"
-            onClick={() => setShowStatsSummary((visible) => !visible)}
-            aria-pressed={showStatsSummary}
-            aria-label={showStatsSummary ? "Disable summary" : "Enable summary"}
-            title={showStatsSummary ? "Disable summary" : "Enable summary"}
-            className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-700 transition hover:bg-slate-50"
-          >
-            {showStatsSummary ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-          </button>
-        </div>
-      )}
 
       {/* Stats Summary Cards */}
       {showStatsSummary && (
@@ -644,8 +667,10 @@ export default function ServerFood() {
       )}
 
       {/* Search and Filters Bar */}
+      {!isAdminBillingOrderPage && (
       <div className={`flex flex-col gap-3 rounded-2xl border border-gray-100 bg-white p-4 shadow-sm ${selectedTable ? "xl:flex-row xl:items-center" : "md:flex-row md:items-center md:justify-between"}`}>
         {/* Search Input */}
+        {!isAdminBillingOrderPage && (
         <div className={`relative w-full max-w-md ${selectedTable ? "xl:min-w-[180px] xl:flex-1" : "md:flex-1"}`}>
           <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
           <input
@@ -664,6 +689,7 @@ export default function ServerFood() {
             </button>
           )}
         </div>
+        )}
 
         {/* Filter Dropdowns, View Mode, and Table Actions */}
         <div className={`flex flex-wrap items-center gap-2 ${selectedTable ? "xl:justify-end" : ""}`}>
@@ -687,7 +713,7 @@ export default function ServerFood() {
             )}
 
             {/* Type Dropdown (Veg/Non-Veg) */}
-            <select
+            {!isAdminBillingOrderPage && <select
               value={selectedType}
               onChange={(e) => setSelectedType(e.target.value)}
               className="px-3 py-2 text-xs sm:text-sm bg-gray-50 border border-gray-200 rounded-xl text-gray-700 outline-none focus:border-[#FF5A00]"
@@ -695,7 +721,7 @@ export default function ServerFood() {
               <option value="all">All Types</option>
               <option value="veg">🟢 Veg Only ({stats.vegCount})</option>
               <option value="non-veg">🔴 Non-Veg ({stats.nonVegCount})</option>
-            </select>
+            </select>}
 
             {/* Order entry only shows items that can be added to the current order. */}
             {!hasOrderContext && (
@@ -713,7 +739,7 @@ export default function ServerFood() {
             )}
 
             {/* Sort Dropdown */}
-            <select
+            {!isAdminBillingOrderPage && <select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value)}
               className="px-3 py-2 text-xs sm:text-sm bg-gray-50 border border-gray-200 rounded-xl text-gray-700 outline-none focus:border-[#FF5A00]"
@@ -723,10 +749,10 @@ export default function ServerFood() {
               <option value="price-high">Price: High to Low</option>
               <option value="prep-time">Prep Time: Quickest</option>
               <option value="name">Name: A to Z</option>
-            </select>
+            </select>}
 
             {/* View Mode Switcher */}
-            <div className="flex items-center rounded-xl border border-gray-200 p-1 bg-gray-50">
+            {!isAdminBillingOrderPage && <div className="flex items-center rounded-xl border border-gray-200 p-1 bg-gray-50">
               <button
                 type="button"
                 onClick={() => setViewMode("grid")}
@@ -743,7 +769,7 @@ export default function ServerFood() {
               >
                 <Table2 className="w-4 h-4" />
               </button>
-            </div>
+            </div>}
             {hasActiveFilters && (
               <button
                 type="button"
@@ -753,19 +779,7 @@ export default function ServerFood() {
                 Clear filters
               </button>
             )}
-            {selectedTable && isAdminBillingOrderPage && (
-              <button
-                type="button"
-                onClick={() => setShowStatsSummary((visible) => !visible)}
-                aria-pressed={showStatsSummary}
-                aria-label={showStatsSummary ? "Disable summary" : "Enable summary"}
-                title={showStatsSummary ? "Disable summary" : "Enable summary"}
-                className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-700 transition hover:bg-slate-50"
-              >
-                {showStatsSummary ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-              </button>
-            )}
-            {selectedTable && (
+            {selectedTable && !isAdminBillingOrderPage && (
               <button
                 type="button"
                 onClick={changeSelectedTable}
@@ -776,6 +790,7 @@ export default function ServerFood() {
             )}
         </div>
       </div>
+      )}
 
       <div className={hasOrderContext ? `grid min-w-0 ${isAdminBillingOrderPage ? "min-h-0 flex-1 items-stretch gap-3 xl:grid-cols-[minmax(0,1fr)_380px]" : "items-start gap-5 xl:grid-cols-[minmax(0,1fr)_380px]"}` : ""}>
       <div className={`${isAdminBillingOrderPage ? "grid h-full min-h-0 min-w-0 gap-3 xl:grid-cols-[160px_minmax(0,1fr)] xl:grid-rows-[minmax(0,1fr)]" : ""} ${hasOrderContext ? `min-w-0 ${isAdminBillingOrderPage ? "xl:min-h-0" : "xl:max-h-[calc(100vh-12rem)] xl:overflow-y-auto xl:overscroll-contain xl:pr-2 scrollbar-hide"}` : "min-w-0"}`}>

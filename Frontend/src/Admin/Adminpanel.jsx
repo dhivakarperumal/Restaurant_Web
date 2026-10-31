@@ -8,6 +8,8 @@ import Header from "./AdminHeader";
 const AdminLayout = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [changeBillingTable, setChangeBillingTable] = useState(null);
+  const [billingControls, setBillingControls] = useState(null);
   const [isLargeScreen, setIsLargeScreen] = useState(
     window.innerWidth >= 1024
   );
@@ -59,7 +61,11 @@ const AdminLayout = () => {
         {/* Header */}
         {!isPrintPage && (
           <div className="print:hidden sticky top-0 z-40">
-            <Header onMenuClick={() => setSidebarOpen(true)} />
+            <Header
+              onMenuClick={() => setSidebarOpen(true)}
+              onChangeTable={changeBillingTable}
+              billingControls={billingControls}
+            />
           </div>
         )}
 
@@ -72,7 +78,10 @@ const AdminLayout = () => {
                 <p className="text-white/30 text-[10px] tracking-widest uppercase">Accessing Terminal...</p>
               </div>
             }>
-              <Outlet />
+              <Outlet context={{
+                registerChangeBillingTable: setChangeBillingTable,
+                registerBillingControls: setBillingControls,
+              }} />
             </Suspense>
           </div>
         </main>
