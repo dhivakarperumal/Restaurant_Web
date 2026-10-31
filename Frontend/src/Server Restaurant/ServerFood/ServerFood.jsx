@@ -1352,29 +1352,33 @@ export default function ServerFood() {
               </div>
               <p className="text-xl font-extrabold tabular-nums text-[#FF5A00]">₹{cartTotal.toFixed(2)}</p>
             </div>
-            {selectedTable && (
+            <div className={selectedTable ? "grid grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)] gap-2" : ""}>
+              {selectedTable && (
+                <button
+                  type="button"
+                  onClick={() => setShowBillPreview(true)}
+                  className="inline-flex min-h-10 min-w-0 w-full cursor-pointer items-center justify-center gap-1 rounded-xl border border-[#1a3c36] bg-white px-2 py-2 text-xs font-bold text-[#1a3c36] transition hover:bg-[#f3f7f3] sm:gap-2 sm:px-3 sm:text-sm"
+                >
+                  <Eye className="h-4 w-4 shrink-0" />
+                  <span className="truncate">Bill Preview</span>
+                </button>
+              )}
               <button
                 type="button"
-                onClick={() => setShowBillPreview(true)}
-                className="mb-2 inline-flex min-h-10 w-full cursor-pointer items-center justify-center gap-2 rounded-xl border border-[#1a3c36] bg-white px-4 py-2 text-sm font-bold text-[#1a3c36] transition hover:bg-[#f3f7f3]"
+                onClick={submitOrder}
+                disabled={cartItems.length === 0 || submittingOrder}
+                className={`inline-flex min-h-10 w-full cursor-pointer items-center justify-center gap-1 rounded-xl bg-[#FF5A00] px-2 py-2 text-xs font-bold text-white shadow-sm transition hover:bg-[#E94B00] disabled:cursor-not-allowed disabled:opacity-50 sm:gap-2 sm:px-3 sm:text-sm ${selectedTable ? "min-w-0" : "min-h-12 px-4 py-3"}`}
               >
-                <Eye className="h-4 w-4" />
-                Bill Preview
+                {submittingOrder ? <Loader2 className="h-4 w-4 shrink-0 animate-spin" /> : <ShoppingCart className="h-4 w-4 shrink-0" />}
+                <span className={selectedTable ? "truncate" : ""}>
+                  {submittingOrder
+                    ? "Sending to kitchen..."
+                    : activeBill
+                    ? `Add to Bill · Round ${(activeBill.rounds?.length || 1) + 1}`
+                    : "Send Order to Kitchen"}
+                </span>
               </button>
-            )}
-            <button
-              type="button"
-              onClick={submitOrder}
-              disabled={cartItems.length === 0 || submittingOrder}
-              className="inline-flex min-h-12 w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-[#FF5A00] px-4 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-[#E94B00] disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              {submittingOrder ? <Loader2 className="h-4 w-4 animate-spin" /> : <ShoppingCart className="h-4 w-4" />}
-              {submittingOrder
-                ? "Sending to kitchen..."
-                : activeBill
-                ? `Add to Bill · Round ${(activeBill.rounds?.length || 1) + 1}`
-                : "Send Order to Kitchen"}
-            </button>
+            </div>
           </footer>
         </section>
       )}

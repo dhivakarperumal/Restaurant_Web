@@ -315,11 +315,19 @@ const Header = ({ onMenuClick, onChangeTable, billingControls }) => {
             isBillingOrderPage ? "shrink-0" : "flex-1"
           }`}>
             {isBillingOrderPage ? (
-              <img
-                src="/images/adminlogo.png"
-                alt="Buy Foods restaurant logo"
-                className="h-10 w-10 shrink-0 rounded-xl border border-[#dce7df] bg-white object-contain p-0.5 shadow-sm"
-              />
+              <button
+                type="button"
+                onClick={() => navigate("/admin/billing")}
+                aria-label="Back to billing"
+                title="Back to billing"
+                className="shrink-0 rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1a3c36]/30"
+              >
+                <img
+                  src="/images/adminlogo.png"
+                  alt="Buy Foods restaurant logo"
+                  className="h-10 w-10 rounded-xl border border-[#dce7df] bg-white object-contain p-0.5 shadow-sm transition hover:shadow-md"
+                />
+              </button>
             ) : (
               <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-[#d4a843]/30 bg-[#d4a843]/15 text-[#d4a843]">
                 <PageIcon size={17} />
