@@ -77,6 +77,7 @@ export default function ServerFood() {
   const [foods, setFoods] = useState([]);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [showStatsSummary, setShowStatsSummary] = useState(false);
 
   // Filters & Search
   const [searchQuery, setSearchQuery] = useState("");
@@ -88,7 +89,7 @@ export default function ServerFood() {
   const [cart, setCart] = useState(() => location.state?.orderDraft?.cart || {});
   const [submittingOrder, setSubmittingOrder] = useState(false);
   const [activeBill, setActiveBill] = useState(null);
-  const [showBillItems, setShowBillItems] = useState(false);
+  const [showBillPreview, setShowBillPreview] = useState(false);
   const [customer, setCustomer] = useState(() => (
     location.state?.orderDraft?.customer || { name: "", phone: "", address: "" }
   ));
@@ -420,6 +421,11 @@ export default function ServerFood() {
     (total, [, item]) => total + item.unitPrice * item.quantity,
     0,
   );
+  const billPreviewSubtotal = Number(activeBill?.subtotal || 0) + cartTotal;
+  const billPreviewTaxRate = Number(activeBill?.tax_rate ?? 5);
+  const billPreviewTax = Number((billPreviewSubtotal * billPreviewTaxRate / 100).toFixed(2));
+  const billPreviewDiscount = Number(activeBill?.discount || 0);
+  const billPreviewTotal = Math.max(0, billPreviewSubtotal + billPreviewTax - billPreviewDiscount);
 
   const submitOrder = async () => {
     if (submissionLock.current || cartItems.length === 0) return;
@@ -513,58 +519,21 @@ export default function ServerFood() {
      
         
 
-      {/* Active Dining Bill Banner for Table (Consolidating Rounds) */}
-      {selectedTable && activeBill && (
-        <div className="rounded-2xl border border-blue-200 bg-gradient-to-r from-blue-900 via-indigo-900 to-slate-900 p-4 text-white shadow-sm">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex items-center gap-3">
-              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white/10 text-amber-300">
-                <Sparkles className="h-6 w-6" />
-              </div>
-              <div>
-                <h4 className="flex flex-wrap items-center gap-2 text-sm font-bold sm:text-base">
-                  Active Bill #{activeBill.bill_number} for Table {selectedTable.table_number}
-                  <span className="rounded-full bg-amber-400 px-2 py-0.5 text-[11px] font-extrabold text-amber-950">
-                    Round {(activeBill.rounds?.length || 1) + 1} Add-on
-                  </span>
-                </h4>
-                <p className="mt-0.5 text-xs text-blue-200">
-                  {activeBill.total_items_count} item{activeBill.total_items_count === 1 ? "" : "s"} already ordered (Running Total: ₹{activeBill.grand_total.toFixed(2)}).
-                  Any additional dishes selected now will be added to the <strong className="text-white">SAME bill</strong>.
-                </p>
-              </div>
-            </div>
-            <button
-              type="button"
-              onClick={() => setShowBillItems((prev) => !prev)}
-              className="self-start rounded-xl bg-[#FF5A00] px-3.5 py-1.5 text-xs font-semibold text-white transition hover:bg-[#E94B00] sm:self-auto cursor-pointer"
-            >
-              {showBillItems ? "Hide Ordered Items ▲" : "View Ordered Items ▼"}
-            </button>
-          </div>
-
-          {showBillItems && (
-            <div className="mt-3 rounded-xl border border-blue-400/30 bg-black/20 p-3">
-              <p className="mb-2 text-xs font-bold text-blue-200 uppercase tracking-wider">
-                Previously Ordered Items on this Bill:
-              </p>
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
-                {activeBill.consolidated_items?.map((it) => (
-                  <div key={it.food_id} className="rounded-lg bg-white/10 p-2 text-xs flex justify-between items-center">
-                    <div>
-                      <p className="font-semibold text-white">{it.food_name}</p>
-                      <p className="text-[11px] text-blue-200">{it.quantity} × ₹{it.unit_price}</p>
-                    </div>
-                    <span className="font-bold text-amber-300">₹{it.total_price.toFixed(2)}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
+      {location.pathname === "/admin/billing/order" && (
+        <div className="flex justify-end">
+          <button
+            type="button"
+            onClick={() => setShowStatsSummary((visible) => !visible)}
+            aria-pressed={showStatsSummary}
+            className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+          >
+            {showStatsSummary ? "Disable Summary" : "Enable Summary"}
+          </button>
         </div>
       )}
 
       {/* Stats Summary Cards */}
+      {showStatsSummary && (
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-4">
         {[
           {
@@ -637,6 +606,7 @@ export default function ServerFood() {
           </article>
         ))}
       </div>
+      )}
 
       {selectedTable && (
         <div className="flex flex-col gap-3 rounded-2xl border border-[#d8e5da] bg-white p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between">
@@ -1322,6 +1292,16 @@ export default function ServerFood() {
               </div>
               <p className="text-xl font-extrabold tabular-nums text-[#FF5A00]">₹{cartTotal.toFixed(2)}</p>
             </div>
+            {selectedTable && (
+              <button
+                type="button"
+                onClick={() => setShowBillPreview(true)}
+                className="mb-2 inline-flex min-h-10 w-full cursor-pointer items-center justify-center gap-2 rounded-xl border border-[#1a3c36] bg-white px-4 py-2 text-sm font-bold text-[#1a3c36] transition hover:bg-[#f3f7f3]"
+              >
+                <Eye className="h-4 w-4" />
+                Bill Preview
+              </button>
+            )}
             <button
               type="button"
               onClick={submitOrder}
@@ -1339,6 +1319,83 @@ export default function ServerFood() {
         </section>
       )}
       </div>
+
+      {showBillPreview && selectedTable && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget) setShowBillPreview(false);
+          }}
+        >
+          <section
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="bill-preview-title"
+            className="flex max-h-[90vh] w-full max-w-xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl"
+          >
+            <header className="flex items-start justify-between border-b border-slate-100 p-5">
+              <div>
+                <h2 id="bill-preview-title" className="text-lg font-bold text-slate-900">Bill Preview</h2>
+                <p className="mt-1 text-sm text-slate-500">
+                  Table {selectedTable.table_number}
+                  {activeBill?.bill_number ? ` · Bill #${activeBill.bill_number}` : ""}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowBillPreview(false)}
+                aria-label="Close bill preview"
+                className="rounded-lg p-2 text-slate-500 transition hover:bg-slate-100 hover:text-slate-800"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </header>
+
+            <div className="min-h-0 flex-1 space-y-5 overflow-y-auto p-5">
+              {activeBill?.consolidated_items?.length > 0 && (
+                <section>
+                  <h3 className="mb-2 text-xs font-bold uppercase tracking-wide text-slate-500">Previously ordered</h3>
+                  <div className="divide-y divide-slate-100 rounded-xl border border-slate-200 px-3">
+                    {activeBill.consolidated_items.map((item, index) => (
+                      <div key={`${item.food_id}-${index}`} className="flex items-center justify-between gap-3 py-3 text-sm">
+                        <span className="min-w-0 text-slate-700">{item.food_name} <span className="text-slate-500">× {item.quantity}</span></span>
+                        <span className="shrink-0 font-semibold text-slate-800">₹{Number(item.total_price || 0).toFixed(2)}</span>
+                      </div>
+                    ))}
+                  </div>
+                </section>
+              )}
+
+              <section>
+                <h3 className="mb-2 text-xs font-bold uppercase tracking-wide text-slate-500">This round</h3>
+                {cartItems.length ? (
+                  <div className="divide-y divide-slate-100 rounded-xl border border-slate-200 px-3">
+                    {cartItems.map(([cartKey, item]) => (
+                      <div key={cartKey} className="flex items-center justify-between gap-3 py-3 text-sm">
+                        <span className="min-w-0 text-slate-700">{item.food.food_name} <span className="text-slate-500">× {item.quantity}</span></span>
+                        <span className="shrink-0 font-semibold text-slate-800">₹{(item.unitPrice * item.quantity).toFixed(2)}</span>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="rounded-xl border border-dashed border-slate-200 p-4 text-center text-sm text-slate-500">No items selected for this round.</p>
+                )}
+              </section>
+            </div>
+
+            <footer className="space-y-2 border-t border-slate-100 bg-slate-50 p-5 text-sm">
+              <div className="flex justify-between text-slate-600"><span>Subtotal</span><span>₹{billPreviewSubtotal.toFixed(2)}</span></div>
+              <div className="flex justify-between text-slate-600"><span>Tax ({billPreviewTaxRate}%)</span><span>₹{billPreviewTax.toFixed(2)}</span></div>
+              {billPreviewDiscount > 0 && (
+                <div className="flex justify-between text-slate-600"><span>Discount</span><span>-₹{billPreviewDiscount.toFixed(2)}</span></div>
+              )}
+              <div className="flex justify-between border-t border-slate-200 pt-2 text-base font-extrabold text-slate-900">
+                <span>Estimated total</span><span>₹{billPreviewTotal.toFixed(2)}</span>
+              </div>
+            </footer>
+          </section>
+        </div>
+      )}
 
       {/* VIEW-ONLY FOOD DETAILS MODAL */}
       {viewingFood && (
