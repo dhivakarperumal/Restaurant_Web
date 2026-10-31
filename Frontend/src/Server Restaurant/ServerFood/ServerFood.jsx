@@ -876,7 +876,7 @@ export default function ServerFood() {
               >
                 <div>
                   {/* Card Image */}
-                  <div className={`relative w-full bg-gray-100 overflow-hidden ${isAdminBillingOrderPage ? "h-24 2xl:h-28" : "h-44"}`}>
+                  <div className={`relative w-full bg-gray-100 overflow-hidden ${isAdminBillingOrderPage ? "h-20 2xl:h-24" : "h-44"}`}>
                     {primaryImage ? (
                       <img
                         src={resolveImageUrl(primaryImage)}
@@ -940,10 +940,16 @@ export default function ServerFood() {
                         <span>{food.preparation_time}m</span>
                       </div>
                     ) : null}
+                    {Number(food.discount || 0) > 0 && (
+                      <div className="absolute bottom-2.5 left-2.5 inline-flex items-center gap-1 rounded-md bg-emerald-600 px-2 py-1 text-[10px] font-bold leading-none text-white shadow-sm">
+                        <Tag className="h-3 w-3 shrink-0" />
+                        <span>{Number(food.discount)}% OFF</span>
+                      </div>
+                    )}
                   </div>
 
                   {/* Card Content */}
-                  <div className={`${isAdminBillingOrderPage ? "space-y-1.5 p-2.5" : "space-y-2.5 p-4"}`}>
+                  <div className={`${isAdminBillingOrderPage ? "space-y-1 p-2" : "space-y-2.5 p-4"}`}>
                     <div>
                       <div className="flex items-center justify-between gap-1 text-[11px] text-gray-400">
                         <span className="font-mono font-medium">
@@ -967,8 +973,8 @@ export default function ServerFood() {
                     </div>
 
                     {/* Pricing */}
-                    <div className="flex items-baseline gap-2 pt-1 border-t border-gray-100">
-                      <span className="text-lg font-bold text-gray-900">
+                    <div className={`flex items-baseline gap-2 border-t border-gray-100 ${isAdminBillingOrderPage ? "pt-0.5" : "pt-1"}`}>
+                      <span className={`${isAdminBillingOrderPage ? "text-base" : "text-lg"} font-bold text-gray-900`}>
                         ₹{Number(food.final_price || 0).toFixed(2)}
                       </span>
                       {Number(food.mrp || 0) > Number(food.final_price || 0) && (
@@ -976,25 +982,20 @@ export default function ServerFood() {
                           ₹{Number(food.mrp || 0).toFixed(2)}
                         </span>
                       )}
-                      {Number(food.discount || 0) > 0 && (
-                        <span className="text-[10px] font-semibold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded">
-                          {Number(food.discount)}% OFF
-                        </span>
-                      )}
                     </div>
                   </div>
                 </div>
 
                 {/* Card Footer: View Details Action */}
-                <div className="space-y-2 p-3 pt-0">
-                  {hasOrderContext && (
-                    <div className="flex items-center justify-between rounded-xl bg-gray-50 p-2">
+                <div className={`space-y-1.5 ${isAdminBillingOrderPage ? "p-2 pt-0" : "p-3 pt-0"}`}>
+                  {hasOrderContext && getFoodQuantity(food) > 0 && (
+                    <div className={`flex items-center justify-between rounded-xl bg-gray-50 ${isAdminBillingOrderPage ? "p-1" : "p-2"}`}>
                       <div className="flex items-center gap-2">
-                        <button type="button" onClick={() => adjustFoodQuantity(food, -1)} aria-label={`Decrease ${food.food_name} quantity`} disabled={!getFoodQuantity(food)} className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg border border-orange-200 bg-white text-[#FF5A00] hover:bg-orange-50 disabled:cursor-not-allowed disabled:opacity-40">
+                        <button type="button" onClick={() => adjustFoodQuantity(food, -1)} aria-label={`Decrease ${food.food_name} quantity`} disabled={!getFoodQuantity(food)} className={`flex cursor-pointer items-center justify-center rounded-lg border border-orange-200 bg-white text-[#FF5A00] hover:bg-orange-50 disabled:cursor-not-allowed disabled:opacity-40 ${isAdminBillingOrderPage ? "h-7 w-7" : "h-8 w-8"}`}>
                           <Minus className="h-4 w-4" />
                         </button>
                         <span className="w-5 text-center text-sm font-bold">{getFoodQuantity(food)}</span>
-                        <button type="button" onClick={() => adjustFoodQuantity(food, 1)} aria-label={`Increase ${food.food_name} quantity`} disabled={!isAvailable || getFoodQuantity(food) >= 99} className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg border border-orange-200 bg-white text-[#FF5A00] hover:bg-orange-50 disabled:cursor-not-allowed disabled:opacity-40">
+                        <button type="button" onClick={() => adjustFoodQuantity(food, 1)} aria-label={`Increase ${food.food_name} quantity`} disabled={!isAvailable || getFoodQuantity(food) >= 99} className={`flex cursor-pointer items-center justify-center rounded-lg border border-orange-200 bg-white text-[#FF5A00] hover:bg-orange-50 disabled:cursor-not-allowed disabled:opacity-40 ${isAdminBillingOrderPage ? "h-7 w-7" : "h-8 w-8"}`}>
                           <Plus className="h-4 w-4" />
                         </button>
                       </div>
