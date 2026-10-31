@@ -564,6 +564,7 @@ const getDeliveryPartnerEarnings = async (req, res) => {
     );
     const [entries] = await db.execute(
       `SELECT order_number AS order_id, customer_name, updated_at AS date,
+              order_status, subtotal,
               delivery_charge, delivery_distance_km AS distance_km,
               delivery_charge AS total_earnings, total_amount AS order_total,
               payment_method, payment_status

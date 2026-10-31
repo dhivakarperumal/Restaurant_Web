@@ -41,7 +41,7 @@ const readCoordinates = (location, label, statusCode = 400) => {
   return { latitude, longitude };
 };
 
-const distanceInKilometres = (origin, destination) => {
+const distanceInMetres = (origin, destination) => {
   const radians = (degrees) => (degrees * Math.PI) / 180;
   const latitudeDifference = radians(destination.latitude - origin.latitude);
   const longitudeDifference = radians(destination.longitude - origin.longitude);
@@ -49,8 +49,12 @@ const distanceInKilometres = (origin, destination) => {
     + Math.cos(radians(origin.latitude))
       * Math.cos(radians(destination.latitude))
       * Math.sin(longitudeDifference / 2) ** 2);
-  return 6371 * 2 * Math.atan2(Math.sqrt(haversine), Math.sqrt(1 - haversine));
+  return 6371000 * 2 * Math.atan2(Math.sqrt(haversine), Math.sqrt(1 - haversine));
 };
+
+const distanceInKilometres = (origin, destination) => (
+  distanceInMetres(origin, destination) / 1000
+);
 
 const calculateDeliveryQuoteFromSettings = ({
   location,
@@ -75,9 +79,10 @@ const calculateDeliveryQuoteFromSettings = ({
     throw createDeliveryError('The configured delivery radius is invalid. Please contact the restaurant.', 503);
   }
 
-  const exactDistance = distanceInKilometres(restaurantCoordinates, customerCoordinates);
-  const distanceKm = Number(exactDistance.toFixed(2));
-  if (exactDistance > maxDistance) {
+  const exactDistanceMetres = distanceInMetres(restaurantCoordinates, customerCoordinates);
+  const exactDistanceKm = exactDistanceMetres / 1000;
+  const distanceKm = Number(exactDistanceKm.toFixed(2));
+  if (exactDistanceMetres > maxDistance * 1000) {
     throw createDeliveryError(
       `This address is outside the delivery area. Delivery is available within ${maxDistance} km; your location is about ${distanceKm} km away.`,
       400,
@@ -87,7 +92,7 @@ const calculateDeliveryQuoteFromSettings = ({
   const freeDelivery = freeMinimum > 0 && amount >= freeMinimum;
   const deliveryCharge = freeDelivery
     ? 0
-    : Number((baseCharge + (exactDistance * perKmCharge)).toFixed(2));
+    : Number((baseCharge + (exactDistanceMetres * perKmCharge / 1000)).toFixed(2));
   return {
     deliveryCharge,
     distanceKm,

@@ -13,6 +13,12 @@ const EMPTY_PROFILE = {};
 const currency = (value) =>
   value == null ? "—" : `₹${Number(value).toLocaleString("en-IN")}`;
 
+const distanceFee = (distanceKm, perKmCharge) => {
+  if (distanceKm == null || perKmCharge == null || distanceKm === "" || perKmCharge === "") return null;
+  const fee = Number(distanceKm) * Number(perKmCharge);
+  return Number.isFinite(fee) ? fee : null;
+};
+
 const rowsFrom = (payload) => {
   if (Array.isArray(payload))                return payload;
   if (Array.isArray(payload?.items))         return payload.items;
@@ -111,6 +117,12 @@ const EarningsPage = () => {
   const [viewMode, setViewMode] = useState("list");
   const params = { range: "this-month" };
   const { resource, loading, error, refresh } = usePartnerResource("/delivery-partner/earnings", params);
+  const {
+    resource: deliverySettings,
+    loading: pricingLoading,
+    error: pricingError,
+    refresh: refreshPricing,
+  } = usePartnerResource("/settings/delivery");
 
   const summary = resource?.summary || resource || {};
   const entries = rowsFrom(resource?.entries || resource?.history || resource?.rows || []);
@@ -137,7 +149,25 @@ const EarningsPage = () => {
       ["Today's earnings", summary.today_earnings ?? summary.todayEarnings, IndianRupee, "mint"], ["This week", summary.week_earnings ?? summary.weekEarnings, IndianRupee, "violet"], ["This month", summary.month_earnings ?? summary.monthEarnings, IndianRupee, "pink"], ["Total earnings", summary.total_earnings ?? summary.totalEarnings, WalletCards, "amber"], ["Completed deliveries", summary.completed_deliveries ?? summary.completedDeliveries, CheckCheck, "green"], ["Cash collected", summary.cash_collected ?? summary.cashCollected, WalletCards, "forest"],
     ].map(([label, value, Icon, tone]) => <EarningsCard key={label} label={label} value={currency(value)} icon={Icon} tone={tone} loading={loading} />)}</div>
     <div className="overflow-hidden rounded-xl border border-[#e2e9e3] bg-white">
-      <div className="border-b border-gray-100 px-4 py-4"><h2 className="font-bold">Earnings history</h2><p className="mt-1 text-xs text-gray-500">Per-delivery amounts and payment status</p></div>
+      <div className="border-b border-gray-100 px-4 py-4"><h2 className="font-bold">Delivery pricing settings</h2><p className="mt-1 text-xs text-gray-500">Current rates from restaurant settings; these are not historical rate snapshots.</p></div>
+      <div className="p-4">
+        <ServiceNotice error={pricingError} loading={pricingLoading} refresh={refreshPricing} noun="Delivery pricing" />
+        {!pricingLoading && !pricingError && <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          {[
+            ["Base delivery fee", currency(deliverySettings?.base_charge)],
+            ["Fee per kilometre", currency(deliverySettings?.per_km_charge)],
+            ["Free delivery minimum", currency(deliverySettings?.free_minimum)],
+            ["Maximum delivery distance", deliverySettings?.max_distance == null ? "—" : `${deliverySettings.max_distance} km`],
+            ["Service area", deliverySettings?.area_scope || "—"],
+            ["Estimated delivery time", deliverySettings?.estimated_time || "—"],
+            ["Express delivery", deliverySettings?.express_enabled == null ? "—" : (deliverySettings.express_enabled === 1 || deliverySettings.express_enabled === "1" || deliverySettings.express_enabled === true ? "Available" : "Unavailable")],
+            ["Express delivery fee", currency(deliverySettings?.express_charge)],
+          ].map(([label, value]) => <div key={label} className="rounded-lg bg-[#f7faf8] p-3"><p className="text-xs text-gray-500">{label}</p><p className="mt-1 font-semibold text-slate-800">{value}</p></div>)}
+        </div>}
+      </div>
+    </div>
+    <div className="overflow-hidden rounded-xl border border-[#e2e9e3] bg-white">
+      <div className="border-b border-gray-100 px-4 py-4"><h2 className="font-bold">Earnings history</h2><p className="mt-1 text-xs text-gray-500">Per-kilometre fee × distance shows the distance-based portion. The delivery charge may also include the base fee or free-delivery adjustments.</p></div>
       <div className="flex flex-col gap-3 border-b border-gray-100 p-3 sm:flex-row sm:items-center sm:gap-4 sm:p-4">
         <label className="relative block min-w-0 flex-1">
           <Search size={18} className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[#7f8983]" />
@@ -162,14 +192,21 @@ const EarningsPage = () => {
       {viewMode === "grid" ? (
         <div className="grid gap-3 p-4 sm:grid-cols-2 xl:grid-cols-3">
           {filteredEntries.map((entry, index) => <article key={entry.order_id || entry.id || index} className="rounded-xl border border-[#e2e9e3] bg-white p-4">
-            <div className="flex items-start justify-between gap-3"><div><p className="text-xs font-semibold text-gray-500">{entry.order_id || entry.id || "—"}</p><p className="mt-1 text-xs text-gray-500">{entry.date ? new Date(entry.date).toLocaleDateString("en-IN") : "—"}</p></div><span className="rounded-full bg-emerald-50 px-2 py-1 text-xs font-semibold text-emerald-700">{entry.payment_status || "—"}</span></div>
-            <div className="mt-4 grid grid-cols-2 gap-3 text-sm"><div><p className="text-xs text-gray-500">Distance</p><p className="mt-1 font-semibold">{entry.distance_km ?? "—"} km</p></div><div><p className="text-xs text-gray-500">Delivery charge</p><p className="mt-1 font-bold">{currency(entry.delivery_charge ?? entry.total_earnings)}</p></div></div>
-            <div className="mt-3 border-t border-gray-100 pt-3 text-xs text-gray-500">Order total <span className="font-semibold text-slate-700">{currency(entry.order_total)}</span></div>
+            <div className="flex items-start justify-between gap-3"><div><p className="text-xs font-semibold text-gray-500">{entry.order_id || entry.id || "—"}</p><p className="mt-1 text-sm font-semibold text-slate-700">{entry.customer_name || "Customer not available"}</p><p className="mt-1 text-xs text-gray-500">{entry.date ? new Date(entry.date).toLocaleDateString("en-IN") : "—"}</p></div><span className="rounded-full bg-emerald-50 px-2 py-1 text-xs font-semibold text-emerald-700">{entry.order_status || "—"}</span></div>
+            <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
+              <div><p className="text-xs text-gray-500">Distance</p><p className="mt-1 font-semibold">{entry.distance_km ?? "—"} km</p></div>
+              <div><p className="text-xs text-gray-500">Fee per kilometre</p><p className="mt-1 font-semibold">{currency(deliverySettings?.per_km_charge)}</p></div>
+              <div><p className="text-xs text-gray-500">Per-km fee × distance</p><p className="mt-1 font-semibold">{currency(distanceFee(entry.distance_km, deliverySettings?.per_km_charge))}</p></div>
+              <div><p className="text-xs text-gray-500">Subtotal</p><p className="mt-1 font-semibold">{currency(entry.subtotal)}</p></div>
+              <div><p className="text-xs text-gray-500">Order total</p><p className="mt-1 font-bold">{currency(entry.order_total)}</p></div>
+            </div>
+            <div className="mt-3 flex justify-between gap-3 border-t border-gray-100 pt-3 text-xs"><span className="text-gray-500">Payment method</span><span className="font-semibold">{entry.payment_method || "—"}</span></div>
+            <div className="mt-2 flex justify-between gap-3 text-xs"><span className="text-gray-500">Payment status</span><span className="font-semibold">{entry.payment_status || "—"}</span></div>
           </article>)}
           {!loading && !error && filteredEntries.length === 0 && <p className="py-8 text-center text-sm text-gray-500 sm:col-span-2 xl:col-span-3">No earnings match these filters.</p>}
         </div>
       ) : (
-        <div className="overflow-x-auto"><table className="w-full min-w-[720px] text-left text-sm"><thead className="border-b border-orange-100 bg-orange-50 text-xs uppercase text-orange-700"><tr>{["Order", "Date", "Distance", "Delivery charge", "Order total", "Payment"].map((heading) => <th key={heading} className="px-4 py-3 font-semibold">{heading}</th>)}</tr></thead><tbody className="divide-y divide-gray-100">{filteredEntries.map((entry, index) => <tr key={entry.order_id || entry.id || index}><td className="px-4 py-3 font-semibold">{entry.order_id || entry.id || "—"}</td><td className="whitespace-nowrap px-4 py-3 text-gray-500">{entry.date ? new Date(entry.date).toLocaleDateString("en-IN") : "—"}</td><td className="px-4 py-3">{entry.distance_km ?? "—"} km</td><td className="px-4 py-3 font-bold">{currency(entry.delivery_charge ?? entry.total_earnings)}</td><td className="px-4 py-3">{currency(entry.order_total)}</td><td className="px-4 py-3"><span className="rounded-full bg-emerald-50 px-2 py-1 text-xs font-semibold text-emerald-700">{entry.payment_status || "—"}</span></td></tr>)}{!loading && !error && filteredEntries.length === 0 && <tr><td colSpan={6} className="px-4 py-12 text-center text-sm text-gray-500">{entries.length ? "No earnings match these filters." : "Earnings history will appear after completed deliveries."}</td></tr>}</tbody></table></div>
+        <div className="overflow-x-auto"><table className="w-full min-w-[1120px] text-left text-sm"><thead className="border-b border-orange-100 bg-orange-50 text-xs uppercase text-orange-700"><tr>{["Order / Customer", "Status", "Date", "Distance", "Fee per kilometre", "Per-km fee × distance", "Subtotal", "Order total", "Payment method", "Payment status"].map((heading) => <th key={heading} className="px-4 py-3 font-semibold">{heading}</th>)}</tr></thead><tbody className="divide-y divide-gray-100">{filteredEntries.map((entry, index) => <tr key={entry.order_id || entry.id || index}><td className="px-4 py-3"><p className="font-semibold">{entry.order_id || entry.id || "—"}</p><p className="mt-1 text-xs text-gray-500">{entry.customer_name || "Customer not available"}</p></td><td className="px-4 py-3">{entry.order_status || "—"}</td><td className="whitespace-nowrap px-4 py-3 text-gray-500">{entry.date ? new Date(entry.date).toLocaleDateString("en-IN") : "—"}</td><td className="px-4 py-3">{entry.distance_km ?? "—"} km</td><td className="px-4 py-3">{currency(deliverySettings?.per_km_charge)}</td><td className="px-4 py-3">{currency(distanceFee(entry.distance_km, deliverySettings?.per_km_charge))}</td><td className="px-4 py-3">{currency(entry.subtotal)}</td><td className="px-4 py-3">{currency(entry.order_total)}</td><td className="px-4 py-3">{entry.payment_method || "—"}</td><td className="px-4 py-3"><span className="rounded-full bg-emerald-50 px-2 py-1 text-xs font-semibold text-emerald-700">{entry.payment_status || "—"}</span></td></tr>)}{!loading && !error && filteredEntries.length === 0 && <tr><td colSpan={10} className="px-4 py-12 text-center text-sm text-gray-500">{entries.length ? "No earnings match these filters." : "Earnings history will appear after completed deliveries."}</td></tr>}</tbody></table></div>
       )}
     </div>
   </section>;

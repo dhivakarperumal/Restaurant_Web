@@ -205,6 +205,29 @@ const requireDeliveryPartner = async (req, res, next) => {
   }
 };
 
+const requireDeliveryPricingAccess = async (req, res, next) => {
+  const token = req.get('authorization')?.replace(/^Bearer\s+/i, '');
+  if (!token) return res.status(401).json({ success: false, message: 'Login is required.' });
+
+  try {
+    const user = await findUserByToken(token);
+    if (!user) return res.status(401).json({ success: false, message: 'Your session is invalid or expired.' });
+
+    const role = String(user.role || '').trim().toLowerCase();
+    const isAdmin = ['admin', 'super admin', 'superadmin'].includes(role);
+    const isDeliveryPartner = ['delivery', 'delivery partner'].includes(role) && Boolean(user.employee_id);
+    if (!isAdmin && !isDeliveryPartner) {
+      return res.status(403).json({ success: false, message: 'Administrator or delivery partner access is required.' });
+    }
+
+    req.auth = user;
+    return next();
+  } catch (error) {
+    console.error('Failed to authorize delivery pricing request:', error);
+    return res.status(500).json({ success: false, message: 'Unable to verify delivery pricing access.' });
+  }
+};
+
 const requireKitchenRole = (allowedRoles) => async (req, res, next) => {
   const token = req.get('authorization')?.replace(/^Bearer\s+/i, '');
   if (!token) return res.status(401).json({ success: false, message: 'Login is required.' });
@@ -281,7 +304,12 @@ router.use('/banners', bannersRouter);
 router.use('/coupons', couponsRouter);
 router.use('/reviews', reviewsRouter);
 router.use('/videos', videosRouter);
-router.use('/settings', requireAdmin, settingsRouter);
+router.use('/settings', (req, res, next) => {
+  if (req.method === 'GET' && req.path === '/delivery') {
+    return requireDeliveryPricingAccess(req, res, next);
+  }
+  return requireAdmin(req, res, next);
+}, settingsRouter);
 router.use('/cart', optionalAuth, cartRouter);
 router.use('/wishlist', requireAuthenticatedUser, wishlistRouter);
 router.use('/reservations', (req, res, next) => {

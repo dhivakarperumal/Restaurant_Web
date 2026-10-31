@@ -23,6 +23,8 @@ test('returns completed order delivery charges and distances for partner earning
       order_id: 'ORD024',
       customer_name: 'Customer',
       date: '2026-10-31T12:00:00.000Z',
+      order_status: 'delivered',
+      subtotal: '67.50',
       delivery_charge: '50.06',
       distance_km: '0.01',
       total_earnings: '50.06',
@@ -56,6 +58,8 @@ test('returns completed order delivery charges and distances for partner earning
       order_id: 'ORD024',
       customer_name: 'Customer',
       date: '2026-10-31T12:00:00.000Z',
+      order_status: 'delivered',
+      subtotal: '67.50',
       delivery_charge: '50.06',
       distance_km: '0.01',
       total_earnings: '50.06',
@@ -72,6 +76,7 @@ test('returns completed order delivery charges and distances for partner earning
     }
     assert.match(statements[0].query, /SUM\(delivery_charge\).*AS total_earnings/);
     assert.match(statements[1].query, /delivery_distance_km AS distance_km/);
+    assert.match(statements[1].query, /order_status, subtotal/);
     assert.match(statements[1].query, /total_amount AS order_total/);
   } finally {
     db.execute = originalExecute;

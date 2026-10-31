@@ -43,7 +43,44 @@ app.get("/", (req, res) => {
 
 const PORT = Number(process.env.PORT) || 5000;
 
+function isBackendAlreadyRunning() {
+  return new Promise((resolve) => {
+    const request = http.get({
+      hostname: '127.0.0.1',
+      port: PORT,
+      path: '/',
+      timeout: 2000,
+    }, (response) => {
+      let body = '';
+      response.setEncoding('utf8');
+      response.on('data', (chunk) => {
+        body += chunk;
+      });
+      response.on('end', () => {
+        try {
+          const result = JSON.parse(body);
+          resolve(
+            response.statusCode === 200
+            && result.success === true
+            && result.message === 'Restaurant Backend API Running'
+          );
+        } catch {
+          resolve(false);
+        }
+      });
+    });
+
+    request.on('timeout', () => request.destroy());
+    request.on('error', () => resolve(false));
+  });
+}
+
 async function startServer() {
+  if (await isBackendAlreadyRunning()) {
+    console.log(`Backend is already running at http://localhost:${PORT}`);
+    return;
+  }
+
   try {
     await testConnection();
     console.log('MySQL connected');
@@ -97,6 +134,14 @@ async function startServer() {
   }
 
   initializeNotificationSocket(server, allowedOrigins);
+  server.on('error', (error) => {
+    if (error.code === 'EADDRINUSE') {
+      console.error(`Port ${PORT} is already in use by another process.`);
+    } else {
+      console.error('Backend server failed to start:', error);
+    }
+    process.exit(1);
+  });
   server.listen(PORT, () => {
     console.log(`Backend running: http://localhost:${PORT}`);
   });
