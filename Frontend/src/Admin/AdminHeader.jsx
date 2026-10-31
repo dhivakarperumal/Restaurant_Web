@@ -299,7 +299,7 @@ const Header = ({ onMenuClick, onChangeTable, billingControls }) => {
           : "border-gray-200 bg-white shadow-sm"
       }`}>
         <div className={`flex items-center gap-3 px-4 sm:px-6 ${
-          isBillingOrderPage ? "min-h-16 flex-nowrap overflow-x-auto py-2" : "h-18"
+          isBillingOrderPage ? "min-h-16 flex-nowrap overflow-visible py-2" : "h-18"
         }`} ref={dropdownRef}>
 
           {/* ── HAMBURGER (mobile) ── */}
