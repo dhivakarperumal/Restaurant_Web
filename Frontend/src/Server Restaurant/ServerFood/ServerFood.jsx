@@ -859,7 +859,7 @@ export default function ServerFood() {
         </div>
       ) : viewMode === "grid" ? (
         /* GRID (CARD) VIEW */
-        <div className={`grid gap-5 ${hasOrderContext ? "grid-cols-1 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3" : "grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4"}`}>
+        <div className={`grid gap-3 ${isAdminBillingOrderPage ? "grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-6" : hasOrderContext ? "grid-cols-1 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3" : "grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4"}`}>
           {filteredFoods.map((food) => {
             const isVeg =
               String(food.food_type || "").trim().toLowerCase() === "veg";
@@ -876,7 +876,7 @@ export default function ServerFood() {
               >
                 <div>
                   {/* Card Image */}
-                  <div className="relative h-44 w-full bg-gray-100 overflow-hidden">
+                  <div className={`relative w-full bg-gray-100 overflow-hidden ${isAdminBillingOrderPage ? "h-24 2xl:h-28" : "h-44"}`}>
                     {primaryImage ? (
                       <img
                         src={resolveImageUrl(primaryImage)}
@@ -943,7 +943,7 @@ export default function ServerFood() {
                   </div>
 
                   {/* Card Content */}
-                  <div className="p-4 space-y-2.5">
+                  <div className={`${isAdminBillingOrderPage ? "space-y-1.5 p-2.5" : "space-y-2.5 p-4"}`}>
                     <div>
                       <div className="flex items-center justify-between gap-1 text-[11px] text-gray-400">
                         <span className="font-mono font-medium">
@@ -954,7 +954,7 @@ export default function ServerFood() {
                         </span>
                       </div>
                       <h3
-                        className="font-bold text-gray-900 text-base mt-1 line-clamp-1 group-hover:text-[#1a3c36] transition-colors"
+                        className={`mt-1 line-clamp-1 font-bold text-gray-900 group-hover:text-[#1a3c36] transition-colors ${isAdminBillingOrderPage ? "text-sm" : "text-base"}`}
                         title={food.food_name}
                       >
                         {food.food_name}
@@ -989,7 +989,6 @@ export default function ServerFood() {
                 <div className="space-y-2 p-3 pt-0">
                   {hasOrderContext && (
                     <div className="flex items-center justify-between rounded-xl bg-gray-50 p-2">
-                      <span className="text-xs font-medium text-gray-600">Quantity</span>
                       <div className="flex items-center gap-2">
                         <button type="button" onClick={() => adjustFoodQuantity(food, -1)} aria-label={`Decrease ${food.food_name} quantity`} disabled={!getFoodQuantity(food)} className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg border border-orange-200 bg-white text-[#FF5A00] hover:bg-orange-50 disabled:cursor-not-allowed disabled:opacity-40">
                           <Minus className="h-4 w-4" />
@@ -1007,19 +1006,19 @@ export default function ServerFood() {
                         type="button"
                         onClick={() => addFoodDirectly(food)}
                         disabled={!isAvailable || getFoodQuantity(food) >= 99}
-                        className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-[#FF5A00] bg-[#FF5A00] px-3 py-2 text-xs font-semibold text-white transition hover:bg-[#E94B00] disabled:cursor-not-allowed disabled:opacity-50"
+                        className="inline-flex w-full items-center justify-center gap-1 rounded-xl border border-[#0b3f2f] bg-[#0b3f2f] px-2 py-2 text-xs font-semibold text-white transition hover:bg-[#14543f] disabled:cursor-not-allowed disabled:opacity-50"
                       >
                         <Plus className="h-3.5 w-3.5" />
-                        <span>Add</span>
+                        <span>A</span>
                       </button>
                       <button
                         type="button"
                         onClick={() => handleOpenDetails(food)}
                         disabled={!isAvailable}
-                        className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-orange-200 bg-white px-3 py-2 text-xs font-semibold text-[#C74700] transition hover:bg-orange-50 disabled:cursor-not-allowed disabled:opacity-50"
+                        className="inline-flex w-full items-center justify-center gap-1 rounded-xl border border-[#0b3f2f] bg-[#e8f1ed] px-2 py-2 text-xs font-semibold text-[#0b3f2f] transition hover:bg-[#dcebe4] disabled:cursor-not-allowed disabled:opacity-50"
                       >
                         <Eye className="h-3.5 w-3.5" />
-                        <span>Customize</span>
+                        <span>C</span>
                       </button>
                     </div>
                   ) : (
