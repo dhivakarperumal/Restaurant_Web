@@ -9,6 +9,8 @@ import Header from "./ServerHeader";
 const ServerLayout = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [serverFoodControls, setServerFoodControls] = useState(null);
+  const [changeServerFoodTable, setChangeServerFoodTable] = useState(null);
   const [isLargeScreen, setIsLargeScreen] = useState(
     window.innerWidth >= 1024
   );
@@ -27,6 +29,7 @@ const ServerLayout = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const isPrintPage = location.pathname.includes('/Chef/pt-form/print/');
+  const isServerFoodsPage = location.pathname === "/server/foods";
   const [orderSheetOpen, setOrderSheetOpen] = useState(false);
   const [selectingOrderType, setSelectingOrderType] = useState(false);
 
@@ -53,10 +56,10 @@ const ServerLayout = () => {
 
 
   return (
-    <div className={`admin-root admin-theme flex min-h-screen ${isPrintPage ? 'bg-gray-100 text-black' : 'bg-white text-gray-900'} print:bg-white print:text-black print:min-h-0 print:block`}>
+    <div className={`admin-root admin-theme flex ${isServerFoodsPage ? "h-dvh overflow-hidden" : "min-h-screen"} ${isPrintPage ? 'bg-gray-100 text-black' : 'bg-white text-gray-900'} print:bg-white print:text-black print:min-h-0 print:block`}>
       
       {/* Sidebar */}
-      {!isPrintPage && (
+      {!isPrintPage && !isServerFoodsPage && (
         <div className="print:hidden">
           <Sidebar
             isOpen={sidebarOpen}
@@ -70,36 +73,44 @@ const ServerLayout = () => {
       {/* Main Content */}
       <div
         className={`
-          flex flex-col flex-1 min-w-0 min-h-screen
+          flex flex-col flex-1 min-w-0 ${isServerFoodsPage ? "min-h-0" : "min-h-screen"}
           transition-all duration-300 ease-in-out
           bg-[#fafcff]
-          ${!isPrintPage && isLargeScreen ? (sidebarCollapsed ? "lg:ml-[80px]" : "lg:ml-72") : ""}
+          ${!isPrintPage && !isServerFoodsPage && isLargeScreen ? (sidebarCollapsed ? "lg:ml-[80px]" : "lg:ml-72") : ""}
           print:ml-0 print:min-h-0 print:block print:w-full
         `}
       >
         {/* Header */}
         {!isPrintPage && (
-          <div className="print:hidden sticky top-0 z-40">
-            <Header onMenuClick={() => setSidebarOpen(true)} />
+          <div className={`print:hidden sticky top-0 z-40 ${isServerFoodsPage ? "shrink-0" : ""}`}>
+            <Header
+              onMenuClick={() => setSidebarOpen(true)}
+              foodControls={isServerFoodsPage ? serverFoodControls : null}
+              selectedTable={isServerFoodsPage ? location.state?.selectedTable : null}
+              onChangeTable={isServerFoodsPage ? changeServerFoodTable : null}
+            />
           </div>
         )}
 
         {/* Page Content */}
-        <main className={`flex-1 ${isPrintPage ? 'p-0' : 'p-4 pb-24 sm:p-5 sm:pb-24 lg:p-6'} overflow-y-auto bg-[#f3f4f6] print:p-0 print:m-0 print:overflow-visible`}>
-          <div className={isPrintPage ? '' : 'glass-container bg-[#f3f4f6] print:bg-transparent print:border-none print:p-0 print:m-0 print:shadow-none print:backdrop-filter-none'}>
+        <main className={`flex-1 ${isServerFoodsPage ? "flex min-h-0 flex-col overflow-hidden p-0 bg-transparent" : isPrintPage ? 'p-0' : 'p-4 pb-24 sm:p-5 sm:pb-24 lg:p-6'} ${!isServerFoodsPage && !isPrintPage ? "overflow-y-auto bg-[#f3f4f6]" : ""} print:p-0 print:m-0 print:overflow-visible`}>
+          <div className={isServerFoodsPage ? "flex min-h-0 flex-1 flex-col bg-transparent" : isPrintPage ? '' : 'glass-container bg-[#f3f4f6] print:bg-transparent print:border-none print:p-0 print:m-0 print:shadow-none print:backdrop-filter-none'}>
             <Suspense fallback={
               <div className="flex flex-col items-center justify-center min-h-[50vh] gap-4 print:hidden">
                 <PacmanLoader color="#ef4444" size={20} />
                 <p className="text-white/30 text-[10px] tracking-widest uppercase">Accessing Terminal...</p>
               </div>
             }>
-              <Outlet />
+              <Outlet context={{
+                registerFoodControls: setServerFoodControls,
+                registerChangeServerFoodTable: setChangeServerFoodTable,
+              }} />
             </Suspense>
           </div>
         </main>
 
         {/* Footer */}
-       {!isPrintPage && (
+       {!isPrintPage && !isServerFoodsPage && (
          <footer className="glass-footer bg-gray-100 text-center py-4  text-sm  print:hidden">
            © {new Date().getFullYear()} Q-Techx Solutions. All rights reserved.
          </footer>

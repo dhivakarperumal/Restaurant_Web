@@ -1,13 +1,14 @@
 import { useState, useRef, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import {
-  Menu, Bell, Settings, User, LogOut, ChevronDown,
+  Menu, Bell, Settings, User, LogOut, ChevronDown, Search, LayoutGrid, Table2,
   ShoppingBag, Package, Clock, X, LayoutDashboard, MessageSquare,
   Users, CreditCard, UserCheck, ClipboardList, Activity, UserRound,
   CalendarCheck, Receipt, ShoppingCart, BarChart3, Dumbbell, Send,
   Boxes, Plus, PhoneCall, HeartPulse, FolderKanban, CheckSquare,
   DollarSign, CalendarOff, BookOpen, GraduationCap, CalendarDays,
   CalendarClock, TrendingUp, Tag,
+  UtensilsCrossed,
 } from "lucide-react";
 import api from "../api";
 import { useAuth } from "../PrivateRouter/AuthContext";
@@ -16,6 +17,7 @@ import AttendanceWidget from "../CommonComponents/AttendanceWidget";
 
 /* ── page title map ── */
 const pageInfo = {
+  "/server/foods":                 { title: "Menu",                  icon: UtensilsCrossed },
   "/admin":                         { title: "Dashboard",             icon: LayoutDashboard },
   "/admin/billing":                 { title: "Billing",               icon: Receipt },
   "/admin/billing/new":             { title: "New Billing",            icon: Plus },
@@ -102,7 +104,7 @@ const AlertDropdown = ({ title, items, icon, type, onClose, accent }) => {
 };
 
 /* ══════════════════ MAIN HEADER ══════════════════ */
-const ServerHeader = ({ onMenuClick }) => {
+const ServerHeader = ({ onMenuClick, foodControls, selectedTable, onChangeTable }) => {
   const [activeDropdown, setActiveDropdown] = useState(null);
   const [alerts, setAlerts] = useState({ tasks: [], leaves: [], lowStock: [] });
   const [currentTime, setCurrentTime] = useState(dayjs());
@@ -115,6 +117,7 @@ const ServerHeader = ({ onMenuClick }) => {
   const userName = profileName || "Admin";
   const userRole = role ? role.charAt(0).toUpperCase() + role.slice(1) : "Administrator";
   const { title: pageTitle, icon: PageIcon } = getPageInfo(location.pathname);
+  const activeTable = selectedTable || foodControls?.selectedTable;
 
   /* clock */
   useEffect(() => {
@@ -226,7 +229,7 @@ const ServerHeader = ({ onMenuClick }) => {
   return (
     <>
       <header className="sticky top-0 z-30 bg-white backdrop-blur-xl border-b border-gray-200 shadow-sm">
-        <div className="flex items-center gap-3 px-4 sm:px-6 h-18" ref={dropdownRef}>
+        <div className={`flex items-center gap-3 px-4 sm:px-6 ${foodControls ? "min-h-16 flex-nowrap overflow-visible py-2" : "h-18"}`} ref={dropdownRef}>
 
           {/* ── HAMBURGER (mobile) ── */}
           <button
@@ -237,36 +240,115 @@ const ServerHeader = ({ onMenuClick }) => {
           </button>
 
           {/* ── PAGE TITLE ── */}
-          <div className="flex items-center gap-2.5 flex-1 min-w-0">
-            <div className="w-8 h-8 rounded-lg bg-[#d4a843]/15 border border-[#d4a843]/30 flex items-center justify-center shrink-0">
-              <PageIcon size={16} className="text-[#d4a843]" />
-            </div>
+          <div className={`flex items-center gap-2.5 min-w-0 ${foodControls ? "shrink-0" : "flex-1"}`}>
+            {foodControls ? (
+              <Link
+                to="/server"
+                aria-label="Go to server dashboard"
+                title="Server dashboard"
+                className="shrink-0 rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1a3c36]/30"
+              >
+                <img
+                  src="/images/adminlogo.png"
+                  alt="Buy Foods restaurant logo"
+                  className="h-10 w-10 rounded-xl border border-[#dce7df] bg-white object-contain p-0.5 shadow-sm transition hover:shadow-md"
+                />
+              </Link>
+            ) : (
+              <div className="w-8 h-8 rounded-lg bg-[#d4a843]/15 border border-[#d4a843]/30 flex items-center justify-center shrink-0">
+                <PageIcon size={16} className="text-[#d4a843]" />
+              </div>
+            )}
             <div className="min-w-0 hidden sm:block">
               <h1 className="text-base font-bold text-gray-900 truncate leading-tight">{pageTitle}</h1>
-              <p className="text-[10px] text-gray-500 leading-none">
-                {currentTime.format("ddd, DD MMM YYYY")} · {currentTime.format("hh:mm:ss A")}
+              <p className={`text-[10px] leading-none ${activeTable ? "font-semibold text-[#1a3c36]" : "text-gray-500"}`}>
+                {activeTable
+                  ? `Table ${activeTable.table_number || activeTable.table_name || ""}`
+                  : `${currentTime.format("ddd, DD MMM YYYY")} · ${currentTime.format("hh:mm:ss A")}`}
               </p>
             </div>
           </div>
 
+          {foodControls && (
+            <div className="flex min-w-0 flex-1 items-center justify-start gap-2">
+              <div className="relative min-w-[160px] max-w-md flex-1">
+                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                <input
+                  type="search"
+                  value={foodControls.searchQuery}
+                  onChange={(event) => foodControls.setSearchQuery(event.target.value)}
+                  placeholder="Search dishes by name, cuisine, category..."
+                  aria-label="Search dishes"
+                  className="h-10 w-full rounded-xl border border-gray-200 bg-gray-50 pl-9 pr-3 text-sm text-gray-800 outline-none transition placeholder:text-gray-400 focus:border-[#1a3c36] focus:bg-white"
+                />
+              </div>
+              <div className="ml-auto flex shrink-0 items-center gap-2">
+                <select
+                  value={foodControls.selectedType}
+                  onChange={(event) => foodControls.setSelectedType(event.target.value)}
+                  aria-label="Filter dishes by type"
+                  className="h-10 min-w-32 rounded-xl border border-gray-200 bg-gray-50 px-3 text-sm text-gray-700 outline-none focus:border-[#1a3c36]"
+                >
+                  <option value="all">All Types</option>
+                  <option value="veg">Veg Only</option>
+                  <option value="non-veg">Non-Veg</option>
+                </select>
+                <div className="flex h-10 shrink-0 items-center rounded-xl border border-gray-200 bg-gray-50 p-1">
+                  <button
+                    type="button"
+                    onClick={() => foodControls.setViewMode("grid")}
+                    aria-label="Grid view"
+                    aria-pressed={foodControls.viewMode === "grid"}
+                    className={`flex h-8 w-8 items-center justify-center rounded-lg ${foodControls.viewMode === "grid" ? "bg-[#1a3c36] text-white" : "text-gray-500 hover:text-[#1a3c36]"}`}
+                  >
+                    <LayoutGrid className="h-4 w-4" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => foodControls.setViewMode("table")}
+                    aria-label="Table view"
+                    aria-pressed={foodControls.viewMode === "table"}
+                    className={`flex h-8 w-8 items-center justify-center rounded-lg ${foodControls.viewMode === "table" ? "bg-[#1a3c36] text-white" : "text-gray-500 hover:text-[#1a3c36]"}`}
+                  >
+                    <Table2 className="h-4 w-4" />
+                  </button>
+                </div>
+                {onChangeTable && (
+                  <button
+                    type="button"
+                    onClick={onChangeTable}
+                    className="inline-flex h-10 shrink-0 items-center justify-center rounded-xl bg-[#0b3f2f] px-4 text-sm font-semibold text-white transition hover:bg-[#14543f]"
+                  >
+                    Change Table
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
+
           {/* ── RIGHT ACTIONS ── */}
           <div className="flex items-center gap-2 shrink-0">
 
-            {/* Attendance clock in/out pill */}
-            <AttendanceWidget variant="header" />
+            {foodControls
+              ? <AttendanceWidget variant="header" clockOutOnly />
+              : <AttendanceWidget variant="header" />}
 
-            {/* Low stock notifications */}
-            <div className="relative">
-              <IconBtn name="lowStock" badge={alerts.lowStock.length} badgeColor="bg-red-500" title="Low Stock Notifications">
-                <Package size={18} />
-              </IconBtn>
-              {activeDropdown === "lowStock" && (
-                <AlertDropdown title="Low Stock Notifications" items={alerts.lowStock} icon={<Package size={13} className="text-red-400" />} type="lowStock" onClose={() => setActiveDropdown(null)} accent="bg-red-500/20 text-red-400" />
-              )}
-            </div>
+            {!foodControls && (
+              <>
+                {/* Low stock notifications */}
+                <div className="relative">
+                  <IconBtn name="lowStock" badge={alerts.lowStock.length} badgeColor="bg-red-500" title="Low Stock Notifications">
+                    <Package size={18} />
+                  </IconBtn>
+                  {activeDropdown === "lowStock" && (
+                    <AlertDropdown title="Low Stock Notifications" items={alerts.lowStock} icon={<Package size={13} className="text-red-400" />} type="lowStock" onClose={() => setActiveDropdown(null)} accent="bg-red-500/20 text-red-400" />
+                  )}
+                </div>
+                <div className="w-px h-6 bg-gray-200 mx-1" />
+              </>
+            )}
 
-            {/* Divider */}
-            <div className="w-px h-6 bg-gray-200 mx-1" />
+            {foodControls && <div className="w-px h-6 bg-gray-200 mx-1" />}
 
             {/* ── USER PROFILE ── */}
             <div className="relative ml-1 sm:ml-2">

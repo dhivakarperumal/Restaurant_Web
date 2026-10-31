@@ -19,7 +19,7 @@ import toast from "react-hot-toast";
 import api from "../api";
 import { useAuth } from "../PrivateRouter/AuthContext";
 
-export default function AttendanceWidget({ variant = "header", onAttendanceChange, embedded = false }) {
+export default function AttendanceWidget({ variant = "header", onAttendanceChange, embedded = false, showHistory = true, clockOutOnly = false }) {
   const { user, userProfile } = useAuth();
   const [attendance, setAttendance] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -184,6 +184,20 @@ export default function AttendanceWidget({ variant = "header", onAttendanceChang
 
   // --- HEADER COMPACT VARIANT ---
   if (variant === "header") {
+    if (clockOutOnly) {
+      return isWorking ? (
+        <button
+          onClick={handleClockOut}
+          disabled={actionLoading}
+          title="Clock Out of your shift"
+          className="inline-flex h-10 shrink-0 items-center gap-1.5 rounded-xl bg-emerald-600 px-3 text-xs font-bold text-white shadow-sm transition hover:bg-rose-600 disabled:opacity-50"
+        >
+          <LogOut size={14} />
+          Clock Out
+        </button>
+      ) : null;
+    }
+
     return (
       <div className="flex items-center gap-2">
         {isWorking ? (
@@ -237,14 +251,15 @@ export default function AttendanceWidget({ variant = "header", onAttendanceChang
           </button>
         )}
 
-        {/* History Icon Button */}
-        <button
-          onClick={loadHistory}
-          title="View my attendance history"
-          className="grid h-8 w-8 place-items-center rounded-full border border-gray-200 bg-white text-gray-600 transition hover:bg-gray-50 hover:text-gray-900 shadow-sm"
-        >
-          <History size={14} />
-        </button>
+        {showHistory && (
+          <button
+            onClick={loadHistory}
+            title="View my attendance history"
+            className="grid h-8 w-8 place-items-center rounded-full border border-gray-200 bg-white text-gray-600 transition hover:bg-gray-50 hover:text-gray-900 shadow-sm"
+          >
+            <History size={14} />
+          </button>
+        )}
 
         {/* Attendance History Modal */}
         {showHistoryModal && renderHistoryModal()}

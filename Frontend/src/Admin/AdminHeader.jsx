@@ -353,7 +353,7 @@ const Header = ({ onMenuClick, onChangeTable, billingControls }) => {
           </div>
 
           {isBillingOrderPage && (
-            <div className="flex min-w-0 flex-1 items-center justify-end gap-2">
+            <div className="flex min-w-0 flex-1 items-center justify-start gap-2">
               <div className="relative w-40 shrink-0 sm:w-56 lg:w-64">
                 <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
                 <input
@@ -375,16 +375,6 @@ const Header = ({ onMenuClick, onChangeTable, billingControls }) => {
                   </button>
                 )}
               </div>
-              {selectedTable && onChangeTable && (
-                <button
-                  type="button"
-                  onClick={onChangeTable}
-                  className="inline-flex h-10 shrink-0 items-center justify-center rounded-xl bg-[#1a3c36] px-3 text-xs font-semibold text-white transition hover:bg-[#244c43] sm:px-4 sm:text-sm"
-                >
-                  <span className="sm:hidden">Table</span>
-                  <span className="hidden sm:inline">Change Table</span>
-                </button>
-              )}
             </div>
           )}
 
@@ -453,6 +443,17 @@ const Header = ({ onMenuClick, onChangeTable, billingControls }) => {
                   : <Eye className="h-4 w-4" />}
               </button>
             </div>
+          )}
+
+          {isBillingOrderPage && selectedTable && onChangeTable && (
+            <button
+              type="button"
+              onClick={onChangeTable}
+              className="inline-flex h-10 shrink-0 items-center justify-center rounded-xl bg-[#1a3c36] px-3 text-xs font-semibold text-white transition hover:bg-[#244c43] sm:px-4 sm:text-sm"
+            >
+              <span className="sm:hidden">Table</span>
+              <span className="hidden sm:inline">Change Table</span>
+            </button>
           )}
 
           {/* ── RIGHT ACTIONS ── */}

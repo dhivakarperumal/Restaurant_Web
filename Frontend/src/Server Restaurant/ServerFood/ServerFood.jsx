@@ -71,7 +71,12 @@ const isFoodAvailable = (food, orderType = "", currentTime) => {
 export default function ServerFood() {
   const location = useLocation();
   const navigate = useNavigate();
-  const { registerChangeBillingTable, registerBillingControls } = useOutletContext() || {};
+  const {
+    registerChangeBillingTable,
+    registerBillingControls,
+    registerFoodControls,
+    registerChangeServerFoodTable,
+  } = useOutletContext() || {};
   const selectedTable = location.state?.selectedTable;
   const orderType = selectedTable ? "dine-in" : location.state?.orderType || "";
   const orderReturnPath = location.state?.returnPath || "/server";
@@ -108,6 +113,8 @@ export default function ServerFood() {
   const [customizeQuantity, setCustomizeQuantity] = useState(1);
   const hasOrderContext = Boolean(orderType);
   const isAdminBillingOrderPage = location.pathname === "/admin/billing/order";
+  const isServerFoodsPage = location.pathname === "/server/foods";
+  const isCompactFoodPage = isAdminBillingOrderPage || isServerFoodsPage;
 
   const fetchActiveBill = async () => {
     if (!selectedTable?.table_id) return;
@@ -554,8 +561,45 @@ export default function ServerFood() {
     stats.nonVegCount,
   ]);
 
+  useEffect(() => {
+    if (!isServerFoodsPage || !registerFoodControls) return undefined;
+    registerFoodControls({
+      searchQuery,
+      setSearchQuery,
+      selectedType,
+      setSelectedType,
+      sortBy,
+      setSortBy,
+      viewMode,
+      setViewMode,
+      selectedTable,
+    });
+    return () => registerFoodControls(null);
+  }, [
+    isServerFoodsPage,
+    registerFoodControls,
+    searchQuery,
+    selectedType,
+    sortBy,
+    viewMode,
+    selectedTable,
+  ]);
+
+  useEffect(() => {
+    if (!isServerFoodsPage || !registerChangeServerFoodTable || !selectedTable) return undefined;
+    registerChangeServerFoodTable(() => changeSelectedTable);
+    return () => registerChangeServerFoodTable(null);
+  }, [
+    isServerFoodsPage,
+    registerChangeServerFoodTable,
+    selectedTable,
+    cart,
+    customer,
+    orderReturnPath,
+  ]);
+
   return (
-    <div className={isAdminBillingOrderPage ? "flex h-full min-h-0 flex-col gap-3 overflow-hidden p-3" : "space-y-6"}>
+    <div className={isAdminBillingOrderPage ? "flex h-full min-h-0 flex-col gap-3 overflow-hidden p-3" : isServerFoodsPage ? "flex min-h-0 min-w-0 flex-1 flex-col gap-3 overflow-hidden p-2" : "space-y-6"}>
      
         
 
@@ -667,7 +711,7 @@ export default function ServerFood() {
       )}
 
       {/* Search and Filters Bar */}
-      {!isAdminBillingOrderPage && (
+      {!isCompactFoodPage && (
       <div className={`flex flex-col gap-3 rounded-2xl border border-gray-100 bg-white p-4 shadow-sm ${selectedTable ? "xl:flex-row xl:items-center" : "md:flex-row md:items-center md:justify-between"}`}>
         {/* Search Input */}
         {!isAdminBillingOrderPage && (
@@ -694,7 +738,7 @@ export default function ServerFood() {
         {/* Filter Dropdowns, View Mode, and Table Actions */}
         <div className={`flex flex-wrap items-center gap-2 ${selectedTable ? "xl:justify-end" : ""}`}>
             {/* Category Dropdown */}
-            {!isAdminBillingOrderPage && (
+            {!isCompactFoodPage && (
               <select
                 value={selectedCategory}
                 onChange={(e) => setSelectedCategory(e.target.value)}
@@ -792,10 +836,14 @@ export default function ServerFood() {
       </div>
       )}
 
-      <div className={hasOrderContext ? `grid min-w-0 ${isAdminBillingOrderPage ? "min-h-0 flex-1 items-stretch gap-3 xl:grid-cols-[minmax(0,1fr)_380px]" : "items-start gap-5 xl:grid-cols-[minmax(0,1fr)_380px]"}` : ""}>
-      <div className={`${isAdminBillingOrderPage ? "grid h-full min-h-0 min-w-0 gap-3 xl:grid-cols-[160px_minmax(0,1fr)] xl:grid-rows-[minmax(0,1fr)]" : ""} ${hasOrderContext ? `min-w-0 ${isAdminBillingOrderPage ? "xl:min-h-0" : "xl:max-h-[calc(100vh-12rem)] xl:overflow-y-auto xl:overscroll-contain xl:pr-2 scrollbar-hide"}` : "min-w-0"}`}>
-      {isAdminBillingOrderPage && (
-        <aside aria-label="Filter dishes by category" className="min-h-0 min-w-0 rounded-xl bg-slate-100 p-2 xl:h-full">
+      <div className={isServerFoodsPage
+        ? `grid min-h-0 min-w-0 flex-1 grid-rows-[minmax(0,1fr)] items-stretch gap-3 ${hasOrderContext ? "xl:grid-cols-[minmax(0,1fr)_380px]" : "grid-cols-1"}`
+        : hasOrderContext
+          ? `grid min-w-0 ${isAdminBillingOrderPage ? "min-h-0 flex-1 items-stretch gap-3 xl:grid-cols-[minmax(0,1fr)_380px]" : "items-start gap-5 xl:grid-cols-[minmax(0,1fr)_380px]"}`
+          : ""}>
+      <div className={`${isAdminBillingOrderPage ? "grid h-full min-h-0 min-w-0 gap-3 xl:grid-cols-[160px_minmax(0,1fr)] xl:grid-rows-[minmax(0,1fr)]" : isServerFoodsPage ? "grid h-full min-h-0 min-w-0 flex-1 gap-3 xl:grid-cols-[160px_minmax(0,1fr)] xl:grid-rows-[minmax(0,1fr)]" : ""} ${hasOrderContext ? `min-w-0 ${isAdminBillingOrderPage ? "xl:min-h-0" : isServerFoodsPage ? "xl:max-h-none xl:min-h-0 xl:overflow-hidden" : "xl:max-h-[calc(100vh-12rem)] xl:overflow-y-auto xl:overscroll-contain xl:pr-2 scrollbar-hide"}` : "min-w-0"}`}>
+      {isCompactFoodPage && (
+        <aside aria-label="Filter dishes by category" className={`min-h-0 min-w-0 rounded-xl bg-slate-100 p-2 ${isCompactFoodPage ? "xl:h-full" : ""}`}>
           <div className="flex gap-1.5 overflow-x-auto pb-1 xl:h-full xl:flex-col xl:overflow-y-auto xl:overflow-x-hidden xl:pb-0">
             <button
               type="button"
@@ -841,7 +889,7 @@ export default function ServerFood() {
         </aside>
       )}
       {/* Main Content Area */}
-      <div className={isAdminBillingOrderPage ? "h-full min-h-0 min-w-0 overflow-y-auto overscroll-contain pr-1" : ""}>
+      <div className={isCompactFoodPage ? "h-full min-h-0 min-w-0 overflow-y-auto overscroll-contain pr-1" : ""}>
       {loading ? (
         <div className="bg-white p-14 rounded-2xl border border-gray-100 flex flex-col items-center justify-center gap-3">
           <Loader2 className="w-8 h-8 animate-spin text-[#d4a843]" />
@@ -873,7 +921,7 @@ export default function ServerFood() {
         </div>
       ) : viewMode === "grid" ? (
         /* GRID (CARD) VIEW */
-        <div className={`grid gap-3 ${isAdminBillingOrderPage ? "grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-6" : hasOrderContext ? "grid-cols-1 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3" : "grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4"}`}>
+        <div className={`grid gap-3 ${isCompactFoodPage ? "grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-6" : hasOrderContext ? "grid-cols-1 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3" : "grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4"}`}>
           {filteredFoods.map((food) => {
             const isVeg =
               String(food.food_type || "").trim().toLowerCase() === "veg";
@@ -887,14 +935,14 @@ export default function ServerFood() {
               <div
                 key={food.food_id || food.id}
                 className={`group flex flex-col justify-between overflow-hidden transition-all ${
-                  isAdminBillingOrderPage
+                  isCompactFoodPage
                     ? "rounded-xl border border-[#e2e9e4] bg-white shadow-[0_2px_8px_rgba(26,60,54,0.06)] hover:-translate-y-0.5 hover:border-[#9db6a7] hover:shadow-[0_8px_18px_rgba(26,60,54,0.12)]"
                     : "rounded-2xl border border-gray-100 bg-white shadow-sm hover:shadow-md"
                 }`}
               >
                 <div>
                   {/* Card Image */}
-                  <div className={`relative w-full overflow-hidden bg-gray-100 ${isAdminBillingOrderPage ? "h-16 2xl:h-20" : "h-44"}`}>
+                  <div className={`relative w-full overflow-hidden bg-gray-100 ${isCompactFoodPage ? "h-16 2xl:h-20" : "h-44"}`}>
                     {primaryImage ? (
                       <img
                         src={resolveImageUrl(primaryImage)}
@@ -912,15 +960,15 @@ export default function ServerFood() {
                       style={{ display: primaryImage ? "none" : "flex" }}
                       className="w-full h-full items-center justify-center bg-gradient-to-br from-[#1f3228]/5 to-[#1f3228]/15 text-[#1f3228]/40"
                     >
-                      <UtensilsCrossed className={isAdminBillingOrderPage ? "h-8 w-8" : "h-12 w-12"} />
+                      <UtensilsCrossed className={isCompactFoodPage ? "h-8 w-8" : "h-12 w-12"} />
                     </div>
 
                     {/* Top Badges */}
-                    <div className={`absolute left-2.5 top-2.5 flex items-center gap-1.5 ${isAdminBillingOrderPage ? "left-2 top-2" : ""}`}>
+                    <div className={`absolute left-2.5 top-2.5 flex items-center gap-1.5 ${isCompactFoodPage ? "left-2 top-2" : ""}`}>
                       {/* Veg / Non-Veg Indicator */}
                       <span
                         className={`inline-flex items-center justify-center rounded bg-white shadow-sm border ${
-                          isAdminBillingOrderPage ? "h-4 w-4" : "h-5 w-5"
+                          isCompactFoodPage ? "h-4 w-4" : "h-5 w-5"
                         } ${
                           isVeg ? "border-green-600" : "border-rose-600"
                         }`}
@@ -928,7 +976,7 @@ export default function ServerFood() {
                       >
                         <span
                           className={`rounded-full ${
-                            isAdminBillingOrderPage ? "h-2 w-2" : "h-2.5 w-2.5"
+                            isCompactFoodPage ? "h-2 w-2" : "h-2.5 w-2.5"
                           } ${
                             isVeg ? "bg-green-600" : "bg-rose-600"
                           }`}
@@ -943,7 +991,7 @@ export default function ServerFood() {
                     </div>
 
                     {/* Availability status badge */}
-                    {!isAdminBillingOrderPage && <div className="absolute right-2.5 top-2.5">
+                    {!isCompactFoodPage && <div className="absolute right-2.5 top-2.5">
                       <span
                         className={`rounded-full px-2 py-0.5 text-[11px] font-semibold shadow-sm backdrop-blur-sm ${
                           isAvailable ? "bg-emerald-500/90 text-white" : "bg-gray-800/80 text-gray-200"
@@ -955,12 +1003,12 @@ export default function ServerFood() {
 
                     {/* Preparation Time */}
                     {food.preparation_time ? (
-                      <div className={`absolute bottom-2.5 right-2.5 flex items-center gap-1 rounded-md bg-black/60 font-medium text-white backdrop-blur-sm ${isAdminBillingOrderPage ? "bottom-2 right-2 px-1.5 py-0.5 text-[9px]" : "px-2 py-0.5 text-[11px]"}`}>
+                      <div className={`absolute bottom-2.5 right-2.5 flex items-center gap-1 rounded-md bg-black/60 font-medium text-white backdrop-blur-sm ${isCompactFoodPage ? "bottom-2 right-2 px-1.5 py-0.5 text-[9px]" : "px-2 py-0.5 text-[11px]"}`}>
                         <Clock className="w-3 h-3" />
                         <span>{food.preparation_time}m</span>
                       </div>
                     ) : null}
-                    {!isAdminBillingOrderPage && Number(food.discount || 0) > 0 && (
+                    {!isCompactFoodPage && Number(food.discount || 0) > 0 && (
                       <div className="absolute bottom-2.5 left-2.5 inline-flex items-center gap-1 rounded-md bg-emerald-600 px-2 py-1 text-[10px] font-bold leading-none text-white shadow-sm">
                         <Tag className="h-3 w-3 shrink-0" />
                         <span>{Number(food.discount)}% OFF</span>
@@ -969,9 +1017,9 @@ export default function ServerFood() {
                   </div>
 
                   {/* Card Content */}
-                  <div className={`${isAdminBillingOrderPage ? "space-y-1 p-2" : "space-y-2.5 p-4"}`}>
+                  <div className={`${isCompactFoodPage ? "space-y-1 p-2" : "space-y-2.5 p-4"}`}>
                     <div>
-                      {!isAdminBillingOrderPage && (
+                      {!isCompactFoodPage && (
                         <div className="flex items-center justify-between gap-1 text-[11px] text-gray-400">
                           <span className="font-mono font-medium">{food.food_id}</span>
                           <span className="max-w-[120px] truncate rounded bg-gray-100 px-2 py-0.5 text-[10px] font-medium text-gray-600">
@@ -980,12 +1028,12 @@ export default function ServerFood() {
                         </div>
                       )}
                       <h3
-                        className={`mt-1 line-clamp-1 font-bold text-gray-900 transition-colors group-hover:text-[#1a3c36] ${isAdminBillingOrderPage ? "text-[13px] leading-4" : "text-base"}`}
+                        className={`mt-1 line-clamp-1 font-bold text-gray-900 transition-colors group-hover:text-[#1a3c36] ${isCompactFoodPage ? "text-[13px] leading-4" : "text-base"}`}
                         title={food.food_name}
                       >
                         {food.food_name}
                       </h3>
-                      {!isAdminBillingOrderPage && food.cuisine_name ? (
+                      {!isCompactFoodPage && food.cuisine_name ? (
                         <p className="text-xs text-gray-500 line-clamp-1">
                           {food.cuisine_name} Cuisine
                         </p>
@@ -993,11 +1041,11 @@ export default function ServerFood() {
                     </div>
 
                     {/* Pricing */}
-                    <div className={`flex items-baseline gap-2 border-t border-gray-100 ${isAdminBillingOrderPage ? "pt-0.5" : "pt-1"}`}>
-                      <span className={`${isAdminBillingOrderPage ? "text-sm" : "text-lg"} font-bold text-gray-900`}>
+                    <div className={`flex items-baseline gap-2 border-t border-gray-100 ${isCompactFoodPage ? "pt-0.5" : "pt-1"}`}>
+                      <span className={`${isCompactFoodPage ? "text-sm" : "text-lg"} font-bold text-gray-900`}>
                         ₹{Number(food.final_price || 0).toFixed(2)}
                       </span>
-                      {!isAdminBillingOrderPage && Number(food.mrp || 0) > Number(food.final_price || 0) && (
+                      {!isCompactFoodPage && Number(food.mrp || 0) > Number(food.final_price || 0) && (
                         <span className="text-xs text-gray-400 line-through">
                           ₹{Number(food.mrp || 0).toFixed(2)}
                         </span>
@@ -1007,27 +1055,27 @@ export default function ServerFood() {
                 </div>
 
                 {/* Card Footer: View Details Action */}
-                <div className={`space-y-1 ${isAdminBillingOrderPage ? "p-2 pt-0" : "p-3 pt-0"}`}>
+                <div className={`space-y-1 ${isCompactFoodPage ? "p-2 pt-0" : "p-3 pt-0"}`}>
                   {hasOrderContext && getFoodQuantity(food) > 0 && (
-                    <div className={`flex items-center justify-between rounded-lg bg-[#f4f7f5] ${isAdminBillingOrderPage ? "p-0.5" : "p-2"}`}>
-                      <div className={`flex w-full items-center justify-between ${isAdminBillingOrderPage ? "gap-1" : "gap-2"}`}>
-                        <button type="button" onClick={() => adjustFoodQuantity(food, -1)} aria-label={`Decrease ${food.food_name} quantity`} disabled={!getFoodQuantity(food)} className={`flex cursor-pointer items-center justify-center rounded-md border border-orange-200 bg-white text-[#FF5A00] hover:bg-orange-50 disabled:cursor-not-allowed disabled:opacity-40 ${isAdminBillingOrderPage ? "h-5 w-5" : "h-8 w-8"}`}>
-                          <Minus className={isAdminBillingOrderPage ? "h-3 w-3" : "h-4 w-4"} />
+                    <div className={`flex items-center justify-between rounded-lg bg-[#f4f7f5] ${isCompactFoodPage ? "p-0.5" : "p-2"}`}>
+                      <div className={`flex w-full items-center justify-between ${isCompactFoodPage ? "gap-1" : "gap-2"}`}>
+                        <button type="button" onClick={() => adjustFoodQuantity(food, -1)} aria-label={`Decrease ${food.food_name} quantity`} disabled={!getFoodQuantity(food)} className={`flex cursor-pointer items-center justify-center rounded-md border border-orange-200 bg-white text-[#FF5A00] hover:bg-orange-50 disabled:cursor-not-allowed disabled:opacity-40 ${isCompactFoodPage ? "h-5 w-5" : "h-8 w-8"}`}>
+                          <Minus className={isCompactFoodPage ? "h-3 w-3" : "h-4 w-4"} />
                         </button>
-                        <span className={`${isAdminBillingOrderPage ? "w-4 text-xs" : "w-5 text-sm"} text-center font-bold`}>{getFoodQuantity(food)}</span>
-                        <button type="button" onClick={() => adjustFoodQuantity(food, 1)} aria-label={`Increase ${food.food_name} quantity`} disabled={!isAvailable || getFoodQuantity(food) >= 99} className={`flex cursor-pointer items-center justify-center rounded-md border border-orange-200 bg-white text-[#FF5A00] hover:bg-orange-50 disabled:cursor-not-allowed disabled:opacity-40 ${isAdminBillingOrderPage ? "h-5 w-5" : "h-8 w-8"}`}>
-                          <Plus className={isAdminBillingOrderPage ? "h-3 w-3" : "h-4 w-4"} />
+                        <span className={`${isCompactFoodPage ? "w-4 text-xs" : "w-5 text-sm"} text-center font-bold`}>{getFoodQuantity(food)}</span>
+                        <button type="button" onClick={() => adjustFoodQuantity(food, 1)} aria-label={`Increase ${food.food_name} quantity`} disabled={!isAvailable || getFoodQuantity(food) >= 99} className={`flex cursor-pointer items-center justify-center rounded-md border border-orange-200 bg-white text-[#FF5A00] hover:bg-orange-50 disabled:cursor-not-allowed disabled:opacity-40 ${isCompactFoodPage ? "h-5 w-5" : "h-8 w-8"}`}>
+                          <Plus className={isCompactFoodPage ? "h-3 w-3" : "h-4 w-4"} />
                         </button>
                       </div>
                     </div>
                   )}
                   {hasOrderContext ? (
-                    <div className={`grid grid-cols-2 ${isAdminBillingOrderPage ? "gap-1" : "gap-2"}`}>
+                    <div className={`grid grid-cols-2 ${isCompactFoodPage ? "gap-1" : "gap-2"}`}>
                       <button
                         type="button"
                         onClick={() => addFoodDirectly(food)}
                         disabled={!isAvailable || getFoodQuantity(food) >= 99}
-                        className={`inline-flex w-full items-center justify-center gap-1 border border-[#0b3f2f] bg-[#0b3f2f] font-semibold text-white transition hover:bg-[#14543f] disabled:cursor-not-allowed disabled:opacity-50 ${isAdminBillingOrderPage ? "h-7 rounded-lg px-1 text-[10px]" : "rounded-xl px-2 py-2 text-xs"}`}
+                        className={`inline-flex w-full items-center justify-center gap-1 border border-[#0b3f2f] bg-[#0b3f2f] font-semibold text-white transition hover:bg-[#14543f] disabled:cursor-not-allowed disabled:opacity-50 ${isCompactFoodPage ? "h-7 rounded-lg px-1 text-[10px]" : "rounded-xl px-2 py-2 text-xs"}`}
                       >
                         <Plus className="h-3.5 w-3.5" />
                         <span>Add</span>
@@ -1036,7 +1084,7 @@ export default function ServerFood() {
                         type="button"
                         onClick={() => handleOpenDetails(food)}
                         disabled={!isAvailable}
-                        className={`inline-flex w-full items-center justify-center gap-1 border border-[#0b3f2f] bg-[#e8f1ed] font-semibold text-[#0b3f2f] transition hover:bg-[#dcebe4] disabled:cursor-not-allowed disabled:opacity-50 ${isAdminBillingOrderPage ? "h-7 rounded-lg px-1 text-[10px]" : "rounded-xl px-2 py-2 text-xs"}`}
+                        className={`inline-flex w-full items-center justify-center gap-1 border border-[#0b3f2f] bg-[#e8f1ed] font-semibold text-[#0b3f2f] transition hover:bg-[#dcebe4] disabled:cursor-not-allowed disabled:opacity-50 ${isCompactFoodPage ? "h-7 rounded-lg px-1 text-[10px]" : "rounded-xl px-2 py-2 text-xs"}`}
                       >
                         <Eye className="h-3.5 w-3.5" />
                         <span>Customize</span>
@@ -1258,7 +1306,7 @@ export default function ServerFood() {
       </div>
 
       {hasOrderContext && (
-        <section aria-label="Current order" className={`flex min-h-0 flex-col overflow-hidden rounded-2xl border border-[#b8cbbd] bg-white shadow-[0_8px_28px_rgba(16,40,24,0.12)] ${isAdminBillingOrderPage ? "h-full max-h-none" : "max-h-[70vh] xl:sticky xl:top-4 xl:h-[calc(100vh-12rem)] xl:max-h-none"}`}>
+        <section aria-label="Current order" className={`flex min-h-0 flex-col overflow-hidden rounded-2xl border border-[#b8cbbd] bg-white shadow-[0_8px_28px_rgba(16,40,24,0.12)] ${isCompactFoodPage ? "h-full max-h-none" : "max-h-[70vh] xl:sticky xl:top-4 xl:h-[calc(100vh-12rem)] xl:max-h-none"}`}>
           <header className="shrink-0 border-b border-[#e8eee9] bg-gradient-to-br from-[#f7faf7] to-white p-4 sm:p-5">
             <div className="flex items-start gap-3">
               <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#1a3c36] text-white shadow-sm">
@@ -1267,7 +1315,7 @@ export default function ServerFood() {
               <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-center gap-2">
                   <h2 className="text-lg font-bold text-gray-900">{selectedTable ? `Table ${selectedTable.table_number}` : orderType === "pickup" ? "Pick Up" : "Home Delivery"}</h2>
-                  {activeBill && (
+                  {activeBill && isAdminBillingOrderPage && (
                     <span className="rounded-full border border-purple-200 bg-purple-50 px-2.5 py-1 text-[10px] font-bold text-purple-800">
                       Bill #{activeBill.bill_number} · Round {(activeBill.rounds?.length || 1) + 1}
                     </span>
