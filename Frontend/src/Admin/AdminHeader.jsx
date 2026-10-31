@@ -17,6 +17,7 @@ import dayjs from "dayjs";
 const pageInfo = {
   "/admin":                         { title: "Dashboard",             icon: LayoutDashboard },
   "/admin/billing":                 { title: "Billing",               icon: Receipt },
+  "/admin/billing/order":           { title: "Billing POS",            icon: Receipt },
   "/admin/revenue":                 { title: "Revenue",               icon: DollarSign },
   "/admin/billing/new":             { title: "New Billing",            icon: Plus },
   "/admin/orders/new":              { title: "New Orders",              icon: ShoppingCart },
@@ -132,6 +133,8 @@ const Header = ({ onMenuClick }) => {
   const userName = profileName || "Admin";
   const userRole = role ? role.charAt(0).toUpperCase() + role.slice(1) : "Administrator";
   const { title: pageTitle, icon: PageIcon } = getPageInfo(location.pathname);
+  const isBillingOrderPage = location.pathname === "/admin/billing/order";
+  const selectedTable = location.state?.selectedTable;
 
   /* clock */
   useEffect(() => {
@@ -277,8 +280,14 @@ const Header = ({ onMenuClick }) => {
 
   return (
     <>
-      <header className="sticky top-0 z-30 bg-white backdrop-blur-xl border-b border-gray-200 shadow-sm">
-        <div className="flex items-center gap-3 px-4 sm:px-6 h-18" ref={dropdownRef}>
+      <header className={`sticky top-0 z-30 border-b backdrop-blur-xl ${
+        isBillingOrderPage
+          ? "border-[#dce7df] bg-white/95 shadow-[0_4px_18px_rgba(26,60,54,0.08)]"
+          : "border-gray-200 bg-white shadow-sm"
+      }`}>
+        <div className={`flex items-center gap-3 px-4 sm:px-6 ${
+          isBillingOrderPage ? "h-16" : "h-18"
+        }`} ref={dropdownRef}>
 
           {/* ── HAMBURGER (mobile) ── */}
           <button
@@ -290,13 +299,32 @@ const Header = ({ onMenuClick }) => {
 
           {/* ── PAGE TITLE ── */}
           <div className="flex items-center gap-2.5 flex-1 min-w-0">
-            <div className="w-8 h-8 rounded-lg bg-[#d4a843]/15 border border-[#d4a843]/30 flex items-center justify-center shrink-0">
-              <PageIcon size={16} className="text-[#d4a843]" />
-            </div>
+            {isBillingOrderPage ? (
+              <img
+                src="/images/adminlogo.png"
+                alt="Buy Foods restaurant logo"
+                className="h-10 w-10 shrink-0 rounded-xl border border-[#dce7df] bg-white object-contain p-0.5 shadow-sm"
+              />
+            ) : (
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-[#d4a843]/30 bg-[#d4a843]/15 text-[#d4a843]">
+                <PageIcon size={17} />
+              </div>
+            )}
             <div className="min-w-0 hidden sm:block">
-              <h1 className="text-base font-bold text-gray-900 truncate leading-tight">{pageTitle}</h1>
-              <p className="text-[10px] text-gray-500 leading-none">
-                {currentTime.format("ddd, DD MMM YYYY")} · {currentTime.format("hh:mm:ss A")}
+              <div className="flex min-w-0 items-center gap-2">
+                <h1 className="truncate text-sm font-bold leading-tight text-gray-900 sm:text-base">{pageTitle}</h1>
+                {isBillingOrderPage && selectedTable && (
+                  <span className="inline-flex shrink-0 items-center rounded-full border border-[#dce7df] bg-[#f3f8f4] px-2.5 py-1 text-[10px] font-semibold text-[#1a3c36]">
+                    Table {selectedTable.table_number}
+                  </span>
+                )}
+              </div>
+              <p className="mt-0.5 truncate text-[10px] leading-none text-gray-500">
+                {isBillingOrderPage
+                  ? selectedTable
+                    ? `Dine-in billing · ${currentTime.format("ddd, DD MMM YYYY")} · ${currentTime.format("hh:mm A")}`
+                    : `Restaurant billing terminal · ${currentTime.format("ddd, DD MMM YYYY")} · ${currentTime.format("hh:mm A")}`
+                  : `${currentTime.format("ddd, DD MMM YYYY")} · ${currentTime.format("hh:mm:ss A")}`}
               </p>
             </div>
           </div>

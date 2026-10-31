@@ -517,7 +517,7 @@ export default function ServerFood() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className={isAdminBillingOrderPage ? "flex h-full min-h-0 flex-col gap-3 overflow-hidden p-3" : "space-y-6"}>
      
         
 
@@ -777,10 +777,10 @@ export default function ServerFood() {
         </div>
       </div>
 
-      <div className={hasOrderContext ? "grid items-start gap-5 xl:grid-cols-[minmax(0,1fr)_380px]" : ""}>
-      <div className={`${isAdminBillingOrderPage ? "grid min-w-0 items-start gap-4 xl:grid-cols-[160px_minmax(0,1fr)]" : ""} ${hasOrderContext ? `min-w-0 ${isAdminBillingOrderPage ? "xl:h-[calc(100dvh-11rem)] xl:max-h-none" : "xl:max-h-[calc(100vh-12rem)]"} xl:overflow-y-auto xl:overscroll-contain xl:pr-2 scrollbar-hide` : "min-w-0"}`}>
+      <div className={hasOrderContext ? `grid min-w-0 ${isAdminBillingOrderPage ? "min-h-0 flex-1 items-stretch gap-3 xl:grid-cols-[minmax(0,1fr)_380px]" : "items-start gap-5 xl:grid-cols-[minmax(0,1fr)_380px]"}` : ""}>
+      <div className={`${isAdminBillingOrderPage ? "grid h-full min-h-0 min-w-0 gap-3 xl:grid-cols-[160px_minmax(0,1fr)] xl:grid-rows-[minmax(0,1fr)]" : ""} ${hasOrderContext ? `min-w-0 ${isAdminBillingOrderPage ? "xl:min-h-0" : "xl:max-h-[calc(100vh-12rem)] xl:overflow-y-auto xl:overscroll-contain xl:pr-2 scrollbar-hide"}` : "min-w-0"}`}>
       {isAdminBillingOrderPage && (
-        <aside aria-label="Filter dishes by category" className="min-h-0 min-w-0 rounded-xl bg-slate-100 p-2 xl:sticky xl:top-2 xl:h-[calc(100dvh-11rem)]">
+        <aside aria-label="Filter dishes by category" className="min-h-0 min-w-0 rounded-xl bg-slate-100 p-2 xl:h-full">
           <div className="flex gap-1.5 overflow-x-auto pb-1 xl:h-full xl:flex-col xl:overflow-y-auto xl:overflow-x-hidden xl:pb-0">
             <button
               type="button"
@@ -812,6 +812,7 @@ export default function ServerFood() {
         </aside>
       )}
       {/* Main Content Area */}
+      <div className={isAdminBillingOrderPage ? "h-full min-h-0 min-w-0 overflow-y-auto overscroll-contain pr-1" : ""}>
       {loading ? (
         <div className="bg-white p-14 rounded-2xl border border-gray-100 flex flex-col items-center justify-center gap-3">
           <Loader2 className="w-8 h-8 animate-spin text-[#d4a843]" />
@@ -1219,9 +1220,10 @@ export default function ServerFood() {
         </div>
       )}
       </div>
+      </div>
 
       {hasOrderContext && (
-        <section aria-label="Current order" className="flex max-h-[70vh] flex-col overflow-hidden rounded-2xl border border-[#b8cbbd] bg-white shadow-[0_8px_28px_rgba(16,40,24,0.12)] xl:sticky xl:top-4 xl:h-[calc(100vh-12rem)] xl:max-h-none">
+        <section aria-label="Current order" className={`flex min-h-0 flex-col overflow-hidden rounded-2xl border border-[#b8cbbd] bg-white shadow-[0_8px_28px_rgba(16,40,24,0.12)] ${isAdminBillingOrderPage ? "h-full max-h-none" : "max-h-[70vh] xl:sticky xl:top-4 xl:h-[calc(100vh-12rem)] xl:max-h-none"}`}>
           <header className="shrink-0 border-b border-[#e8eee9] bg-gradient-to-br from-[#f7faf7] to-white p-4 sm:p-5">
             <div className="flex items-start gap-3">
               <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#1a3c36] text-white shadow-sm">

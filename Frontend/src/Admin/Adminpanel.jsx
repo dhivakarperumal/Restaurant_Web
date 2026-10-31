@@ -57,7 +57,7 @@ const AdminLayout = () => {
         `}
       >
         {/* Header */}
-        {!isPrintPage && !isBillingOrderPage && (
+        {!isPrintPage && (
           <div className="print:hidden sticky top-0 z-40">
             <Header onMenuClick={() => setSidebarOpen(true)} />
           </div>
