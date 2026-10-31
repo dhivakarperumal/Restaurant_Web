@@ -106,6 +106,7 @@ export default function ServerFood() {
   const [customizationRequest, setCustomizationRequest] = useState("");
   const [customizeQuantity, setCustomizeQuantity] = useState(1);
   const hasOrderContext = Boolean(orderType);
+  const isAdminBillingOrderPage = location.pathname === "/admin/billing/order";
 
   const fetchActiveBill = async () => {
     if (!selectedTable?.table_id) return;
@@ -520,7 +521,7 @@ export default function ServerFood() {
      
         
 
-      {location.pathname === "/admin/billing/order" && !selectedTable && (
+      {isAdminBillingOrderPage && !selectedTable && (
         <div className="flex justify-end">
           <button
             type="button"
@@ -667,21 +668,23 @@ export default function ServerFood() {
         {/* Filter Dropdowns, View Mode, and Table Actions */}
         <div className={`flex flex-wrap items-center gap-2 ${selectedTable ? "xl:justify-end" : ""}`}>
             {/* Category Dropdown */}
-            <select
-              value={selectedCategory}
-              onChange={(e) => setSelectedCategory(e.target.value)}
-              className="px-3 py-2 text-xs sm:text-sm bg-gray-50 border border-gray-200 rounded-xl text-gray-700 outline-none focus:border-[#FF5A00]"
-            >
-              <option value="all">All Categories ({foods.length})</option>
-              {categories.map((cat) => (
-                <option
-                  key={cat.category_id || cat.id}
-                  value={cat.category_id || cat.name}
-                >
-                  {cat.name || cat.category_name}
-                </option>
-              ))}
-            </select>
+            {!isAdminBillingOrderPage && (
+              <select
+                value={selectedCategory}
+                onChange={(e) => setSelectedCategory(e.target.value)}
+                className="px-3 py-2 text-xs sm:text-sm bg-gray-50 border border-gray-200 rounded-xl text-gray-700 outline-none focus:border-[#FF5A00]"
+              >
+                <option value="all">All Categories ({foods.length})</option>
+                {categories.map((cat) => (
+                  <option
+                    key={cat.category_id || cat.id}
+                    value={cat.category_id || cat.name}
+                  >
+                    {cat.name || cat.category_name}
+                  </option>
+                ))}
+              </select>
+            )}
 
             {/* Type Dropdown (Veg/Non-Veg) */}
             <select
@@ -750,7 +753,7 @@ export default function ServerFood() {
                 Clear filters
               </button>
             )}
-            {selectedTable && location.pathname === "/admin/billing/order" && (
+            {selectedTable && isAdminBillingOrderPage && (
               <button
                 type="button"
                 onClick={() => setShowStatsSummary((visible) => !visible)}
@@ -775,7 +778,44 @@ export default function ServerFood() {
       </div>
 
       <div className={hasOrderContext ? "grid items-start gap-5 xl:grid-cols-[minmax(0,1fr)_380px]" : ""}>
-      <div className={hasOrderContext ? "min-w-0 xl:max-h-[calc(100vh-12rem)] xl:overflow-y-auto xl:overscroll-contain xl:pr-2 scrollbar-hide" : "min-w-0"}>
+      <div className={`${isAdminBillingOrderPage ? "grid min-w-0 items-start gap-4 xl:grid-cols-[200px_minmax(0,1fr)]" : ""} ${hasOrderContext ? "min-w-0 xl:max-h-[calc(100vh-12rem)] xl:overflow-y-auto xl:overscroll-contain xl:pr-2 scrollbar-hide" : "min-w-0"}`}>
+      {isAdminBillingOrderPage && (
+        <aside aria-label="Filter dishes by category" className="min-w-0 rounded-2xl border border-gray-100 bg-white p-3 shadow-sm xl:sticky xl:top-2">
+          <h2 className="mb-2 px-2 text-xs font-bold uppercase tracking-wide text-gray-500">Categories</h2>
+          <div className="flex gap-2 overflow-x-auto pb-1 xl:flex-col xl:overflow-x-visible">
+            <button
+              type="button"
+              onClick={() => setSelectedCategory("all")}
+              aria-pressed={selectedCategory === "all"}
+              className={`flex shrink-0 items-center justify-between gap-3 rounded-xl px-3 py-2 text-left text-sm font-semibold transition xl:w-full ${selectedCategory === "all" ? "bg-[#1a3c36] text-white" : "text-gray-700 hover:bg-emerald-50 hover:text-[#1a3c36]"}`}
+            >
+              <span>All Categories</span>
+              <span className={`text-xs ${selectedCategory === "all" ? "text-white/75" : "text-gray-400"}`}>{foods.length}</span>
+            </button>
+            {categories.map((category) => {
+              const categoryValue = String(category.category_id || category.name || "");
+              const categoryName = category.name || category.category_name || "Category";
+              const categoryCount = foods.filter((food) => (
+                String(food.category_id || "") === categoryValue
+                || String(food.category_name || "").toLowerCase() === categoryName.toLowerCase()
+              )).length;
+              const isSelected = selectedCategory === categoryValue;
+              return (
+                <button
+                  key={category.category_id || category.id || categoryName}
+                  type="button"
+                  onClick={() => setSelectedCategory(categoryValue)}
+                  aria-pressed={isSelected}
+                  className={`flex shrink-0 items-center justify-between gap-3 rounded-xl px-3 py-2 text-left text-sm font-medium transition xl:w-full ${isSelected ? "bg-[#1a3c36] text-white" : "text-gray-700 hover:bg-emerald-50 hover:text-[#1a3c36]"}`}
+                >
+                  <span className="truncate">{categoryName}</span>
+                  <span className={`text-xs ${isSelected ? "text-white/75" : "text-gray-400"}`}>{categoryCount}</span>
+                </button>
+              );
+            })}
+          </div>
+        </aside>
+      )}
       {/* Main Content Area */}
       {loading ? (
         <div className="bg-white p-14 rounded-2xl border border-gray-100 flex flex-col items-center justify-center gap-3">

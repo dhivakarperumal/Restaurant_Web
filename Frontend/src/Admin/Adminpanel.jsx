@@ -25,6 +25,7 @@ const AdminLayout = () => {
 
   const location = useLocation();
   const isPrintPage = location.pathname.includes('/admin/pt-form/print/');
+  const isBillingOrderPage = location.pathname === '/admin/billing/order';
   const isPosPage = location.pathname === '/admin/billing';
   const isDashboard = location.pathname === '/admin';
   const isProductsPage = location.pathname === '/admin/products';
@@ -34,7 +35,7 @@ const AdminLayout = () => {
     <div className={`admin-root admin-theme flex min-h-screen ${isPrintPage ? 'bg-slate-100 text-slate-900' : 'bg-slate-100/75 text-slate-800'} print:bg-white print:text-black print:min-h-0 print:block`}>
       
       {/* Sidebar */}
-      {!isPrintPage && (
+      {!isPrintPage && !isBillingOrderPage && (
         <div className="print:hidden">
           <Sidebar
             isOpen={sidebarOpen}
@@ -51,7 +52,7 @@ const AdminLayout = () => {
           flex flex-col flex-1 min-w-0 min-h-screen
           transition-all duration-300 ease-in-out
           bg-slate-100/75
-          ${!isPrintPage && isLargeScreen ? (sidebarCollapsed ? "lg:ml-[80px]" : "lg:ml-72") : ""}
+          ${!isPrintPage && !isBillingOrderPage && isLargeScreen ? (sidebarCollapsed ? "lg:ml-[80px]" : "lg:ml-72") : ""}
           print:ml-0 print:min-h-0 print:block print:w-full
         `}
       >
