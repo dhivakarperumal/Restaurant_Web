@@ -803,7 +803,9 @@ export default function ServerFood() {
               aria-pressed={selectedCategory === "all"}
               className={`flex min-h-11 shrink-0 items-center gap-2 rounded-lg px-2.5 py-2 text-left text-xs font-semibold transition xl:w-full ${selectedCategory === "all" ? "bg-[#1a3c36] text-white shadow-sm" : "text-slate-700 hover:bg-white hover:text-[#1a3c36]"}`}
             >
-              <Utensils className="h-4 w-4 shrink-0" />
+              <span className="relative flex h-7 w-7 shrink-0 items-center justify-center overflow-hidden rounded-md bg-white/80">
+                <Utensils className="h-4 w-4 text-[#1a3c36]" />
+              </span>
               <span className="truncate">All Items</span>
             </button>
             {categories.map((category) => {
@@ -818,7 +820,19 @@ export default function ServerFood() {
                   aria-pressed={isSelected}
                   className={`flex min-h-11 shrink-0 items-center gap-2 rounded-lg px-2.5 py-2 text-left text-xs font-medium transition xl:w-full ${isSelected ? "bg-[#1a3c36] text-white shadow-sm" : "text-slate-700 hover:bg-white hover:text-[#1a3c36]"}`}
                 >
-                  <Utensils className="h-4 w-4 shrink-0" />
+                  <span className="relative flex h-7 w-7 shrink-0 items-center justify-center overflow-hidden rounded-md bg-white/80">
+                    <Utensils className="h-4 w-4 text-[#1a3c36]" />
+                    {category.category_image && (
+                      <img
+                        src={resolveImageUrl(category.category_image)}
+                        alt=""
+                        className="absolute inset-0 h-full w-full object-cover"
+                        onError={(event) => {
+                          event.currentTarget.style.display = "none";
+                        }}
+                      />
+                    )}
+                  </span>
                   <span className="truncate">{categoryName}</span>
                 </button>
               );
@@ -929,19 +943,15 @@ export default function ServerFood() {
                     </div>
 
                     {/* Availability status badge */}
-                    <div className={`absolute right-2.5 top-2.5 ${isAdminBillingOrderPage ? "right-2 top-2" : ""}`}>
+                    {!isAdminBillingOrderPage && <div className="absolute right-2.5 top-2.5">
                       <span
-                        className={`rounded-full font-semibold shadow-sm backdrop-blur-sm ${
-                          isAdminBillingOrderPage ? "px-1.5 py-0.5 text-[9px]" : "px-2 py-0.5 text-[11px]"
-                        } ${
-                          isAvailable
-                            ? "bg-emerald-500/90 text-white"
-                            : "bg-gray-800/80 text-gray-200"
+                        className={`rounded-full px-2 py-0.5 text-[11px] font-semibold shadow-sm backdrop-blur-sm ${
+                          isAvailable ? "bg-emerald-500/90 text-white" : "bg-gray-800/80 text-gray-200"
                         }`}
                       >
                         {isAvailable ? "Available" : "Unavailable"}
                       </span>
-                    </div>
+                    </div>}
 
                     {/* Preparation Time */}
                     {food.preparation_time ? (
@@ -950,9 +960,9 @@ export default function ServerFood() {
                         <span>{food.preparation_time}m</span>
                       </div>
                     ) : null}
-                    {Number(food.discount || 0) > 0 && (
-                      <div className={`absolute bottom-2.5 left-2.5 inline-flex items-center gap-1 rounded-md bg-emerald-600 font-bold leading-none text-white shadow-sm ${isAdminBillingOrderPage ? "bottom-2 left-2 px-1.5 py-1 text-[9px]" : "px-2 py-1 text-[10px]"}`}>
-                        <Tag className={`shrink-0 ${isAdminBillingOrderPage ? "h-2.5 w-2.5" : "h-3 w-3"}`} />
+                    {!isAdminBillingOrderPage && Number(food.discount || 0) > 0 && (
+                      <div className="absolute bottom-2.5 left-2.5 inline-flex items-center gap-1 rounded-md bg-emerald-600 px-2 py-1 text-[10px] font-bold leading-none text-white shadow-sm">
+                        <Tag className="h-3 w-3 shrink-0" />
                         <span>{Number(food.discount)}% OFF</span>
                       </div>
                     )}
@@ -961,21 +971,21 @@ export default function ServerFood() {
                   {/* Card Content */}
                   <div className={`${isAdminBillingOrderPage ? "space-y-1 p-2" : "space-y-2.5 p-4"}`}>
                     <div>
-                      <div className={`flex items-center justify-between gap-1 text-[11px] text-gray-400 ${isAdminBillingOrderPage ? "text-[9px]" : ""}`}>
-                        <span className="font-mono font-medium">
-                          {food.food_id}
-                        </span>
-                        <span className={`max-w-[120px] truncate rounded bg-gray-100 px-2 py-0.5 font-medium text-gray-600 ${isAdminBillingOrderPage ? "text-[9px]" : "text-[10px]"}`}>
-                          {food.category_name || "General"}
-                        </span>
-                      </div>
+                      {!isAdminBillingOrderPage && (
+                        <div className="flex items-center justify-between gap-1 text-[11px] text-gray-400">
+                          <span className="font-mono font-medium">{food.food_id}</span>
+                          <span className="max-w-[120px] truncate rounded bg-gray-100 px-2 py-0.5 text-[10px] font-medium text-gray-600">
+                            {food.category_name || "General"}
+                          </span>
+                        </div>
+                      )}
                       <h3
                         className={`mt-1 line-clamp-1 font-bold text-gray-900 transition-colors group-hover:text-[#1a3c36] ${isAdminBillingOrderPage ? "text-[13px] leading-4" : "text-base"}`}
                         title={food.food_name}
                       >
                         {food.food_name}
                       </h3>
-                      {food.cuisine_name ? (
+                      {!isAdminBillingOrderPage && food.cuisine_name ? (
                         <p className="text-xs text-gray-500 line-clamp-1">
                           {food.cuisine_name} Cuisine
                         </p>
@@ -987,7 +997,7 @@ export default function ServerFood() {
                       <span className={`${isAdminBillingOrderPage ? "text-sm" : "text-lg"} font-bold text-gray-900`}>
                         ₹{Number(food.final_price || 0).toFixed(2)}
                       </span>
-                      {Number(food.mrp || 0) > Number(food.final_price || 0) && (
+                      {!isAdminBillingOrderPage && Number(food.mrp || 0) > Number(food.final_price || 0) && (
                         <span className="text-xs text-gray-400 line-through">
                           ₹{Number(food.mrp || 0).toFixed(2)}
                         </span>
@@ -999,14 +1009,14 @@ export default function ServerFood() {
                 {/* Card Footer: View Details Action */}
                 <div className={`space-y-1 ${isAdminBillingOrderPage ? "p-2 pt-0" : "p-3 pt-0"}`}>
                   {hasOrderContext && getFoodQuantity(food) > 0 && (
-                    <div className={`flex items-center justify-between rounded-lg bg-[#f4f7f5] ${isAdminBillingOrderPage ? "p-1" : "p-2"}`}>
-                      <div className="ml-auto flex items-center gap-2">
-                        <button type="button" onClick={() => adjustFoodQuantity(food, -1)} aria-label={`Decrease ${food.food_name} quantity`} disabled={!getFoodQuantity(food)} className={`flex cursor-pointer items-center justify-center rounded-lg border border-orange-200 bg-white text-[#FF5A00] hover:bg-orange-50 disabled:cursor-not-allowed disabled:opacity-40 ${isAdminBillingOrderPage ? "h-7 w-7" : "h-8 w-8"}`}>
-                          <Minus className="h-4 w-4" />
+                    <div className={`flex items-center justify-between rounded-lg bg-[#f4f7f5] ${isAdminBillingOrderPage ? "p-0.5" : "p-2"}`}>
+                      <div className={`flex w-full items-center justify-between ${isAdminBillingOrderPage ? "gap-1" : "gap-2"}`}>
+                        <button type="button" onClick={() => adjustFoodQuantity(food, -1)} aria-label={`Decrease ${food.food_name} quantity`} disabled={!getFoodQuantity(food)} className={`flex cursor-pointer items-center justify-center rounded-md border border-orange-200 bg-white text-[#FF5A00] hover:bg-orange-50 disabled:cursor-not-allowed disabled:opacity-40 ${isAdminBillingOrderPage ? "h-5 w-5" : "h-8 w-8"}`}>
+                          <Minus className={isAdminBillingOrderPage ? "h-3 w-3" : "h-4 w-4"} />
                         </button>
-                        <span className="w-5 text-center text-sm font-bold">{getFoodQuantity(food)}</span>
-                        <button type="button" onClick={() => adjustFoodQuantity(food, 1)} aria-label={`Increase ${food.food_name} quantity`} disabled={!isAvailable || getFoodQuantity(food) >= 99} className={`flex cursor-pointer items-center justify-center rounded-lg border border-orange-200 bg-white text-[#FF5A00] hover:bg-orange-50 disabled:cursor-not-allowed disabled:opacity-40 ${isAdminBillingOrderPage ? "h-7 w-7" : "h-8 w-8"}`}>
-                          <Plus className="h-4 w-4" />
+                        <span className={`${isAdminBillingOrderPage ? "w-4 text-xs" : "w-5 text-sm"} text-center font-bold`}>{getFoodQuantity(food)}</span>
+                        <button type="button" onClick={() => adjustFoodQuantity(food, 1)} aria-label={`Increase ${food.food_name} quantity`} disabled={!isAvailable || getFoodQuantity(food) >= 99} className={`flex cursor-pointer items-center justify-center rounded-md border border-orange-200 bg-white text-[#FF5A00] hover:bg-orange-50 disabled:cursor-not-allowed disabled:opacity-40 ${isAdminBillingOrderPage ? "h-5 w-5" : "h-8 w-8"}`}>
+                          <Plus className={isAdminBillingOrderPage ? "h-3 w-3" : "h-4 w-4"} />
                         </button>
                       </div>
                     </div>
