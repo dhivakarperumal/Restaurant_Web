@@ -127,6 +127,7 @@ const PointOfSale = () => {
   const selectionLock = useRef(false);
   const settlementLock = useRef(false);
   const billingLoadSequence = useRef(0);
+  const settlementLaunchBillId = useRef("");
 
   const loadBillingData = useCallback(async ({ showLoading = true } = {}) => {
     const requestId = billingLoadSequence.current + 1;
@@ -316,6 +317,23 @@ const PointOfSale = () => {
       setLoadingSettlementBill(false);
     }
   };
+
+  useEffect(() => {
+    const requestedBillId = String(location.state?.openSettlementBillId || "");
+    if (!requestedBillId || !billingDataFresh || loading) return;
+    if (settlementLaunchBillId.current === requestedBillId) return;
+
+    settlementLaunchBillId.current = requestedBillId;
+    const bill = activeBills.find(
+      (activeBill) => String(activeBill.bill_id) === requestedBillId
+    );
+    if (bill) {
+      completeActiveBill(bill);
+    } else {
+      toast.error("The requested active bill could not be found.");
+    }
+    navigate(location.pathname, { replace: true, state: null });
+  }, [activeBills, billingDataFresh, completeActiveBill, loading, location.pathname, location.state, navigate]);
 
   const settleBillInPopup = async () => {
     if (!settlementBill?.bill_id || settlementLock.current || settlingBill) return;

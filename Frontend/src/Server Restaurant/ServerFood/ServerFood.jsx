@@ -1456,6 +1456,23 @@ export default function ServerFood() {
               <div className="flex justify-between border-t border-slate-200 pt-2 text-base font-extrabold text-slate-900">
                 <span>Estimated total</span><span>₹{billPreviewTotal.toFixed(2)}</span>
               </div>
+              {activeBill && (
+                <button
+                  type="button"
+                  disabled={cartItems.length > 0}
+                  onClick={() => {
+                    setShowBillPreview(false);
+                    navigate("/admin/billing", {
+                      state: { openSettlementBillId: activeBill.bill_id },
+                    });
+                  }}
+                  title={cartItems.length > 0 ? "Add this round to the bill before completing it." : "Complete and settle this bill"}
+                  className="mt-2 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-[#0b3f2f] px-4 py-2.5 text-sm font-bold text-white transition hover:bg-[#14543f] disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  <CheckCircle2 className="h-4 w-4" />
+                  Bill Completed
+                </button>
+              )}
             </footer>
           </section>
         </div>
