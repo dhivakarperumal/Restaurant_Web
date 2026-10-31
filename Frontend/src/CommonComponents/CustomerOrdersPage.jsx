@@ -292,6 +292,7 @@ function CustomerOrdersPage({
   const assignableHomeDeliveryOrders = visibleOrders.filter((order) => (
     !order.is_kitchen_order
     && order.order_type === 'home_delivery'
+    && order.order_status === 'ready'
     && !order.assigned_delivery_partner_id
     && !['delivered', 'completed', 'cancelled'].includes(String(order.order_status || '').toLowerCase())
   ));
