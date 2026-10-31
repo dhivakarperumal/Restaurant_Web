@@ -778,27 +778,22 @@ export default function ServerFood() {
       </div>
 
       <div className={hasOrderContext ? "grid items-start gap-5 xl:grid-cols-[minmax(0,1fr)_380px]" : ""}>
-      <div className={`${isAdminBillingOrderPage ? "grid min-w-0 items-start gap-4 xl:grid-cols-[200px_minmax(0,1fr)]" : ""} ${hasOrderContext ? "min-w-0 xl:max-h-[calc(100vh-12rem)] xl:overflow-y-auto xl:overscroll-contain xl:pr-2 scrollbar-hide" : "min-w-0"}`}>
+      <div className={`${isAdminBillingOrderPage ? "grid min-w-0 items-start gap-4 xl:grid-cols-[160px_minmax(0,1fr)]" : ""} ${hasOrderContext ? `min-w-0 ${isAdminBillingOrderPage ? "xl:h-[calc(100dvh-11rem)] xl:max-h-none" : "xl:max-h-[calc(100vh-12rem)]"} xl:overflow-y-auto xl:overscroll-contain xl:pr-2 scrollbar-hide` : "min-w-0"}`}>
       {isAdminBillingOrderPage && (
-        <aside aria-label="Filter dishes by category" className="min-w-0 rounded-2xl border border-gray-100 bg-white p-3 shadow-sm xl:sticky xl:top-2">
-          <h2 className="mb-2 px-2 text-xs font-bold uppercase tracking-wide text-gray-500">Categories</h2>
-          <div className="flex gap-2 overflow-x-auto pb-1 xl:flex-col xl:overflow-x-visible">
+        <aside aria-label="Filter dishes by category" className="min-h-0 min-w-0 rounded-xl bg-slate-100 p-2 xl:sticky xl:top-2 xl:h-[calc(100dvh-11rem)]">
+          <div className="flex gap-1.5 overflow-x-auto pb-1 xl:h-full xl:flex-col xl:overflow-y-auto xl:overflow-x-hidden xl:pb-0">
             <button
               type="button"
               onClick={() => setSelectedCategory("all")}
               aria-pressed={selectedCategory === "all"}
-              className={`flex shrink-0 items-center justify-between gap-3 rounded-xl px-3 py-2 text-left text-sm font-semibold transition xl:w-full ${selectedCategory === "all" ? "bg-[#1a3c36] text-white" : "text-gray-700 hover:bg-emerald-50 hover:text-[#1a3c36]"}`}
+              className={`flex min-h-11 shrink-0 items-center gap-2 rounded-lg px-2.5 py-2 text-left text-xs font-semibold transition xl:w-full ${selectedCategory === "all" ? "bg-[#1a3c36] text-white shadow-sm" : "text-slate-700 hover:bg-white hover:text-[#1a3c36]"}`}
             >
-              <span>All Categories</span>
-              <span className={`text-xs ${selectedCategory === "all" ? "text-white/75" : "text-gray-400"}`}>{foods.length}</span>
+              <Utensils className="h-4 w-4 shrink-0" />
+              <span className="truncate">All Items</span>
             </button>
             {categories.map((category) => {
               const categoryValue = String(category.category_id || category.name || "");
               const categoryName = category.name || category.category_name || "Category";
-              const categoryCount = foods.filter((food) => (
-                String(food.category_id || "") === categoryValue
-                || String(food.category_name || "").toLowerCase() === categoryName.toLowerCase()
-              )).length;
               const isSelected = selectedCategory === categoryValue;
               return (
                 <button
@@ -806,10 +801,10 @@ export default function ServerFood() {
                   type="button"
                   onClick={() => setSelectedCategory(categoryValue)}
                   aria-pressed={isSelected}
-                  className={`flex shrink-0 items-center justify-between gap-3 rounded-xl px-3 py-2 text-left text-sm font-medium transition xl:w-full ${isSelected ? "bg-[#1a3c36] text-white" : "text-gray-700 hover:bg-emerald-50 hover:text-[#1a3c36]"}`}
+                  className={`flex min-h-11 shrink-0 items-center gap-2 rounded-lg px-2.5 py-2 text-left text-xs font-medium transition xl:w-full ${isSelected ? "bg-[#1a3c36] text-white shadow-sm" : "text-slate-700 hover:bg-white hover:text-[#1a3c36]"}`}
                 >
+                  <Utensils className="h-4 w-4 shrink-0" />
                   <span className="truncate">{categoryName}</span>
-                  <span className={`text-xs ${isSelected ? "text-white/75" : "text-gray-400"}`}>{categoryCount}</span>
                 </button>
               );
             })}
