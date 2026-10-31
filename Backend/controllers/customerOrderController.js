@@ -462,15 +462,15 @@ const getDeliveryPartnerDashboard = async (req, res) => {
 
     const [counts] = await db.execute(
       `SELECT
-        COUNT(CASE WHEN DATE(created_at) = CURDATE() AND order_status IN ('delivered', 'completed') THEN 1 END) AS todayDeliveries,
+        COUNT(CASE WHEN DATE(updated_at) = CURDATE() AND order_status IN ('delivered', 'completed') THEN 1 END) AS todayDeliveries,
         COUNT(CASE WHEN order_status = 'assigned' THEN 1 END) AS newOrders,
         COUNT(CASE WHEN order_status IN ('assigned', 'accepted') THEN 1 END) AS assignedOrders,
         COUNT(CASE WHEN order_status = 'reached_pickup' THEN 1 END) AS pickupPending,
         COUNT(CASE WHEN order_status IN ('picked_up', 'out_for_delivery', 'reached_customer') THEN 1 END) AS outForDelivery,
         COUNT(CASE WHEN order_status IN ('delivered', 'completed') THEN 1 END) AS deliveredOrders,
         COUNT(CASE WHEN order_status = 'cancelled' THEN 1 END) AS cancelledOrders,
-        COALESCE(SUM(CASE WHEN DATE(created_at) = CURDATE() AND order_status IN ('delivered', 'completed') THEN total_amount END), 0) AS todayEarnings,
-        COALESCE(SUM(CASE WHEN order_status IN ('delivered', 'completed') THEN total_amount END), 0) AS totalEarnings
+        COALESCE(SUM(CASE WHEN DATE(updated_at) = CURDATE() AND order_status IN ('delivered', 'completed') THEN delivery_charge END), 0) AS todayEarnings,
+        COALESCE(SUM(CASE WHEN order_status IN ('delivered', 'completed') THEN delivery_charge END), 0) AS totalEarnings
        FROM orders
        WHERE assigned_delivery_partner_id = ? AND order_type = 'home_delivery'`,
       [employeeId]
@@ -554,19 +554,19 @@ const getDeliveryPartnerEarnings = async (req, res) => {
   try {
     const [summaryRows] = await db.execute(
       `SELECT COUNT(*) AS completed_deliveries,
-              COALESCE(SUM(total_amount), 0) AS total_earnings,
-              COALESCE(SUM(CASE WHEN DATE(updated_at) = CURDATE() THEN total_amount ELSE 0 END), 0) AS today_earnings,
-              COALESCE(SUM(CASE WHEN YEARWEEK(updated_at, 3) = YEARWEEK(CURDATE(), 3) THEN total_amount ELSE 0 END), 0) AS week_earnings,
-              COALESCE(SUM(CASE WHEN YEAR(updated_at) = YEAR(CURDATE()) AND MONTH(updated_at) = MONTH(CURDATE()) THEN total_amount ELSE 0 END), 0) AS month_earnings,
+              COALESCE(SUM(delivery_charge), 0) AS total_earnings,
+              COALESCE(SUM(CASE WHEN DATE(updated_at) = CURDATE() THEN delivery_charge ELSE 0 END), 0) AS today_earnings,
+              COALESCE(SUM(CASE WHEN YEARWEEK(updated_at, 3) = YEARWEEK(CURDATE(), 3) THEN delivery_charge ELSE 0 END), 0) AS week_earnings,
+              COALESCE(SUM(CASE WHEN YEAR(updated_at) = YEAR(CURDATE()) AND MONTH(updated_at) = MONTH(CURDATE()) THEN delivery_charge ELSE 0 END), 0) AS month_earnings,
               COALESCE(SUM(CASE WHEN LOWER(payment_method) = 'cod' THEN total_amount ELSE 0 END), 0) AS cash_collected
        FROM orders WHERE ${where}`,
       params
     );
     const [entries] = await db.execute(
       `SELECT order_number AS order_id, customer_name, updated_at AS date,
-              total_amount AS total_earnings, payment_method,
-              payment_status, NULL AS distance_km, NULL AS base_charge,
-              NULL AS extra_charge, NULL AS incentive
+              delivery_charge, delivery_distance_km AS distance_km,
+              delivery_charge AS total_earnings, total_amount AS order_total,
+              payment_method, payment_status
        FROM orders WHERE ${where}
        ORDER BY updated_at DESC, id DESC LIMIT 500`,
       params
