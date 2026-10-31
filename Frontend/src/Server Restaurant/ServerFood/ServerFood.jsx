@@ -611,44 +611,6 @@ export default function ServerFood() {
       </div>
       )}
 
-      {selectedTable && (
-        <div className="flex flex-col gap-3 rounded-2xl border border-[#d8e5da] bg-white p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#1a3c36] text-white">
-              <Table2 className="h-5 w-5" />
-            </div>
-            <div>
-              <p className="text-xs font-medium text-gray-500">Selected table</p>
-              <p className="text-sm font-bold text-gray-900">
-                {selectedTable.table_number}
-                {selectedTable.no_of_seats ? ` · ${selectedTable.no_of_seats} seats` : ""}
-              </p>
-            </div>
-          </div>
-          <div className="flex flex-wrap items-center gap-2">
-            {location.pathname === "/admin/billing/order" && (
-              <button
-                type="button"
-                onClick={() => setShowStatsSummary((visible) => !visible)}
-                aria-pressed={showStatsSummary}
-                aria-label={showStatsSummary ? "Disable summary" : "Enable summary"}
-                title={showStatsSummary ? "Disable summary" : "Enable summary"}
-                className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-700 transition hover:bg-slate-50"
-              >
-                {showStatsSummary ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-              </button>
-            )}
-            <button
-              type="button"
-              onClick={changeSelectedTable}
-              className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-xl bg-[#FF5A00] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#E94B00]"
-            >
-              Change Table
-            </button>
-          </div>
-        </div>
-      )}
-
       {hasOrderContext && !selectedTable && (
         <section className="rounded-2xl border border-orange-200 bg-white p-4 shadow-sm">
           <div className="mb-4 flex items-center justify-between gap-3">
@@ -681,36 +643,29 @@ export default function ServerFood() {
       )}
 
       {/* Search and Filters Bar */}
-      <div className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm space-y-3">
-        <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
-          {/* Search Input */}
-          <div className="relative flex-1 max-w-md">
-            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-            <input
-              type="text"
-              placeholder="Search dishes by name, cuisine, category..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2.5 text-sm bg-gray-50 rounded-xl border border-gray-200 focus:outline-none focus:border-[#FF5A00] focus:bg-white transition"
-            />
-            {searchQuery && (
-              <button
-                onClick={() => setSearchQuery("")}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            )}
-          </div>
-
-          {/* Filter Dropdowns and View Mode */}
-          <div className="flex flex-wrap items-center gap-2">
-            <span
-              className="mr-1 whitespace-nowrap text-xs font-medium text-gray-500"
-              aria-live="polite"
+      <div className={`flex flex-col gap-3 rounded-2xl border border-gray-100 bg-white p-4 shadow-sm ${selectedTable ? "xl:flex-row xl:items-center" : "md:flex-row md:items-center md:justify-between"}`}>
+        {/* Search Input */}
+        <div className={`relative w-full max-w-md ${selectedTable ? "xl:min-w-[180px] xl:flex-1" : "md:flex-1"}`}>
+          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+          <input
+            type="text"
+            placeholder="Search dishes by name, cuisine, category..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full pl-10 pr-4 py-2.5 text-sm bg-gray-50 rounded-xl border border-gray-200 focus:outline-none focus:border-[#FF5A00] focus:bg-white transition"
+          />
+          {searchQuery && (
+            <button
+              onClick={() => setSearchQuery("")}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
             >
-              {filteredFoods.length} of {foods.length}
-            </span>
+              <X className="w-4 h-4" />
+            </button>
+          )}
+        </div>
+
+        {/* Filter Dropdowns, View Mode, and Table Actions */}
+        <div className={`flex flex-wrap items-center gap-2 ${selectedTable ? "xl:justify-end" : ""}`}>
             {/* Category Dropdown */}
             <select
               value={selectedCategory}
@@ -740,11 +695,7 @@ export default function ServerFood() {
             </select>
 
             {/* Order entry only shows items that can be added to the current order. */}
-            {hasOrderContext ? (
-              <span className="rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-800">
-                Available foods only
-              </span>
-            ) : (
+            {!hasOrderContext && (
               <select
                 value={selectedStatus}
                 onChange={(e) => setSelectedStatus(e.target.value)}
@@ -799,7 +750,27 @@ export default function ServerFood() {
                 Clear filters
               </button>
             )}
-          </div>
+            {selectedTable && location.pathname === "/admin/billing/order" && (
+              <button
+                type="button"
+                onClick={() => setShowStatsSummary((visible) => !visible)}
+                aria-pressed={showStatsSummary}
+                aria-label={showStatsSummary ? "Disable summary" : "Enable summary"}
+                title={showStatsSummary ? "Disable summary" : "Enable summary"}
+                className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-700 transition hover:bg-slate-50"
+              >
+                {showStatsSummary ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </button>
+            )}
+            {selectedTable && (
+              <button
+                type="button"
+                onClick={changeSelectedTable}
+                className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-xl bg-[#FF5A00] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#E94B00]"
+              >
+                Change Table
+              </button>
+            )}
         </div>
       </div>
 
