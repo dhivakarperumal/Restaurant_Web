@@ -11,8 +11,8 @@ export default defineConfig({
   server: {
     proxy: {
       '/api': {
-        target: 'http://localhost:5000', 
-        // target: 'https://restaurant.qtechx.com',
+        // target: 'http://localhost:5000', 
+        target: 'https://restaurant.qtechx.com',
         changeOrigin: true,
         secure: false,
       },

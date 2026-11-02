@@ -81,6 +81,7 @@ import { AdminProvider } from './PrivateRouter/AdminContext';
 import RouteError from './CommonComponents/RouteError.jsx'
 import CustomerOrdersPage from './CommonComponents/CustomerOrdersPage.jsx'
 import FoodDetailsPage from './CommonComponents/FoodDetailsPage.jsx'
+import TechBanner from '../TechBanner.jsx'
 
 const directFoodRoute = window.location.pathname.match(/^\/food\/([^/]+)\/?$/i)
 if (directFoodRoute && !window.location.hash) {
@@ -99,7 +100,12 @@ const router = createHashRouter([
         index: true,
         element: <Home />,
       },
-      
+
+      {
+        path: 'tech-banner',
+        element: <TechBanner />,
+      },
+
       {
         path: 'shop',
         element: <Shop />,
@@ -172,8 +178,8 @@ const router = createHashRouter([
         path: 'register',
         element: <Register />,
       },
-      
-      
+
+
       {
         path: 'admin',
         element: (
